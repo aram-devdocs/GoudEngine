@@ -10,46 +10,7 @@ public final class AnimationController {
         self._ctx = ctx
     }
 
-    /// Creates an animation controller for an entity
-    public func create(entity: UInt64) -> Int32 {
-        return goud_animation_controller_create(_ctx, entity)
-    }
-
-    /// Adds a named animation state
-    public func addState(entity: UInt64, stateName: String, clipIndex: Int32) -> Int32 {
-        stateName.withCString { stateNamePtr in
-            return goud_animation_controller_add_state(_ctx, entity, stateNamePtr, clipIndex)
-        }
-    }
-
-    /// Adds a transition between two states
-    public func addTransition(entity: UInt64, from: String, to: String, trigger: String) -> Int32 {
-        from.withCString { fromPtr in
-            to.withCString { toPtr in
-                trigger.withCString { triggerPtr in
-                    return goud_animation_controller_add_transition(_ctx, entity, fromPtr, toPtr, triggerPtr)
-                }
-            }
-        }
-    }
-
-    /// Sets the current animation state
-    public func setState(entity: UInt64, stateName: String) -> Int32 {
-        stateName.withCString { stateNamePtr in
-            return goud_animation_controller_set_state(_ctx, entity, stateNamePtr)
-        }
-    }
-
-    /// Gets the current animation state name
-    public func getState(entity: UInt64) -> String {
-        return String(cString: goud_animation_controller_get_state(_ctx, entity))
-    }
-
-    /// Updates the animation controller
-    public func update(entity: UInt64, dt: Float) -> Int32 {
-        return goud_animation_controller_update(_ctx, entity, dt)
-    }
-
+    // Methods will be generated once codegen handles sub-tool FFI patterns.
 }
 
 /// Interpolation animation between two values with easing
@@ -60,31 +21,7 @@ public final class Tween {
         self._ctx = ctx
     }
 
-    /// Creates a new tween and returns its handle
-    public func create(start: Float, end: Float, duration: Float, easingType: Int32) -> Int64 {
-        return goud_tween_create(_ctx, start, end, duration, easingType)
-    }
-
-    /// Updates the tween by delta time
-    public func update(handle: Int64, dt: Float) -> Int32 {
-        return goud_tween_update(_ctx, handle, dt)
-    }
-
-    /// Gets the current interpolated value
-    public func value(handle: Int64) -> Float {
-        return goud_tween_value(_ctx, handle)
-    }
-
-    /// Returns whether the tween has finished
-    public func isComplete(handle: Int64) -> Bool {
-        return (goud_tween_is_complete(_ctx, handle) != 0)
-    }
-
-    /// Resets the tween to its initial state
-    public func reset(handle: Int64) -> Int32 {
-        return goud_tween_reset(_ctx, handle)
-    }
-
+    // Methods will be generated once codegen handles sub-tool FFI patterns.
 }
 
 /// 2D skeletal animation system
@@ -95,30 +32,7 @@ public final class Skeleton {
         self._ctx = ctx
     }
 
-    /// Creates a skeleton for an entity
-    public func create(entity: UInt64) -> Int32 {
-        return goud_skeleton_create(_ctx, entity)
-    }
-
-    /// Adds a bone to the skeleton
-    public func addBone(entity: UInt64, boneName: String, parentIndex: Int32, x: Float, y: Float, rotation: Float) -> Int32 {
-        boneName.withCString { boneNamePtr in
-            return goud_skeleton_add_bone(_ctx, entity, boneNamePtr, parentIndex, x, y, rotation)
-        }
-    }
-
-    /// Sets the transform of a bone by index
-    public func setBoneTransform(entity: UInt64, boneIndex: Int32, x: Float, y: Float, rotation: Float) -> Int32 {
-        return goud_skeleton_set_bone_transform(_ctx, entity, boneIndex, x, y, rotation)
-    }
-
-    /// Plays a named animation clip
-    public func playClip(entity: UInt64, clipName: String, looping: Bool) -> Int32 {
-        clipName.withCString { clipNamePtr in
-            return goud_skeleton_play_clip(_ctx, entity, clipNamePtr, looping)
-        }
-    }
-
+    // Methods will be generated once codegen handles sub-tool FFI patterns.
 }
 
 /// Animation keyframe event system for configuring and reading fired events
@@ -129,25 +43,7 @@ public final class AnimationEvents {
         self._ctx = ctx
     }
 
-    /// Adds an event to the clip of an entity's SpriteAnimator
-    public func addClipEvent(entity: UInt64, frameIndex: UInt32, name: String, payloadType: UInt32, payloadInt: Int32, payloadFloat: Float, payloadString: String) -> Int32 {
-        name.withCString { namePtr in
-            payloadString.withCString { payloadStringPtr in
-                return goud_animation_clip_add_event(_ctx, entity, frameIndex, namePtr, payloadType, payloadInt, payloadFloat, payloadStringPtr)
-            }
-        }
-    }
-
-    /// Returns the number of fired animation events available for reading
-    public func count() -> Int32 {
-        return goud_animation_events_count(_ctx)
-    }
-
-    /// Reads a fired animation event by index
-    public func read(index: UInt32) -> AnimationEventData {
-        return AnimationEventData(ffi: goud_animation_events_read(_ctx, index))
-    }
-
+    // Methods will be generated once codegen handles sub-tool FFI patterns.
 }
 
 /// Multi-layer animation blending system
@@ -158,43 +54,7 @@ public final class AnimationLayerStack {
         self._ctx = ctx
     }
 
-    /// Creates an empty animation layer stack on the entity
-    public func create(entity: UInt64) -> Int32 {
-        return goud_animation_layer_stack_create(_ctx, entity)
-    }
-
-    /// Adds a named animation layer to the stack
-    public func addLayer(entity: UInt64, name: String, blendMode: UInt32) -> Int32 {
-        name.withCString { namePtr in
-            return goud_animation_layer_add(_ctx, entity, namePtr, blendMode)
-        }
-    }
-
-    /// Sets the blend weight of a layer by index (clamped to 0.0-1.0)
-    public func setLayerWeight(entity: UInt64, layerIndex: UInt32, weight: Float) -> Int32 {
-        return goud_animation_layer_set_weight(_ctx, entity, layerIndex, weight)
-    }
-
-    /// Starts playback on a layer by index
-    public func play(entity: UInt64, layerIndex: UInt32) -> Int32 {
-        return goud_animation_layer_play(_ctx, entity, layerIndex)
-    }
-
-    /// Sets the animation clip on a layer with empty frames, frame duration, and playback mode
-    public func setClip(entity: UInt64, layerIndex: UInt32, frameCount: UInt32, frameDuration: Float, mode: UInt32) -> Int32 {
-        return goud_animation_layer_set_clip(_ctx, entity, layerIndex, frameCount, frameDuration, mode)
-    }
-
-    /// Adds a source rectangle frame to a layer's animation clip
-    public func addFrame(entity: UInt64, layerIndex: UInt32, x: Float, y: Float, w: Float, h: Float) -> Int32 {
-        return goud_animation_layer_add_frame(_ctx, entity, layerIndex, x, y, w, h)
-    }
-
-    /// Resets a finished or in-progress animation layer to its initial state
-    public func resetLayer(entity: UInt64, layerIndex: UInt32) -> Int32 {
-        return goud_animation_layer_reset(_ctx, entity, layerIndex)
-    }
-
+    // Methods will be generated once codegen handles sub-tool FFI patterns.
 }
 
 /// Networking transport layer supporting UDP, WebSocket, and TCP
@@ -205,51 +65,7 @@ public final class Network {
         self._ctx = ctx
     }
 
-    /// Starts hosting on a port
-    public func host(protocol: Int32, port: UInt16) -> Int64 {
-        return goud_network_host(_ctx, protocol, port)
-    }
-
-    /// Connects to a remote host
-    public func connect(protocol: Int32, address: String, port: UInt16) -> Int64 {
-        address.withCString { addressPtr in
-            return goud_network_connect(_ctx, protocol, addressPtr, port)
-        }
-    }
-
-    /// Disconnects a network handle
-    public func disconnect(handle: Int64) -> Int32 {
-        return goud_network_disconnect(_ctx, handle)
-    }
-
-    /// Sends data to a peer
-    public func send(handle: Int64, peerId: UInt64, data: Data, channel: UInt8) -> Int32 {
-        data.withUnsafeBytes { dataRawBuf in
-            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            return goud_network_send(_ctx, handle, peerId, dataBasePtr, channel)
-        }
-    }
-
-    /// Receives data from a peer
-    public func receive(handle: Int64) -> Data {
-        return goud_network_receive(_ctx, handle)
-    }
-
-    /// Polls the network for events
-    public func poll(handle: Int64) -> Int32 {
-        return goud_network_poll(_ctx, handle)
-    }
-
-    /// Gets network statistics
-    public func getStats(handle: Int64) -> Object {
-        return goud_network_get_stats(_ctx, handle)
-    }
-
-    /// Returns the number of connected peers
-    public func peerCount(handle: Int64) -> Int32 {
-        return goud_network_peer_count(_ctx, handle)
-    }
-
+    // Methods will be generated once codegen handles sub-tool FFI patterns.
 }
 
 /// Plugin registration and management system
@@ -260,32 +76,7 @@ public final class Plugin {
         self._ctx = ctx
     }
 
-    /// Registers a plugin by ID
-    public func register(pluginId: String) -> Int32 {
-        pluginId.withCString { pluginIdPtr in
-            return goud_plugin_register(_ctx, pluginIdPtr)
-        }
-    }
-
-    /// Unregisters a plugin by ID
-    public func unregister(pluginId: String) -> Int32 {
-        pluginId.withCString { pluginIdPtr in
-            return goud_plugin_unregister(_ctx, pluginIdPtr)
-        }
-    }
-
-    /// Checks if a plugin is registered
-    public func isRegistered(pluginId: String) -> Bool {
-        pluginId.withCString { pluginIdPtr in
-            return (goud_plugin_is_registered(_ctx, pluginIdPtr) != 0)
-        }
-    }
-
-    /// Lists all registered plugins
-    public func list() -> String {
-        return String(cString: goud_plugin_list(_ctx))
-    }
-
+    // Methods will be generated once codegen handles sub-tool FFI patterns.
 }
 
 /// Audio playback and volume control. Audio data is passed as raw file bytes (WAV/OGG/MP3/FLAC) and decoded at playback time.
@@ -296,83 +87,5 @@ public final class Audio {
         self._ctx = ctx
     }
 
-    /// Plays audio from raw bytes on the default SFX channel
-    public func play(data: Data) -> Int64 {
-        data.withUnsafeBytes { dataRawBuf in
-            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            return goud_audio_play(_ctx, dataBasePtr)
-        }
-    }
-
-    /// Plays audio on a specific channel
-    public func playOnChannel(data: Data, channel: UInt8) -> Int64 {
-        data.withUnsafeBytes { dataRawBuf in
-            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            return goud_audio_play_on_channel(_ctx, dataBasePtr, channel)
-        }
-    }
-
-    /// Plays audio with full control over volume, speed, looping, and channel
-    public func playWithSettings(data: Data, volume: Float, speed: Float, looping: Bool, channel: UInt8) -> Int64 {
-        data.withUnsafeBytes { dataRawBuf in
-            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            return goud_audio_play_with_settings(_ctx, dataBasePtr, volume, speed, looping, channel)
-        }
-    }
-
-    /// Stops playback for a player
-    public func stop(playerId: UInt64) -> Int32 {
-        return goud_audio_stop(_ctx, playerId)
-    }
-
-    /// Pauses playback for a player
-    public func pause(playerId: UInt64) -> Int32 {
-        return goud_audio_pause(_ctx, playerId)
-    }
-
-    /// Resumes playback for a player
-    public func resume(playerId: UInt64) -> Int32 {
-        return goud_audio_resume(_ctx, playerId)
-    }
-
-    /// Stops all currently playing audio
-    public func stopAll() -> Int32 {
-        return goud_audio_stop_all(_ctx)
-    }
-
-    /// Sets the global audio volume
-    public func setGlobalVolume(volume: Float) -> Int32 {
-        return goud_audio_set_global_volume(_ctx, volume)
-    }
-
-    /// Returns the current global audio volume
-    public func getGlobalVolume() -> Float {
-        return goud_audio_get_global_volume(_ctx)
-    }
-
-    /// Sets the volume for a specific audio channel
-    public func setChannelVolume(channel: UInt8, volume: Float) -> Int32 {
-        return goud_audio_set_channel_volume(_ctx, channel, volume)
-    }
-
-    /// Returns the current volume for a specific audio channel
-    public func getChannelVolume(channel: UInt8) -> Float {
-        return goud_audio_get_channel_volume(_ctx, channel)
-    }
-
-    /// Checks whether a specific player is currently playing
-    public func isPlaying(playerId: UInt64) -> Int32 {
-        return goud_audio_is_playing(_ctx, playerId)
-    }
-
-    /// Returns the number of active audio players
-    public func activeCount() -> Int32 {
-        return goud_audio_active_count(_ctx)
-    }
-
-    /// Removes finished audio players from the manager
-    public func cleanupFinished() -> Int32 {
-        return goud_audio_cleanup_finished(_ctx)
-    }
-
+    // Methods will be generated once codegen handles sub-tool FFI patterns.
 }

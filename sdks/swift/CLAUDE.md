@@ -37,6 +37,33 @@ python3 codegen/gen_swift.py
 - String parameters are passed through `withCString { ptr in ... }`.
 - Enum raw values use SCREAMING_SNAKE_CASE to match the C header.
 
+## Adding as an SPM dependency
+
+Projects that consume the Swift SDK add a local package dependency pointing at
+`sdks/swift/`. The native library (`libgoud_engine.dylib` / `.so`) must be
+built first via `cargo build --release`.
+
+```swift
+// In your game's Package.swift
+dependencies: [
+    .package(path: "../../sdks/swift"),  // adjust relative path
+],
+targets: [
+    .executableTarget(
+        name: "MyGame",
+        dependencies: [
+            .product(name: "GoudEngine", package: "GoudEngine"),
+        ],
+        linkerSettings: [
+            .unsafeFlags(["-L", "../../target/release"]),
+        ]
+    ),
+]
+```
+
+Set `GOUD_ENGINE_LIB_DIR` to override the library search path
+(defaults to `../../target/release` relative to the SDK `Package.swift`).
+
 ## Testing
 
 ```bash

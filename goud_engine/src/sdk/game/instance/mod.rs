@@ -5,8 +5,14 @@ mod debugger_frame;
 mod ecs_scene;
 #[cfg(feature = "lua")]
 mod lua_bindings;
+#[cfg(all(feature = "lua", feature = "native"))]
+mod lua_bridge;
+#[cfg(all(feature = "lua", feature = "native"))]
+pub(crate) mod lua_hot_reload;
 #[cfg(feature = "lua")]
-mod lua_runtime;
+mod lua_integration;
+#[cfg(feature = "lua")]
+pub(crate) mod lua_runtime;
 #[cfg(test)]
 mod tests;
 
@@ -110,6 +116,10 @@ pub struct GoudGame {
     #[cfg(feature = "lua")]
     // Kept alive for Drop: the embedded Lua VM lives as long as GoudGame.
     lua_runtime: LuaRuntime,
+
+    /// Optional Lua script hot-reload watcher (native + lua only).
+    #[cfg(all(feature = "lua", feature = "native"))]
+    lua_watcher: Option<lua_hot_reload::LuaScriptWatcher>,
 
     // =========================================================================
     // Native-only fields (require a desktop windowing and render backend)
@@ -226,6 +236,8 @@ impl GoudGame {
             window_resized_events: Events::new(),
             #[cfg(feature = "lua")]
             lua_runtime,
+            #[cfg(all(feature = "lua", feature = "native"))]
+            lua_watcher: None,
             #[cfg(feature = "native")]
             platform: None,
             #[cfg(feature = "native")]
@@ -365,6 +377,8 @@ impl GoudGame {
             window_resized_events: Events::new(),
             #[cfg(feature = "lua")]
             lua_runtime,
+            #[cfg(feature = "lua")]
+            lua_watcher: None,
             platform: Some(native_runtime.platform),
             render_backend: Some(render_backend),
             input_manager: InputManager::default(),
@@ -435,15 +449,8 @@ impl GoudGame {
         }
     }
 
-    /// Executes a Lua script in the embedded runtime.
-    ///
-    /// # Errors
-    ///
-    /// Returns a `GoudError` if the script has syntax or runtime errors.
-    #[cfg(feature = "lua")]
-    pub fn execute_lua(&self, source: &str, name: &str) -> GoudResult<()> {
-        self.lua_runtime.execute_script(source, name)
-    }
+    // Lua integration methods (execute_lua, call_lua_global, etc.) are in
+    // lua_integration.rs to keep this file under the 500-line limit.
 }
 
 impl Drop for GoudGame {

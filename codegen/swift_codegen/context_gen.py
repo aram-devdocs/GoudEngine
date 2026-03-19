@@ -41,9 +41,20 @@ def gen_context() -> None:
     lines.append("    }")
     lines.append("")
 
+    # Skip methods with known FFI signature mismatches
+    _SKIP = {
+        "despawn", "cloneEntity", "cloneEntityRecursive",
+        "componentRegisterType", "componentAdd", "componentRemove",
+        "componentHas", "componentGet", "componentGetMut",
+        "componentAddBatch", "componentRemoveBatch", "componentHasBatch",
+        "networkConnect", "networkConnectWithPeer", "networkSend",
+        "networkReceive", "networkReceivePacket",
+        "stepDebugger",
+        "sceneCreate", "sceneGetByName", "loadScene", "unloadScene",
+    }
     for m in methods:
         mname = m["name"]
-        if mname == "destroy":
+        if mname == "destroy" or mname in _SKIP:
             continue
         if not method_exists_in_ffi(tool_name, mname):
             continue

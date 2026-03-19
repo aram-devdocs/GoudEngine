@@ -1,0 +1,37 @@
+-- constants.lua
+-- Game constants matching the C#, Python, TypeScript, and Rust implementations.
+
+-- Screen
+SCREEN_WIDTH  = 288
+SCREEN_HEIGHT = 512
+BASE_HEIGHT   = 112
+TARGET_FPS    = 120
+
+-- Bird
+BIRD_WIDTH    = 34
+BIRD_HEIGHT   = 24
+BIRD_START_X  = SCREEN_WIDTH / 4
+BIRD_START_Y  = SCREEN_HEIGHT / 2
+
+-- Physics
+GRAVITY       = 9.8
+JUMP_STRENGTH = -3.5
+JUMP_COOLDOWN = 0.3
+
+-- Pipes
+PIPE_SPEED          = 1.0
+PIPE_SPAWN_INTERVAL = 1.5
+PIPE_GAP            = 100
+PIPE_COLLISION_WIDTH = 60
+PIPE_IMAGE_WIDTH    = 52
+PIPE_IMAGE_HEIGHT   = 320
+
+-- Rendering dimensions
+BACKGROUND_WIDTH  = 288
+BACKGROUND_HEIGHT = 512
+BASE_SPRITE_WIDTH = 336
+
+-- Score
+SCORE_DIGIT_WIDTH   = 24
+SCORE_DIGIT_HEIGHT  = 36
+SCORE_DIGIT_SPACING = 30

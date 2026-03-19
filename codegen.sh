@@ -89,6 +89,9 @@ echo "║ [11b/15] Generating Swift SDK..."
 stage_header_copy "sdks/swift/Sources/CGoudEngine/include"
 python3 codegen/gen_swift.py
 
+echo "║ [11c/15] Generating Lua SDK..."
+python3 codegen/gen_lua.py
+
 echo "║ [12/15] Generating Kotlin SDK..."
 python3 codegen/gen_kotlin.py
 

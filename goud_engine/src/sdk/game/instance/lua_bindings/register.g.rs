@@ -3,8 +3,26 @@
 use mlua::prelude::*;
 
 /// Registers all Lua bindings (types, enums, tools) on the given Lua state.
-pub(crate) fn register_lua_bindings(lua: &Lua, _ctx_id: u64) -> LuaResult<()> {
+pub(crate) fn register_lua_bindings(lua: &Lua, ctx_id: u64) -> LuaResult<()> {
     super::types::register_type_factories(lua)?;
     super::enums::register_enum_constants(lua)?;
+    #[cfg(feature = "native")]
+    {
+        super::tools::register_goud_game_tools(lua, ctx_id)?;
+        super::tools::register_goud_context_tools(lua, ctx_id)?;
+        #[cfg(feature = "rapier2d")]
+        super::tools::register_physics_world2_d_tools(lua, ctx_id)?;
+        #[cfg(feature = "rapier3d")]
+        super::tools::register_physics_world3_d_tools(lua, ctx_id)?;
+        super::tools::register_animation_controller_tools(lua, ctx_id)?;
+        super::tools::register_animation_events_tools(lua, ctx_id)?;
+        super::tools::register_tween_tools(lua, ctx_id)?;
+        super::tools::register_skeleton_tools(lua, ctx_id)?;
+        super::tools::register_animation_layer_stack_tools(lua, ctx_id)?;
+        super::tools::register_network_tools(lua, ctx_id)?;
+        super::tools::register_audio_tools(lua, ctx_id)?;
+    }
+    #[cfg(not(feature = "native"))]
+    let _ = ctx_id;
     Ok(())
 }

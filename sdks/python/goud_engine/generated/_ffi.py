@@ -132,7 +132,7 @@ class GoudRenderStats(ctypes.Structure):
         ("shader_binds", ctypes.c_uint32)
     ]
 
-class GoudFpsStats(ctypes.Structure):
+class FpsStats(ctypes.Structure):
     _fields_ = [
         ("current_fps", ctypes.c_float),
         ("min_fps", ctypes.c_float),
@@ -182,7 +182,7 @@ class GoudContact(ctypes.Structure):
         ("penetration", ctypes.c_float)
     ]
 
-class FfiPhysicsRaycastHit2D(ctypes.Structure):
+class None(ctypes.Structure):
     _fields_ = [
         ("body_handle", ctypes.c_uint64),
         ("collider_handle", ctypes.c_uint64),
@@ -193,21 +193,21 @@ class FfiPhysicsRaycastHit2D(ctypes.Structure):
         ("distance", ctypes.c_float)
     ]
 
-class FfiPhysicsCollisionEvent2D(ctypes.Structure):
+class None(ctypes.Structure):
     _fields_ = [
         ("body_a", ctypes.c_uint64),
         ("body_b", ctypes.c_uint64),
         ("kind", ctypes.c_uint32)
     ]
 
-class FfiVec3(ctypes.Structure):
+class None(ctypes.Structure):
     _fields_ = [
         ("x", ctypes.c_float),
         ("y", ctypes.c_float),
         ("z", ctypes.c_float)
     ]
 
-class FfiRenderCapabilities(ctypes.Structure):
+class RenderCapabilities(ctypes.Structure):
     _fields_ = [
         ("max_texture_units", ctypes.c_uint32),
         ("max_texture_size", ctypes.c_uint32),
@@ -216,27 +216,27 @@ class FfiRenderCapabilities(ctypes.Structure):
         ("supports_msaa", ctypes.c_bool)
     ]
 
-class FfiPhysicsCapabilities(ctypes.Structure):
+class PhysicsCapabilities(ctypes.Structure):
     _fields_ = [
         ("supports_continuous_collision", ctypes.c_bool),
         ("supports_joints", ctypes.c_bool),
         ("max_bodies", ctypes.c_uint32)
     ]
 
-class FfiAudioCapabilities(ctypes.Structure):
+class AudioCapabilities(ctypes.Structure):
     _fields_ = [
         ("supports_spatial", ctypes.c_bool),
         ("max_channels", ctypes.c_uint32)
     ]
 
-class FfiInputCapabilities(ctypes.Structure):
+class InputCapabilities(ctypes.Structure):
     _fields_ = [
         ("supports_gamepad", ctypes.c_bool),
         ("supports_touch", ctypes.c_bool),
         ("max_gamepads", ctypes.c_uint32)
     ]
 
-class FfiNetworkCapabilities(ctypes.Structure):
+class NetworkCapabilities(ctypes.Structure):
     _fields_ = [
         ("supports_hosting", ctypes.c_bool),
         ("max_connections", ctypes.c_uint32),
@@ -258,7 +258,7 @@ class FfiNetworkStats(ctypes.Structure):
         ("jitter_ms", ctypes.c_float)
     ]
 
-class FfiNetworkSimulationConfig(ctypes.Structure):
+class NetworkSimulationConfig(ctypes.Structure):
     _fields_ = [
         ("one_way_latency_ms", ctypes.c_uint32),
         ("jitter_ms", ctypes.c_uint32),
@@ -1220,15 +1220,15 @@ def _setup():
         pass  # feature not compiled in
 
     # providers
-    _lib.goud_provider_render_capabilities.argtypes = [GoudContextId, ctypes.POINTER(FfiRenderCapabilities)]
+    _lib.goud_provider_render_capabilities.argtypes = [GoudContextId, ctypes.POINTER(RenderCapabilities)]
     _lib.goud_provider_render_capabilities.restype = ctypes.c_int32
-    _lib.goud_provider_physics_capabilities.argtypes = [GoudContextId, ctypes.POINTER(FfiPhysicsCapabilities)]
+    _lib.goud_provider_physics_capabilities.argtypes = [GoudContextId, ctypes.POINTER(PhysicsCapabilities)]
     _lib.goud_provider_physics_capabilities.restype = ctypes.c_int32
-    _lib.goud_provider_audio_capabilities.argtypes = [GoudContextId, ctypes.POINTER(FfiAudioCapabilities)]
+    _lib.goud_provider_audio_capabilities.argtypes = [GoudContextId, ctypes.POINTER(AudioCapabilities)]
     _lib.goud_provider_audio_capabilities.restype = ctypes.c_int32
-    _lib.goud_provider_input_capabilities.argtypes = [GoudContextId, ctypes.POINTER(FfiInputCapabilities)]
+    _lib.goud_provider_input_capabilities.argtypes = [GoudContextId, ctypes.POINTER(InputCapabilities)]
     _lib.goud_provider_input_capabilities.restype = ctypes.c_int32
-    _lib.goud_provider_network_capabilities.argtypes = [GoudContextId, ctypes.POINTER(FfiNetworkCapabilities)]
+    _lib.goud_provider_network_capabilities.argtypes = [GoudContextId, ctypes.POINTER(NetworkCapabilities)]
     _lib.goud_provider_network_capabilities.restype = ctypes.c_int32
     _lib.goud_provider_hot_swap_render.argtypes = [GoudContextId, ctypes.c_int32]
     _lib.goud_provider_hot_swap_render.restype = ctypes.c_int32

@@ -519,8 +519,8 @@ jobs:
 
       - uses: actions/setup-java@v4
         with:
-          distribution: temurin
           java-version: '17'
+          distribution: temurin
 
       - uses: actions/setup-python@v6
         with:
@@ -532,7 +532,7 @@ jobs:
           pattern: native-*
           path: artifacts/
 
-      - name: Stage native libs into Kotlin resources
+      - name: Stage native libs into SDK resources
         run: |
           mkdir -p sdks/kotlin/src/main/resources/native/linux-x64
           mkdir -p sdks/kotlin/src/main/resources/native/osx-x64
@@ -552,6 +552,8 @@ jobs:
         env:
           MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: ./gradlew publish --no-daemon
 
   # ── Step 8: Publish to crates.io ──

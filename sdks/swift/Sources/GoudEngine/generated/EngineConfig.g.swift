@@ -86,7 +86,8 @@ public final class EngineConfig {
     /// Configures debugger runtime startup for the created game.
     @discardableResult
     public func setDebugger(debugger: DebuggerConfig) -> EngineConfig {
-        goud_engine_config_set_debugger(_handle!, debugger.toFFI())
+        var _debuggerFfi = debugger.toFFI()
+        goud_engine_config_set_debugger(_handle!, &_debuggerFfi)
         return self
     }
 

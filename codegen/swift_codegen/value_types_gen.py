@@ -8,6 +8,7 @@ from .shared_helpers import (
     swift_default,
     swift_literal,
     to_camel,
+    to_snake,
     SWIFT_TYPES,
 )
 
@@ -42,12 +43,23 @@ _FACTORY_OVERRIDES: dict[tuple[str, str], str] = {
 def gen_value_types() -> None:
     lines = [swift_file_header(), "import Foundation", "import CGoudEngine", "", "// Simple math helpers (Vec2, Color, Rect) are the one intentional local-logic exception", "// per CLAUDE.md. All other game logic lives in Rust and is called via FFI.", ""]
 
+    # PhysicsWorld2D/3D are generated as full classes in Physics.g.swift;
+    # skip the handle-struct form here to avoid duplicate declarations.
+    _SKIP_HANDLES = {"PhysicsWorld2D", "PhysicsWorld3D"}
+    # Skip value types whose FFI structs have complex pointer/color fields
+    # that need manual bridging (will be added in a follow-up).
+    _SKIP_VALUES = {"UiStyle", "UiEvent"}
+
     for type_name, type_def in schema.get("types", {}).items():
         kind = type_def.get("kind")
         if kind == "handle":
+            if type_name in _SKIP_HANDLES:
+                continue
             _gen_handle_type(lines, type_name, type_def)
             continue
         if kind != "value":
+            continue
+        if type_name in _SKIP_VALUES:
             continue
 
         # Special case: Mat3x3
@@ -66,9 +78,12 @@ def gen_value_types() -> None:
 
         # Fields
         for f in fields:
+            fdoc = f.get("doc", "")
             fname = to_camel(f["name"])
             ftype = swift_field_type(f)
             fdefault = swift_default(f.get("type", "f32"))
+            if fdoc:
+                lines.append(f"    /// {fdoc}")
             lines.append(f"    public var {fname}: {ftype}")
 
         lines.append("")
@@ -91,37 +106,44 @@ def gen_value_types() -> None:
         ffi_info = mapping.get("ffi_types", {}).get(type_name, {})
         ffi_name = ffi_info.get("ffi_name")
         if ffi_name:
-            lines.append(f"    internal init(ffi: {ffi_name}) {{")
+            # Qualify with CGoudEngine. when FFI type name would collide
+            # with the Swift type we are generating.
+            qualified_ffi = f"CGoudEngine.{ffi_name}" if ffi_name == type_name else ffi_name
+
+            lines.append(f"    internal init(ffi: {qualified_ffi}) {{")
             for f in fields:
                 fname = to_camel(f["name"])
+                ffi_field = to_snake(f["name"])
                 ftype = f.get("type", "f32")
                 if ftype == "string":
-                    lines.append(f"        self.{fname} = String(cString: ffi.{f['name']})")
+                    lines.append(f"        self.{fname} = String(cString: ffi.{ffi_field})")
                 elif ftype in schema.get("types", {}) and schema["types"][ftype].get("kind") == "value":
                     nested_ffi = mapping.get("ffi_types", {}).get(ftype, {}).get("ffi_name")
                     if nested_ffi:
-                        lines.append(f"        self.{fname} = {ftype}(ffi: ffi.{f['name']})")
+                        nested_q = f"CGoudEngine.{nested_ffi}" if nested_ffi == ftype else nested_ffi
+                        lines.append(f"        self.{fname} = {ftype}(ffi: ffi.{ffi_field})")
                     else:
                         lines.append(f"        self.{fname} = {ftype}()")
                 else:
-                    lines.append(f"        self.{fname} = ffi.{f['name']}")
+                    lines.append(f"        self.{fname} = ffi.{ffi_field}")
             lines.append("    }")
             lines.append("")
 
             # toFFI()
-            lines.append(f"    internal func toFFI() -> {ffi_name} {{")
-            lines.append(f"        var ffi = {ffi_name}()")
+            lines.append(f"    internal func toFFI() -> {qualified_ffi} {{")
+            lines.append(f"        var ffi = {qualified_ffi}()")
             for f in fields:
                 fname = to_camel(f["name"])
+                ffi_field = to_snake(f["name"])
                 ftype = f.get("type", "f32")
                 if ftype == "string":
                     pass  # String fields in FFI are tricky; skip for now
                 elif ftype in schema.get("types", {}) and schema["types"][ftype].get("kind") == "value":
                     nested_ffi = mapping.get("ffi_types", {}).get(ftype, {}).get("ffi_name")
                     if nested_ffi:
-                        lines.append(f"        ffi.{f['name']} = {fname}.toFFI()")
+                        lines.append(f"        ffi.{ffi_field} = {fname}.toFFI()")
                 else:
-                    lines.append(f"        ffi.{f['name']} = {fname}")
+                    lines.append(f"        ffi.{ffi_field} = {fname}")
             lines.append("        return ffi")
             lines.append("    }")
             lines.append("")
@@ -197,7 +219,7 @@ def _gen_mat3x3(lines: list[str]) -> None:
     """Generate Mat3x3 with tuple field."""
     lines += [
         "/// 3x3 matrix in column-major order for 2D transforms.",
-        "public struct Mat3x3: Equatable {",
+        "public struct Mat3x3 {",
         "    public var m: (Float, Float, Float, Float, Float, Float, Float, Float, Float)",
         "",
         "    public init(m: (Float, Float, Float, Float, Float, Float, Float, Float, Float) = (0, 0, 0, 0, 0, 0, 0, 0, 0)) {",
@@ -225,6 +247,12 @@ def _gen_mat3x3(lines: list[str]) -> None:
         "        var ffi = FfiMat3x3()",
         "        ffi.m = m",
         "        return ffi",
+        "    }",
+        "}",
+        "",
+        "extension Mat3x3: Equatable {",
+        "    public static func == (lhs: Mat3x3, rhs: Mat3x3) -> Bool {",
+        "        withUnsafeBytes(of: lhs.m) { l in withUnsafeBytes(of: rhs.m) { r in l.elementsEqual(r) } }",
         "    }",
         "}",
         "",

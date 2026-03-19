@@ -29,25 +29,17 @@ def run():
     types_path = LUA_BINDINGS_DIR / "types.g.rs"
     sdk_common.write_generated(types_path, types_content)
 
-    # 3. Tools -- generates extern "C" stubs, which only resolve in cdylib
-    # builds. Write them but don't register them until a proper linking
-    # strategy is in place (e.g., re-exporting FFI functions as pub(crate)).
+    # 3. Tools -- uses crate-internal imports to call FFI functions directly.
     tools_content = tools_gen.generate(schema, ffi_manifest)
     tools_path = LUA_BINDINGS_DIR / "tools.g.rs"
     sdk_common.write_generated(tools_path, tools_content)
 
-    # Tools are generated but use `extern "C"` declarations to call FFI
-    # functions. These extern declarations cause linker errors in test/lib
-    # builds because the FFI symbols are only reliably available in the cdylib
-    # target. Until tools.g.rs is refactored to call FFI functions via
-    # crate-internal paths (e.g. `crate::ffi::...`), tool registration is
-    # deferred.
-    has_tools = False
-    tool_names_with_methods = []
+    has_tools, tool_names_with_methods = tools_gen.generated_tool_names(schema, ffi_manifest)
 
     # 4. Register
     register_content = register_gen.generate(schema, has_tools, tool_names_with_methods)
     register_path = LUA_BINDINGS_DIR / "register.g.rs"
     sdk_common.write_generated(register_path, register_content)
 
-    print(f"Lua codegen complete. Generated {4} files in {LUA_BINDINGS_DIR}")
+    file_count = 4  # enums, types, tools, register
+    print(f"Lua codegen complete. Generated {file_count} files in {LUA_BINDINGS_DIR}")

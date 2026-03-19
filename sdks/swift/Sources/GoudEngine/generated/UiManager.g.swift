@@ -4,7 +4,7 @@ import CGoudEngine
 
 /// Immediate-mode UI manager for creating and managing UI node trees
 public final class UiManager {
-    private var _handle: UnsafeMutableRawPointer?
+    private var _handle: OpaquePointer?
     private var _alive: Bool = true
 
     public init() {
@@ -13,12 +13,12 @@ public final class UiManager {
 
     /// Runs the UI layout update tick
     public func update() {
-        goud_ui_manager_update(_handle!)
+        let _ = goud_ui_manager_update(_handle!)
     }
 
     /// Renders the UI tree
     public func render() {
-        goud_ui_manager_render(_handle!)
+        let _ = goud_ui_manager_render(_handle!)
     }
 
     /// Returns the number of live nodes in the UI tree
@@ -61,43 +61,14 @@ public final class UiManager {
         return goud_ui_set_widget(_handle!, nodeId, widgetKind)
     }
 
-    /// Applies per-node style overrides using a C-safe style payload
-    public func setStyle(nodeId: UInt64, style: UiStyle) -> Int32 {
-        return goud_ui_set_style(_handle!, nodeId, style.toFFI())
-    }
-
-    /// Sets or creates a label widget and updates its text
-    public func setLabelText(nodeId: UInt64, text: String) -> Int32 {
-        text.withCString { textPtr in
-            return goud_ui_set_label_text(_handle!, nodeId, textPtr)
-        }
-    }
-
     /// Sets or creates a button widget and updates its enabled state
     public func setButtonEnabled(nodeId: UInt64, enabled: Bool) -> Int32 {
         return goud_ui_set_button_enabled(_handle!, nodeId, enabled)
     }
 
-    /// Sets or creates an image widget and updates its texture path
-    public func setImageTexturePath(nodeId: UInt64, path: String) -> Int32 {
-        path.withCString { pathPtr in
-            return goud_ui_set_image_texture_path(_handle!, nodeId, pathPtr)
-        }
-    }
-
-    /// Sets or creates a slider widget and updates range/value/enabled
-    public func setSlider(nodeId: UInt64, min: Float, max: Float, value: Float, enabled: Bool) -> Int32 {
-        return goud_ui_set_slider(_handle!, nodeId, min, max, value, enabled)
-    }
-
     /// Returns the number of UI events captured in the latest update tick
     public func eventCount() -> UInt32 {
         return goud_ui_event_count(_handle!)
-    }
-
-    /// Reads one captured UI event by index
-    public func eventRead(index: UInt32) -> UiEvent? {
-        return UiEvent(ffi: goud_ui_event_read(_handle!, index))
     }
 
     deinit {

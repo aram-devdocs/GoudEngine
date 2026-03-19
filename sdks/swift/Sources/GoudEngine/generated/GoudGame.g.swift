@@ -6,30 +6,50 @@ import CGoudEngine
 public final class GoudGame {
     internal var _ctx: GoudContextId
     private var _alive: Bool = true
+    private var _deltaTime: Float = 0
 
     public init(width: UInt32 = 800, height: UInt32 = 600, title: String = "GoudEngine") {
+        var _ctxLocal: GoudContextId!
         title.withCString { titlePtr in
-            self._ctx = goud_window_create(width, height, titlePtr)
+            _ctxLocal = goud_window_create(width, height, titlePtr)
         }
+        self._ctx = _ctxLocal
     }
 
     internal init(ctx: GoudContextId) {
         self._ctx = ctx
     }
 
+    /// The delta time (in seconds) returned by the last call to `beginFrame`.
+    public var deltaTime: Float { _deltaTime }
+
+    /// Polls events, clears the screen, begins the renderer, and enables blending.
+    public func beginFrame(r: Float = 0, g: Float = 0, b: Float = 0, a: Float = 1) {
+        _deltaTime = goud_window_poll_events(_ctx)
+        goud_window_clear(_ctx, r, g, b, a)
+        let _ = goud_renderer_begin(_ctx)
+        goud_renderer_enable_blending(_ctx)
+    }
+
+    /// Ends the renderer and swaps the window buffers.
+    public func endFrame() {
+        let _ = goud_renderer_end(_ctx)
+        goud_window_swap_buffers(_ctx)
+    }
+
     /// Returns true if the window close has been requested
     public func shouldClose() -> Bool {
-        return (goud_window_should_close(_ctx) != 0)
+        return goud_window_should_close(_ctx)
     }
 
     /// Signals the window to close
     public func requestClose() {
-        goud_window_set_should_close(_ctx)
+        let _ = goud_window_set_should_close(_ctx, true)
     }
 
     /// Requests a logical resize on the active native window
     public func setWindowSize(width: UInt32, height: UInt32) -> Bool {
-        return (goud_window_set_size(_ctx, width, height) != 0)
+        return goud_window_set_size(_ctx, width, height)
     }
 
     /// Loads a texture from a file path and returns its handle
@@ -41,7 +61,7 @@ public final class GoudGame {
 
     /// Destroys a previously loaded texture
     public func destroyTexture(handle: UInt64) {
-        goud_texture_destroy(_ctx, handle)
+        let _ = goud_texture_destroy(_ctx, handle)
     }
 
     /// Loads a font from a file path and returns its handle
@@ -53,89 +73,59 @@ public final class GoudGame {
 
     /// Destroys a previously loaded font
     public func destroyFont(handle: UInt64) -> Bool {
-        return (goud_font_destroy(_ctx, handle) != 0)
+        return goud_font_destroy(_ctx, handle)
     }
 
     /// Draws text using a loaded font
     public func drawText(fontHandle: UInt64, text: String, x: Float, y: Float, fontSize: Float = 16, alignment: TextAlignment = .LEFT, maxWidth: Float = 0, lineSpacing: Float = 1, direction: TextDirection = .AUTO, color: Color = Color.white()) -> Bool {
         text.withCString { textPtr in
-            return (goud_renderer_draw_text(_ctx, fontHandle, textPtr, x, y, fontSize, UInt8(alignment.rawValue), maxWidth, lineSpacing, UInt8(direction.rawValue), color.toFFI()) != 0)
+            return goud_renderer_draw_text(_ctx, fontHandle, textPtr, x, y, fontSize, UInt8(alignment.rawValue), maxWidth, lineSpacing, UInt8(direction.rawValue), color.r, color.g, color.b, color.a)
         }
     }
 
     /// Draws a textured sprite
     public func drawSprite(texture: UInt64, x: Float, y: Float, width: Float, height: Float, rotation: Float = 0, color: Color = Color.white()) {
-        goud_renderer_draw_sprite(_ctx, texture, x, y, width, height, rotation, color.toFFI())
+        let _ = goud_renderer_draw_sprite(_ctx, texture, x, y, width, height, rotation, color.r, color.g, color.b, color.a)
     }
 
     /// Draws a colored rectangle
     public func drawQuad(x: Float, y: Float, width: Float, height: Float, color: Color = Color.white()) {
-        goud_renderer_draw_quad(_ctx, x, y, width, height, color.toFFI())
+        let _ = goud_renderer_draw_quad(_ctx, x, y, width, height, color.r, color.g, color.b, color.a)
     }
 
     /// Returns true if the key is currently held down
     public func isKeyPressed(key: Key) -> Bool {
-        return (goud_input_key_pressed(_ctx, Int32(key.rawValue)) != 0)
+        return goud_input_key_pressed(_ctx, Int32(key.rawValue))
     }
 
     /// Returns true if the key was pressed this frame
     public func isKeyJustPressed(key: Key) -> Bool {
-        return (goud_input_key_just_pressed(_ctx, Int32(key.rawValue)) != 0)
+        return goud_input_key_just_pressed(_ctx, Int32(key.rawValue))
     }
 
     /// Returns true if the key was released this frame
     public func isKeyJustReleased(key: Key) -> Bool {
-        return (goud_input_key_just_released(_ctx, Int32(key.rawValue)) != 0)
+        return goud_input_key_just_released(_ctx, Int32(key.rawValue))
     }
 
     /// Returns true if the mouse button is currently held
     public func isMouseButtonPressed(button: MouseButton) -> Bool {
-        return (goud_input_mouse_button_pressed(_ctx, Int32(button.rawValue)) != 0)
+        return goud_input_mouse_button_pressed(_ctx, Int32(button.rawValue))
     }
 
     /// Returns true if the mouse button was pressed this frame
     public func isMouseButtonJustPressed(button: MouseButton) -> Bool {
-        return (goud_input_mouse_button_just_pressed(_ctx, Int32(button.rawValue)) != 0)
+        return goud_input_mouse_button_just_pressed(_ctx, Int32(button.rawValue))
     }
 
     /// Returns true if the mouse button was released this frame
     public func isMouseButtonJustReleased(button: MouseButton) -> Bool {
-        return (goud_input_mouse_button_just_released(_ctx, Int32(button.rawValue)) != 0)
-    }
-
-    /// Returns the mouse position relative to the window
-    public func getMousePosition() -> Vec2 {
-        return Vec2(ffi: goud_input_get_mouse_position(_ctx))
-    }
-
-    /// Returns the mouse movement since last frame
-    public func getMouseDelta() -> Vec2 {
-        return Vec2(ffi: goud_input_get_mouse_delta(_ctx))
-    }
-
-    /// Returns the scroll wheel delta this frame
-    public func getScrollDelta() -> Vec2 {
-        return Vec2(ffi: goud_input_get_scroll_delta(_ctx))
+        return goud_input_mouse_button_just_released(_ctx, Int32(button.rawValue))
     }
 
     /// Creates a new empty entity
     public func spawnEmpty() -> Entity {
         return Entity(bits: goud_entity_spawn_empty(_ctx))
-    }
-
-    /// Destroys an entity and all its components
-    public func despawn(entity: Entity) -> Bool {
-        return (goud_entity_despawn(_ctx, entity.bits) != 0)
-    }
-
-    /// Clones an entity, creating a new entity with copies of all cloneable components
-    public func cloneEntity(entity: Entity) -> Entity {
-        return Entity(bits: goud_entity_clone(_ctx, entity.bits))
-    }
-
-    /// Clones an entity and all its descendants recursively
-    public func cloneEntityRecursive(entity: Entity) -> Entity {
-        return Entity(bits: goud_entity_clone_recursive(_ctx, entity.bits))
     }
 
     /// Returns the number of living entities
@@ -145,33 +135,7 @@ public final class GoudGame {
 
     /// Returns true if the entity still exists
     public func isAlive(entity: Entity) -> Bool {
-        return (goud_entity_is_alive(_ctx, entity.bits) != 0)
-    }
-
-    /// Checks if multiple entities are alive, writing results to an output array
-    public func isAliveBatch(entities: [Entity], outResults: Data) -> UInt32 {
-        outResults.withUnsafeBytes { outResultsRawBuf in
-            let outResultsBasePtr = outResultsRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            let entitiesBits = entities.map { $0.bits }
-            entitiesBits.withUnsafeBufferPointer { entitiesBuf in
-                let entitiesBasePtr = entitiesBuf.baseAddress!
-                return goud_entity_is_alive_batch(_ctx, entitiesBasePtr, outResultsBasePtr)
-            }
-        }
-    }
-
-    /// Spawns multiple empty entities at once
-    public func spawnBatch(count: UInt32) -> [Entity] {
-        return goud_entity_spawn_batch(_ctx, count) /* TODO: array return needs manual FFI bridge */
-    }
-
-    /// Despawns multiple entities at once
-    public func despawnBatch(entities: [Entity]) -> UInt32 {
-        let entitiesBits = entities.map { $0.bits }
-        entitiesBits.withUnsafeBufferPointer { entitiesBuf in
-            let entitiesBasePtr = entitiesBuf.baseAddress!
-            return goud_entity_despawn_batch(_ctx, entitiesBasePtr)
-        }
+        return goud_entity_is_alive(_ctx, entity.bits)
     }
 
     /// Starts animation playback for an entity
@@ -182,27 +146,6 @@ public final class GoudGame {
     /// Stops animation playback for an entity
     public func stop(entity: Entity) -> Int32 {
         return goud_animation_stop(_ctx, entity.bits)
-    }
-
-    /// Sets the active animation state for an entity
-    public func setState(entity: Entity, stateName: String) -> Int32 {
-        stateName.withCString { stateNamePtr in
-            return goud_animation_set_state(_ctx, entity.bits, stateNamePtr)
-        }
-    }
-
-    /// Sets a boolean animation parameter for an entity
-    public func setParameterBool(entity: Entity, name: String, value: Bool) -> Int32 {
-        name.withCString { namePtr in
-            return goud_animation_set_parameter_bool(_ctx, entity.bits, namePtr, value)
-        }
-    }
-
-    /// Sets a float animation parameter for an entity
-    public func setParameterFloat(entity: Entity, name: String, value: Float) -> Int32 {
-        name.withCString { namePtr in
-            return goud_animation_set_parameter_float(_ctx, entity.bits, namePtr, value)
-        }
     }
 
     /// Creates a 3D cube
@@ -227,22 +170,22 @@ public final class GoudGame {
 
     /// Sets a 3D object's position
     public func setObjectPosition(objectId: UInt32, x: Float, y: Float, z: Float) -> Bool {
-        return (goud_renderer3d_set_object_position(_ctx, objectId, x, y, z) != 0)
+        return goud_renderer3d_set_object_position(_ctx, objectId, x, y, z)
     }
 
     /// Sets a 3D object's rotation in degrees
     public func setObjectRotation(objectId: UInt32, x: Float, y: Float, z: Float) -> Bool {
-        return (goud_renderer3d_set_object_rotation(_ctx, objectId, x, y, z) != 0)
+        return goud_renderer3d_set_object_rotation(_ctx, objectId, x, y, z)
     }
 
     /// Sets a 3D object's scale
     public func setObjectScale(objectId: UInt32, x: Float, y: Float, z: Float) -> Bool {
-        return (goud_renderer3d_set_object_scale(_ctx, objectId, x, y, z) != 0)
+        return goud_renderer3d_set_object_scale(_ctx, objectId, x, y, z)
     }
 
     /// Destroys a 3D object
     public func destroyObject(objectId: UInt32) -> Bool {
-        return (goud_renderer3d_destroy_object(_ctx, objectId) != 0)
+        return goud_renderer3d_destroy_object(_ctx, objectId)
     }
 
     /// Adds a light to the 3D scene
@@ -252,52 +195,52 @@ public final class GoudGame {
 
     /// Updates a light's properties
     public func updateLight(lightId: UInt32, lightType: Int32, posX: Float, posY: Float, posZ: Float, dirX: Float, dirY: Float, dirZ: Float, r: Float, g: Float, b: Float, intensity: Float, range: Float, spotAngle: Float) -> Bool {
-        return (goud_renderer3d_update_light(_ctx, lightId, lightType, posX, posY, posZ, dirX, dirY, dirZ, r, g, b, intensity, range, spotAngle) != 0)
+        return goud_renderer3d_update_light(_ctx, lightId, lightType, posX, posY, posZ, dirX, dirY, dirZ, r, g, b, intensity, range, spotAngle)
     }
 
     /// Removes a light
     public func removeLight(lightId: UInt32) -> Bool {
-        return (goud_renderer3d_remove_light(_ctx, lightId) != 0)
+        return goud_renderer3d_remove_light(_ctx, lightId)
     }
 
     /// Sets the 3D camera position
     public func setCameraPosition3D(x: Float, y: Float, z: Float) -> Bool {
-        return (goud_renderer3d_set_camera_position(_ctx, x, y, z) != 0)
+        return goud_renderer3d_set_camera_position(_ctx, x, y, z)
     }
 
     /// Sets the 3D camera rotation
     public func setCameraRotation3D(pitch: Float, yaw: Float, roll: Float) -> Bool {
-        return (goud_renderer3d_set_camera_rotation(_ctx, pitch, yaw, roll) != 0)
+        return goud_renderer3d_set_camera_rotation(_ctx, pitch, yaw, roll)
     }
 
     /// Configures the ground grid
     public func configureGrid(enabled: Bool, size: Float, divisions: UInt32) -> Bool {
-        return (goud_renderer3d_configure_grid(_ctx, enabled, size, divisions) != 0)
+        return goud_renderer3d_configure_grid(_ctx, enabled, size, divisions)
     }
 
     /// Sets grid visibility
     public func setGridEnabled(enabled: Bool) -> Bool {
-        return (goud_renderer3d_set_grid_enabled(_ctx, enabled) != 0)
+        return goud_renderer3d_set_grid_enabled(_ctx, enabled)
     }
 
     /// Configures the skybox/background color
     public func configureSkybox(enabled: Bool, r: Float, g: Float, b: Float, a: Float) -> Bool {
-        return (goud_renderer3d_configure_skybox(_ctx, enabled, r, g, b, a) != 0)
+        return goud_renderer3d_configure_skybox(_ctx, enabled, r, g, b, a)
     }
 
     /// Configures fog settings
     public func configureFog(enabled: Bool, r: Float, g: Float, b: Float, density: Float) -> Bool {
-        return (goud_renderer3d_configure_fog(_ctx, enabled, r, g, b, density) != 0)
+        return goud_renderer3d_configure_fog(_ctx, enabled, r, g, b, density)
     }
 
     /// Sets fog visibility
     public func setFogEnabled(enabled: Bool) -> Bool {
-        return (goud_renderer3d_set_fog_enabled(_ctx, enabled) != 0)
+        return goud_renderer3d_set_fog_enabled(_ctx, enabled)
     }
 
     /// Renders all 3D objects
     public func render3D() -> Bool {
-        return (goud_renderer3d_render(_ctx) != 0)
+        return goud_renderer3d_render(_ctx)
     }
 
     /// Creates a 3D material
@@ -307,17 +250,17 @@ public final class GoudGame {
 
     /// Updates a 3D material
     public func updateMaterial(materialId: UInt32, materialType: Int32, r: Float, g: Float, b: Float, a: Float, shininess: Float, metallic: Float, roughness: Float, ao: Float) -> Bool {
-        return (goud_renderer3d_update_material(_ctx, materialId, materialType, r, g, b, a, shininess, metallic, roughness, ao) != 0)
+        return goud_renderer3d_update_material(_ctx, materialId, materialType, r, g, b, a, shininess, metallic, roughness, ao)
     }
 
     /// Removes a 3D material
     public func removeMaterial(materialId: UInt32) -> Bool {
-        return (goud_renderer3d_remove_material(_ctx, materialId) != 0)
+        return goud_renderer3d_remove_material(_ctx, materialId)
     }
 
     /// Binds a material to an object
     public func setObjectMaterial(objectId: UInt32, materialId: UInt32) -> Bool {
-        return (goud_renderer3d_set_object_material(_ctx, objectId, materialId) != 0)
+        return goud_renderer3d_set_object_material(_ctx, objectId, materialId)
     }
 
     /// Gets the material ID bound to an object
@@ -325,34 +268,24 @@ public final class GoudGame {
         return goud_renderer3d_get_object_material(_ctx, objectId)
     }
 
-    /// Creates a skinned mesh from raw vertex data
-    public func createSkinnedMesh(verticesPtr: UnsafeMutableRawPointer, vertexCount: UInt32) -> UInt32 {
-        return goud_renderer3d_create_skinned_mesh(_ctx, verticesPtr, vertexCount)
-    }
-
     /// Removes a skinned mesh
     public func removeSkinnedMesh(meshId: UInt32) -> Bool {
-        return (goud_renderer3d_remove_skinned_mesh(_ctx, meshId) != 0)
+        return goud_renderer3d_remove_skinned_mesh(_ctx, meshId)
     }
 
     /// Sets the position of a skinned mesh
     public func setSkinnedMeshPosition(meshId: UInt32, x: Float, y: Float, z: Float) -> Bool {
-        return (goud_renderer3d_set_skinned_mesh_position(_ctx, meshId, x, y, z) != 0)
+        return goud_renderer3d_set_skinned_mesh_position(_ctx, meshId, x, y, z)
     }
 
     /// Sets the rotation of a skinned mesh
     public func setSkinnedMeshRotation(meshId: UInt32, x: Float, y: Float, z: Float) -> Bool {
-        return (goud_renderer3d_set_skinned_mesh_rotation(_ctx, meshId, x, y, z) != 0)
+        return goud_renderer3d_set_skinned_mesh_rotation(_ctx, meshId, x, y, z)
     }
 
     /// Sets the scale of a skinned mesh
     public func setSkinnedMeshScale(meshId: UInt32, x: Float, y: Float, z: Float) -> Bool {
-        return (goud_renderer3d_set_skinned_mesh_scale(_ctx, meshId, x, y, z) != 0)
-    }
-
-    /// Updates bone matrices for a skinned mesh
-    public func setSkinnedMeshBones(meshId: UInt32, matricesPtr: UnsafeMutableRawPointer, boneCount: UInt32) -> Bool {
-        return (goud_renderer3d_set_skinned_mesh_bones(_ctx, meshId, matricesPtr, boneCount) != 0)
+        return goud_renderer3d_set_skinned_mesh_scale(_ctx, meshId, x, y, z)
     }
 
     /// Adds a bloom pass to the post-processing pipeline
@@ -372,7 +305,7 @@ public final class GoudGame {
 
     /// Removes a post-processing pass by index
     public func removePostprocessPass(index: UInt32) -> Bool {
-        return (goud_renderer3d_remove_postprocess_pass(_ctx, index) != 0)
+        return goud_renderer3d_remove_postprocess_pass(_ctx, index)
     }
 
     /// Returns the number of post-processing passes
@@ -382,364 +315,178 @@ public final class GoudGame {
 
     /// Draws a sprite with source rectangle for sprite sheets
     public func drawSpriteRect(texture: UInt64, x: Float, y: Float, width: Float, height: Float, rotation: Float = 0, srcX: Float, srcY: Float, srcW: Float, srcH: Float, color: Color = Color.white()) -> Bool {
-        return (goud_renderer_draw_sprite_rect(_ctx, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, color.toFFI()) != 0)
+        return goud_renderer_draw_sprite_rect(_ctx, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, color.r, color.g, color.b, color.a)
     }
 
     /// Sets the rendering viewport
     public func setViewport(x: Int32, y: Int32, width: UInt32, height: UInt32) {
-        goud_renderer_set_viewport(_ctx, x, y, width, height)
+        let _ = goud_renderer_set_viewport(_ctx, x, y, width, height)
     }
 
     /// Enables depth testing
     public func enableDepthTest() {
-        goud_renderer_enable_depth_test(_ctx)
+        let _ = goud_renderer_enable_depth_test(_ctx)
     }
 
     /// Disables depth testing
     public func disableDepthTest() {
-        goud_renderer_disable_depth_test(_ctx)
+        let _ = goud_renderer_disable_depth_test(_ctx)
     }
 
     /// Clears the depth buffer
     public func clearDepth() {
-        goud_renderer_clear_depth(_ctx)
+        let _ = goud_renderer_clear_depth(_ctx)
     }
 
     /// Disables alpha blending
     public func disableBlending() {
-        goud_renderer_disable_blending(_ctx)
-    }
-
-    /// Returns rendering statistics for the current frame
-    public func getRenderStats() -> RenderStats {
-        return RenderStats(ffi: goud_renderer_get_stats(_ctx))
-    }
-
-    /// Returns FPS statistics from the debug overlay rolling window
-    public func getFpsStats() -> FpsStats {
-        return FpsStats(ffi: goud_debug_get_fps_stats(_ctx))
+        let _ = goud_renderer_disable_blending(_ctx)
     }
 
     /// Enables or disables the FPS debug overlay
     public func setFpsOverlayEnabled(enabled: Bool) {
-        goud_debug_set_fps_overlay_enabled(_ctx, enabled)
+        let _ = goud_debug_set_fps_overlay_enabled(_ctx, enabled)
     }
 
     /// Sets how often FPS statistics are recomputed
     public func setFpsUpdateInterval(interval: Float) {
-        goud_debug_set_fps_update_interval(_ctx, interval)
+        let _ = goud_debug_set_fps_update_interval(_ctx, interval)
     }
 
     /// Sets the screen corner where the FPS overlay is displayed
     public func setFpsOverlayCorner(corner: OverlayCorner) {
-        goud_debug_set_fps_overlay_corner(_ctx, Int32(corner.rawValue))
-    }
-
-    /// Returns the latest debugger snapshot JSON for this route.
-    public func getDebuggerSnapshotJson() -> String {
-        return String(cString: goud_debugger_get_snapshot_json(_ctx))
-    }
-
-    /// Returns the current process-wide debugger manifest JSON.
-    public func getDebuggerManifestJson() -> String {
-        return String(cString: goud_debugger_get_manifest_json(_ctx))
+        let _ = goud_debug_set_fps_overlay_corner(_ctx, Int32(corner.rawValue))
     }
 
     /// Pauses or resumes the route-scoped debugger runtime.
     public func setDebuggerPaused(paused: Bool) {
-        goud_debugger_set_paused(_ctx, paused)
-    }
-
-    /// Consumes debugger-controlled frame or tick step budget for this route.
-    public func stepDebugger(kind: DebuggerStepKind, count: UInt32) {
-        goud_debugger_step(_ctx, Int32(kind.rawValue), count)
+        let _ = goud_debugger_set_paused(_ctx, paused)
     }
 
     /// Sets the debugger-owned time-scale multiplier for this route.
     public func setDebuggerTimeScale(scale: Float) {
-        goud_debugger_set_time_scale(_ctx, scale)
+        let _ = goud_debugger_set_time_scale(_ctx, scale)
     }
 
     /// Enables or disables runtime-owned debug draw for this route.
     public func setDebuggerDebugDrawEnabled(enabled: Bool) {
-        goud_debugger_set_debug_draw_enabled(_ctx, enabled)
+        let _ = goud_debugger_set_debug_draw_enabled(_ctx, enabled)
     }
 
     /// Queues one normalized keyboard event through the debugger control plane.
     public func injectDebuggerKeyEvent(key: Key, pressed: Bool) {
-        goud_debugger_inject_key_event(_ctx, Int32(key.rawValue), pressed)
+        let _ = goud_debugger_inject_key_event(_ctx, Int32(key.rawValue), pressed)
     }
 
     /// Queues one normalized mouse-button event through the debugger control plane.
     public func injectDebuggerMouseButton(button: MouseButton, pressed: Bool) {
-        goud_debugger_inject_mouse_button(_ctx, Int32(button.rawValue), pressed)
+        let _ = goud_debugger_inject_mouse_button(_ctx, Int32(button.rawValue), pressed)
     }
 
     /// Queues one normalized mouse-position event through the debugger control plane.
     public func injectDebuggerMousePosition(position: Vec2) {
-        goud_debugger_inject_mouse_position(_ctx, position.toFFI())
+        let _ = goud_debugger_inject_mouse_position(_ctx, position.toFFI())
     }
 
     /// Queues one normalized scroll event through the debugger control plane.
     public func injectDebuggerScroll(delta: Vec2) {
-        goud_debugger_inject_scroll(_ctx, delta.toFFI())
+        let _ = goud_debugger_inject_scroll(_ctx, delta.toFFI())
     }
 
     /// Enables or disables per-system debugger profiling for this route.
     public func setDebuggerProfilingEnabled(enabled: Bool) {
-        goud_debugger_set_profiling_enabled(_ctx, enabled)
+        let _ = goud_debugger_set_profiling_enabled(_ctx, enabled)
     }
 
     /// Selects one entity for expanded debugger inspector output.
     public func setDebuggerSelectedEntity(entityId: UInt64) {
-        goud_debugger_set_selected_entity(_ctx, entityId)
+        let _ = goud_debugger_set_selected_entity(_ctx, entityId)
     }
 
     /// Clears the selected debugger inspector entity for this route.
     public func clearDebuggerSelectedEntity() {
-        goud_debugger_clear_selected_entity(_ctx)
-    }
-
-    /// Returns debugger-owned aggregate memory statistics for this route.
-    public func getMemorySummary() -> MemorySummary {
-        return MemorySummary(ffi: goud_debugger_get_memory_summary(_ctx))
-    }
-
-    /// Captures the current frame plus debugger-owned metadata attachments for this route.
-    public func captureDebuggerFrame() -> DebuggerCapture {
-        return DebuggerCapture(ffi: goud_debugger_capture_frame_json(_ctx))
+        let _ = goud_debugger_clear_selected_entity(_ctx)
     }
 
     /// Starts debugger-owned normalized input recording for this route.
     public func startDebuggerRecording() {
-        goud_debugger_start_recording(_ctx)
-    }
-
-    /// Stops debugger-owned recording and returns the exported replay artifact.
-    public func stopDebuggerRecording() -> DebuggerReplayArtifact {
-        return DebuggerReplayArtifact(ffi: goud_debugger_stop_recording_json(_ctx))
+        let _ = goud_debugger_start_recording(_ctx)
     }
 
     /// Starts debugger-owned replay using previously exported recording bytes.
     public func startDebuggerReplay(recording: Data) {
         recording.withUnsafeBytes { recordingRawBuf in
-            let recordingBasePtr = recordingRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            goud_debugger_start_replay(_ctx, recordingBasePtr)
+            let recordingBasePtr = recordingRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
+            let _ = goud_debugger_start_replay(_ctx, recordingBasePtr, recording.count)
         }
     }
 
     /// Stops any active debugger-owned replay session for this route.
     public func stopDebuggerReplay() {
-        goud_debugger_stop_replay(_ctx)
-    }
-
-    /// Returns the current debugger replay status JSON for this route.
-    public func getDebuggerReplayStatusJson() -> String {
-        return String(cString: goud_debugger_get_replay_status_json(_ctx))
-    }
-
-    /// Returns the current debugger metrics-trace JSON for this route.
-    public func getDebuggerMetricsTraceJson() -> String {
-        return String(cString: goud_debugger_get_metrics_trace_json(_ctx))
+        let _ = goud_debugger_stop_replay(_ctx)
     }
 
     /// Maps an action name to a key
     public func mapActionKey(action: String, key: Key) -> Bool {
         action.withCString { actionPtr in
-            return (goud_input_map_action_key(_ctx, actionPtr, Int32(key.rawValue)) != 0)
+            return goud_input_map_action_key(_ctx, actionPtr, Int32(key.rawValue))
         }
     }
 
     /// Returns true if the action is currently pressed
     public func isActionPressed(action: String) -> Bool {
         action.withCString { actionPtr in
-            return (goud_input_action_pressed(_ctx, actionPtr) != 0)
+            return goud_input_action_pressed(_ctx, actionPtr)
         }
     }
 
     /// Returns true if the action was pressed this frame
     public func isActionJustPressed(action: String) -> Bool {
         action.withCString { actionPtr in
-            return (goud_input_action_just_pressed(_ctx, actionPtr) != 0)
+            return goud_input_action_just_pressed(_ctx, actionPtr)
         }
     }
 
     /// Returns true if the action was released this frame
     public func isActionJustReleased(action: String) -> Bool {
         action.withCString { actionPtr in
-            return (goud_input_action_just_released(_ctx, actionPtr) != 0)
+            return goud_input_action_just_released(_ctx, actionPtr)
         }
-    }
-
-    /// AABB vs AABB collision test with contact
-    public func collisionAabbAabb(centerAx: Float, centerAy: Float, halfWa: Float, halfHa: Float, centerBx: Float, centerBy: Float, halfWb: Float, halfHb: Float) -> Contact? {
-        return Contact(ffi: goud_collision_aabb_aabb(_ctx, centerAx, centerAy, halfWa, halfHa, centerBx, centerBy, halfWb, halfHb))
-    }
-
-    /// Circle vs circle collision test
-    public func collisionCircleCircle(centerAx: Float, centerAy: Float, radiusA: Float, centerBx: Float, centerBy: Float, radiusB: Float) -> Contact? {
-        return Contact(ffi: goud_collision_circle_circle(_ctx, centerAx, centerAy, radiusA, centerBx, centerBy, radiusB))
-    }
-
-    /// Circle vs AABB collision test
-    public func collisionCircleAabb(circleX: Float, circleY: Float, circleRadius: Float, boxX: Float, boxY: Float, boxHw: Float, boxHh: Float) -> Contact? {
-        return Contact(ffi: goud_collision_circle_aabb(_ctx, circleX, circleY, circleRadius, boxX, boxY, boxHw, boxHh))
     }
 
     /// Tests if a point is inside a rectangle
     public func pointInRect(px: Float, py: Float, rx: Float, ry: Float, rw: Float, rh: Float) -> Bool {
-        return (goud_collision_point_in_rect(_ctx, px, py, rx, ry, rw, rh) != 0)
+        return goud_collision_point_in_rect(px, py, rx, ry, rw, rh)
     }
 
     /// Tests if a point is inside a circle
     public func pointInCircle(px: Float, py: Float, cx: Float, cy: Float, radius: Float) -> Bool {
-        return (goud_collision_point_in_circle(_ctx, px, py, cx, cy, radius) != 0)
+        return goud_collision_point_in_circle(px, py, cx, cy, radius)
     }
 
     /// Fast AABB overlap test
     public func aabbOverlap(minAx: Float, minAy: Float, maxAx: Float, maxAy: Float, minBx: Float, minBy: Float, maxBx: Float, maxBy: Float) -> Bool {
-        return (goud_collision_aabb_overlap(_ctx, minAx, minAy, maxAx, maxAy, minBx, minBy, maxBx, maxBy) != 0)
+        return goud_collision_aabb_overlap(minAx, minAy, maxAx, maxAy, minBx, minBy, maxBx, maxBy)
     }
 
     /// Fast circle overlap test
     public func circleOverlap(x1: Float, y1: Float, r1: Float, x2: Float, y2: Float, r2: Float) -> Bool {
-        return (goud_collision_circle_overlap(_ctx, x1, y1, r1, x2, y2, r2) != 0)
+        return goud_collision_circle_overlap(x1, y1, r1, x2, y2, r2)
     }
 
     /// Distance between two points
     public func distance(x1: Float, y1: Float, x2: Float, y2: Float) -> Float {
-        return goud_collision_distance(_ctx, x1, y1, x2, y2)
+        return goud_collision_distance(x1, y1, x2, y2)
     }
 
     /// Squared distance between two points
     public func distanceSquared(x1: Float, y1: Float, x2: Float, y2: Float) -> Float {
-        return goud_collision_distance_squared(_ctx, x1, y1, x2, y2)
-    }
-
-    /// Casts a filtered ray and returns the full hit payload, or null when no hit is found (FFI: goud_physics_raycast_ex)
-    public func physicsRaycastEx(originX: Float, originY: Float, dirX: Float, dirY: Float, maxDist: Float, layerMask: UInt32) -> PhysicsRaycastHit2D? {
-        return PhysicsRaycastHit2D(ffi: goud_physics_raycast_ex(_ctx, originX, originY, dirX, dirY, maxDist, layerMask))
-    }
-
-    /// Returns the number of queued physics collision events available to read (FFI: goud_physics_collision_events_count)
-    public func physicsCollisionEventsCount() -> Int32 {
-        return goud_physics_collision_events_count(_ctx)
-    }
-
-    /// Reads one queued physics collision event by index, or null when the index is out of range (FFI: goud_physics_collision_events_read)
-    public func physicsCollisionEventsRead(index: UInt32) -> PhysicsCollisionEvent2D? {
-        return PhysicsCollisionEvent2D(ffi: goud_physics_collision_events_read(_ctx, index))
-    }
-
-    /// Registers or clears a physics collision callback function pointer. C# callers must keep the callback delegate alive for the full registration lifetime. Python and TypeScript wrappers support clear-only (`callbackPtr = 0`, `userData = 0`) for safety. (FFI: goud_physics_set_collision_callback)
-    public func physicsSetCollisionCallback(callbackPtr: UnsafeMutableRawPointer, userData: UnsafeMutableRawPointer) -> Int32 {
-        return goud_physics_set_collision_callback(_ctx, callbackPtr, userData)
-    }
-
-    /// Registers a component type for generic operations
-    public func componentRegisterType(typeIdHash: UInt64, name: String, size: Int, align: Int) -> Bool {
-        name.withCString { namePtr in
-            return (goud_component_register_type(_ctx, typeIdHash, namePtr, size, align) != 0)
-        }
-    }
-
-    /// Adds a generic component to an entity
-    public func componentAdd(entity: Entity, typeIdHash: UInt64, dataPtr: UnsafeMutableRawPointer, dataSize: Int) -> Bool {
-        return (goud_component_add(_ctx, entity.bits, typeIdHash, dataPtr, dataSize) != 0)
-    }
-
-    /// Removes a generic component from an entity
-    public func componentRemove(entity: Entity, typeIdHash: UInt64) -> Bool {
-        return (goud_component_remove(_ctx, entity.bits, typeIdHash) != 0)
-    }
-
-    /// Checks if an entity has a generic component
-    public func componentHas(entity: Entity, typeIdHash: UInt64) -> Bool {
-        return (goud_component_has(_ctx, entity.bits, typeIdHash) != 0)
-    }
-
-    /// Gets a read-only pointer to a generic component
-    public func componentGet(entity: Entity, typeIdHash: UInt64) -> UnsafeMutableRawPointer {
-        return goud_component_get(_ctx, entity.bits, typeIdHash)
-    }
-
-    /// Gets a mutable pointer to a generic component
-    public func componentGetMut(entity: Entity, typeIdHash: UInt64) -> UnsafeMutableRawPointer {
-        return goud_component_get_mut(_ctx, entity.bits, typeIdHash)
-    }
-
-    /// Adds a generic component to multiple entities
-    public func componentAddBatch(entities: [Entity], typeIdHash: UInt64, dataPtr: UnsafeMutableRawPointer, componentSize: Int) -> UInt32 {
-        let entitiesBits = entities.map { $0.bits }
-        entitiesBits.withUnsafeBufferPointer { entitiesBuf in
-            let entitiesBasePtr = entitiesBuf.baseAddress!
-            return goud_component_add_batch(_ctx, entitiesBasePtr, typeIdHash, dataPtr, componentSize)
-        }
-    }
-
-    /// Removes a generic component from multiple entities
-    public func componentRemoveBatch(entities: [Entity], typeIdHash: UInt64) -> UInt32 {
-        let entitiesBits = entities.map { $0.bits }
-        entitiesBits.withUnsafeBufferPointer { entitiesBuf in
-            let entitiesBasePtr = entitiesBuf.baseAddress!
-            return goud_component_remove_batch(_ctx, entitiesBasePtr, typeIdHash)
-        }
-    }
-
-    /// Checks if multiple entities have a generic component
-    public func componentHasBatch(entities: [Entity], typeIdHash: UInt64, outResults: Data) -> UInt32 {
-        outResults.withUnsafeBytes { outResultsRawBuf in
-            let outResultsBasePtr = outResultsRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            let entitiesBits = entities.map { $0.bits }
-            entitiesBits.withUnsafeBufferPointer { entitiesBuf in
-                let entitiesBasePtr = entitiesBuf.baseAddress!
-                return goud_component_has_batch(_ctx, entitiesBasePtr, typeIdHash, outResultsBasePtr)
-            }
-        }
-    }
-
-    /// Queries the render provider's capabilities
-    public func getRenderCapabilities() -> RenderCapabilities {
-        return RenderCapabilities(ffi: goud_provider_render_capabilities(_ctx))
-    }
-
-    /// Queries the physics provider's capabilities
-    public func getPhysicsCapabilities() -> PhysicsCapabilities {
-        return PhysicsCapabilities(ffi: goud_provider_physics_capabilities(_ctx))
-    }
-
-    /// Queries the audio provider's capabilities
-    public func getAudioCapabilities() -> AudioCapabilities {
-        return AudioCapabilities(ffi: goud_provider_audio_capabilities(_ctx))
-    }
-
-    /// Queries the input provider's capabilities
-    public func getInputCapabilities() -> InputCapabilities {
-        return InputCapabilities(ffi: goud_provider_input_capabilities(_ctx))
-    }
-
-    /// Queries the network provider's capabilities. Throws if no network provider is installed.
-    public func getNetworkCapabilities() -> NetworkCapabilities {
-        return NetworkCapabilities(ffi: goud_provider_network_capabilities(_ctx))
+        return goud_collision_distance_squared(x1, y1, x2, y2)
     }
 
     /// Starts hosting on the given port with the selected transport protocol.
-    public func networkHost(protocol: Int32, port: UInt16) -> Int64 {
-        return goud_network_host(_ctx, protocol, port)
-    }
-
-    /// Connects to a remote host with the selected transport protocol.
-    public func networkConnect(protocol: Int32, address: String, port: UInt16) -> Int64 {
-        address.withCString { addressPtr in
-            return goud_network_connect(_ctx, protocol, addressPtr, port)
-        }
-    }
-
-    /// Connects to a remote host with the selected transport protocol and preserves the provider-assigned peer ID.
-    public func networkConnectWithPeer(protocol: Int32, address: String, port: UInt16) -> NetworkConnectResult {
-        address.withCString { addressPtr in
-            return NetworkConnectResult(ffi: goud_network_connect_with_peer(_ctx, protocol, addressPtr, port))
-        }
+    public func networkHost(`protocol`: Int32, port: UInt16) -> Int64 {
+        return goud_network_host(_ctx, `protocol`, port)
     }
 
     /// Disconnects a network host or connection handle.
@@ -747,32 +494,9 @@ public final class GoudGame {
         return goud_network_disconnect(_ctx, handle)
     }
 
-    /// Sends raw bytes to the given peer over a network handle and channel.
-    public func networkSend(handle: Int64, peerId: UInt64, data: Data, channel: UInt8) -> Int32 {
-        data.withUnsafeBytes { dataRawBuf in
-            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            return goud_network_send(_ctx, handle, peerId, dataBasePtr, channel)
-        }
-    }
-
-    /// Receives the next buffered payload produced by networkPoll.
-    public func networkReceive(handle: Int64) -> Data {
-        return goud_network_receive(_ctx, handle)
-    }
-
-    /// Receives the next buffered payload produced by networkPoll and preserves the sender peer ID.
-    public func networkReceivePacket(handle: Int64) -> NetworkPacket? {
-        return NetworkPacket(ffi: goud_network_receive(_ctx, handle))
-    }
-
     /// Polls the network handle and buffers inbound messages for retrieval.
     public func networkPoll(handle: Int64) -> Int32 {
         return goud_network_poll(_ctx, handle)
-    }
-
-    /// Returns aggregate network statistics for a network handle.
-    public func getNetworkStats(handle: Int64) -> NetworkStats {
-        return NetworkStats(ffi: goud_network_get_stats_v2(_ctx, handle))
     }
 
     /// Returns the number of connected peers for a network handle.
@@ -803,24 +527,24 @@ public final class GoudGame {
     /// Plays audio from raw bytes on the default channel
     public func audioPlay(data: Data) -> Int64 {
         data.withUnsafeBytes { dataRawBuf in
-            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            return goud_audio_play(_ctx, dataBasePtr)
+            let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
+            return goud_audio_play(_ctx, dataBasePtr, data.count)
         }
     }
 
     /// Plays audio from raw bytes on the given channel
     public func audioPlayOnChannel(data: Data, channel: UInt8) -> Int64 {
         data.withUnsafeBytes { dataRawBuf in
-            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            return goud_audio_play_on_channel(_ctx, dataBasePtr, channel)
+            let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
+            return goud_audio_play_on_channel(_ctx, dataBasePtr, data.count, channel)
         }
     }
 
     /// Plays audio with explicit volume, speed, looping, and channel settings
     public func audioPlayWithSettings(data: Data, volume: Float, speed: Float, looping: Bool, channel: UInt8) -> Int64 {
         data.withUnsafeBytes { dataRawBuf in
-            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            return goud_audio_play_with_settings(_ctx, dataBasePtr, volume, speed, looping, channel)
+            let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
+            return goud_audio_play_with_settings(_ctx, dataBasePtr, data.count, volume, speed, looping, channel)
         }
     }
 
@@ -882,8 +606,8 @@ public final class GoudGame {
     /// Plays audio with 3D spatial attenuation
     public func audioPlaySpatial3d(data: Data, sourceX: Float, sourceY: Float, sourceZ: Float, listenerX: Float, listenerY: Float, listenerZ: Float, maxDistance: Float, rolloff: Float) -> Int64 {
         data.withUnsafeBytes { dataRawBuf in
-            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            return goud_audio_play_spatial_3d(_ctx, dataBasePtr, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff)
+            let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
+            return goud_audio_play_spatial_3d(_ctx, dataBasePtr, data.count, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff)
         }
     }
 
@@ -920,16 +644,16 @@ public final class GoudGame {
     /// Starts a timed crossfade from one player to a new audio asset
     public func audioCrossfadeTo(fromPlayerId: UInt64, data: Data, durationSec: Float, channel: UInt8) -> Int64 {
         data.withUnsafeBytes { dataRawBuf in
-            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            return goud_audio_crossfade_to(_ctx, fromPlayerId, dataBasePtr, durationSec, channel)
+            let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
+            return goud_audio_crossfade_to(_ctx, fromPlayerId, dataBasePtr, data.count, durationSec, channel)
         }
     }
 
     /// Mixes a secondary audio asset with a primary player
     public func audioMixWith(primaryPlayerId: UInt64, data: Data, secondaryVolume: Float, secondaryChannel: UInt8) -> Int64 {
         data.withUnsafeBytes { dataRawBuf in
-            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            return goud_audio_mix_with(_ctx, primaryPlayerId, dataBasePtr, secondaryVolume, secondaryChannel)
+            let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
+            return goud_audio_mix_with(_ctx, primaryPlayerId, dataBasePtr, data.count, secondaryVolume, secondaryChannel)
         }
     }
 
@@ -950,7 +674,7 @@ public final class GoudGame {
 
     /// Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred.
     public func checkHotSwapShortcut() -> Bool {
-        return (goud_provider_check_hot_swap_shortcut(_ctx) != 0)
+        return goud_provider_check_hot_swap_shortcut(_ctx) != 0
     }
 
     deinit {

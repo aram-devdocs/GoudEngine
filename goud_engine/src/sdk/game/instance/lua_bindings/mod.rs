@@ -27,7 +27,7 @@ mod enums {
     include!("enums.g.rs");
 }
 
-#[cfg(all(feature = "lua", feature = "native"))]
+#[cfg(feature = "native")]
 #[allow(
     unused_imports,
     unused_variables,
@@ -35,7 +35,8 @@ mod enums {
     clippy::redundant_closure_call,
     clippy::needless_pass_by_value,
     clippy::too_many_arguments,
-    clippy::missing_safety_doc
+    clippy::missing_safety_doc,
+    clippy::unnecessary_cast
 )]
 mod tools {
     include!("tools.g.rs");
