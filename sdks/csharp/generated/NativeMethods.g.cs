@@ -92,16 +92,6 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct FpsStats
-    {
-        public float CurrentFps;
-        public float MinFps;
-        public float MaxFps;
-        public float AvgFps;
-        public float FrameTimeMs;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
     public struct GoudDebuggerConfig
     {
         [MarshalAs(UnmanagedType.U1)]
@@ -151,85 +141,6 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct None
-    {
-        public ulong BodyHandle;
-        public ulong ColliderHandle;
-        public float PointX;
-        public float PointY;
-        public float NormalX;
-        public float NormalY;
-        public float Distance;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct None
-    {
-        public ulong BodyA;
-        public ulong BodyB;
-        public uint Kind;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct None
-    {
-        public float X;
-        public float Y;
-        public float Z;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct RenderCapabilities
-    {
-        public uint MaxTextureUnits;
-        public uint MaxTextureSize;
-        [MarshalAs(UnmanagedType.U1)]
-        public bool SupportsInstancing;
-        [MarshalAs(UnmanagedType.U1)]
-        public bool SupportsCompute;
-        [MarshalAs(UnmanagedType.U1)]
-        public bool SupportsMsaa;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct PhysicsCapabilities
-    {
-        [MarshalAs(UnmanagedType.U1)]
-        public bool SupportsContinuousCollision;
-        [MarshalAs(UnmanagedType.U1)]
-        public bool SupportsJoints;
-        public uint MaxBodies;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct AudioCapabilities
-    {
-        [MarshalAs(UnmanagedType.U1)]
-        public bool SupportsSpatial;
-        public uint MaxChannels;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct InputCapabilities
-    {
-        [MarshalAs(UnmanagedType.U1)]
-        public bool SupportsGamepad;
-        [MarshalAs(UnmanagedType.U1)]
-        public bool SupportsTouch;
-        public uint MaxGamepads;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct NetworkCapabilities
-    {
-        [MarshalAs(UnmanagedType.U1)]
-        public bool SupportsHosting;
-        public uint MaxConnections;
-        public byte MaxChannels;
-        public uint MaxMessageSize;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
     public struct FfiNetworkStats
     {
         public ulong BytesSent;
@@ -242,14 +153,6 @@ namespace GoudEngine
         public float ReceiveBandwidthBytesPerSec;
         public float PacketLossPercent;
         public float JitterMs;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct NetworkSimulationConfig
-    {
-        public uint OneWayLatencyMs;
-        public uint JitterMs;
-        public float PacketLossPercent;
     }
 
     [StructLayout(LayoutKind.Sequential)]

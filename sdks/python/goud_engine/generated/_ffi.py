@@ -132,15 +132,6 @@ class GoudRenderStats(ctypes.Structure):
         ("shader_binds", ctypes.c_uint32)
     ]
 
-class FpsStats(ctypes.Structure):
-    _fields_ = [
-        ("current_fps", ctypes.c_float),
-        ("min_fps", ctypes.c_float),
-        ("max_fps", ctypes.c_float),
-        ("avg_fps", ctypes.c_float),
-        ("frame_time_ms", ctypes.c_float)
-    ]
-
 class GoudDebuggerConfig(ctypes.Structure):
     _fields_ = [
         ("enabled", ctypes.c_bool),
@@ -182,68 +173,6 @@ class GoudContact(ctypes.Structure):
         ("penetration", ctypes.c_float)
     ]
 
-class None(ctypes.Structure):
-    _fields_ = [
-        ("body_handle", ctypes.c_uint64),
-        ("collider_handle", ctypes.c_uint64),
-        ("point_x", ctypes.c_float),
-        ("point_y", ctypes.c_float),
-        ("normal_x", ctypes.c_float),
-        ("normal_y", ctypes.c_float),
-        ("distance", ctypes.c_float)
-    ]
-
-class None(ctypes.Structure):
-    _fields_ = [
-        ("body_a", ctypes.c_uint64),
-        ("body_b", ctypes.c_uint64),
-        ("kind", ctypes.c_uint32)
-    ]
-
-class None(ctypes.Structure):
-    _fields_ = [
-        ("x", ctypes.c_float),
-        ("y", ctypes.c_float),
-        ("z", ctypes.c_float)
-    ]
-
-class RenderCapabilities(ctypes.Structure):
-    _fields_ = [
-        ("max_texture_units", ctypes.c_uint32),
-        ("max_texture_size", ctypes.c_uint32),
-        ("supports_instancing", ctypes.c_bool),
-        ("supports_compute", ctypes.c_bool),
-        ("supports_msaa", ctypes.c_bool)
-    ]
-
-class PhysicsCapabilities(ctypes.Structure):
-    _fields_ = [
-        ("supports_continuous_collision", ctypes.c_bool),
-        ("supports_joints", ctypes.c_bool),
-        ("max_bodies", ctypes.c_uint32)
-    ]
-
-class AudioCapabilities(ctypes.Structure):
-    _fields_ = [
-        ("supports_spatial", ctypes.c_bool),
-        ("max_channels", ctypes.c_uint32)
-    ]
-
-class InputCapabilities(ctypes.Structure):
-    _fields_ = [
-        ("supports_gamepad", ctypes.c_bool),
-        ("supports_touch", ctypes.c_bool),
-        ("max_gamepads", ctypes.c_uint32)
-    ]
-
-class NetworkCapabilities(ctypes.Structure):
-    _fields_ = [
-        ("supports_hosting", ctypes.c_bool),
-        ("max_connections", ctypes.c_uint32),
-        ("max_channels", ctypes.c_uint8),
-        ("max_message_size", ctypes.c_uint32)
-    ]
-
 class FfiNetworkStats(ctypes.Structure):
     _fields_ = [
         ("bytes_sent", ctypes.c_uint64),
@@ -256,13 +185,6 @@ class FfiNetworkStats(ctypes.Structure):
         ("receive_bandwidth_bytes_per_sec", ctypes.c_float),
         ("packet_loss_percent", ctypes.c_float),
         ("jitter_ms", ctypes.c_float)
-    ]
-
-class NetworkSimulationConfig(ctypes.Structure):
-    _fields_ = [
-        ("one_way_latency_ms", ctypes.c_uint32),
-        ("jitter_ms", ctypes.c_uint32),
-        ("packet_loss_percent", ctypes.c_float)
     ]
 
 class FfiMat3x3(ctypes.Structure):

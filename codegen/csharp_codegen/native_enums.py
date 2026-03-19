@@ -29,16 +29,22 @@ def gen_native_methods():
         "        [MarshalAs(UnmanagedType.U1)] public bool Success;",
         "    }", "",
     ]
-    # Emit FFI struct declarations for all types (including FfiSprite)
+    # Emit FFI struct declarations for types with a distinct FFI name
+    # (e.g. FfiSprite, GoudDebuggerConfig). Value types whose ffi_name
+    # matches the SDK type name (or is None) are already generated as
+    # standalone files by gen_value_types() and must not be duplicated here.
     for type_name, type_def in mapping["ffi_types"].items():
         ffi_name = type_def["ffi_name"]
-        if ffi_name in ("u64",):
+        if not ffi_name or ffi_name in ("u64",):
             continue
         sdk_type = schema["types"].get(type_name)
         if not sdk_type or "fields" not in sdk_type:
             continue
         # Skip FfiMat3x3 -- handled separately with fixed array
         if ffi_name == "FfiMat3x3":
+            continue
+        # Skip value types already emitted as Math/*.g.cs
+        if sdk_type.get("kind") == "value" and ffi_name == type_name:
             continue
         lines += ["    [StructLayout(LayoutKind.Sequential)]", f"    public struct {ffi_name}", "    {"]
         for f in sdk_type["fields"]:
