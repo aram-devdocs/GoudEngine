@@ -288,6 +288,38 @@ export interface IGoudGame {
   setFogEnabled(enabled: boolean): boolean;
   /** Renders all 3D objects */
   render3D(): boolean;
+  /** Creates a 3D material */
+  createMaterial(materialType: number, r: number, g: number, b: number, a: number, shininess: number, metallic: number, roughness: number, ao: number): number;
+  /** Updates a 3D material */
+  updateMaterial(materialId: number, materialType: number, r: number, g: number, b: number, a: number, shininess: number, metallic: number, roughness: number, ao: number): boolean;
+  /** Removes a 3D material */
+  removeMaterial(materialId: number): boolean;
+  /** Binds a material to an object */
+  setObjectMaterial(objectId: number, materialId: number): boolean;
+  /** Gets the material ID bound to an object */
+  getObjectMaterial(objectId: number): number;
+  /** Creates a skinned mesh from raw vertex data */
+  createSkinnedMesh(verticesPtr: number, vertexCount: number): number;
+  /** Removes a skinned mesh */
+  removeSkinnedMesh(meshId: number): boolean;
+  /** Sets the position of a skinned mesh */
+  setSkinnedMeshPosition(meshId: number, x: number, y: number, z: number): boolean;
+  /** Sets the rotation of a skinned mesh */
+  setSkinnedMeshRotation(meshId: number, x: number, y: number, z: number): boolean;
+  /** Sets the scale of a skinned mesh */
+  setSkinnedMeshScale(meshId: number, x: number, y: number, z: number): boolean;
+  /** Updates bone matrices for a skinned mesh */
+  setSkinnedMeshBones(meshId: number, matricesPtr: number, boneCount: number): boolean;
+  /** Adds a bloom pass to the post-processing pipeline */
+  addBloomPass(threshold: number, intensity: number): number;
+  /** Adds a Gaussian blur pass */
+  addBlurPass(radius: number): number;
+  /** Adds a color grading pass */
+  addColorGradePass(exposure: number, contrast: number, saturation: number): number;
+  /** Removes a post-processing pass by index */
+  removePostprocessPass(index: number): boolean;
+  /** Returns the number of post-processing passes */
+  postprocessPassCount(): number;
   /** Draws a sprite with source rectangle for sprite sheets */
   drawSpriteRect(texture: number, x: number, y: number, width: number, height: number, rotation: number, srcX: number, srcY: number, srcW: number, srcH: number, color?: IColor): boolean;
   /** Sets the rendering viewport */

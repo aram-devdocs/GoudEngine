@@ -1607,6 +1607,21 @@ func GoudProviderRenderCapabilities(context_id C.GoudContextId, out *C.RenderCap
 	return int32(C.goud_provider_render_capabilities(context_id, out))
 }
 
+// GoudRenderer3dAddBloomPass wraps goud_renderer3d_add_bloom_pass.
+func GoudRenderer3dAddBloomPass(context_id C.GoudContextId, threshold float32, intensity float32) int32 {
+	return int32(C.goud_renderer3d_add_bloom_pass(context_id, C.float(threshold), C.float(intensity)))
+}
+
+// GoudRenderer3dAddBlurPass wraps goud_renderer3d_add_blur_pass.
+func GoudRenderer3dAddBlurPass(context_id C.GoudContextId, radius uint32) int32 {
+	return int32(C.goud_renderer3d_add_blur_pass(context_id, C.uint32_t(radius)))
+}
+
+// GoudRenderer3dAddColorGradePass wraps goud_renderer3d_add_color_grade_pass.
+func GoudRenderer3dAddColorGradePass(context_id C.GoudContextId, exposure float32, contrast float32, saturation float32) int32 {
+	return int32(C.goud_renderer3d_add_color_grade_pass(context_id, C.float(exposure), C.float(contrast), C.float(saturation)))
+}
+
 // GoudRenderer3dAddLight wraps goud_renderer3d_add_light.
 func GoudRenderer3dAddLight(context_id C.GoudContextId, light_type int32, pos_x float32, pos_y float32, pos_z float32, dir_x float32, dir_y float32, dir_z float32, r float32, g float32, b float32, intensity float32, range_ float32, spot_angle float32) uint32 {
 	return uint32(C.goud_renderer3d_add_light(context_id, C.int32_t(light_type), C.float(pos_x), C.float(pos_y), C.float(pos_z), C.float(dir_x), C.float(dir_y), C.float(dir_z), C.float(r), C.float(g), C.float(b), C.float(intensity), C.float(range_), C.float(spot_angle)))
@@ -1637,9 +1652,22 @@ func GoudRenderer3dCreateCylinder(context_id C.GoudContextId, texture_id uint32,
 	return uint32(C.goud_renderer3d_create_cylinder(context_id, C.uint32_t(texture_id), C.float(radius), C.float(height), C.uint32_t(segments)))
 }
 
+// GoudRenderer3dCreateMaterial wraps goud_renderer3d_create_material.
+func GoudRenderer3dCreateMaterial(context_id C.GoudContextId, material_type int32, r float32, g float32, b float32, a float32, shininess float32, metallic float32, roughness float32, ao float32) uint32 {
+	return uint32(C.goud_renderer3d_create_material(context_id, C.int32_t(material_type), C.float(r), C.float(g), C.float(b), C.float(a), C.float(shininess), C.float(metallic), C.float(roughness), C.float(ao)))
+}
+
 // GoudRenderer3dCreatePlane wraps goud_renderer3d_create_plane.
 func GoudRenderer3dCreatePlane(context_id C.GoudContextId, texture_id uint32, width float32, depth float32) uint32 {
 	return uint32(C.goud_renderer3d_create_plane(context_id, C.uint32_t(texture_id), C.float(width), C.float(depth)))
+}
+
+// GoudRenderer3dCreateSkinnedMesh wraps goud_renderer3d_create_skinned_mesh.
+func GoudRenderer3dCreateSkinnedMesh(context_id C.GoudContextId, vertices_ptr *C.f32, vertex_count uint32) uint32 {
+	if vertices_ptr == nil {
+		return 0
+	}
+	return uint32(C.goud_renderer3d_create_skinned_mesh(context_id, vertices_ptr, C.uint32_t(vertex_count)))
 }
 
 // GoudRenderer3dCreateSphere wraps goud_renderer3d_create_sphere.
@@ -1652,9 +1680,34 @@ func GoudRenderer3dDestroyObject(context_id C.GoudContextId, object_id uint32) b
 	return bool(C.goud_renderer3d_destroy_object(context_id, C.uint32_t(object_id)))
 }
 
+// GoudRenderer3dGetObjectMaterial wraps goud_renderer3d_get_object_material.
+func GoudRenderer3dGetObjectMaterial(context_id C.GoudContextId, object_id uint32) uint32 {
+	return uint32(C.goud_renderer3d_get_object_material(context_id, C.uint32_t(object_id)))
+}
+
+// GoudRenderer3dPostprocessPassCount wraps goud_renderer3d_postprocess_pass_count.
+func GoudRenderer3dPostprocessPassCount(context_id C.GoudContextId) uint32 {
+	return uint32(C.goud_renderer3d_postprocess_pass_count(context_id))
+}
+
 // GoudRenderer3dRemoveLight wraps goud_renderer3d_remove_light.
 func GoudRenderer3dRemoveLight(context_id C.GoudContextId, light_id uint32) bool {
 	return bool(C.goud_renderer3d_remove_light(context_id, C.uint32_t(light_id)))
+}
+
+// GoudRenderer3dRemoveMaterial wraps goud_renderer3d_remove_material.
+func GoudRenderer3dRemoveMaterial(context_id C.GoudContextId, material_id uint32) bool {
+	return bool(C.goud_renderer3d_remove_material(context_id, C.uint32_t(material_id)))
+}
+
+// GoudRenderer3dRemovePostprocessPass wraps goud_renderer3d_remove_postprocess_pass.
+func GoudRenderer3dRemovePostprocessPass(context_id C.GoudContextId, index uint32) bool {
+	return bool(C.goud_renderer3d_remove_postprocess_pass(context_id, C.uint32_t(index)))
+}
+
+// GoudRenderer3dRemoveSkinnedMesh wraps goud_renderer3d_remove_skinned_mesh.
+func GoudRenderer3dRemoveSkinnedMesh(context_id C.GoudContextId, mesh_id uint32) bool {
+	return bool(C.goud_renderer3d_remove_skinned_mesh(context_id, C.uint32_t(mesh_id)))
 }
 
 // GoudRenderer3dRender wraps goud_renderer3d_render.
@@ -1687,6 +1740,11 @@ func GoudRenderer3dSetGridEnabled(context_id C.GoudContextId, enabled bool) bool
 	return bool(C.goud_renderer3d_set_grid_enabled(context_id, C._Bool(enabled)))
 }
 
+// GoudRenderer3dSetObjectMaterial wraps goud_renderer3d_set_object_material.
+func GoudRenderer3dSetObjectMaterial(context_id C.GoudContextId, object_id uint32, material_id uint32) bool {
+	return bool(C.goud_renderer3d_set_object_material(context_id, C.uint32_t(object_id), C.uint32_t(material_id)))
+}
+
 // GoudRenderer3dSetObjectPosition wraps goud_renderer3d_set_object_position.
 func GoudRenderer3dSetObjectPosition(context_id C.GoudContextId, object_id uint32, x float32, y float32, z float32) bool {
 	return bool(C.goud_renderer3d_set_object_position(context_id, C.uint32_t(object_id), C.float(x), C.float(y), C.float(z)))
@@ -1702,9 +1760,37 @@ func GoudRenderer3dSetObjectScale(context_id C.GoudContextId, object_id uint32, 
 	return bool(C.goud_renderer3d_set_object_scale(context_id, C.uint32_t(object_id), C.float(x), C.float(y), C.float(z)))
 }
 
+// GoudRenderer3dSetSkinnedMeshBones wraps goud_renderer3d_set_skinned_mesh_bones.
+func GoudRenderer3dSetSkinnedMeshBones(context_id C.GoudContextId, mesh_id uint32, matrices_ptr *C.f32, bone_count uint32) bool {
+	if matrices_ptr == nil {
+		return false
+	}
+	return bool(C.goud_renderer3d_set_skinned_mesh_bones(context_id, C.uint32_t(mesh_id), matrices_ptr, C.uint32_t(bone_count)))
+}
+
+// GoudRenderer3dSetSkinnedMeshPosition wraps goud_renderer3d_set_skinned_mesh_position.
+func GoudRenderer3dSetSkinnedMeshPosition(context_id C.GoudContextId, mesh_id uint32, x float32, y float32, z float32) bool {
+	return bool(C.goud_renderer3d_set_skinned_mesh_position(context_id, C.uint32_t(mesh_id), C.float(x), C.float(y), C.float(z)))
+}
+
+// GoudRenderer3dSetSkinnedMeshRotation wraps goud_renderer3d_set_skinned_mesh_rotation.
+func GoudRenderer3dSetSkinnedMeshRotation(context_id C.GoudContextId, mesh_id uint32, x float32, y float32, z float32) bool {
+	return bool(C.goud_renderer3d_set_skinned_mesh_rotation(context_id, C.uint32_t(mesh_id), C.float(x), C.float(y), C.float(z)))
+}
+
+// GoudRenderer3dSetSkinnedMeshScale wraps goud_renderer3d_set_skinned_mesh_scale.
+func GoudRenderer3dSetSkinnedMeshScale(context_id C.GoudContextId, mesh_id uint32, x float32, y float32, z float32) bool {
+	return bool(C.goud_renderer3d_set_skinned_mesh_scale(context_id, C.uint32_t(mesh_id), C.float(x), C.float(y), C.float(z)))
+}
+
 // GoudRenderer3dUpdateLight wraps goud_renderer3d_update_light.
 func GoudRenderer3dUpdateLight(context_id C.GoudContextId, light_id uint32, light_type int32, pos_x float32, pos_y float32, pos_z float32, dir_x float32, dir_y float32, dir_z float32, r float32, g float32, b float32, intensity float32, range_ float32, spot_angle float32) bool {
 	return bool(C.goud_renderer3d_update_light(context_id, C.uint32_t(light_id), C.int32_t(light_type), C.float(pos_x), C.float(pos_y), C.float(pos_z), C.float(dir_x), C.float(dir_y), C.float(dir_z), C.float(r), C.float(g), C.float(b), C.float(intensity), C.float(range_), C.float(spot_angle)))
+}
+
+// GoudRenderer3dUpdateMaterial wraps goud_renderer3d_update_material.
+func GoudRenderer3dUpdateMaterial(context_id C.GoudContextId, material_id uint32, material_type int32, r float32, g float32, b float32, a float32, shininess float32, metallic float32, roughness float32, ao float32) bool {
+	return bool(C.goud_renderer3d_update_material(context_id, C.uint32_t(material_id), C.int32_t(material_type), C.float(r), C.float(g), C.float(b), C.float(a), C.float(shininess), C.float(metallic), C.float(roughness), C.float(ao)))
 }
 
 // GoudRendererBegin wraps goud_renderer_begin.

@@ -551,8 +551,6 @@ def _setup():
     _lib.goud_renderer3d_render.restype = ctypes.c_bool
     _lib.goud_renderer3d_render_all.argtypes = [GoudContextId]
     _lib.goud_renderer3d_render_all.restype = ctypes.c_bool
-
-    # renderer_3d materials
     _lib.goud_renderer3d_create_material.argtypes = [GoudContextId, ctypes.c_int32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
     _lib.goud_renderer3d_create_material.restype = ctypes.c_uint32
     _lib.goud_renderer3d_update_material.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_int32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
@@ -563,8 +561,6 @@ def _setup():
     _lib.goud_renderer3d_set_object_material.restype = ctypes.c_bool
     _lib.goud_renderer3d_get_object_material.argtypes = [GoudContextId, ctypes.c_uint32]
     _lib.goud_renderer3d_get_object_material.restype = ctypes.c_uint32
-
-    # renderer_3d skinned mesh
     _lib.goud_renderer3d_create_skinned_mesh.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_float), ctypes.c_uint32]
     _lib.goud_renderer3d_create_skinned_mesh.restype = ctypes.c_uint32
     _lib.goud_renderer3d_remove_skinned_mesh.argtypes = [GoudContextId, ctypes.c_uint32]
@@ -577,8 +573,6 @@ def _setup():
     _lib.goud_renderer3d_set_skinned_mesh_scale.restype = ctypes.c_bool
     _lib.goud_renderer3d_set_skinned_mesh_bones.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.POINTER(ctypes.c_float), ctypes.c_uint32]
     _lib.goud_renderer3d_set_skinned_mesh_bones.restype = ctypes.c_bool
-
-    # renderer_3d postprocess
     _lib.goud_renderer3d_add_bloom_pass.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float]
     _lib.goud_renderer3d_add_bloom_pass.restype = ctypes.c_int32
     _lib.goud_renderer3d_add_blur_pass.argtypes = [GoudContextId, ctypes.c_uint32]

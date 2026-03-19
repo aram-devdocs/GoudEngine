@@ -300,6 +300,86 @@ public final class GoudGame {
         return (goud_renderer3d_render(_ctx) != 0)
     }
 
+    /// Creates a 3D material
+    public func createMaterial(materialType: Int32, r: Float, g: Float, b: Float, a: Float, shininess: Float, metallic: Float, roughness: Float, ao: Float) -> UInt32 {
+        return goud_renderer3d_create_material(_ctx, materialType, r, g, b, a, shininess, metallic, roughness, ao)
+    }
+
+    /// Updates a 3D material
+    public func updateMaterial(materialId: UInt32, materialType: Int32, r: Float, g: Float, b: Float, a: Float, shininess: Float, metallic: Float, roughness: Float, ao: Float) -> Bool {
+        return (goud_renderer3d_update_material(_ctx, materialId, materialType, r, g, b, a, shininess, metallic, roughness, ao) != 0)
+    }
+
+    /// Removes a 3D material
+    public func removeMaterial(materialId: UInt32) -> Bool {
+        return (goud_renderer3d_remove_material(_ctx, materialId) != 0)
+    }
+
+    /// Binds a material to an object
+    public func setObjectMaterial(objectId: UInt32, materialId: UInt32) -> Bool {
+        return (goud_renderer3d_set_object_material(_ctx, objectId, materialId) != 0)
+    }
+
+    /// Gets the material ID bound to an object
+    public func getObjectMaterial(objectId: UInt32) -> UInt32 {
+        return goud_renderer3d_get_object_material(_ctx, objectId)
+    }
+
+    /// Creates a skinned mesh from raw vertex data
+    public func createSkinnedMesh(verticesPtr: UnsafeMutableRawPointer, vertexCount: UInt32) -> UInt32 {
+        return goud_renderer3d_create_skinned_mesh(_ctx, verticesPtr, vertexCount)
+    }
+
+    /// Removes a skinned mesh
+    public func removeSkinnedMesh(meshId: UInt32) -> Bool {
+        return (goud_renderer3d_remove_skinned_mesh(_ctx, meshId) != 0)
+    }
+
+    /// Sets the position of a skinned mesh
+    public func setSkinnedMeshPosition(meshId: UInt32, x: Float, y: Float, z: Float) -> Bool {
+        return (goud_renderer3d_set_skinned_mesh_position(_ctx, meshId, x, y, z) != 0)
+    }
+
+    /// Sets the rotation of a skinned mesh
+    public func setSkinnedMeshRotation(meshId: UInt32, x: Float, y: Float, z: Float) -> Bool {
+        return (goud_renderer3d_set_skinned_mesh_rotation(_ctx, meshId, x, y, z) != 0)
+    }
+
+    /// Sets the scale of a skinned mesh
+    public func setSkinnedMeshScale(meshId: UInt32, x: Float, y: Float, z: Float) -> Bool {
+        return (goud_renderer3d_set_skinned_mesh_scale(_ctx, meshId, x, y, z) != 0)
+    }
+
+    /// Updates bone matrices for a skinned mesh
+    public func setSkinnedMeshBones(meshId: UInt32, matricesPtr: UnsafeMutableRawPointer, boneCount: UInt32) -> Bool {
+        return (goud_renderer3d_set_skinned_mesh_bones(_ctx, meshId, matricesPtr, boneCount) != 0)
+    }
+
+    /// Adds a bloom pass to the post-processing pipeline
+    public func addBloomPass(threshold: Float, intensity: Float) -> Int32 {
+        return goud_renderer3d_add_bloom_pass(_ctx, threshold, intensity)
+    }
+
+    /// Adds a Gaussian blur pass
+    public func addBlurPass(radius: UInt32) -> Int32 {
+        return goud_renderer3d_add_blur_pass(_ctx, radius)
+    }
+
+    /// Adds a color grading pass
+    public func addColorGradePass(exposure: Float, contrast: Float, saturation: Float) -> Int32 {
+        return goud_renderer3d_add_color_grade_pass(_ctx, exposure, contrast, saturation)
+    }
+
+    /// Removes a post-processing pass by index
+    public func removePostprocessPass(index: UInt32) -> Bool {
+        return (goud_renderer3d_remove_postprocess_pass(_ctx, index) != 0)
+    }
+
+    /// Returns the number of post-processing passes
+    public func postprocessPassCount() -> UInt32 {
+        return goud_renderer3d_postprocess_pass_count(_ctx)
+    }
+
     /// Draws a sprite with source rectangle for sprite sheets
     public func drawSpriteRect(texture: UInt64, x: Float, y: Float, width: Float, height: Float, rotation: Float = 0, srcX: Float, srcY: Float, srcW: Float, srcH: Float, color: Color = Color.white()) -> Bool {
         return (goud_renderer_draw_sprite_rect(_ctx, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, color.toFFI()) != 0)

@@ -536,6 +536,86 @@ export class GoudGame implements IGoudGame {
     return this.native.render3D();
   }
 
+  /** Creates a 3D material */
+  createMaterial(materialType: number, r: number, g: number, b: number, a: number, shininess: number, metallic: number, roughness: number, ao: number): number {
+    return (this.native as any).createMaterial(materialType, r, g, b, a, shininess, metallic, roughness, ao);
+  }
+
+  /** Updates a 3D material */
+  updateMaterial(materialId: number, materialType: number, r: number, g: number, b: number, a: number, shininess: number, metallic: number, roughness: number, ao: number): boolean {
+    return (this.native as any).updateMaterial(materialId, materialType, r, g, b, a, shininess, metallic, roughness, ao);
+  }
+
+  /** Removes a 3D material */
+  removeMaterial(materialId: number): boolean {
+    return (this.native as any).removeMaterial(materialId);
+  }
+
+  /** Binds a material to an object */
+  setObjectMaterial(objectId: number, materialId: number): boolean {
+    return (this.native as any).setObjectMaterial(objectId, materialId);
+  }
+
+  /** Gets the material ID bound to an object */
+  getObjectMaterial(objectId: number): number {
+    return (this.native as any).getObjectMaterial(objectId);
+  }
+
+  /** Creates a skinned mesh from raw vertex data */
+  createSkinnedMesh(verticesPtr: number, vertexCount: number): number {
+    return (this.native as any).createSkinnedMesh(verticesPtr, vertexCount);
+  }
+
+  /** Removes a skinned mesh */
+  removeSkinnedMesh(meshId: number): boolean {
+    return (this.native as any).removeSkinnedMesh(meshId);
+  }
+
+  /** Sets the position of a skinned mesh */
+  setSkinnedMeshPosition(meshId: number, x: number, y: number, z: number): boolean {
+    return (this.native as any).setSkinnedMeshPosition(meshId, x, y, z);
+  }
+
+  /** Sets the rotation of a skinned mesh */
+  setSkinnedMeshRotation(meshId: number, x: number, y: number, z: number): boolean {
+    return (this.native as any).setSkinnedMeshRotation(meshId, x, y, z);
+  }
+
+  /** Sets the scale of a skinned mesh */
+  setSkinnedMeshScale(meshId: number, x: number, y: number, z: number): boolean {
+    return (this.native as any).setSkinnedMeshScale(meshId, x, y, z);
+  }
+
+  /** Updates bone matrices for a skinned mesh */
+  setSkinnedMeshBones(meshId: number, matricesPtr: number, boneCount: number): boolean {
+    return (this.native as any).setSkinnedMeshBones(meshId, matricesPtr, boneCount);
+  }
+
+  /** Adds a bloom pass to the post-processing pipeline */
+  addBloomPass(threshold: number, intensity: number): number {
+    return (this.native as any).addBloomPass(threshold, intensity);
+  }
+
+  /** Adds a Gaussian blur pass */
+  addBlurPass(radius: number): number {
+    return (this.native as any).addBlurPass(radius);
+  }
+
+  /** Adds a color grading pass */
+  addColorGradePass(exposure: number, contrast: number, saturation: number): number {
+    return (this.native as any).addColorGradePass(exposure, contrast, saturation);
+  }
+
+  /** Removes a post-processing pass by index */
+  removePostprocessPass(index: number): boolean {
+    return (this.native as any).removePostprocessPass(index);
+  }
+
+  /** Returns the number of post-processing passes */
+  postprocessPassCount(): number {
+    return (this.native as any).postprocessPassCount();
+  }
+
   /** Draws a sprite with source rectangle for sprite sheets */
   drawSpriteRect(texture: number, x: number, y: number, width: number, height: number, rotation: number, srcX: number, srcY: number, srcW: number, srcH: number, color?: IColor): boolean {
     const c = color ?? Color.white();

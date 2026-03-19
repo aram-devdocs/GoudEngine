@@ -46,6 +46,26 @@ extern "C" {
 #define GOUD_INVALID_ENTITY_ID UINT64_MAX
 
 /**
+ * Invalid material handle constant.
+ */
+#define GOUD_INVALID_MATERIAL UINT32_MAX
+
+/**
+ * Material type: Phong shading.
+ */
+#define GOUD_MATERIAL_TYPE_PHONG 0
+
+/**
+ * Material type: PBR shading.
+ */
+#define GOUD_MATERIAL_TYPE_PBR 1
+
+/**
+ * Material type: Unlit / flat shading.
+ */
+#define GOUD_MATERIAL_TYPE_UNLIT 2
+
+/**
  * Invalid object handle constant.
  */
 #define GOUD_INVALID_OBJECT UINT32_MAX
@@ -91,6 +111,11 @@ extern "C" {
 #define GOUD_PRIMITIVE_CYLINDER 3
 
 /**
+ * Invalid skinned mesh handle constant.
+ */
+#define GOUD_INVALID_SKINNED_MESH UINT32_MAX
+
+/**
  * Sentinel `u64` returned when a node operation fails or no node exists.
  */
 #define INVALID_NODE_U64 UINT64_MAX
@@ -104,6 +129,16 @@ extern "C" {
  * Maximum number of simultaneously-bound texture units.
  */
 #define MAX_TEXTURE_UNITS 16
+
+/**
+ * Maximum bones per skeleton for GPU skinning.
+ */
+#define MAX_BONES 128
+
+/**
+ * Maximum bone influences per vertex.
+ */
+#define MAX_BONE_INFLUENCES 4
 
 /**
  * Maximum number of lights supported
@@ -1189,6 +1224,16 @@ typedef struct GoudResult {
 #define ERR_PROVIDER_OPERATION_FAILED 602
 
 /**
+ * Base code for scripting engine errors.
+ */
+#define SCRIPT_ERROR_BASE 800
+
+/**
+ * Script execution error (syntax, runtime, etc.).
+ */
+#define ERR_SCRIPT_ERROR 800
+
+/**
  * Base code for internal/unexpected errors.
  */
 #define INTERNAL_ERROR_BASE 900
@@ -1565,6 +1610,56 @@ bool goud_renderer3d_update_light(struct GoudContextId context_id, uint32_t ligh
 bool goud_renderer3d_remove_light(struct GoudContextId context_id, uint32_t light_id);
 
 /**
+ * Creates a 3D material.
+ */
+uint32_t goud_renderer3d_create_material(struct GoudContextId context_id, int32_t material_type, float r, float g, float b, float a, float shininess, float metallic, float roughness, float ao);
+
+/**
+ * Updates an existing 3D material.
+ */
+bool goud_renderer3d_update_material(struct GoudContextId context_id, uint32_t material_id, int32_t material_type, float r, float g, float b, float a, float shininess, float metallic, float roughness, float ao);
+
+/**
+ * Removes a 3D material.
+ */
+bool goud_renderer3d_remove_material(struct GoudContextId context_id, uint32_t material_id);
+
+/**
+ * Binds a material to an object.
+ */
+bool goud_renderer3d_set_object_material(struct GoudContextId context_id, uint32_t object_id, uint32_t material_id);
+
+/**
+ * Gets the material ID bound to an object. Returns `GOUD_INVALID_MATERIAL` if none.
+ */
+uint32_t goud_renderer3d_get_object_material(struct GoudContextId context_id, uint32_t object_id);
+
+/**
+ * Adds a bloom pass to the post-processing pipeline. Returns the pass index.
+ */
+int32_t goud_renderer3d_add_bloom_pass(struct GoudContextId context_id, float threshold, float intensity);
+
+/**
+ * Adds a Gaussian blur pass to the post-processing pipeline. Returns the pass index.
+ */
+int32_t goud_renderer3d_add_blur_pass(struct GoudContextId context_id, uint32_t radius);
+
+/**
+ * Adds a color grading pass to the post-processing pipeline. Returns the pass index.
+ */
+int32_t goud_renderer3d_add_color_grade_pass(struct GoudContextId context_id, float exposure, float contrast, float saturation);
+
+/**
+ * Removes a post-processing pass by index.
+ */
+bool goud_renderer3d_remove_postprocess_pass(struct GoudContextId context_id, uint32_t index);
+
+/**
+ * Returns the number of post-processing passes.
+ */
+uint32_t goud_renderer3d_postprocess_pass_count(struct GoudContextId context_id);
+
+/**
  * Creates a 3D cube object.
  */
 uint32_t goud_renderer3d_create_cube(struct GoudContextId context_id, uint32_t texture_id, float width, float height, float depth);
@@ -1603,6 +1698,36 @@ bool goud_renderer3d_set_object_scale(struct GoudContextId context_id, uint32_t 
  * Destroys a 3D object.
  */
 bool goud_renderer3d_destroy_object(struct GoudContextId context_id, uint32_t object_id);
+
+/**
+ * Creates a skinned mesh from raw vertex data.
+ */
+uint32_t goud_renderer3d_create_skinned_mesh(struct GoudContextId context_id, const float *vertices_ptr, uint32_t vertex_count);
+
+/**
+ * Removes a skinned mesh.
+ */
+bool goud_renderer3d_remove_skinned_mesh(struct GoudContextId context_id, uint32_t mesh_id);
+
+/**
+ * Sets the position of a skinned mesh.
+ */
+bool goud_renderer3d_set_skinned_mesh_position(struct GoudContextId context_id, uint32_t mesh_id, float x, float y, float z);
+
+/**
+ * Sets the rotation of a skinned mesh.
+ */
+bool goud_renderer3d_set_skinned_mesh_rotation(struct GoudContextId context_id, uint32_t mesh_id, float x, float y, float z);
+
+/**
+ * Sets the scale of a skinned mesh.
+ */
+bool goud_renderer3d_set_skinned_mesh_scale(struct GoudContextId context_id, uint32_t mesh_id, float x, float y, float z);
+
+/**
+ * Updates bone matrices for a skinned mesh.
+ */
+bool goud_renderer3d_set_skinned_mesh_bones(struct GoudContextId context_id, uint32_t mesh_id, const float *matrices_ptr, uint32_t bone_count);
 
 /* === Input === */
 

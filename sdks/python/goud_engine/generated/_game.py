@@ -426,15 +426,11 @@ class GoudGame:
         """Renders all 3D objects"""
         return self._lib.goud_renderer3d_render(self._ctx)
 
-    # ====================================================================
-    # Material System
-    # ====================================================================
-
-    def create_material(self, material_type, r, g, b, a, shininess, metallic=0.0, roughness=0.5, ao=1.0):
+    def create_material(self, material_type, r, g, b, a, shininess, metallic, roughness, ao):
         """Creates a 3D material"""
         return self._lib.goud_renderer3d_create_material(self._ctx, material_type, r, g, b, a, shininess, metallic, roughness, ao)
 
-    def update_material(self, material_id, material_type, r, g, b, a, shininess, metallic=0.0, roughness=0.5, ao=1.0):
+    def update_material(self, material_id, material_type, r, g, b, a, shininess, metallic, roughness, ao):
         """Updates a 3D material"""
         return self._lib.goud_renderer3d_update_material(self._ctx, material_id, material_type, r, g, b, a, shininess, metallic, roughness, ao)
 
@@ -450,14 +446,9 @@ class GoudGame:
         """Gets the material ID bound to an object"""
         return self._lib.goud_renderer3d_get_object_material(self._ctx, object_id)
 
-    # ====================================================================
-    # Skinned Mesh
-    # ====================================================================
-
-    def create_skinned_mesh(self, vertices):
+    def create_skinned_mesh(self, vertices_ptr, vertex_count):
         """Creates a skinned mesh from raw vertex data"""
-        arr = (ctypes.c_float * len(vertices))(*vertices)
-        return self._lib.goud_renderer3d_create_skinned_mesh(self._ctx, arr, len(vertices))
+        return self._lib.goud_renderer3d_create_skinned_mesh(self._ctx, vertices_ptr, vertex_count)
 
     def remove_skinned_mesh(self, mesh_id):
         """Removes a skinned mesh"""
@@ -475,24 +466,19 @@ class GoudGame:
         """Sets the scale of a skinned mesh"""
         return self._lib.goud_renderer3d_set_skinned_mesh_scale(self._ctx, mesh_id, x, y, z)
 
-    def set_skinned_mesh_bones(self, mesh_id, matrices, bone_count):
+    def set_skinned_mesh_bones(self, mesh_id, matrices_ptr, bone_count):
         """Updates bone matrices for a skinned mesh"""
-        arr = (ctypes.c_float * len(matrices))(*matrices)
-        return self._lib.goud_renderer3d_set_skinned_mesh_bones(self._ctx, mesh_id, arr, bone_count)
+        return self._lib.goud_renderer3d_set_skinned_mesh_bones(self._ctx, mesh_id, matrices_ptr, bone_count)
 
-    # ====================================================================
-    # Post-Processing Pipeline
-    # ====================================================================
-
-    def add_bloom_pass(self, threshold=0.8, intensity=1.0):
+    def add_bloom_pass(self, threshold, intensity):
         """Adds a bloom pass to the post-processing pipeline"""
         return self._lib.goud_renderer3d_add_bloom_pass(self._ctx, threshold, intensity)
 
-    def add_blur_pass(self, radius=2):
+    def add_blur_pass(self, radius):
         """Adds a Gaussian blur pass"""
         return self._lib.goud_renderer3d_add_blur_pass(self._ctx, radius)
 
-    def add_color_grade_pass(self, exposure=1.0, contrast=1.0, saturation=1.0):
+    def add_color_grade_pass(self, exposure, contrast, saturation):
         """Adds a color grading pass"""
         return self._lib.goud_renderer3d_add_color_grade_pass(self._ctx, exposure, contrast, saturation)
 

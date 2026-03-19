@@ -4671,6 +4671,165 @@
           "returns": "bool"
         },
         {
+          "name": "createMaterial",
+          "doc": "Creates a 3D material",
+          "params": [
+            { "name": "materialType", "type": "i32" },
+            { "name": "r", "type": "f32" },
+            { "name": "g", "type": "f32" },
+            { "name": "b", "type": "f32" },
+            { "name": "a", "type": "f32" },
+            { "name": "shininess", "type": "f32" },
+            { "name": "metallic", "type": "f32" },
+            { "name": "roughness", "type": "f32" },
+            { "name": "ao", "type": "f32" }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "updateMaterial",
+          "doc": "Updates a 3D material",
+          "params": [
+            { "name": "materialId", "type": "u32" },
+            { "name": "materialType", "type": "i32" },
+            { "name": "r", "type": "f32" },
+            { "name": "g", "type": "f32" },
+            { "name": "b", "type": "f32" },
+            { "name": "a", "type": "f32" },
+            { "name": "shininess", "type": "f32" },
+            { "name": "metallic", "type": "f32" },
+            { "name": "roughness", "type": "f32" },
+            { "name": "ao", "type": "f32" }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "removeMaterial",
+          "doc": "Removes a 3D material",
+          "params": [
+            { "name": "materialId", "type": "u32" }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setObjectMaterial",
+          "doc": "Binds a material to an object",
+          "params": [
+            { "name": "objectId", "type": "u32" },
+            { "name": "materialId", "type": "u32" }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "getObjectMaterial",
+          "doc": "Gets the material ID bound to an object",
+          "params": [
+            { "name": "objectId", "type": "u32" }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "createSkinnedMesh",
+          "doc": "Creates a skinned mesh from raw vertex data",
+          "params": [
+            { "name": "verticesPtr", "type": "ptr" },
+            { "name": "vertexCount", "type": "u32" }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "removeSkinnedMesh",
+          "doc": "Removes a skinned mesh",
+          "params": [
+            { "name": "meshId", "type": "u32" }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setSkinnedMeshPosition",
+          "doc": "Sets the position of a skinned mesh",
+          "params": [
+            { "name": "meshId", "type": "u32" },
+            { "name": "x", "type": "f32" },
+            { "name": "y", "type": "f32" },
+            { "name": "z", "type": "f32" }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setSkinnedMeshRotation",
+          "doc": "Sets the rotation of a skinned mesh",
+          "params": [
+            { "name": "meshId", "type": "u32" },
+            { "name": "x", "type": "f32" },
+            { "name": "y", "type": "f32" },
+            { "name": "z", "type": "f32" }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setSkinnedMeshScale",
+          "doc": "Sets the scale of a skinned mesh",
+          "params": [
+            { "name": "meshId", "type": "u32" },
+            { "name": "x", "type": "f32" },
+            { "name": "y", "type": "f32" },
+            { "name": "z", "type": "f32" }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setSkinnedMeshBones",
+          "doc": "Updates bone matrices for a skinned mesh",
+          "params": [
+            { "name": "meshId", "type": "u32" },
+            { "name": "matricesPtr", "type": "ptr" },
+            { "name": "boneCount", "type": "u32" }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "addBloomPass",
+          "doc": "Adds a bloom pass to the post-processing pipeline",
+          "params": [
+            { "name": "threshold", "type": "f32" },
+            { "name": "intensity", "type": "f32" }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "addBlurPass",
+          "doc": "Adds a Gaussian blur pass",
+          "params": [
+            { "name": "radius", "type": "u32" }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "addColorGradePass",
+          "doc": "Adds a color grading pass",
+          "params": [
+            { "name": "exposure", "type": "f32" },
+            { "name": "contrast", "type": "f32" },
+            { "name": "saturation", "type": "f32" }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "removePostprocessPass",
+          "doc": "Removes a post-processing pass by index",
+          "params": [
+            { "name": "index", "type": "u32" }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "postprocessPassCount",
+          "doc": "Returns the number of post-processing passes",
+          "params": [],
+          "returns": "u32"
+        },
+        {
           "name": "drawSpriteRect",
           "doc": "Draws a sprite with source rectangle for sprite sheets",
           "params": [
@@ -9904,6 +10063,54 @@
         },
         "render3D": {
           "ffi": "goud_renderer3d_render"
+        },
+        "createMaterial": {
+          "ffi": "goud_renderer3d_create_material"
+        },
+        "updateMaterial": {
+          "ffi": "goud_renderer3d_update_material"
+        },
+        "removeMaterial": {
+          "ffi": "goud_renderer3d_remove_material"
+        },
+        "setObjectMaterial": {
+          "ffi": "goud_renderer3d_set_object_material"
+        },
+        "getObjectMaterial": {
+          "ffi": "goud_renderer3d_get_object_material"
+        },
+        "createSkinnedMesh": {
+          "ffi": "goud_renderer3d_create_skinned_mesh"
+        },
+        "removeSkinnedMesh": {
+          "ffi": "goud_renderer3d_remove_skinned_mesh"
+        },
+        "setSkinnedMeshPosition": {
+          "ffi": "goud_renderer3d_set_skinned_mesh_position"
+        },
+        "setSkinnedMeshRotation": {
+          "ffi": "goud_renderer3d_set_skinned_mesh_rotation"
+        },
+        "setSkinnedMeshScale": {
+          "ffi": "goud_renderer3d_set_skinned_mesh_scale"
+        },
+        "setSkinnedMeshBones": {
+          "ffi": "goud_renderer3d_set_skinned_mesh_bones"
+        },
+        "addBloomPass": {
+          "ffi": "goud_renderer3d_add_bloom_pass"
+        },
+        "addBlurPass": {
+          "ffi": "goud_renderer3d_add_blur_pass"
+        },
+        "addColorGradePass": {
+          "ffi": "goud_renderer3d_add_color_grade_pass"
+        },
+        "removePostprocessPass": {
+          "ffi": "goud_renderer3d_remove_postprocess_pass"
+        },
+        "postprocessPassCount": {
+          "ffi": "goud_renderer3d_postprocess_pass_count"
         },
         "drawSpriteRect": {
           "ffi": "goud_renderer_draw_sprite_rect",

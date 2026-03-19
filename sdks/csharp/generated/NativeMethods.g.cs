@@ -698,6 +698,63 @@ namespace GoudEngine
         [return: MarshalAs(UnmanagedType.U1)]
         public static extern bool goud_renderer3d_render_all(GoudContextId context_id);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_renderer3d_create_material(GoudContextId context_id, int material_type, float r, float g, float b, float a, float shininess, float metallic, float roughness, float ao);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_update_material(GoudContextId context_id, uint material_id, int material_type, float r, float g, float b, float a, float shininess, float metallic, float roughness, float ao);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_remove_material(GoudContextId context_id, uint material_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_set_object_material(GoudContextId context_id, uint object_id, uint material_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_renderer3d_get_object_material(GoudContextId context_id, uint object_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_renderer3d_create_skinned_mesh(GoudContextId context_id, IntPtr vertices_ptr, uint vertex_count);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_remove_skinned_mesh(GoudContextId context_id, uint mesh_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_set_skinned_mesh_position(GoudContextId context_id, uint mesh_id, float x, float y, float z);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_set_skinned_mesh_rotation(GoudContextId context_id, uint mesh_id, float x, float y, float z);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_set_skinned_mesh_scale(GoudContextId context_id, uint mesh_id, float x, float y, float z);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_set_skinned_mesh_bones(GoudContextId context_id, uint mesh_id, IntPtr matrices_ptr, uint bone_count);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_add_bloom_pass(GoudContextId context_id, float threshold, float intensity);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_add_blur_pass(GoudContextId context_id, uint radius);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_add_color_grade_pass(GoudContextId context_id, float exposure, float contrast, float saturation);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_remove_postprocess_pass(GoudContextId context_id, uint index);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_renderer3d_postprocess_pass_count(GoudContextId context_id);
+
         // input
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]

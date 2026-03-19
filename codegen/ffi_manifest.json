@@ -2515,6 +2515,36 @@
       "return_type": "i32",
       "is_unsafe": true
     },
+    "goud_renderer3d_add_bloom_pass": {
+      "source_file": "ffi/renderer3d/postprocess.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "threshold: f32",
+        "intensity: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_add_blur_pass": {
+      "source_file": "ffi/renderer3d/postprocess.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "radius: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_add_color_grade_pass": {
+      "source_file": "ffi/renderer3d/postprocess.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "exposure: f32",
+        "contrast: f32",
+        "saturation: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_renderer3d_add_light": {
       "source_file": "ffi/renderer3d/lighting.rs",
       "params": [
@@ -2597,6 +2627,23 @@
       "return_type": "u32",
       "is_unsafe": false
     },
+    "goud_renderer3d_create_material": {
+      "source_file": "ffi/renderer3d/materials.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "material_type: i32",
+        "r: f32",
+        "g: f32",
+        "b: f32",
+        "a: f32",
+        "shininess: f32",
+        "metallic: f32",
+        "roughness: f32",
+        "ao: f32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
     "goud_renderer3d_create_plane": {
       "source_file": "ffi/renderer3d/primitives.rs",
       "params": [
@@ -2607,6 +2654,16 @@
       ],
       "return_type": "u32",
       "is_unsafe": false
+    },
+    "goud_renderer3d_create_skinned_mesh": {
+      "source_file": "ffi/renderer3d/skinned.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "vertices_ptr: *const f32",
+        "vertex_count: u32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
     },
     "goud_renderer3d_create_sphere": {
       "source_file": "ffi/renderer3d/primitives.rs",
@@ -2628,11 +2685,55 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_renderer3d_get_object_material": {
+      "source_file": "ffi/renderer3d/materials.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "object_id: u32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_postprocess_pass_count": {
+      "source_file": "ffi/renderer3d/postprocess.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
     "goud_renderer3d_remove_light": {
       "source_file": "ffi/renderer3d/lighting.rs",
       "params": [
         "context_id: GoudContextId",
         "light_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_remove_material": {
+      "source_file": "ffi/renderer3d/materials.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "material_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_remove_postprocess_pass": {
+      "source_file": "ffi/renderer3d/postprocess.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "index: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_remove_skinned_mesh": {
+      "source_file": "ffi/renderer3d/skinned.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "mesh_id: u32"
       ],
       "return_type": "bool",
       "is_unsafe": false
@@ -2693,6 +2794,16 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_renderer3d_set_object_material": {
+      "source_file": "ffi/renderer3d/materials.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "object_id: u32",
+        "material_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
     "goud_renderer3d_set_object_position": {
       "source_file": "ffi/renderer3d/primitives.rs",
       "params": [
@@ -2729,6 +2840,53 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_renderer3d_set_skinned_mesh_bones": {
+      "source_file": "ffi/renderer3d/skinned.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "mesh_id: u32",
+        "matrices_ptr: *const f32",
+        "bone_count: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_renderer3d_set_skinned_mesh_position": {
+      "source_file": "ffi/renderer3d/skinned.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "mesh_id: u32",
+        "x: f32",
+        "y: f32",
+        "z: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_skinned_mesh_rotation": {
+      "source_file": "ffi/renderer3d/skinned.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "mesh_id: u32",
+        "x: f32",
+        "y: f32",
+        "z: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_skinned_mesh_scale": {
+      "source_file": "ffi/renderer3d/skinned.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "mesh_id: u32",
+        "x: f32",
+        "y: f32",
+        "z: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
     "goud_renderer3d_update_light": {
       "source_file": "ffi/renderer3d/lighting.rs",
       "params": [
@@ -2747,6 +2905,24 @@
         "intensity: f32",
         "range: f32",
         "spot_angle: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_update_material": {
+      "source_file": "ffi/renderer3d/materials.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "material_id: u32",
+        "material_type: i32",
+        "r: f32",
+        "g: f32",
+        "b: f32",
+        "a: f32",
+        "shininess: f32",
+        "metallic: f32",
+        "roughness: f32",
+        "ao: f32"
       ],
       "return_type": "bool",
       "is_unsafe": false
@@ -4520,5 +4696,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 454
+  "total_count": 470
 }

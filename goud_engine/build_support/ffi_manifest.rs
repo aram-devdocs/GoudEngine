@@ -70,7 +70,10 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/renderer3d/camera.rs",
     "src/ffi/renderer3d/environment.rs",
     "src/ffi/renderer3d/lighting.rs",
+    "src/ffi/renderer3d/materials.rs",
+    "src/ffi/renderer3d/postprocess.rs",
     "src/ffi/renderer3d/primitives.rs",
+    "src/ffi/renderer3d/skinned.rs",
     // input module
     "src/ffi/input/keyboard.rs",
     "src/ffi/input/mouse.rs",

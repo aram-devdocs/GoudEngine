@@ -493,7 +493,23 @@
       "goud_renderer3d_render": {},
       "goud_renderer3d_render_all": {
         "alias_of": "goud_renderer3d_render"
-      }
+      },
+      "goud_renderer3d_create_material": {},
+      "goud_renderer3d_update_material": {},
+      "goud_renderer3d_remove_material": {},
+      "goud_renderer3d_set_object_material": {},
+      "goud_renderer3d_get_object_material": {},
+      "goud_renderer3d_create_skinned_mesh": {},
+      "goud_renderer3d_remove_skinned_mesh": {},
+      "goud_renderer3d_set_skinned_mesh_position": {},
+      "goud_renderer3d_set_skinned_mesh_rotation": {},
+      "goud_renderer3d_set_skinned_mesh_scale": {},
+      "goud_renderer3d_set_skinned_mesh_bones": {},
+      "goud_renderer3d_add_bloom_pass": {},
+      "goud_renderer3d_add_blur_pass": {},
+      "goud_renderer3d_add_color_grade_pass": {},
+      "goud_renderer3d_remove_postprocess_pass": {},
+      "goud_renderer3d_postprocess_pass_count": {}
     },
     "input": {
       "goud_input_key_pressed": {},

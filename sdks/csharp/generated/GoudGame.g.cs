@@ -647,18 +647,14 @@ namespace GoudEngine
             return NativeMethods.goud_renderer3d_render(_ctx);
         }
 
-        // ====================================================================
-        // Material System
-        // ====================================================================
-
         /// <summary>Creates a 3D material</summary>
-        public uint CreateMaterial(int materialType, float r, float g, float b, float a, float shininess, float metallic = 0f, float roughness = 0.5f, float ao = 1f)
+        public uint CreateMaterial(int materialType, float r, float g, float b, float a, float shininess, float metallic, float roughness, float ao)
         {
             return NativeMethods.goud_renderer3d_create_material(_ctx, materialType, r, g, b, a, shininess, metallic, roughness, ao);
         }
 
         /// <summary>Updates a 3D material</summary>
-        public bool UpdateMaterial(uint materialId, int materialType, float r, float g, float b, float a, float shininess, float metallic = 0f, float roughness = 0.5f, float ao = 1f)
+        public bool UpdateMaterial(uint materialId, int materialType, float r, float g, float b, float a, float shininess, float metallic, float roughness, float ao)
         {
             return NativeMethods.goud_renderer3d_update_material(_ctx, materialId, materialType, r, g, b, a, shininess, metallic, roughness, ao);
         }
@@ -681,20 +677,10 @@ namespace GoudEngine
             return NativeMethods.goud_renderer3d_get_object_material(_ctx, objectId);
         }
 
-        // ====================================================================
-        // Skinned Mesh
-        // ====================================================================
-
         /// <summary>Creates a skinned mesh from raw vertex data</summary>
-        public uint CreateSkinnedMesh(float[] vertices)
+        public uint CreateSkinnedMesh(IntPtr verticesPtr, uint vertexCount)
         {
-            unsafe
-            {
-                fixed (float* ptr = vertices)
-                {
-                    return NativeMethods.goud_renderer3d_create_skinned_mesh(_ctx, (IntPtr)ptr, (uint)vertices.Length);
-                }
-            }
+            return NativeMethods.goud_renderer3d_create_skinned_mesh(_ctx, verticesPtr, vertexCount);
         }
 
         /// <summary>Removes a skinned mesh</summary>
@@ -722,35 +708,25 @@ namespace GoudEngine
         }
 
         /// <summary>Updates bone matrices for a skinned mesh</summary>
-        public bool SetSkinnedMeshBones(uint meshId, float[] matrices, uint boneCount)
+        public bool SetSkinnedMeshBones(uint meshId, IntPtr matricesPtr, uint boneCount)
         {
-            unsafe
-            {
-                fixed (float* ptr = matrices)
-                {
-                    return NativeMethods.goud_renderer3d_set_skinned_mesh_bones(_ctx, meshId, (IntPtr)ptr, boneCount);
-                }
-            }
+            return NativeMethods.goud_renderer3d_set_skinned_mesh_bones(_ctx, meshId, matricesPtr, boneCount);
         }
 
-        // ====================================================================
-        // Post-Processing Pipeline
-        // ====================================================================
-
         /// <summary>Adds a bloom pass to the post-processing pipeline</summary>
-        public int AddBloomPass(float threshold = 0.8f, float intensity = 1.0f)
+        public int AddBloomPass(float threshold, float intensity)
         {
             return NativeMethods.goud_renderer3d_add_bloom_pass(_ctx, threshold, intensity);
         }
 
         /// <summary>Adds a Gaussian blur pass</summary>
-        public int AddBlurPass(uint radius = 2)
+        public int AddBlurPass(uint radius)
         {
             return NativeMethods.goud_renderer3d_add_blur_pass(_ctx, radius);
         }
 
         /// <summary>Adds a color grading pass</summary>
-        public int AddColorGradePass(float exposure = 1.0f, float contrast = 1.0f, float saturation = 1.0f)
+        public int AddColorGradePass(float exposure, float contrast, float saturation)
         {
             return NativeMethods.goud_renderer3d_add_color_grade_pass(_ctx, exposure, contrast, saturation);
         }
