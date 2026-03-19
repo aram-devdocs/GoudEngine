@@ -416,7 +416,7 @@ public final class GoudGame {
     /// Starts debugger-owned replay using previously exported recording bytes.
     public func startDebuggerReplay(recording: Data) {
         recording.withUnsafeBytes { recordingRawBuf in
-            let recordingBasePtr = recordingRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            let recordingBasePtr = recordingRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
             let _ = goud_debugger_start_replay(_ctx, recordingBasePtr, recording.count)
         }
     }
@@ -527,7 +527,7 @@ public final class GoudGame {
     /// Plays audio from raw bytes on the default channel
     public func audioPlay(data: Data) -> Int64 {
         data.withUnsafeBytes { dataRawBuf in
-            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
             return goud_audio_play(_ctx, dataBasePtr, data.count)
         }
     }
@@ -535,7 +535,7 @@ public final class GoudGame {
     /// Plays audio from raw bytes on the given channel
     public func audioPlayOnChannel(data: Data, channel: UInt8) -> Int64 {
         data.withUnsafeBytes { dataRawBuf in
-            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
             return goud_audio_play_on_channel(_ctx, dataBasePtr, data.count, channel)
         }
     }
@@ -543,7 +543,7 @@ public final class GoudGame {
     /// Plays audio with explicit volume, speed, looping, and channel settings
     public func audioPlayWithSettings(data: Data, volume: Float, speed: Float, looping: Bool, channel: UInt8) -> Int64 {
         data.withUnsafeBytes { dataRawBuf in
-            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
             return goud_audio_play_with_settings(_ctx, dataBasePtr, data.count, volume, speed, looping, channel)
         }
     }
@@ -606,7 +606,7 @@ public final class GoudGame {
     /// Plays audio with 3D spatial attenuation
     public func audioPlaySpatial3d(data: Data, sourceX: Float, sourceY: Float, sourceZ: Float, listenerX: Float, listenerY: Float, listenerZ: Float, maxDistance: Float, rolloff: Float) -> Int64 {
         data.withUnsafeBytes { dataRawBuf in
-            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
             return goud_audio_play_spatial_3d(_ctx, dataBasePtr, data.count, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff)
         }
     }
@@ -644,7 +644,7 @@ public final class GoudGame {
     /// Starts a timed crossfade from one player to a new audio asset
     public func audioCrossfadeTo(fromPlayerId: UInt64, data: Data, durationSec: Float, channel: UInt8) -> Int64 {
         data.withUnsafeBytes { dataRawBuf in
-            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
             return goud_audio_crossfade_to(_ctx, fromPlayerId, dataBasePtr, data.count, durationSec, channel)
         }
     }
@@ -652,7 +652,7 @@ public final class GoudGame {
     /// Mixes a secondary audio asset with a primary player
     public func audioMixWith(primaryPlayerId: UInt64, data: Data, secondaryVolume: Float, secondaryChannel: UInt8) -> Int64 {
         data.withUnsafeBytes { dataRawBuf in
-            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
             return goud_audio_mix_with(_ctx, primaryPlayerId, dataBasePtr, data.count, secondaryVolume, secondaryChannel)
         }
     }

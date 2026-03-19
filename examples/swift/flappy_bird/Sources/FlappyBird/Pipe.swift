@@ -56,7 +56,7 @@ final class Pipe {
         // Top pipe collision
         if checkAABB(
             x1: birdX, y1: birdY, w1: birdWidth, h1: birdHeight,
-            x2: x, y2: topPipeY, w2: Pipe.pipeWidth, h2: Pipe.pipeHeight
+            x2: x, y2: topPipeY, w2: GameConstants.pipeWidth, h2: Pipe.pipeHeight
         ) {
             return true
         }
@@ -64,7 +64,7 @@ final class Pipe {
         // Bottom pipe collision
         if checkAABB(
             x1: birdX, y1: birdY, w1: birdWidth, h1: birdHeight,
-            x2: x, y2: bottomPipeY, w2: Pipe.pipeWidth, h2: Pipe.pipeHeight
+            x2: x, y2: bottomPipeY, w2: GameConstants.pipeWidth, h2: Pipe.pipeHeight
         ) {
             return true
         }

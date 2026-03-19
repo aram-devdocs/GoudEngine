@@ -419,8 +419,8 @@ def _gen_method(tool_name: str, m: dict, ffi_name: str, handle_var: str) -> list
         dpname = _sc(dp["name"])
         lines.append(f"{indent}{dpname}.withUnsafeBytes {{ {dpname}RawBuf in")
         lines.append(
-            f"{indent}    let {dpname}BasePtr = {dpname}RawBuf.baseAddress!"
-            f".assumingMemoryBound(to: UInt8.self)"
+            f"{indent}    let {dpname}BasePtr = {dpname}RawBuf.baseAddress?"
+            f".assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!"
         )
         indent += "    "
 
@@ -606,8 +606,8 @@ def _gen_method_simple(
         dpname = _sc(dp["name"])
         lines.append(f"{indent}{dpname}.withUnsafeBytes {{ {dpname}RawBuf in")
         lines.append(
-            f"{indent}    let {dpname}BasePtr = {dpname}RawBuf.baseAddress!"
-            f".assumingMemoryBound(to: UInt8.self)"
+            f"{indent}    let {dpname}BasePtr = {dpname}RawBuf.baseAddress?"
+            f".assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!"
         )
         indent += "    "
     for ap in array_params:
@@ -662,8 +662,8 @@ def _emit_unsafe_wrapping(
         dpname = _sc(dp["name"])
         lines.append(f"{indent}{dpname}.withUnsafeBytes {{ {dpname}RawBuf in")
         lines.append(
-            f"{indent}    let {dpname}BasePtr = {dpname}RawBuf.baseAddress!"
-            f".assumingMemoryBound(to: UInt8.self)"
+            f"{indent}    let {dpname}BasePtr = {dpname}RawBuf.baseAddress?"
+            f".assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!"
         )
         indent += "    "
     for ap in array_params:
