@@ -351,7 +351,7 @@
   "ctypes_mappings": {
     "*mut GoudContact": "ctypes.POINTER(GoudContact)",
     "*mut GoudRenderStats": "ctypes.POINTER(GoudRenderStats)",
-    "*mut FpsStats": "ctypes.POINTER(GoudFpsStats)",
+    "*mut FpsStats": "ctypes.POINTER(FpsStats)",
     "*const u64": "ctypes.POINTER(ctypes.c_uint64)",
     "*mut u64": "ctypes.POINTER(ctypes.c_uint64)",
     "*mut u8": "ctypes.POINTER(ctypes.c_uint8)",
