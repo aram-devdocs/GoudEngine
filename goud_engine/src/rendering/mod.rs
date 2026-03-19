@@ -14,4 +14,7 @@ pub use text::TextRenderSystem;
 #[cfg(any(feature = "native", test))]
 pub(crate) use ui_render_system::ensure_ui_asset_loaders;
 pub use ui_render_system::{UiRenderStats, UiRenderSystem};
-pub use viewport::{compute_render_viewport, RenderViewport, ViewportScaleMode};
+pub use viewport::{
+    compute_render_viewport, compute_render_viewport_with_aspect_lock, AspectRatioLock,
+    RenderViewport, ViewportScaleMode,
+};

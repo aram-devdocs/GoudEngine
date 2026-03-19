@@ -65,6 +65,9 @@ pub struct GlfwPlatform {
     last_frame_time: f64,
     width: u32,
     height: u32,
+    fullscreen_mode: super::FullscreenMode,
+    /// Saved window position/size before entering fullscreen, for restore.
+    pre_fullscreen_rect: Option<(i32, i32, u32, u32)>,
 }
 
 /// Creates a GLFW platform with an OpenGL 3.3 Core window.
@@ -119,14 +122,23 @@ impl GlfwPlatform {
 
         let last_frame_time = glfw.get_time();
 
-        Ok(Self {
+        let mut platform = Self {
             glfw,
             window,
             events,
             last_frame_time,
             width: config.width,
             height: config.height,
-        })
+            fullscreen_mode: super::FullscreenMode::Windowed,
+            pre_fullscreen_rect: None,
+        };
+
+        // Apply initial fullscreen mode from config.
+        if config.fullscreen_mode != super::FullscreenMode::Windowed {
+            platform.set_fullscreen(config.fullscreen_mode);
+        }
+
+        Ok(platform)
     }
 }
 
@@ -213,5 +225,49 @@ impl PlatformBackend for GlfwPlatform {
     fn get_framebuffer_size(&self) -> (u32, u32) {
         let (w, h) = self.window.get_framebuffer_size();
         (w as u32, h as u32)
+    }
+
+    fn set_fullscreen(&mut self, mode: super::FullscreenMode) -> bool {
+        match mode {
+            super::FullscreenMode::Windowed => {
+                if let Some((x, y, w, h)) = self.pre_fullscreen_rect.take() {
+                    self.window
+                        .set_monitor(WindowMode::Windowed, x, y, w, h, None);
+                    self.width = w;
+                    self.height = h;
+                }
+                self.fullscreen_mode = super::FullscreenMode::Windowed;
+                true
+            }
+            super::FullscreenMode::Borderless | super::FullscreenMode::Exclusive => {
+                // Save current window position and size for later restore.
+                let (x, y) = self.window.get_pos();
+                let (w, h) = self.window.get_size();
+                self.pre_fullscreen_rect = Some((x, y, w as u32, h as u32));
+
+                self.glfw.with_primary_monitor(|_, monitor| {
+                    if let Some(monitor) = monitor {
+                        if let Some(vid_mode) = monitor.get_video_mode() {
+                            self.window.set_monitor(
+                                WindowMode::FullScreen(monitor),
+                                0,
+                                0,
+                                vid_mode.width,
+                                vid_mode.height,
+                                Some(vid_mode.refresh_rate),
+                            );
+                            self.width = vid_mode.width;
+                            self.height = vid_mode.height;
+                        }
+                    }
+                });
+                self.fullscreen_mode = mode;
+                true
+            }
+        }
+    }
+
+    fn get_fullscreen(&self) -> super::FullscreenMode {
+        self.fullscreen_mode
     }
 }

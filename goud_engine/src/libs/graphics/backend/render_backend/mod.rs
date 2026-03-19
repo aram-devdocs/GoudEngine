@@ -100,3 +100,29 @@ pub trait RenderBackend:
         &self.info().capabilities
     }
 }
+
+/// Marker trait bridging the "render provider" naming to the existing
+/// [`RenderBackend`] trait. Any type implementing `RenderBackend` is
+/// automatically a `RenderProvider`.
+pub trait RenderProvider: RenderBackend {}
+impl<T: RenderBackend> RenderProvider for T {}
+
+#[cfg(test)]
+mod tests {
+    /// Compile-time verification that RenderProvider is automatically
+    /// satisfied by any RenderBackend implementor.
+    fn _assert_render_provider_blanket<T: super::RenderBackend>() {
+        fn _requires_provider<U: super::RenderProvider>() {}
+        _requires_provider::<T>();
+    }
+
+    /// When the `legacy-glfw-opengl` feature is enabled, verify at compile
+    /// time that `OpenGLBackend` satisfies `RenderBackend` (and therefore
+    /// `RenderProvider` via the blanket impl).
+    #[cfg(feature = "legacy-glfw-opengl")]
+    #[test]
+    fn opengl_backend_implements_render_backend() {
+        fn _assert_impl<T: super::RenderBackend + super::RenderProvider>() {}
+        _assert_impl::<crate::libs::graphics::backend::opengl::OpenGLBackend>();
+    }
+}

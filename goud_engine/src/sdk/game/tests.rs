@@ -7,7 +7,7 @@ use crate::core::providers::input_types::{KeyCode as Key, MouseButton};
 use crate::sdk::components::{GlobalTransform2D, Transform2D};
 use crate::sdk::engine_config::EngineConfig;
 use crate::sdk::game::GoudGame;
-use crate::sdk::game_config::{GameConfig, RenderBackendKind, WindowBackendKind};
+use crate::sdk::game_config::{FullscreenMode, GameConfig, RenderBackendKind, WindowBackendKind};
 use crate::ui::{UiAnchor, UiButton, UiComponent, UiImage, UiLabel, UiManager, UiRenderCommand};
 
 #[test]
@@ -288,7 +288,7 @@ fn test_goud_game_from_engine_config_preserves_settings() {
     assert_eq!(game.config().title, "Settings Test");
     assert_eq!(game.window_size(), (640, 480));
     assert!(!game.config().vsync);
-    assert!(game.config().fullscreen);
+    assert_eq!(game.config().fullscreen_mode, FullscreenMode::Borderless);
     assert_eq!(game.config().target_fps, 120);
 }
 
