@@ -8,7 +8,7 @@ public final class EngineConfigNative {
     public static native boolean setTitle(long configHandle, String title);
     public static native boolean setSize(long configHandle, int width, int height);
     public static native boolean setVsync(long configHandle, boolean enabled);
-    public static native boolean setFullscreen(long configHandle, boolean enabled);
+    public static native boolean setFullscreen(long configHandle, int mode);
     public static native boolean setTargetFps(long configHandle, int fps);
     public static native boolean setFpsOverlay(long configHandle, boolean enabled);
     public static native boolean setPhysicsDebug(long configHandle, boolean enabled);

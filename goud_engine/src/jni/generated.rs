@@ -14,53 +14,33 @@ use crate::ffi::*;
 use jni::objects::{JByteArray, JClass, JLongArray, JObject, JString};
 use jni::sys::{jboolean, jbyteArray, jdouble, jfloat, jint, jlong, jlongArray, jobject, jstring};
 
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-struct FfiPhysicsCollisionEvent2D {
-    body_a: u64,
-    body_b: u64,
-    kind: u32,
-}
-
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-struct FfiPhysicsRaycastHit2D {
-    body_handle: u64,
-    collider_handle: u64,
-    point_x: f32,
-    point_y: f32,
-    normal_x: f32,
-    normal_y: f32,
-    distance: f32,
-}
-
-pub(crate) fn set_AudioCapabilities_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::types::AudioCapabilities) -> crate::jni::helpers::JniCallResult<()> {
+pub(crate) fn set_AudioCapabilities_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::types::capabilities::AudioCapabilities) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
     crate::jni::helpers::set_boolean_field(env, obj, "supportsSpatial", value.supports_spatial)?;
     crate::jni::helpers::set_int_field(env, obj, "maxChannels", value.max_channels as i32)?;
     Ok(())
 }
 
-pub(crate) fn new_AudioCapabilities<'local>(env: &mut jni::JNIEnv<'local>, value: crate::core::providers::types::AudioCapabilities) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
+pub(crate) fn new_AudioCapabilities<'local>(env: &mut jni::JNIEnv<'local>, value: crate::core::providers::types::capabilities::AudioCapabilities) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
     let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/AudioCapabilities")?;
     set_AudioCapabilities_fields(env, &obj, value)?;
     Ok(obj)
 }
 
-pub(crate) fn read_AudioCapabilities<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<crate::core::providers::types::AudioCapabilities> {
+pub(crate) fn read_AudioCapabilities<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<crate::core::providers::types::capabilities::AudioCapabilities> {
     if obj.is_null() {
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
     let field_supportsSpatial = crate::jni::helpers::get_boolean_field(env, obj, "supportsSpatial")?;
     let field_maxChannels = crate::jni::helpers::get_int_field(env, obj, "maxChannels")? as _;
-    Ok(crate::core::providers::types::AudioCapabilities {
+    Ok(crate::core::providers::types::capabilities::AudioCapabilities {
         supports_spatial: field_supportsSpatial,
         max_channels: field_maxChannels,
     })
 }
 
-pub(crate) fn write_back_AudioCapabilities<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::types::AudioCapabilities) -> crate::jni::helpers::JniCallResult<()> {
+pub(crate) fn write_back_AudioCapabilities<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::types::capabilities::AudioCapabilities) -> crate::jni::helpers::JniCallResult<()> {
     set_AudioCapabilities_fields(env, obj, value)
 }
 
@@ -461,7 +441,7 @@ pub(crate) fn write_back_NetworkStats<'local>(env: &mut jni::JNIEnv<'local>, obj
     set_NetworkStats_fields(env, obj, value)
 }
 
-pub(crate) fn set_PhysicsCapabilities_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::types::PhysicsCapabilities) -> crate::jni::helpers::JniCallResult<()> {
+pub(crate) fn set_PhysicsCapabilities_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::types::capabilities::PhysicsCapabilities) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
     crate::jni::helpers::set_boolean_field(env, obj, "supportsContinuousCollision", value.supports_continuous_collision)?;
     crate::jni::helpers::set_boolean_field(env, obj, "supportsJoints", value.supports_joints)?;
@@ -469,13 +449,13 @@ pub(crate) fn set_PhysicsCapabilities_fields<'local>(env: &mut jni::JNIEnv<'loca
     Ok(())
 }
 
-pub(crate) fn new_PhysicsCapabilities<'local>(env: &mut jni::JNIEnv<'local>, value: crate::core::providers::types::PhysicsCapabilities) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
+pub(crate) fn new_PhysicsCapabilities<'local>(env: &mut jni::JNIEnv<'local>, value: crate::core::providers::types::capabilities::PhysicsCapabilities) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
     let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/PhysicsCapabilities")?;
     set_PhysicsCapabilities_fields(env, &obj, value)?;
     Ok(obj)
 }
 
-pub(crate) fn read_PhysicsCapabilities<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<crate::core::providers::types::PhysicsCapabilities> {
+pub(crate) fn read_PhysicsCapabilities<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<crate::core::providers::types::capabilities::PhysicsCapabilities> {
     if obj.is_null() {
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
@@ -483,18 +463,18 @@ pub(crate) fn read_PhysicsCapabilities<'local>(env: &mut jni::JNIEnv<'local>, ob
     let field_supportsContinuousCollision = crate::jni::helpers::get_boolean_field(env, obj, "supportsContinuousCollision")?;
     let field_supportsJoints = crate::jni::helpers::get_boolean_field(env, obj, "supportsJoints")?;
     let field_maxBodies = crate::jni::helpers::get_int_field(env, obj, "maxBodies")? as _;
-    Ok(crate::core::providers::types::PhysicsCapabilities {
+    Ok(crate::core::providers::types::capabilities::PhysicsCapabilities {
         supports_continuous_collision: field_supportsContinuousCollision,
         supports_joints: field_supportsJoints,
         max_bodies: field_maxBodies,
     })
 }
 
-pub(crate) fn write_back_PhysicsCapabilities<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::types::PhysicsCapabilities) -> crate::jni::helpers::JniCallResult<()> {
+pub(crate) fn write_back_PhysicsCapabilities<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::types::capabilities::PhysicsCapabilities) -> crate::jni::helpers::JniCallResult<()> {
     set_PhysicsCapabilities_fields(env, obj, value)
 }
 
-pub(crate) fn set_PhysicsCollisionEvent2D_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: FfiPhysicsCollisionEvent2D) -> crate::jni::helpers::JniCallResult<()> {
+pub(crate) fn set_PhysicsCollisionEvent2D_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: PhysicsCollisionEvent2D) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
     crate::jni::helpers::set_long_field(env, obj, "bodyA", value.body_a as i64)?;
     crate::jni::helpers::set_long_field(env, obj, "bodyB", value.body_b as i64)?;
@@ -502,13 +482,13 @@ pub(crate) fn set_PhysicsCollisionEvent2D_fields<'local>(env: &mut jni::JNIEnv<'
     Ok(())
 }
 
-pub(crate) fn new_PhysicsCollisionEvent2D<'local>(env: &mut jni::JNIEnv<'local>, value: FfiPhysicsCollisionEvent2D) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
+pub(crate) fn new_PhysicsCollisionEvent2D<'local>(env: &mut jni::JNIEnv<'local>, value: PhysicsCollisionEvent2D) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
     let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/PhysicsCollisionEvent2D")?;
     set_PhysicsCollisionEvent2D_fields(env, &obj, value)?;
     Ok(obj)
 }
 
-pub(crate) fn read_PhysicsCollisionEvent2D<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<FfiPhysicsCollisionEvent2D> {
+pub(crate) fn read_PhysicsCollisionEvent2D<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<PhysicsCollisionEvent2D> {
     if obj.is_null() {
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
@@ -516,18 +496,18 @@ pub(crate) fn read_PhysicsCollisionEvent2D<'local>(env: &mut jni::JNIEnv<'local>
     let field_bodyA = crate::jni::helpers::get_long_field(env, obj, "bodyA")? as u64;
     let field_bodyB = crate::jni::helpers::get_long_field(env, obj, "bodyB")? as u64;
     let field_kind = crate::jni::helpers::get_int_field(env, obj, "kind")? as _;
-    Ok(FfiPhysicsCollisionEvent2D {
+    Ok(PhysicsCollisionEvent2D {
         body_a: field_bodyA,
         body_b: field_bodyB,
         kind: field_kind,
     })
 }
 
-pub(crate) fn write_back_PhysicsCollisionEvent2D<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: FfiPhysicsCollisionEvent2D) -> crate::jni::helpers::JniCallResult<()> {
+pub(crate) fn write_back_PhysicsCollisionEvent2D<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: PhysicsCollisionEvent2D) -> crate::jni::helpers::JniCallResult<()> {
     set_PhysicsCollisionEvent2D_fields(env, obj, value)
 }
 
-pub(crate) fn set_PhysicsRaycastHit2D_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: FfiPhysicsRaycastHit2D) -> crate::jni::helpers::JniCallResult<()> {
+pub(crate) fn set_PhysicsRaycastHit2D_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: PhysicsRaycastHit2D) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
     crate::jni::helpers::set_long_field(env, obj, "bodyHandle", value.body_handle as i64)?;
     crate::jni::helpers::set_long_field(env, obj, "colliderHandle", value.collider_handle as i64)?;
@@ -539,13 +519,13 @@ pub(crate) fn set_PhysicsRaycastHit2D_fields<'local>(env: &mut jni::JNIEnv<'loca
     Ok(())
 }
 
-pub(crate) fn new_PhysicsRaycastHit2D<'local>(env: &mut jni::JNIEnv<'local>, value: FfiPhysicsRaycastHit2D) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
+pub(crate) fn new_PhysicsRaycastHit2D<'local>(env: &mut jni::JNIEnv<'local>, value: PhysicsRaycastHit2D) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
     let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/PhysicsRaycastHit2D")?;
     set_PhysicsRaycastHit2D_fields(env, &obj, value)?;
     Ok(obj)
 }
 
-pub(crate) fn read_PhysicsRaycastHit2D<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<FfiPhysicsRaycastHit2D> {
+pub(crate) fn read_PhysicsRaycastHit2D<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<PhysicsRaycastHit2D> {
     if obj.is_null() {
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
@@ -557,7 +537,7 @@ pub(crate) fn read_PhysicsRaycastHit2D<'local>(env: &mut jni::JNIEnv<'local>, ob
     let field_normalX = crate::jni::helpers::get_float_field(env, obj, "normalX")? as _;
     let field_normalY = crate::jni::helpers::get_float_field(env, obj, "normalY")? as _;
     let field_distance = crate::jni::helpers::get_float_field(env, obj, "distance")? as _;
-    Ok(FfiPhysicsRaycastHit2D {
+    Ok(PhysicsRaycastHit2D {
         body_handle: field_bodyHandle,
         collider_handle: field_colliderHandle,
         point_x: field_pointX,
@@ -568,7 +548,7 @@ pub(crate) fn read_PhysicsRaycastHit2D<'local>(env: &mut jni::JNIEnv<'local>, ob
     })
 }
 
-pub(crate) fn write_back_PhysicsRaycastHit2D<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: FfiPhysicsRaycastHit2D) -> crate::jni::helpers::JniCallResult<()> {
+pub(crate) fn write_back_PhysicsRaycastHit2D<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: PhysicsRaycastHit2D) -> crate::jni::helpers::JniCallResult<()> {
     set_PhysicsRaycastHit2D_fields(env, obj, value)
 }
 
@@ -608,7 +588,7 @@ pub(crate) fn write_back_Rect<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::
     set_Rect_fields(env, obj, value)
 }
 
-pub(crate) fn set_RenderCapabilities_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::types::RenderCapabilities) -> crate::jni::helpers::JniCallResult<()> {
+pub(crate) fn set_RenderCapabilities_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::types::capabilities::RenderCapabilities) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
     crate::jni::helpers::set_int_field(env, obj, "maxTextureUnits", value.max_texture_units as i32)?;
     crate::jni::helpers::set_int_field(env, obj, "maxTextureSize", value.max_texture_size as i32)?;
@@ -618,13 +598,13 @@ pub(crate) fn set_RenderCapabilities_fields<'local>(env: &mut jni::JNIEnv<'local
     Ok(())
 }
 
-pub(crate) fn new_RenderCapabilities<'local>(env: &mut jni::JNIEnv<'local>, value: crate::core::providers::types::RenderCapabilities) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
+pub(crate) fn new_RenderCapabilities<'local>(env: &mut jni::JNIEnv<'local>, value: crate::core::providers::types::capabilities::RenderCapabilities) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
     let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/RenderCapabilities")?;
     set_RenderCapabilities_fields(env, &obj, value)?;
     Ok(obj)
 }
 
-pub(crate) fn read_RenderCapabilities<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<crate::core::providers::types::RenderCapabilities> {
+pub(crate) fn read_RenderCapabilities<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<crate::core::providers::types::capabilities::RenderCapabilities> {
     if obj.is_null() {
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
@@ -634,7 +614,7 @@ pub(crate) fn read_RenderCapabilities<'local>(env: &mut jni::JNIEnv<'local>, obj
     let field_supportsInstancing = crate::jni::helpers::get_boolean_field(env, obj, "supportsInstancing")?;
     let field_supportsCompute = crate::jni::helpers::get_boolean_field(env, obj, "supportsCompute")?;
     let field_supportsMsaa = crate::jni::helpers::get_boolean_field(env, obj, "supportsMsaa")?;
-    Ok(crate::core::providers::types::RenderCapabilities {
+    Ok(crate::core::providers::types::capabilities::RenderCapabilities {
         max_texture_units: field_maxTextureUnits,
         max_texture_size: field_maxTextureSize,
         supports_instancing: field_supportsInstancing,
@@ -643,7 +623,7 @@ pub(crate) fn read_RenderCapabilities<'local>(env: &mut jni::JNIEnv<'local>, obj
     })
 }
 
-pub(crate) fn write_back_RenderCapabilities<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::types::RenderCapabilities) -> crate::jni::helpers::JniCallResult<()> {
+pub(crate) fn write_back_RenderCapabilities<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::types::capabilities::RenderCapabilities) -> crate::jni::helpers::JniCallResult<()> {
     set_RenderCapabilities_fields(env, obj, value)
 }
 
@@ -1058,7 +1038,7 @@ pub(crate) fn write_back_Vec2<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::
     set_Vec2_fields(env, obj, value)
 }
 
-pub(crate) fn set_Vec3_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::math::Vec3) -> crate::jni::helpers::JniCallResult<()> {
+pub(crate) fn set_Vec3_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: Vec3) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
     crate::jni::helpers::set_float_field(env, obj, "x", value.x)?;
     crate::jni::helpers::set_float_field(env, obj, "y", value.y)?;
@@ -1066,13 +1046,13 @@ pub(crate) fn set_Vec3_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::
     Ok(())
 }
 
-pub(crate) fn new_Vec3<'local>(env: &mut jni::JNIEnv<'local>, value: crate::core::math::Vec3) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
+pub(crate) fn new_Vec3<'local>(env: &mut jni::JNIEnv<'local>, value: Vec3) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
     let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/Vec3")?;
     set_Vec3_fields(env, &obj, value)?;
     Ok(obj)
 }
 
-pub(crate) fn read_Vec3<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<crate::core::math::Vec3> {
+pub(crate) fn read_Vec3<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<Vec3> {
     if obj.is_null() {
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
@@ -1080,14 +1060,14 @@ pub(crate) fn read_Vec3<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::object
     let field_x = crate::jni::helpers::get_float_field(env, obj, "x")? as _;
     let field_y = crate::jni::helpers::get_float_field(env, obj, "y")? as _;
     let field_z = crate::jni::helpers::get_float_field(env, obj, "z")? as _;
-    Ok(crate::core::math::Vec3 {
+    Ok(Vec3 {
         x: field_x,
         y: field_y,
         z: field_z,
     })
 }
 
-pub(crate) fn write_back_Vec3<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::math::Vec3) -> crate::jni::helpers::JniCallResult<()> {
+pub(crate) fn write_back_Vec3<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: Vec3) -> crate::jni::helpers::JniCallResult<()> {
     set_Vec3_fields(env, obj, value)
 }
 
@@ -3081,6 +3061,315 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_render3D<'loc
 
 #[allow(non_snake_case)]
 #[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_createMaterial<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    materialType: jni::sys::jint,
+    r: jni::sys::jfloat,
+    g: jni::sys::jfloat,
+    b: jni::sys::jfloat,
+    a: jni::sys::jfloat,
+    shininess: jni::sys::jfloat,
+    metallic: jni::sys::jfloat,
+    roughness: jni::sys::jfloat,
+    ao: jni::sys::jfloat,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_createMaterial", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_create_material(goud_context_id_from_jlong(contextId), materialType as _, r as _, g as _, b as _, a as _, shininess as _, metallic as _, roughness as _, ao as _);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_create_material", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_updateMaterial<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    materialId: jni::sys::jint,
+    materialType: jni::sys::jint,
+    r: jni::sys::jfloat,
+    g: jni::sys::jfloat,
+    b: jni::sys::jfloat,
+    a: jni::sys::jfloat,
+    shininess: jni::sys::jfloat,
+    metallic: jni::sys::jfloat,
+    roughness: jni::sys::jfloat,
+    ao: jni::sys::jfloat,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_updateMaterial", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_update_material(goud_context_id_from_jlong(contextId), materialId as _, materialType as _, r as _, g as _, b as _, a as _, shininess as _, metallic as _, roughness as _, ao as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_update_material", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_removeMaterial<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    materialId: jni::sys::jint,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_removeMaterial", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_remove_material(goud_context_id_from_jlong(contextId), materialId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_remove_material", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setObjectMaterial<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    objectId: jni::sys::jint,
+    materialId: jni::sys::jint,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_setObjectMaterial", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_set_object_material(goud_context_id_from_jlong(contextId), objectId as _, materialId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_set_object_material", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getObjectMaterial<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    objectId: jni::sys::jint,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_getObjectMaterial", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_get_object_material(goud_context_id_from_jlong(contextId), objectId as _);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_get_object_material", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_removeSkinnedMesh<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    meshId: jni::sys::jint,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_removeSkinnedMesh", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_remove_skinned_mesh(goud_context_id_from_jlong(contextId), meshId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_remove_skinned_mesh", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setSkinnedMeshPosition<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    meshId: jni::sys::jint,
+    x: jni::sys::jfloat,
+    y: jni::sys::jfloat,
+    z: jni::sys::jfloat,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_setSkinnedMeshPosition", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_set_skinned_mesh_position(goud_context_id_from_jlong(contextId), meshId as _, x as _, y as _, z as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_set_skinned_mesh_position", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setSkinnedMeshRotation<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    meshId: jni::sys::jint,
+    x: jni::sys::jfloat,
+    y: jni::sys::jfloat,
+    z: jni::sys::jfloat,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_setSkinnedMeshRotation", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_set_skinned_mesh_rotation(goud_context_id_from_jlong(contextId), meshId as _, x as _, y as _, z as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_set_skinned_mesh_rotation", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setSkinnedMeshScale<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    meshId: jni::sys::jint,
+    x: jni::sys::jfloat,
+    y: jni::sys::jfloat,
+    z: jni::sys::jfloat,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_setSkinnedMeshScale", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_set_skinned_mesh_scale(goud_context_id_from_jlong(contextId), meshId as _, x as _, y as _, z as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_set_skinned_mesh_scale", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_addBloomPass<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    threshold: jni::sys::jfloat,
+    intensity: jni::sys::jfloat,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_addBloomPass", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_add_bloom_pass(goud_context_id_from_jlong(contextId), threshold as _, intensity as _);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_add_bloom_pass", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_addBlurPass<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    radius: jni::sys::jint,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_addBlurPass", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_add_blur_pass(goud_context_id_from_jlong(contextId), radius as _);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_add_blur_pass", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_addColorGradePass<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    exposure: jni::sys::jfloat,
+    contrast: jni::sys::jfloat,
+    saturation: jni::sys::jfloat,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_addColorGradePass", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_add_color_grade_pass(goud_context_id_from_jlong(contextId), exposure as _, contrast as _, saturation as _);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_add_color_grade_pass", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_removePostprocessPass<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    index: jni::sys::jint,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_removePostprocessPass", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_remove_postprocess_pass(goud_context_id_from_jlong(contextId), index as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_remove_postprocess_pass", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_postprocessPassCount<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_postprocessPassCount", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_postprocess_pass_count(goud_context_id_from_jlong(contextId));
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_postprocess_pass_count", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_drawSpriteRect<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
@@ -4146,7 +4435,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_physicsRaycas
             if status == 0 {
                 return Ok(crate::jni::helpers::null_object());
             }
-            let value = FfiPhysicsRaycastHit2D {
+            let value = PhysicsRaycastHit2D {
                 body_handle: out_body_handle,
                 collider_handle: out_collider_handle,
                 point_x: out_point_x,
@@ -4234,7 +4523,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_physicsCollis
             if status == 0 {
                 return Ok(crate::jni::helpers::null_object());
             }
-            let value = FfiPhysicsCollisionEvent2D {
+            let value = PhysicsCollisionEvent2D {
                 body_a: out_body_a,
                 body_b: out_body_b,
                 kind: out_kind,
@@ -5533,13 +5822,13 @@ pub extern "system" fn Java_com_goudengine_internal_EngineConfigNative_setFullsc
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
     configHandle: jni::sys::jlong,
-    enabled: jni::sys::jboolean,
+    mode: jni::sys::jint,
 ) -> jni::sys::jboolean {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_EngineConfigNative_setFullscreen", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
             let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
-        crate::ffi::engine_config::goud_engine_config_set_fullscreen(configHandle as usize as *mut std::ffi::c_void, if enabled != 0 { 1u32 } else { 0u32 })
+        crate::ffi::engine_config::goud_engine_config_set_fullscreen(configHandle as usize as *mut std::ffi::c_void, mode as _)
     };
             if !result && crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_engine_config_set_fullscreen", None);
@@ -8499,7 +8788,7 @@ pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld2DNative_raycast
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_physics_raycast_ex", None);
                 return Err(());
             }
-            let value = FfiPhysicsRaycastHit2D {
+            let value = PhysicsRaycastHit2D {
                 body_handle: out_body_handle,
                 collider_handle: out_collider_handle,
                 point_x: out_point_x,
@@ -8584,7 +8873,7 @@ pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld2DNative_collisi
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_physics_collision_events_read", None);
                 return Err(());
             }
-            let value = FfiPhysicsCollisionEvent2D {
+            let value = PhysicsCollisionEvent2D {
                 body_a: out_body_a,
                 body_b: out_body_b,
                 kind: out_kind,
@@ -8660,7 +8949,7 @@ pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld2DNative_collisi
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_physics_collision_event_read", None);
                 return Err(());
             }
-            let value = FfiPhysicsCollisionEvent2D {
+            let value = PhysicsCollisionEvent2D {
                 body_a: out_body_a,
                 body_b: out_body_b,
                 kind: out_kind,
@@ -9444,7 +9733,7 @@ pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld3DNative_getPosi
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_physics3d_get_position", None);
                 return Err(());
             }
-            let value = crate::core::math::Vec3 {
+            let value = Vec3 {
                 x: out_x,
                 y: out_y,
                 z: out_z,
@@ -9607,7 +9896,7 @@ pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld3DNative_getGrav
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_physics3d_get_gravity", None);
                 return Err(());
             }
-            let value = crate::core::math::Vec3 {
+            let value = Vec3 {
                 x: out_x,
                 y: out_y,
                 z: out_z,

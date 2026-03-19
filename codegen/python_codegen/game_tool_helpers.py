@@ -379,7 +379,7 @@ def _emit_out_buffer_method(mmap: dict, params: list[dict], lines: list[str], us
     status_nullable_struct = bool(mmap.get("status_nullable_struct"))
 
     if not no_ctx:
-        lines.append("        _caps = _ffi_module.FfiNetworkCapabilities()")
+        lines.append("        _caps = _ffi_module.NetworkCapabilities()")
         lines.append("        self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_caps))")
         lines.append("        _buf_len = int(_caps.max_message_size) if _caps.max_message_size else 65536")
     else:

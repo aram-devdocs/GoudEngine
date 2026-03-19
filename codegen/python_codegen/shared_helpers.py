@@ -164,7 +164,12 @@ def ffi_uses_ptr_len(ffi_name: str) -> bool:
 
 
 def py_out_var_ctype(raw_type: str) -> str:
-    """Resolve an out-param type to the ctypes declaration type."""
+    """Resolve an out-param type to the ctypes declaration type.
+
+    Value types whose ffi_name matches the SDK name are qualified with
+    ``_ffi_module.`` so they resolve to the ctypes.Structure class
+    rather than the SDK wrapper class (which may shadow the name).
+    """
     if raw_type in schema.get("enums", {}):
         underlying = schema["enums"][raw_type].get("underlying", "i32")
         return CTYPES_MAP.get(underlying, "ctypes.c_int32")
@@ -172,6 +177,10 @@ def py_out_var_ctype(raw_type: str) -> str:
         ffi_info = mapping.get("ffi_types", {}).get(raw_type, {})
         ffi_name = ffi_info.get("ffi_name")
         if ffi_name:
+            # Value types where ffi_name == type_name may be shadowed
+            # by the SDK import — qualify with _ffi_module.
+            if ffi_name == raw_type:
+                return f"_ffi_module.{ffi_name}"
             return ffi_name
     if raw_type.startswith("Ffi") or raw_type.startswith("Goud"):
         return raw_type

@@ -230,6 +230,48 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
     fun render3D(): Boolean =
         GoudGameNative.render3D(contextId)
 
+    fun createMaterial(materialType: Int, r: Float, g: Float, b: Float, a: Float, shininess: Float, metallic: Float, roughness: Float, ao: Float): Int =
+        GoudGameNative.createMaterial(contextId, materialType, r, g, b, a, shininess, metallic, roughness, ao)
+
+    fun updateMaterial(materialId: Int, materialType: Int, r: Float, g: Float, b: Float, a: Float, shininess: Float, metallic: Float, roughness: Float, ao: Float): Boolean =
+        GoudGameNative.updateMaterial(contextId, materialId, materialType, r, g, b, a, shininess, metallic, roughness, ao)
+
+    fun removeMaterial(materialId: Int): Boolean =
+        GoudGameNative.removeMaterial(contextId, materialId)
+
+    fun setObjectMaterial(objectId: Int, materialId: Int): Boolean =
+        GoudGameNative.setObjectMaterial(contextId, objectId, materialId)
+
+    fun getObjectMaterial(objectId: Int): Int =
+        GoudGameNative.getObjectMaterial(contextId, objectId)
+
+    fun removeSkinnedMesh(meshId: Int): Boolean =
+        GoudGameNative.removeSkinnedMesh(contextId, meshId)
+
+    fun setSkinnedMeshPosition(meshId: Int, x: Float, y: Float, z: Float): Boolean =
+        GoudGameNative.setSkinnedMeshPosition(contextId, meshId, x, y, z)
+
+    fun setSkinnedMeshRotation(meshId: Int, x: Float, y: Float, z: Float): Boolean =
+        GoudGameNative.setSkinnedMeshRotation(contextId, meshId, x, y, z)
+
+    fun setSkinnedMeshScale(meshId: Int, x: Float, y: Float, z: Float): Boolean =
+        GoudGameNative.setSkinnedMeshScale(contextId, meshId, x, y, z)
+
+    fun addBloomPass(threshold: Float, intensity: Float): Int =
+        GoudGameNative.addBloomPass(contextId, threshold, intensity)
+
+    fun addBlurPass(radius: Int): Int =
+        GoudGameNative.addBlurPass(contextId, radius)
+
+    fun addColorGradePass(exposure: Float, contrast: Float, saturation: Float): Int =
+        GoudGameNative.addColorGradePass(contextId, exposure, contrast, saturation)
+
+    fun removePostprocessPass(index: Int): Boolean =
+        GoudGameNative.removePostprocessPass(contextId, index)
+
+    fun postprocessPassCount(): Int =
+        GoudGameNative.postprocessPassCount(contextId)
+
     fun drawSpriteRect(texture: Long, x: Float, y: Float, width: Float, height: Float, rotation: Float, srcX: Float, srcY: Float, srcW: Float, srcH: Float, color: com.goudengine.types.Color): Boolean =
         GoudGameNative.drawSpriteRect(contextId, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, color.toNative())
 

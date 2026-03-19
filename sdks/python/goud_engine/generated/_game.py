@@ -4,9 +4,7 @@ import ctypes
 import json
 from . import _ffi as _ffi_module
 from ._ffi import (get_lib, GoudContextId, FfiVec2, FfiTransform2D, FfiSprite, FfiColor, FfiUiStyle, FfiUiEvent,
-    FfiRenderCapabilities, FfiPhysicsCapabilities, FfiAudioCapabilities,
-    FfiInputCapabilities, FfiNetworkCapabilities, FfiNetworkStats,
-    FfiNetworkSimulationConfig, GoudRenderStats, GoudContact,
+    FfiNetworkStats, GoudRenderStats, GoudContact,
     GoudMemoryCategoryStats, GoudMemorySummary)
 from ._types import (Entity, Vec2, Color, Transform2D, Sprite, RenderStats, UiStyle, UiEvent,
     RenderCapabilities, PhysicsCapabilities, AudioCapabilities, InputCapabilities, NetworkStats,
@@ -527,7 +525,7 @@ class GoudGame:
 
     def get_fps_stats(self):
         """Returns FPS statistics from the debug overlay rolling window"""
-        _stats = FpsStats()
+        _stats = _ffi_module.FpsStats()
         self._lib.goud_debug_get_fps_stats(self._ctx, ctypes.byref(_stats))
         return FpsStats(_stats.current_fps, _stats.min_fps, _stats.max_fps, _stats.avg_fps, _stats.frame_time_ms)
 
@@ -788,31 +786,31 @@ class GoudGame:
 
     def get_render_capabilities(self):
         """Queries the render provider's capabilities"""
-        _out = RenderCapabilities()
+        _out = _ffi_module.RenderCapabilities()
         self._lib.goud_provider_render_capabilities(self._ctx, ctypes.byref(_out))
         return RenderCapabilities(_out.max_texture_units, _out.max_texture_size, _out.supports_instancing, _out.supports_compute, _out.supports_msaa)
 
     def get_physics_capabilities(self):
         """Queries the physics provider's capabilities"""
-        _out = PhysicsCapabilities()
+        _out = _ffi_module.PhysicsCapabilities()
         self._lib.goud_provider_physics_capabilities(self._ctx, ctypes.byref(_out))
         return PhysicsCapabilities(_out.supports_continuous_collision, _out.supports_joints, _out.max_bodies)
 
     def get_audio_capabilities(self):
         """Queries the audio provider's capabilities"""
-        _out = AudioCapabilities()
+        _out = _ffi_module.AudioCapabilities()
         self._lib.goud_provider_audio_capabilities(self._ctx, ctypes.byref(_out))
         return AudioCapabilities(_out.supports_spatial, _out.max_channels)
 
     def get_input_capabilities(self):
         """Queries the input provider's capabilities"""
-        _out = InputCapabilities()
+        _out = _ffi_module.InputCapabilities()
         self._lib.goud_provider_input_capabilities(self._ctx, ctypes.byref(_out))
         return InputCapabilities(_out.supports_gamepad, _out.supports_touch, _out.max_gamepads)
 
     def get_network_capabilities(self):
         """Queries the network provider's capabilities. Throws if no network provider is installed."""
-        _out = NetworkCapabilities()
+        _out = _ffi_module.NetworkCapabilities()
         self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_out))
         return NetworkCapabilities(_out.supports_hosting, _out.max_connections, _out.max_channels, _out.max_message_size)
 
@@ -848,7 +846,7 @@ class GoudGame:
 
     def network_receive(self, handle):
         """Receives the next buffered payload produced by networkPoll."""
-        _caps = _ffi_module.FfiNetworkCapabilities()
+        _caps = _ffi_module.NetworkCapabilities()
         self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_caps))
         _buf_len = int(_caps.max_message_size) if _caps.max_message_size else 65536
         _out_buf = (ctypes.c_uint8 * _buf_len)()
@@ -862,7 +860,7 @@ class GoudGame:
 
     def network_receive_packet(self, handle):
         """Receives the next buffered payload produced by networkPoll and preserves the sender peer ID."""
-        _caps = _ffi_module.FfiNetworkCapabilities()
+        _caps = _ffi_module.NetworkCapabilities()
         self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_caps))
         _buf_len = int(_caps.max_message_size) if _caps.max_message_size else 65536
         _out_buf = (ctypes.c_uint8 * _buf_len)()
@@ -1066,7 +1064,7 @@ class GoudContext:
 
     def get_network_capabilities(self):
         """Queries the network provider's capabilities. Throws if no network provider is installed."""
-        _out = NetworkCapabilities()
+        _out = _ffi_module.NetworkCapabilities()
         self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_out))
         return NetworkCapabilities(_out.supports_hosting, _out.max_connections, _out.max_channels, _out.max_message_size)
 
@@ -1102,7 +1100,7 @@ class GoudContext:
 
     def network_receive(self, handle):
         """Receives the next buffered payload produced by networkPoll."""
-        _caps = _ffi_module.FfiNetworkCapabilities()
+        _caps = _ffi_module.NetworkCapabilities()
         self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_caps))
         _buf_len = int(_caps.max_message_size) if _caps.max_message_size else 65536
         _out_buf = (ctypes.c_uint8 * _buf_len)()
@@ -1116,7 +1114,7 @@ class GoudContext:
 
     def network_receive_packet(self, handle):
         """Receives the next buffered payload produced by networkPoll and preserves the sender peer ID."""
-        _caps = _ffi_module.FfiNetworkCapabilities()
+        _caps = _ffi_module.NetworkCapabilities()
         self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_caps))
         _buf_len = int(_caps.max_message_size) if _caps.max_message_size else 65536
         _out_buf = (ctypes.c_uint8 * _buf_len)()

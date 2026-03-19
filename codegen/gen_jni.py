@@ -359,6 +359,8 @@ def render_checked_enum_conversion(
 def rust_struct_type(schema_type: str) -> str:
     ffi_info = MAPPING["ffi_types"][schema_type]
     ffi_name = ffi_info["ffi_name"]
+    if not ffi_name:
+        return schema_type
     resolved = rust_type(ffi_name)
     if resolved != ffi_name:
         return resolved
@@ -1021,7 +1023,7 @@ def build_local_ffi_structs() -> list[str]:
         if ffi_info is None or "fields" not in ffi_info:
             continue
         ffi_name = ffi_info["ffi_name"]
-        if ffi_name in TYPE_PATHS or type_name in TYPE_PATHS:
+        if not ffi_name or ffi_name in TYPE_PATHS or type_name in TYPE_PATHS:
             continue
         lines += [
             "#[repr(C)]",
