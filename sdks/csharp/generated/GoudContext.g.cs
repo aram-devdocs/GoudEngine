@@ -68,7 +68,7 @@ namespace GoudEngine
         /// <summary>Queries the network provider's capabilities. Throws if no network provider is installed.</summary>
         public NetworkCapabilities GetNetworkCapabilities()
         {
-            FfiNetworkCapabilities _out = default;
+            NetworkCapabilities _out = default;
             NativeMethods.goud_provider_network_capabilities(_ctx, ref _out);
             return new NetworkCapabilities(_out.SupportsHosting, _out.MaxConnections, _out.MaxChannels, _out.MaxMessageSize);
         }
@@ -212,7 +212,7 @@ namespace GoudEngine
         /// <summary>Applies debug-only latency, jitter, and packet-loss simulation to a network handle.</summary>
         public int SetNetworkSimulation(long handle, NetworkSimulationConfig config)
         {
-            var _configFfi = new FfiNetworkSimulationConfig
+            var _configFfi = new NetworkSimulationConfig
             {
                 OneWayLatencyMs = config.OneWayLatencyMs,
                 JitterMs = config.JitterMs,

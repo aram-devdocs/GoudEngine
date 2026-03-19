@@ -791,7 +791,7 @@ namespace GoudEngine
         /// <summary>Returns FPS statistics from the debug overlay rolling window</summary>
         public FpsStats GetFpsStats()
         {
-            GoudFpsStats _stats = default;
+            FpsStats _stats = default;
             NativeMethods.goud_debug_get_fps_stats(_ctx, ref _stats);
             return new FpsStats(_stats.CurrentFps, _stats.MinFps, _stats.MaxFps, _stats.AvgFps, _stats.FrameTimeMs);
         }
@@ -1404,7 +1404,7 @@ namespace GoudEngine
         /// <summary>Queries the render provider's capabilities</summary>
         public RenderCapabilities GetRenderCapabilities()
         {
-            FfiRenderCapabilities _out = default;
+            RenderCapabilities _out = default;
             NativeMethods.goud_provider_render_capabilities(_ctx, ref _out);
             return new RenderCapabilities(_out.MaxTextureUnits, _out.MaxTextureSize, _out.SupportsInstancing, _out.SupportsCompute, _out.SupportsMsaa);
         }
@@ -1412,7 +1412,7 @@ namespace GoudEngine
         /// <summary>Queries the physics provider's capabilities</summary>
         public PhysicsCapabilities GetPhysicsCapabilities()
         {
-            FfiPhysicsCapabilities _out = default;
+            PhysicsCapabilities _out = default;
             NativeMethods.goud_provider_physics_capabilities(_ctx, ref _out);
             return new PhysicsCapabilities(_out.SupportsContinuousCollision, _out.SupportsJoints, _out.MaxBodies);
         }
@@ -1420,7 +1420,7 @@ namespace GoudEngine
         /// <summary>Queries the audio provider's capabilities</summary>
         public AudioCapabilities GetAudioCapabilities()
         {
-            FfiAudioCapabilities _out = default;
+            AudioCapabilities _out = default;
             NativeMethods.goud_provider_audio_capabilities(_ctx, ref _out);
             return new AudioCapabilities(_out.SupportsSpatial, _out.MaxChannels);
         }
@@ -1428,7 +1428,7 @@ namespace GoudEngine
         /// <summary>Queries the input provider's capabilities</summary>
         public InputCapabilities GetInputCapabilities()
         {
-            FfiInputCapabilities _out = default;
+            InputCapabilities _out = default;
             NativeMethods.goud_provider_input_capabilities(_ctx, ref _out);
             return new InputCapabilities(_out.SupportsGamepad, _out.SupportsTouch, _out.MaxGamepads);
         }
@@ -1436,7 +1436,7 @@ namespace GoudEngine
         /// <summary>Queries the network provider's capabilities. Throws if no network provider is installed.</summary>
         public NetworkCapabilities GetNetworkCapabilities()
         {
-            FfiNetworkCapabilities _out = default;
+            NetworkCapabilities _out = default;
             NativeMethods.goud_provider_network_capabilities(_ctx, ref _out);
             return new NetworkCapabilities(_out.SupportsHosting, _out.MaxConnections, _out.MaxChannels, _out.MaxMessageSize);
         }
@@ -1580,7 +1580,7 @@ namespace GoudEngine
         /// <summary>Applies debug-only latency, jitter, and packet-loss simulation to a network handle.</summary>
         public int SetNetworkSimulation(long handle, NetworkSimulationConfig config)
         {
-            var _configFfi = new FfiNetworkSimulationConfig
+            var _configFfi = new NetworkSimulationConfig
             {
                 OneWayLatencyMs = config.OneWayLatencyMs,
                 JitterMs = config.JitterMs,
