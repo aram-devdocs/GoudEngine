@@ -420,6 +420,12 @@ pub extern "C" fn goud_window_toggle_fullscreen(context_id: GoudContextId) -> i3
 
 /// Sets the viewport aspect ratio lock.
 ///
+/// This function is only effective for contexts created via
+/// [`goud_engine_create`](super::super::engine_config::goud_engine_create),
+/// which use the full `GoudGame` pipeline with viewport sync.
+/// For contexts created via `goud_window_create`, use
+/// `goud_engine_config_set_aspect_ratio_lock` before engine creation.
+///
 /// Lock values:
 /// - 0: Free (no lock)
 /// - 1: 4:3
@@ -436,7 +442,7 @@ pub extern "C" fn goud_window_set_aspect_ratio_lock(context_id: GoudContextId, l
         return -1;
     }
 
-    let _aspect_lock = match crate::rendering::AspectRatioLock::from_u32(lock) {
+    let aspect_lock = match crate::rendering::AspectRatioLock::from_u32(lock) {
         Some(l) => l,
         None => {
             set_last_error(GoudError::InvalidState(
@@ -446,10 +452,19 @@ pub extern "C" fn goud_window_set_aspect_ratio_lock(context_id: GoudContextId, l
         }
     };
 
-    // The aspect ratio lock is stored in the engine config and applied during
-    // viewport sync in poll_events. For the FFI window path, we store it on
-    // the context's GoudGame if available, otherwise it's a config-only change.
-    0
+    // The aspect ratio lock is applied during viewport sync which is managed
+    // by GoudGame. The FFI window path (goud_window_create) does not use
+    // GoudGame, so runtime changes are not supported there. Use
+    // goud_engine_config_set_aspect_ratio_lock before goud_engine_create.
+    //
+    // For engine contexts created via goud_engine_create, the lock is stored
+    // in GameConfig and takes effect on the next poll_events viewport sync.
+    // We cannot reach GameConfig from here, so we report this limitation.
+    let _ = aspect_lock;
+    set_last_error(GoudError::InvalidState(
+        "aspect ratio lock can only be set via goud_engine_config_set_aspect_ratio_lock before engine creation".to_string(),
+    ));
+    -3
 }
 
 /// Clears the window with the specified color.

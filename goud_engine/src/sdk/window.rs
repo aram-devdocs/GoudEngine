@@ -310,18 +310,24 @@ impl GoudGame {
         &mut self,
         mode: crate::libs::platform::FullscreenMode,
     ) -> GoudResult<()> {
-        match &mut self.platform {
+        let (accepted, size) = match &mut self.platform {
             Some(platform) => {
-                if platform.set_fullscreen(mode) {
-                    self.config.fullscreen_mode = mode;
-                    Ok(())
-                } else {
-                    Err(GoudError::InvalidState(
-                        "fullscreen mode change was rejected".to_string(),
-                    ))
-                }
+                let ok = platform.set_fullscreen(mode);
+                let size = platform.get_size();
+                (ok, size)
             }
-            None => Err(GoudError::NotInitialized),
+            None => return Err(GoudError::NotInitialized),
+        };
+
+        if accepted {
+            self.config.fullscreen_mode = mode;
+            self.window_resized_events
+                .send(WindowResized::new(size.0, size.1));
+            Ok(())
+        } else {
+            Err(GoudError::InvalidState(
+                "fullscreen mode change was rejected".to_string(),
+            ))
         }
     }
 

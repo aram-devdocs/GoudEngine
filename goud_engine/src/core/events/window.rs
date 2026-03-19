@@ -187,8 +187,8 @@ pub struct WindowCloseRequested;
 /// Contains the new fullscreen mode and the resulting window dimensions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FullscreenChanged {
-    /// The new fullscreen mode (as a `u32` matching `FullscreenMode` discriminants).
-    pub mode: u32,
+    /// The new fullscreen mode.
+    pub mode: crate::libs::platform::FullscreenMode,
     /// Window width after the mode change.
     pub width: u32,
     /// Window height after the mode change.
@@ -198,7 +198,7 @@ pub struct FullscreenChanged {
 impl FullscreenChanged {
     /// Creates a new `FullscreenChanged` event.
     #[must_use]
-    pub fn new(mode: u32, width: u32, height: u32) -> Self {
+    pub fn new(mode: crate::libs::platform::FullscreenMode, width: u32, height: u32) -> Self {
         Self {
             mode,
             width,
@@ -209,6 +209,6 @@ impl FullscreenChanged {
 
 impl Default for FullscreenChanged {
     fn default() -> Self {
-        Self::new(0, 800, 600)
+        Self::new(crate::libs::platform::FullscreenMode::Windowed, 800, 600)
     }
 }

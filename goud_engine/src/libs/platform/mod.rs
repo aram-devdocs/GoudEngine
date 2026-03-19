@@ -41,7 +41,7 @@ pub mod winit_platform;
 use crate::core::input_manager::InputManager;
 
 /// Fullscreen mode for the native window.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 #[repr(u32)]
 pub enum FullscreenMode {
     /// Standard windowed mode.
