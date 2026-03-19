@@ -77,6 +77,7 @@ fn test_embedded_lua_runtime_drops_with_game() {
 
 #[cfg(all(feature = "lua", feature = "native", not(target_os = "macos")))]
 #[test]
+#[ignore] // Requires live window/GL context; winit panics on non-main threads (Windows CI)
 fn test_with_platform_bootstraps_embedded_lua_runtime() {
     if should_skip_native_runtime_test() {
         eprintln!("skipping native runtime lua test: no display available");
@@ -95,6 +96,7 @@ fn test_with_platform_bootstraps_embedded_lua_runtime() {
 // winit requires the macOS main thread, which the unit-test harness does not provide.
 #[cfg(all(feature = "native", not(target_os = "macos")))]
 #[test]
+#[ignore] // Requires live window/GL context; winit panics on non-main threads (Windows CI)
 fn test_with_platform_default_native_stack_initializes_renderers_and_readback() {
     if should_skip_native_runtime_test() {
         eprintln!("skipping native runtime unit test: no display available");
