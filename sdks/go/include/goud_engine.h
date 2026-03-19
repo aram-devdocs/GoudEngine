@@ -733,26 +733,6 @@ typedef struct FfiRollbackConfig {
 } FfiRollbackConfig;
 
 /**
- * Function pointer type: advance the game state by one frame.
- */
-typedef void (*FfiAdvanceFn)(uint8_t *state_ptr, const uint8_t *player_ids, const uint8_t *const *input_ptrs, const uint32_t *input_lens, uint32_t num_players);
-
-/**
- * Function pointer type: compute a hash of the game state.
- */
-typedef uint64_t (*FfiHashFn)(uint8_t *state_ptr);
-
-/**
- * Function pointer type: clone the game state.
- */
-typedef uint8_t *(*FfiCloneFn)(uint8_t *state_ptr);
-
-/**
- * Function pointer type: free a cloned game state.
- */
-typedef void (*FfiFreeFn)(uint8_t *state_ptr);
-
-/**
  * FFI-safe aggregate network statistics for a provider handle.
  */
 typedef struct FfiNetworkStats {
@@ -3964,7 +3944,7 @@ uint64_t goud_p2p_get_host(struct GoudContextId _context_id, int64_t handle);
 /**
  * Creates a new rollback netcode session.
  */
-int64_t goud_rollback_create(struct FfiRollbackConfig config, uint8_t local_player, const uint8_t *player_ids_ptr, uint32_t num_players, uint8_t *state_ptr, FfiAdvanceFn advance_fn, FfiHashFn hash_fn, FfiCloneFn clone_fn, FfiFreeFn free_fn);
+int64_t goud_rollback_create(struct FfiRollbackConfig config, uint8_t local_player, const uint8_t *player_ids_ptr, uint32_t num_players, uint8_t *state_ptr, uint64_t advance_fn, uint64_t hash_fn, uint64_t clone_fn, uint64_t free_fn);
 
 /**
  * Advances the rollback simulation by one frame with the given local input.

@@ -149,6 +149,8 @@ def _kt_param_type(ptype: str) -> str:
         return "com.goudengine.types.Rect"
     if base in ("Transform2D", "Sprite", "Text", "SpriteAnimator"):
         return f"com.goudengine.components.{base}"
+    if base in ("P2pMeshConfig", "RollbackConfig"):
+        return f"com.goudengine.types.{base}"
     return kt_type(_strip_array(ptype) if ptype.endswith("[]") else ptype)
 
 

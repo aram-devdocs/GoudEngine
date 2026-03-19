@@ -1624,7 +1624,7 @@ namespace GoudEngine
         public static extern ulong goud_p2p_get_host(GoudContextId _context_id, long handle);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern long goud_rollback_create(FfiRollbackConfig config, byte local_player, IntPtr player_ids_ptr, uint num_players, IntPtr state_ptr, FfiAdvanceFn advance_fn, FfiHashFn hash_fn, FfiCloneFn clone_fn, FfiFreeFn free_fn);
+        public static extern long goud_rollback_create(FfiRollbackConfig config, byte local_player, IntPtr player_ids_ptr, uint num_players, IntPtr state_ptr, ulong advance_fn, ulong hash_fn, ulong clone_fn, ulong free_fn);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_rollback_destroy(long handle);

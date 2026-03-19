@@ -40,6 +40,10 @@ export interface INetworkSimulationConfig { oneWayLatencyMs: number; jitterMs: n
 export interface INetworkConnectResult { handle: number; peerId: number; }
 /** Inbound network payload with the sender peer ID preserved */
 export interface INetworkPacket { peerId: number; data: Uint8Array; }
+/** Configuration for P2P mesh networking */
+export interface IP2pMeshConfig { maxPeers: number; hostMigration: boolean; topology: number; }
+/** Configuration for rollback netcode session */
+export interface IRollbackConfig { maxRollbackFrames: number; inputDelayFrames: number; desyncDetection: number; }
 /** Capabilities reported by the active render provider */
 export interface IRenderCapabilities { maxTextureUnits: number; maxTextureSize: number; supportsInstancing: boolean; supportsCompute: boolean; supportsMsaa: boolean; }
 /** Capabilities reported by the active physics provider */
@@ -511,9 +515,9 @@ export interface IGoudGame {
   /** Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred. */
   checkHotSwapShortcut(): boolean;
   /** Creates a P2P mesh host on the given port using the specified transport. */
-  p2pCreateMesh(protocol: number, port: number, config: P2pMeshConfig): number;
+  p2pCreateMesh(protocol: number, port: number, config: IP2pMeshConfig): number;
   /** Joins an existing P2P mesh at the given address. */
-  p2pJoinMesh(protocol: number, address: string, port: number, config: P2pMeshConfig): number;
+  p2pJoinMesh(protocol: number, address: string, port: number, config: IP2pMeshConfig): number;
   /** Leaves the P2P mesh and destroys the network instance. */
   p2pLeaveMesh(handle: number): number;
   /** Returns the number of connected peers in the mesh. */
@@ -521,7 +525,7 @@ export interface IGoudGame {
   /** Returns the host peer's ID, or 0 on error. */
   p2pGetHost(handle: number): number;
   /** Creates a new rollback netcode session. Returns a positive handle on success. */
-  rollbackCreate(config: RollbackConfig, localPlayer: number, playerIds: Uint8Array, statePtr: number, advanceFn: number, hashFn: number, cloneFn: number, freeFn: number): number;
+  rollbackCreate(config: IRollbackConfig, localPlayer: number, playerIds: Uint8Array, statePtr: number, advanceFn: number, hashFn: number, cloneFn: number, freeFn: number): number;
   /** Destroys a rollback session and frees all associated resources. */
   rollbackDestroy(handle: number): number;
   /** Advances the rollback simulation by one frame with the given local input. */

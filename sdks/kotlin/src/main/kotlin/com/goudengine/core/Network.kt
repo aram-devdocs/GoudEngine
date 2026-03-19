@@ -26,10 +26,10 @@ class Network(private val contextId: Long) {
     fun peerCount(handle: Long): Int =
         NetworkNative.peerCount(contextId, handle)
 
-    fun p2pCreateMesh(protocol: Int, port: Int, config: P2pMeshConfig): Long =
+    fun p2pCreateMesh(protocol: Int, port: Int, config: com.goudengine.types.P2pMeshConfig): Long =
         NetworkNative.p2pCreateMesh(contextId, protocol, port, config)
 
-    fun p2pJoinMesh(protocol: Int, address: String, port: Int, config: P2pMeshConfig): Long =
+    fun p2pJoinMesh(protocol: Int, address: String, port: Int, config: com.goudengine.types.P2pMeshConfig): Long =
         NetworkNative.p2pJoinMesh(contextId, protocol, address, port, config)
 
     fun p2pLeaveMesh(handle: Long): Int =
@@ -41,7 +41,7 @@ class Network(private val contextId: Long) {
     fun p2pGetHost(handle: Long): Long =
         NetworkNative.p2pGetHost(contextId, handle)
 
-    fun rollbackCreate(config: RollbackConfig, localPlayer: Int, playerIds: ByteArray, statePtr: Long, advanceFn: Long, hashFn: Long, cloneFn: Long, freeFn: Long): Long =
+    fun rollbackCreate(config: com.goudengine.types.RollbackConfig, localPlayer: Int, playerIds: ByteArray, statePtr: Long, advanceFn: Long, hashFn: Long, cloneFn: Long, freeFn: Long): Long =
         NetworkNative.rollbackCreate(contextId, config, localPlayer, playerIds, statePtr, advanceFn, hashFn, cloneFn, freeFn)
 
     fun rollbackDestroy(handle: Long): Int =

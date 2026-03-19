@@ -104,6 +104,22 @@ def gen_interface():
     if schema["types"]["NetworkPacket"].get("doc"):
         lines.append(f"/** {schema['types']['NetworkPacket']['doc']} */")
     lines.append("export interface INetworkPacket { peerId: number; data: Uint8Array; }")
+    p2p_fields = schema["types"]["P2pMeshConfig"]["fields"]
+    p2p_parts = []
+    for f in p2p_fields:
+        ts_ft = "boolean" if f["type"] == "bool" else "number"
+        p2p_parts.append(f"{to_camel(f['name'])}: {ts_ft}")
+    if schema["types"]["P2pMeshConfig"].get("doc"):
+        lines.append(f"/** {schema['types']['P2pMeshConfig']['doc']} */")
+    lines.append(f"export interface IP2pMeshConfig {{ {'; '.join(p2p_parts)}; }}")
+    rb_fields = schema["types"]["RollbackConfig"]["fields"]
+    rb_parts = []
+    for f in rb_fields:
+        ts_ft = "boolean" if f["type"] == "bool" else "number"
+        rb_parts.append(f"{to_camel(f['name'])}: {ts_ft}")
+    if schema["types"]["RollbackConfig"].get("doc"):
+        lines.append(f"/** {schema['types']['RollbackConfig']['doc']} */")
+    lines.append(f"export interface IRollbackConfig {{ {'; '.join(rb_parts)}; }}")
 
     for cap_name in ["RenderCapabilities", "PhysicsCapabilities", "AudioCapabilities", "InputCapabilities", "NetworkCapabilities"]:
         cap_type = schema["types"][cap_name]

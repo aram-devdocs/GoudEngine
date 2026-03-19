@@ -11601,59 +11601,76 @@
           "ffi": "goud_p2p_get_host"
         },
         "rollbackCreate": {
-          "ffi": "goud_rollback_create"
+          "ffi": "goud_rollback_create",
+          "no_context": true
         },
         "rollbackDestroy": {
-          "ffi": "goud_rollback_destroy"
+          "ffi": "goud_rollback_destroy",
+          "no_context": true
         },
         "rollbackAdvanceFrame": {
-          "ffi": "goud_rollback_advance_frame"
+          "ffi": "goud_rollback_advance_frame",
+          "no_context": true
         },
         "rollbackReceiveRemoteInput": {
-          "ffi": "goud_rollback_receive_remote_input"
+          "ffi": "goud_rollback_receive_remote_input",
+          "no_context": true
         },
         "rollbackShouldRollback": {
-          "ffi": "goud_rollback_should_rollback"
+          "ffi": "goud_rollback_should_rollback",
+          "no_context": true
         },
         "rollbackResimulate": {
-          "ffi": "goud_rollback_resimulate"
+          "ffi": "goud_rollback_resimulate",
+          "no_context": true
         },
         "rollbackConfirmedFrame": {
-          "ffi": "goud_rollback_confirmed_frame"
+          "ffi": "goud_rollback_confirmed_frame",
+          "no_context": true
         },
         "rollbackCurrentFrame": {
-          "ffi": "goud_rollback_current_frame"
+          "ffi": "goud_rollback_current_frame",
+          "no_context": true
         },
         "rollbackCheckDesync": {
-          "ffi": "goud_rollback_check_desync"
+          "ffi": "goud_rollback_check_desync",
+          "no_context": true
         },
         "rpcCreate": {
-          "ffi": "goud_rpc_create"
+          "ffi": "goud_rpc_create",
+          "no_context": true
         },
         "rpcDestroy": {
-          "ffi": "goud_rpc_destroy"
+          "ffi": "goud_rpc_destroy",
+          "no_context": true
         },
         "rpcRegister": {
           "ffi": "goud_rpc_register",
+          "no_context": true,
           "string_params": [
             "name"
           ]
         },
         "rpcCall": {
-          "ffi": "goud_rpc_call"
+          "ffi": "goud_rpc_call",
+          "no_context": true
         },
         "rpcPoll": {
-          "ffi": "goud_rpc_poll"
+          "ffi": "goud_rpc_poll",
+          "no_context": true
         },
         "rpcProcessIncoming": {
-          "ffi": "goud_rpc_process_incoming"
+          "ffi": "goud_rpc_process_incoming",
+          "no_context": true
         },
         "rpcReceiveResponse": {
           "ffi": "goud_rpc_receive_response",
+          "no_context": true,
           "out_buffer": true
         },
         "rpcDrainOne": {
           "ffi": "goud_rpc_drain_one",
+          "no_context": true,
           "out_buffer": true
         }
       },
@@ -12863,59 +12880,76 @@
           "ffi": "goud_p2p_get_host"
         },
         "rollbackCreate": {
-          "ffi": "goud_rollback_create"
+          "ffi": "goud_rollback_create",
+          "no_context": true
         },
         "rollbackDestroy": {
-          "ffi": "goud_rollback_destroy"
+          "ffi": "goud_rollback_destroy",
+          "no_context": true
         },
         "rollbackAdvanceFrame": {
-          "ffi": "goud_rollback_advance_frame"
+          "ffi": "goud_rollback_advance_frame",
+          "no_context": true
         },
         "rollbackReceiveRemoteInput": {
-          "ffi": "goud_rollback_receive_remote_input"
+          "ffi": "goud_rollback_receive_remote_input",
+          "no_context": true
         },
         "rollbackShouldRollback": {
-          "ffi": "goud_rollback_should_rollback"
+          "ffi": "goud_rollback_should_rollback",
+          "no_context": true
         },
         "rollbackResimulate": {
-          "ffi": "goud_rollback_resimulate"
+          "ffi": "goud_rollback_resimulate",
+          "no_context": true
         },
         "rollbackConfirmedFrame": {
-          "ffi": "goud_rollback_confirmed_frame"
+          "ffi": "goud_rollback_confirmed_frame",
+          "no_context": true
         },
         "rollbackCurrentFrame": {
-          "ffi": "goud_rollback_current_frame"
+          "ffi": "goud_rollback_current_frame",
+          "no_context": true
         },
         "rollbackCheckDesync": {
-          "ffi": "goud_rollback_check_desync"
+          "ffi": "goud_rollback_check_desync",
+          "no_context": true
         },
         "rpcCreate": {
-          "ffi": "goud_rpc_create"
+          "ffi": "goud_rpc_create",
+          "no_context": true
         },
         "rpcDestroy": {
-          "ffi": "goud_rpc_destroy"
+          "ffi": "goud_rpc_destroy",
+          "no_context": true
         },
         "rpcRegister": {
           "ffi": "goud_rpc_register",
+          "no_context": true,
           "string_params": [
             "name"
           ]
         },
         "rpcCall": {
-          "ffi": "goud_rpc_call"
+          "ffi": "goud_rpc_call",
+          "no_context": true
         },
         "rpcPoll": {
-          "ffi": "goud_rpc_poll"
+          "ffi": "goud_rpc_poll",
+          "no_context": true
         },
         "rpcProcessIncoming": {
-          "ffi": "goud_rpc_process_incoming"
+          "ffi": "goud_rpc_process_incoming",
+          "no_context": true
         },
         "rpcReceiveResponse": {
           "ffi": "goud_rpc_receive_response",
+          "no_context": true,
           "out_buffer": true
         },
         "rpcDrainOne": {
           "ffi": "goud_rpc_drain_one",
+          "no_context": true,
           "out_buffer": true
         }
       }

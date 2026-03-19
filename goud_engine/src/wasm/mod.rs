@@ -341,15 +341,6 @@ impl WasmGame {
         }
     }
 
-    /// Returns a cloned reference to the pending-texture queue.
-    ///
-    /// Async callbacks can push `PendingTexture` entries into this queue
-    /// without borrowing `WasmGame`.  The entries are drained in
-    /// `begin_frame`.
-    pub fn pending_texture_queue(&self) -> Rc<RefCell<Vec<PendingTexture>>> {
-        Rc::clone(&self.pending_textures)
-    }
-
     // ======================================================================
     // Debugger support
     // ======================================================================
@@ -407,6 +398,21 @@ impl WasmGame {
     #[wasm_bindgen(js_name = "captureCanvasBase64")]
     pub fn capture_canvas_base64(&self) -> Result<String, JsValue> {
         Ok(String::new())
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Internal (Rust-only) helpers — NOT exported to JS via wasm_bindgen
+// ---------------------------------------------------------------------------
+
+impl WasmGame {
+    /// Returns a cloned reference to the pending-texture queue.
+    ///
+    /// Async callbacks can push `PendingTexture` entries into this queue
+    /// without borrowing `WasmGame`.  The entries are drained in
+    /// `begin_frame`.
+    pub fn pending_texture_queue(&self) -> Rc<RefCell<Vec<PendingTexture>>> {
+        Rc::clone(&self.pending_textures)
     }
 }
 

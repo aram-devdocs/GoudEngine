@@ -3177,10 +3177,10 @@
         "player_ids_ptr: *const u8",
         "num_players: u32",
         "state_ptr: *mut u8",
-        "advance_fn: FfiAdvanceFn",
-        "hash_fn: FfiHashFn",
-        "clone_fn: FfiCloneFn",
-        "free_fn: FfiFreeFn"
+        "advance_fn: u64",
+        "hash_fn: u64",
+        "clone_fn: u64",
+        "free_fn: u64"
       ],
       "return_type": "i64",
       "is_unsafe": true

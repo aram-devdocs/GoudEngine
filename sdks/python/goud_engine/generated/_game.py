@@ -1055,7 +1055,7 @@ class GoudGame:
 
     def rollback_destroy(self, handle):
         """Destroys a rollback session and frees all associated resources."""
-        return self._lib.goud_rollback_destroy(self._ctx, handle)
+        return self._lib.goud_rollback_destroy(handle)
 
     def rollback_advance_frame(self, handle, input):
         """Advances the rollback simulation by one frame with the given local input."""
@@ -1069,31 +1069,31 @@ class GoudGame:
 
     def rollback_should_rollback(self, handle):
         """Returns 1 if a rollback is pending, 0 otherwise."""
-        return self._lib.goud_rollback_should_rollback(self._ctx, handle)
+        return self._lib.goud_rollback_should_rollback(handle)
 
     def rollback_resimulate(self, handle):
         """Performs rollback and resimulation. Returns the number of frames resimulated."""
-        return self._lib.goud_rollback_resimulate(self._ctx, handle)
+        return self._lib.goud_rollback_resimulate(handle)
 
     def rollback_confirmed_frame(self, handle):
         """Returns the latest confirmed frame."""
-        return self._lib.goud_rollback_confirmed_frame(self._ctx, handle)
+        return self._lib.goud_rollback_confirmed_frame(handle)
 
     def rollback_current_frame(self, handle):
         """Returns the current simulation frame."""
-        return self._lib.goud_rollback_current_frame(self._ctx, handle)
+        return self._lib.goud_rollback_current_frame(handle)
 
     def rollback_check_desync(self, handle, remote_hash, frame):
         """Checks for desync at the given frame. Returns 0=in sync, 1=desync, 2=frame not available."""
-        return self._lib.goud_rollback_check_desync(self._ctx, handle, remote_hash, frame)
+        return self._lib.goud_rollback_check_desync(handle, remote_hash, frame)
 
     def rpc_create(self, timeout_ms, max_payload):
         """Creates an RPC framework instance."""
-        return self._lib.goud_rpc_create(self._ctx, timeout_ms, max_payload)
+        return self._lib.goud_rpc_create(timeout_ms, max_payload)
 
     def rpc_destroy(self, handle):
         """Destroys an RPC framework instance."""
-        return self._lib.goud_rpc_destroy(self._ctx, handle)
+        return self._lib.goud_rpc_destroy(handle)
 
     def rpc_register(self, handle, rpc_id, name, direction):
         """Registers an RPC handler with the given direction constraint."""
@@ -1108,7 +1108,7 @@ class GoudGame:
 
     def rpc_poll(self, handle, delta_secs):
         """Advances the RPC framework: checks timeouts and processes pending calls."""
-        return self._lib.goud_rpc_poll(self._ctx, handle, delta_secs)
+        return self._lib.goud_rpc_poll(handle, delta_secs)
 
     def rpc_process_incoming(self, handle, peer_id, data):
         """Feeds raw incoming data to the RPC framework for processing."""
@@ -1117,12 +1117,10 @@ class GoudGame:
 
     def rpc_receive_response(self, handle, call_id):
         """Attempts to retrieve the response for a pending RPC call."""
-        _caps = _ffi_module.NetworkCapabilities()
-        self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_caps))
-        _buf_len = int(_caps.max_message_size) if _caps.max_message_size else 65536
+        _buf_len = 65536
         _out_buf = (ctypes.c_uint8 * _buf_len)()
         _out_peer_id = ctypes.c_uint64()
-        _status = self._lib.goud_rpc_receive_response(self._ctx, handle, call_id, ctypes.cast(_out_buf, ctypes.POINTER(ctypes.c_uint8)), _buf_len, ctypes.byref(_out_peer_id))
+        _status = self._lib.goud_rpc_receive_response(handle, call_id, ctypes.cast(_out_buf, ctypes.POINTER(ctypes.c_uint8)), _buf_len, ctypes.byref(_out_peer_id))
         if _status < 0:
             raise RuntimeError(f'goud_rpc_receive_response failed with status {_status}')
         if _status == 0:
@@ -1131,12 +1129,10 @@ class GoudGame:
 
     def rpc_drain_one(self, handle):
         """Drains outbound RPC messages and copies the next one into the caller's buffer."""
-        _caps = _ffi_module.NetworkCapabilities()
-        self._lib.goud_provider_network_capabilities(self._ctx, ctypes.byref(_caps))
-        _buf_len = int(_caps.max_message_size) if _caps.max_message_size else 65536
+        _buf_len = 65536
         _out_buf = (ctypes.c_uint8 * _buf_len)()
         _out_peer_id = ctypes.c_uint64()
-        _status = self._lib.goud_rpc_drain_one(self._ctx, handle, ctypes.cast(_out_buf, ctypes.POINTER(ctypes.c_uint8)), _buf_len, ctypes.byref(_out_peer_id))
+        _status = self._lib.goud_rpc_drain_one(handle, ctypes.cast(_out_buf, ctypes.POINTER(ctypes.c_uint8)), _buf_len, ctypes.byref(_out_peer_id))
         if _status < 0:
             raise RuntimeError(f'goud_rpc_drain_one failed with status {_status}')
         if _status == 0:

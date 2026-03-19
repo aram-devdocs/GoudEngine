@@ -516,10 +516,10 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
     fun checkHotSwapShortcut(): Boolean =
         GoudGameNative.checkHotSwapShortcut(contextId)
 
-    fun p2pCreateMesh(protocol: Int, port: Int, config: P2pMeshConfig): Long =
+    fun p2pCreateMesh(protocol: Int, port: Int, config: com.goudengine.types.P2pMeshConfig): Long =
         GoudGameNative.p2pCreateMesh(contextId, protocol, port, config)
 
-    fun p2pJoinMesh(protocol: Int, address: String, port: Int, config: P2pMeshConfig): Long =
+    fun p2pJoinMesh(protocol: Int, address: String, port: Int, config: com.goudengine.types.P2pMeshConfig): Long =
         GoudGameNative.p2pJoinMesh(contextId, protocol, address, port, config)
 
     fun p2pLeaveMesh(handle: Long): Int =
@@ -531,56 +531,56 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
     fun p2pGetHost(handle: Long): Long =
         GoudGameNative.p2pGetHost(contextId, handle)
 
-    fun rollbackCreate(config: RollbackConfig, localPlayer: Int, playerIds: ByteArray, statePtr: Long, advanceFn: Long, hashFn: Long, cloneFn: Long, freeFn: Long): Long =
-        GoudGameNative.rollbackCreate(contextId, config, localPlayer, playerIds, statePtr, advanceFn, hashFn, cloneFn, freeFn)
+    fun rollbackCreate(config: com.goudengine.types.RollbackConfig, localPlayer: Int, playerIds: ByteArray, statePtr: Long, advanceFn: Long, hashFn: Long, cloneFn: Long, freeFn: Long): Long =
+        GoudGameNative.rollbackCreate(config, localPlayer, playerIds, statePtr, advanceFn, hashFn, cloneFn, freeFn)
 
     fun rollbackDestroy(handle: Long): Int =
-        GoudGameNative.rollbackDestroy(contextId, handle)
+        GoudGameNative.rollbackDestroy(handle)
 
     fun rollbackAdvanceFrame(handle: Long, input: ByteArray): Int =
-        GoudGameNative.rollbackAdvanceFrame(contextId, handle, input)
+        GoudGameNative.rollbackAdvanceFrame(handle, input)
 
     fun rollbackReceiveRemoteInput(handle: Long, playerId: Int, frame: Long, input: ByteArray): Int =
-        GoudGameNative.rollbackReceiveRemoteInput(contextId, handle, playerId, frame, input)
+        GoudGameNative.rollbackReceiveRemoteInput(handle, playerId, frame, input)
 
     fun rollbackShouldRollback(handle: Long): Int =
-        GoudGameNative.rollbackShouldRollback(contextId, handle)
+        GoudGameNative.rollbackShouldRollback(handle)
 
     fun rollbackResimulate(handle: Long): Int =
-        GoudGameNative.rollbackResimulate(contextId, handle)
+        GoudGameNative.rollbackResimulate(handle)
 
     fun rollbackConfirmedFrame(handle: Long): Long =
-        GoudGameNative.rollbackConfirmedFrame(contextId, handle)
+        GoudGameNative.rollbackConfirmedFrame(handle)
 
     fun rollbackCurrentFrame(handle: Long): Long =
-        GoudGameNative.rollbackCurrentFrame(contextId, handle)
+        GoudGameNative.rollbackCurrentFrame(handle)
 
     fun rollbackCheckDesync(handle: Long, remoteHash: Long, frame: Long): Int =
-        GoudGameNative.rollbackCheckDesync(contextId, handle, remoteHash, frame)
+        GoudGameNative.rollbackCheckDesync(handle, remoteHash, frame)
 
     fun rpcCreate(timeoutMs: Long, maxPayload: Int): Long =
-        GoudGameNative.rpcCreate(contextId, timeoutMs, maxPayload)
+        GoudGameNative.rpcCreate(timeoutMs, maxPayload)
 
     fun rpcDestroy(handle: Long): Int =
-        GoudGameNative.rpcDestroy(contextId, handle)
+        GoudGameNative.rpcDestroy(handle)
 
     fun rpcRegister(handle: Long, rpcId: Int, name: String, direction: Int): Int =
-        GoudGameNative.rpcRegister(contextId, handle, rpcId, name, direction)
+        GoudGameNative.rpcRegister(handle, rpcId, name, direction)
 
     fun rpcCall(handle: Long, peerId: Long, rpcId: Int, payload: ByteArray): Long =
-        GoudGameNative.rpcCall(contextId, handle, peerId, rpcId, payload)
+        GoudGameNative.rpcCall(handle, peerId, rpcId, payload)
 
     fun rpcPoll(handle: Long, deltaSecs: Float): Int =
-        GoudGameNative.rpcPoll(contextId, handle, deltaSecs)
+        GoudGameNative.rpcPoll(handle, deltaSecs)
 
     fun rpcProcessIncoming(handle: Long, peerId: Long, data: ByteArray): Int =
-        GoudGameNative.rpcProcessIncoming(contextId, handle, peerId, data)
+        GoudGameNative.rpcProcessIncoming(handle, peerId, data)
 
     fun rpcReceiveResponse(handle: Long, callId: Long): ByteArray =
-        GoudGameNative.rpcReceiveResponse(contextId, handle, callId)
+        GoudGameNative.rpcReceiveResponse(handle, callId)
 
     fun rpcDrainOne(handle: Long): ByteArray =
-        GoudGameNative.rpcDrainOne(contextId, handle)
+        GoudGameNative.rpcDrainOne(handle)
 
     fun destroy() {
         GoudGameNative.destroy(contextId)

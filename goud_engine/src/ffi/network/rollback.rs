@@ -219,10 +219,10 @@ pub unsafe extern "C" fn goud_rollback_create(
     player_ids_ptr: *const u8,
     num_players: u32,
     state_ptr: *mut u8,
-    advance_fn: FfiAdvanceFn,
-    hash_fn: FfiHashFn,
-    clone_fn: FfiCloneFn,
-    free_fn: FfiFreeFn,
+    advance_fn: u64,
+    hash_fn: u64,
+    clone_fn: u64,
+    free_fn: u64,
 ) -> i64 {
     if player_ids_ptr.is_null() {
         set_last_error(GoudError::InvalidState(
@@ -240,6 +240,12 @@ pub unsafe extern "C" fn goud_rollback_create(
         ));
         return -1;
     }
+    if advance_fn == 0 || hash_fn == 0 || clone_fn == 0 || free_fn == 0 {
+        set_last_error(GoudError::InvalidState(
+            "callback function pointers must not be null".to_string(),
+        ));
+        return -1;
+    }
 
     // SAFETY: Caller guarantees player_ids_ptr points to num_players valid bytes.
     let player_ids =
@@ -251,12 +257,15 @@ pub unsafe extern "C" fn goud_rollback_create(
         desync_detection: config.desync_detection != 0,
     };
 
+    // SAFETY: Caller guarantees these u64 values are valid function pointers
+    // cast from extern "C" fn types matching the FfiAdvanceFn/FfiHashFn/
+    // FfiCloneFn/FfiFreeFn signatures.
     let game_state = FfiGameState {
         state_ptr,
-        advance_fn,
-        hash_fn,
-        clone_fn,
-        free_fn,
+        advance_fn: unsafe { std::mem::transmute::<u64, FfiAdvanceFn>(advance_fn) },
+        hash_fn: unsafe { std::mem::transmute::<u64, FfiHashFn>(hash_fn) },
+        clone_fn: unsafe { std::mem::transmute::<u64, FfiCloneFn>(clone_fn) },
+        free_fn: unsafe { std::mem::transmute::<u64, FfiFreeFn>(free_fn) },
     };
 
     let engine = RollbackNetcode::new(rb_config, local_player, player_ids, game_state);

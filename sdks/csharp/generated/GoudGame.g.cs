@@ -1874,7 +1874,7 @@ namespace GoudEngine
                 var playerIdsBytes = playerIds ?? Array.Empty<byte>();
                 fixed (byte* playerIdsPtr = playerIdsBytes)
                 {
-                    return NativeMethods.goud_rollback_create(_ctx, _configFfi, localPlayer, playerIdsBytes.Length == 0 ? IntPtr.Zero : (IntPtr)playerIdsPtr, (uint)playerIdsBytes.Length, statePtr, advanceFn, hashFn, cloneFn, freeFn);
+                    return NativeMethods.goud_rollback_create(_configFfi, localPlayer, playerIdsBytes.Length == 0 ? IntPtr.Zero : (IntPtr)playerIdsPtr, (uint)playerIdsBytes.Length, statePtr, advanceFn, hashFn, cloneFn, freeFn);
                 }
             }
         }
@@ -1882,7 +1882,7 @@ namespace GoudEngine
         /// <summary>Destroys a rollback session and frees all associated resources.</summary>
         public int RollbackDestroy(long handle)
         {
-            return NativeMethods.goud_rollback_destroy(_ctx, handle);
+            return NativeMethods.goud_rollback_destroy(handle);
         }
 
         /// <summary>Advances the rollback simulation by one frame with the given local input.</summary>
@@ -1893,7 +1893,7 @@ namespace GoudEngine
                 var inputBytes = input ?? Array.Empty<byte>();
                 fixed (byte* inputPtr = inputBytes)
                 {
-                    return NativeMethods.goud_rollback_advance_frame(_ctx, handle, inputBytes.Length == 0 ? IntPtr.Zero : (IntPtr)inputPtr, (uint)inputBytes.Length);
+                    return NativeMethods.goud_rollback_advance_frame(handle, inputBytes.Length == 0 ? IntPtr.Zero : (IntPtr)inputPtr, (uint)inputBytes.Length);
                 }
             }
         }
@@ -1906,7 +1906,7 @@ namespace GoudEngine
                 var inputBytes = input ?? Array.Empty<byte>();
                 fixed (byte* inputPtr = inputBytes)
                 {
-                    return NativeMethods.goud_rollback_receive_remote_input(_ctx, handle, playerId, frame, inputBytes.Length == 0 ? IntPtr.Zero : (IntPtr)inputPtr, (uint)inputBytes.Length);
+                    return NativeMethods.goud_rollback_receive_remote_input(handle, playerId, frame, inputBytes.Length == 0 ? IntPtr.Zero : (IntPtr)inputPtr, (uint)inputBytes.Length);
                 }
             }
         }
@@ -1914,43 +1914,43 @@ namespace GoudEngine
         /// <summary>Returns 1 if a rollback is pending, 0 otherwise.</summary>
         public int RollbackShouldRollback(long handle)
         {
-            return NativeMethods.goud_rollback_should_rollback(_ctx, handle);
+            return NativeMethods.goud_rollback_should_rollback(handle);
         }
 
         /// <summary>Performs rollback and resimulation. Returns the number of frames resimulated.</summary>
         public int RollbackResimulate(long handle)
         {
-            return NativeMethods.goud_rollback_resimulate(_ctx, handle);
+            return NativeMethods.goud_rollback_resimulate(handle);
         }
 
         /// <summary>Returns the latest confirmed frame.</summary>
         public long RollbackConfirmedFrame(long handle)
         {
-            return NativeMethods.goud_rollback_confirmed_frame(_ctx, handle);
+            return NativeMethods.goud_rollback_confirmed_frame(handle);
         }
 
         /// <summary>Returns the current simulation frame.</summary>
         public long RollbackCurrentFrame(long handle)
         {
-            return NativeMethods.goud_rollback_current_frame(_ctx, handle);
+            return NativeMethods.goud_rollback_current_frame(handle);
         }
 
         /// <summary>Checks for desync at the given frame. Returns 0=in sync, 1=desync, 2=frame not available.</summary>
         public int RollbackCheckDesync(long handle, ulong remoteHash, ulong frame)
         {
-            return NativeMethods.goud_rollback_check_desync(_ctx, handle, remoteHash, frame);
+            return NativeMethods.goud_rollback_check_desync(handle, remoteHash, frame);
         }
 
         /// <summary>Creates an RPC framework instance.</summary>
         public long RpcCreate(ulong timeoutMs, uint maxPayload)
         {
-            return NativeMethods.goud_rpc_create(_ctx, timeoutMs, maxPayload);
+            return NativeMethods.goud_rpc_create(timeoutMs, maxPayload);
         }
 
         /// <summary>Destroys an RPC framework instance.</summary>
         public int RpcDestroy(long handle)
         {
-            return NativeMethods.goud_rpc_destroy(_ctx, handle);
+            return NativeMethods.goud_rpc_destroy(handle);
         }
 
         /// <summary>Registers an RPC handler with the given direction constraint.</summary>
@@ -1961,7 +1961,7 @@ namespace GoudEngine
                 var nameBytes = System.Text.Encoding.UTF8.GetBytes(name);
                 fixed (byte* namePtr = nameBytes)
                 {
-                    return NativeMethods.goud_rpc_register(_ctx, handle, rpcId, nameBytes.Length == 0 ? IntPtr.Zero : (IntPtr)namePtr, (int)nameBytes.Length, direction);
+                    return NativeMethods.goud_rpc_register(handle, rpcId, nameBytes.Length == 0 ? IntPtr.Zero : (IntPtr)namePtr, (int)nameBytes.Length, direction);
                 }
             }
         }
@@ -1974,7 +1974,7 @@ namespace GoudEngine
                 var payloadBytes = payload ?? Array.Empty<byte>();
                 fixed (byte* payloadPtr = payloadBytes)
                 {
-                    return NativeMethods.goud_rpc_call(_ctx, handle, peerId, rpcId, payloadBytes.Length == 0 ? IntPtr.Zero : (IntPtr)payloadPtr, (uint)payloadBytes.Length);
+                    return NativeMethods.goud_rpc_call(handle, peerId, rpcId, payloadBytes.Length == 0 ? IntPtr.Zero : (IntPtr)payloadPtr, (int)payloadBytes.Length);
                 }
             }
         }
@@ -1982,7 +1982,7 @@ namespace GoudEngine
         /// <summary>Advances the RPC framework: checks timeouts and processes pending calls.</summary>
         public int RpcPoll(long handle, float deltaSecs)
         {
-            return NativeMethods.goud_rpc_poll(_ctx, handle, deltaSecs);
+            return NativeMethods.goud_rpc_poll(handle, deltaSecs);
         }
 
         /// <summary>Feeds raw incoming data to the RPC framework for processing.</summary>
@@ -1993,7 +1993,7 @@ namespace GoudEngine
                 var dataBytes = data ?? Array.Empty<byte>();
                 fixed (byte* dataPtr = dataBytes)
                 {
-                    return NativeMethods.goud_rpc_process_incoming(_ctx, handle, peerId, dataBytes.Length == 0 ? IntPtr.Zero : (IntPtr)dataPtr, (uint)dataBytes.Length);
+                    return NativeMethods.goud_rpc_process_incoming(handle, peerId, dataBytes.Length == 0 ? IntPtr.Zero : (IntPtr)dataPtr, (int)dataBytes.Length);
                 }
             }
         }
@@ -2001,14 +2001,14 @@ namespace GoudEngine
         /// <summary>Attempts to retrieve the response for a pending RPC call.</summary>
         public byte[] RpcReceiveResponse(long handle, ulong callId)
         {
-            int _bufferSize = GetNetworkReceiveBufferSize();
+            const int _bufferSize = 65536;
             var buf = new byte[_bufferSize];
             ulong _peerId = 0;
             unsafe
             {
                 fixed (byte* bufPtr = buf)
                 {
-                    int _written = NativeMethods.goud_rpc_receive_response(_ctx, handle, callId, (IntPtr)bufPtr, buf.Length, ref _peerId);
+                    int _written = NativeMethods.goud_rpc_receive_response(handle, callId, (IntPtr)bufPtr, buf.Length, ref _peerId);
                     if (_written < 0)
                     {
                         var _ex = GoudException.FromLastError();
@@ -2026,14 +2026,14 @@ namespace GoudEngine
         /// <summary>Drains outbound RPC messages and copies the next one into the caller's buffer.</summary>
         public byte[] RpcDrainOne(long handle)
         {
-            int _bufferSize = GetNetworkReceiveBufferSize();
+            const int _bufferSize = 65536;
             var buf = new byte[_bufferSize];
             ulong _peerId = 0;
             unsafe
             {
                 fixed (byte* bufPtr = buf)
                 {
-                    int _written = NativeMethods.goud_rpc_drain_one(_ctx, handle, (IntPtr)bufPtr, buf.Length, ref _peerId);
+                    int _written = NativeMethods.goud_rpc_drain_one(handle, (IntPtr)bufPtr, buf.Length, ref _peerId);
                     if (_written < 0)
                     {
                         var _ex = GoudException.FromLastError();
