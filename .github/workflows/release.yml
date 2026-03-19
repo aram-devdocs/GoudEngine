@@ -126,6 +126,62 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
+  # ── Step 2a+: Publish native tarballs to GitHub Release ──
+  publish-native-tarballs:
+    name: Native Tarballs
+    needs: [build-native-libs, release-please]
+    if: needs.release-please.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: linux-x64
+            lib: libgoud_engine.so
+          - rid: osx-x64
+            lib: libgoud_engine.dylib
+          - rid: osx-arm64
+            lib: libgoud_engine.dylib
+          - rid: win-x64
+            lib: goud_engine.dll
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download native artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: native-${{ matrix.rid }}
+          path: artifacts/native-${{ matrix.rid }}
+
+      - name: Create tarball
+        env:
+          VERSION: ${{ needs.release-please.outputs.version }}
+          RID: ${{ matrix.rid }}
+          LIB: ${{ matrix.lib }}
+        run: |
+          STAGING="goud-engine-v${VERSION}-${RID}"
+          mkdir -p "${STAGING}/lib"
+          mkdir -p "${STAGING}/include"
+          mkdir -p "${STAGING}/cmake"
+
+          cp "artifacts/native-${RID}/${LIB}" "${STAGING}/lib/"
+          cp "artifacts/native-${RID}/include/goud_engine.h" "${STAGING}/include/"
+          cp -r sdks/c/include/goud "${STAGING}/include/"
+          cp -r sdks/cpp/include/goud/* "${STAGING}/include/goud/"
+          cp sdks/cpp/cmake/FindGoudEngine.cmake "${STAGING}/cmake/"
+          cp sdks/cpp/cmake/GoudEngineConfig.cmake "${STAGING}/cmake/"
+
+          tar -czf "${STAGING}.tar.gz" "${STAGING}"
+
+      - name: Upload tarball to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.release-please.outputs.version }}
+          RID: ${{ matrix.rid }}
+        run: |
+          TARBALL="goud-engine-v${VERSION}-${RID}.tar.gz"
+          gh release upload "v${VERSION}" "${TARBALL}" --clobber
+
   # ── Step 2b: Build napi-rs addons for Node.js ──
   build-napi:
     name: Napi (${{ matrix.name }})
@@ -489,7 +545,7 @@ jobs:
   # ── Summary ──
   release-summary:
     name: Release Summary
-    needs: [release-please, publish-npm, publish-nuget, publish-pypi, publish-crates]
+    needs: [release-please, publish-npm, publish-nuget, publish-pypi, publish-crates, publish-native-tarballs]
     if: always() && needs.release-please.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -505,4 +561,5 @@ jobs:
           | NuGet | \`GoudEngine\` | ${{ needs.publish-nuget.result }} |
           | PyPI | \`goudengine\` | ${{ needs.publish-pypi.result }} |
           | crates.io | \`goud-engine\` | ${{ needs.publish-crates.result }} |
+          | GitHub Release | C/C++ tarballs | ${{ needs.publish-native-tarballs.result }} |
           EOF

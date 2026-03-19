@@ -10,6 +10,44 @@ The wrapper adds:
 - `goud::Context` and `goud::Engine` RAII wrappers with `noexcept` destructors
 - optional `std::unique_ptr` and `std::shared_ptr` constructors where shared or transferred ownership is clearer than a raw handle
 
+## Package Manager Installation
+
+### vcpkg
+
+```bash
+vcpkg install goud-engine
+```
+
+Then in your `CMakeLists.txt`:
+
+```cmake
+cmake_minimum_required(VERSION 3.15)
+project(MyGame LANGUAGES CXX)
+
+find_package(GoudEngine CONFIG REQUIRED)
+
+add_executable(my_game main.cpp)
+target_link_libraries(my_game PRIVATE GoudEngine::GoudEngine)
+```
+
+### Conan
+
+```bash
+conan install --requires=goud-engine/0.0.832
+```
+
+Then in your `CMakeLists.txt`:
+
+```cmake
+cmake_minimum_required(VERSION 3.15)
+project(MyGame LANGUAGES CXX)
+
+find_package(GoudEngine REQUIRED)
+
+add_executable(my_game main.cpp)
+target_link_libraries(my_game PRIVATE GoudEngine::GoudEngine)
+```
+
 ## Prerequisites
 
 Build the native library first:
@@ -97,3 +135,8 @@ int main() {
     return 0;
 }
 ```
+
+## Documentation
+
+API reference generated with Doxygen is available at the
+[C/C++ API docs](https://aram-devdocs.github.io/GoudEngine/api/c-cpp/) page.
