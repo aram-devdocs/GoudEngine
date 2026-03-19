@@ -9,8 +9,8 @@
 //! - `factory`    -- `goud_text_new`, `goud_text_default`
 //! - `properties` -- font size, color, alignment, max width, line spacing
 
-pub mod factory;
-pub mod properties;
+pub(crate) mod factory;
+pub(crate) mod properties;
 
 // Re-export the FfiText type from core for backward compatibility
 pub use crate::core::types::FfiText;

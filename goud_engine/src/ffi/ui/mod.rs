@@ -17,10 +17,10 @@
 //!
 //! The sentinel value `u64::MAX` represents "no node" / invalid.
 
-pub mod events;
-pub mod manager;
-pub mod node;
-pub mod widget;
+pub(crate) mod events;
+pub(crate) mod manager;
+pub(crate) mod node;
+pub(crate) mod widget;
 
 use std::ffi::c_void;
 

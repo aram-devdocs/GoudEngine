@@ -41,12 +41,12 @@
 //! - `layering`   — explicit sprite z-layer accessors and builders
 //! - `builder`    — heap-allocated `FfiSpriteBuilder` with chaining API
 
-pub mod builder;
-pub mod color;
-pub mod factory;
-pub mod layering;
-pub mod properties;
-pub mod texture;
+pub(crate) mod builder;
+pub(crate) mod color;
+pub(crate) mod factory;
+pub(crate) mod layering;
+pub(crate) mod properties;
+pub(crate) mod texture;
 
 #[cfg(test)]
 mod tests;

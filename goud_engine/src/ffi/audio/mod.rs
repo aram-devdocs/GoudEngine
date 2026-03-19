@@ -12,9 +12,9 @@
 //!   timed crossfade, and additive mix helpers
 
 /// FFI functions for playback control, channel/volume state, and playback state queries.
-pub mod controls;
-pub mod playback;
-pub mod spatial;
+pub(crate) mod controls;
+pub(crate) mod playback;
+pub(crate) mod spatial;
 
 /// Error sentinel for functions returning `i64` player IDs.
 const ERR_AUDIO: i64 = -1;
