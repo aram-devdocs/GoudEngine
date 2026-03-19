@@ -10,7 +10,7 @@ use super::{generated, helpers};
 // The process can only host one JVM. Each test reuses it and clears any stale
 // pending exception on attach so a failed prior test does not poison later ones.
 static JVM: OnceLock<JavaVM> = OnceLock::new();
-const GENERATED_JNI_RS: &str = include_str!("generated.rs");
+const GENERATED_JNI_RS: &str = include_str!("generated.g.rs");
 const GOUD_GAME_NATIVE_JAVA: &str =
     include_str!("../../tests/jni/java/com/goudengine/internal/GoudGameNative.java");
 const GOUD_CONTEXT_NATIVE_JAVA: &str =
