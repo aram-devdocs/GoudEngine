@@ -4,90 +4,90 @@
 //! files into [`MeshAsset`] data using the `gltf` crate.
 
 #[cfg(feature = "native")]
-use super::asset::{MeshAsset, MeshVertex, SubMesh};
+use super::asset::{MeshAsset, MeshBounds, MeshVertex, SubMesh};
 #[cfg(feature = "native")]
-use crate::assets::AssetLoadError;
+use crate::assets::{AssetLoadError, LoadContext};
+#[cfg(feature = "native")]
+use cgmath::{Matrix4, SquareMatrix};
+
+#[cfg(feature = "native")]
+mod support;
+#[cfg(feature = "native")]
+use support::{
+    collect_buffer_data, collect_image_assets, extract_material, node_transform_matrix,
+    primitive_name, transform_normal, transform_position,
+};
 
 /// Parses a GLTF or GLB file from raw bytes into a [`MeshAsset`].
 ///
-/// All meshes and their primitives are merged into a single vertex/index
-/// buffer. Each primitive becomes a [`SubMesh`] entry.
-///
-/// # Errors
-///
-/// Returns [`AssetLoadError::DecodeFailed`] if the bytes cannot be parsed
-/// as valid GLTF/GLB or if the file contains no mesh data.
+/// All primitives referenced by the active scene are flattened into a single
+/// vertex/index buffer. Each primitive becomes a [`SubMesh`] entry.
 #[cfg(feature = "native")]
-pub(super) fn parse_gltf(bytes: &[u8]) -> Result<MeshAsset, AssetLoadError> {
+pub(super) fn parse_gltf(
+    bytes: &[u8],
+    context: &mut LoadContext,
+) -> Result<MeshAsset, AssetLoadError> {
     let gltf::Gltf { document, mut blob } = gltf::Gltf::from_slice(bytes)
         .map_err(|e| AssetLoadError::decode_failed(format!("GLTF parse error: {e}")))?;
 
-    // Collect buffer data. For GLB the first buffer is in `blob`.
-    let buffers = collect_buffer_data(&document, &mut blob)?;
+    let buffers = collect_buffer_data(&document, &mut blob, context)?;
+    let image_paths = collect_image_assets(&document, &buffers, context)?;
 
     let mut vertices: Vec<MeshVertex> = Vec::new();
     let mut indices: Vec<u32> = Vec::new();
     let mut sub_meshes: Vec<SubMesh> = Vec::new();
+    let mut mesh_bounds = MeshBounds::default();
+    let mut has_mesh_bounds = false;
+    let mut flattened_any = false;
 
-    for mesh in document.meshes() {
-        for primitive in mesh.primitives() {
-            let reader =
-                primitive.reader(|buffer| buffers.get(buffer.index()).map(|d| d.as_slice()));
-
-            let base_vertex = vertices.len() as u32;
-            let start_index = indices.len() as u32;
-
-            // Positions (required)
-            let positions: Vec<[f32; 3]> = reader
-                .read_positions()
-                .ok_or_else(|| {
-                    AssetLoadError::decode_failed("GLTF primitive missing POSITION attribute")
-                })?
-                .collect();
-
-            // Normals (optional -- default to [0, 0, 1])
-            let normals: Vec<[f32; 3]> = reader
-                .read_normals()
-                .map(|n| n.collect())
-                .unwrap_or_else(|| vec![[0.0, 0.0, 1.0]; positions.len()]);
-
-            // Tex coords (optional -- default to [0, 0])
-            let uvs: Vec<[f32; 2]> = reader
-                .read_tex_coords(0)
-                .map(|tc| tc.into_f32().collect())
-                .unwrap_or_else(|| vec![[0.0, 0.0]; positions.len()]);
-
-            for i in 0..positions.len() {
-                vertices.push(MeshVertex {
-                    position: positions[i],
-                    normal: normals[i],
-                    uv: uvs[i],
-                });
+    if let Some(scene) = document.default_scene() {
+        for node in scene.nodes() {
+            flatten_node(
+                node,
+                Matrix4::identity(),
+                &buffers,
+                &image_paths,
+                &mut vertices,
+                &mut indices,
+                &mut sub_meshes,
+                &mut mesh_bounds,
+                &mut has_mesh_bounds,
+                &mut flattened_any,
+            )?;
+        }
+    } else {
+        for scene in document.scenes() {
+            for node in scene.nodes() {
+                flatten_node(
+                    node,
+                    Matrix4::identity(),
+                    &buffers,
+                    &image_paths,
+                    &mut vertices,
+                    &mut indices,
+                    &mut sub_meshes,
+                    &mut mesh_bounds,
+                    &mut has_mesh_bounds,
+                    &mut flattened_any,
+                )?;
             }
+        }
+    }
 
-            // Indices (optional -- generate sequential if missing)
-            if let Some(idx_reader) = reader.read_indices() {
-                for idx in idx_reader.into_u32() {
-                    indices.push(base_vertex + idx);
-                }
-            } else {
-                for i in 0..positions.len() as u32 {
-                    indices.push(base_vertex + i);
-                }
-            }
-
-            let index_count = indices.len() as u32 - start_index;
-            let name = mesh
-                .name()
-                .map(|n| n.to_string())
-                .unwrap_or_else(|| format!("mesh_{}", mesh.index()));
-
-            sub_meshes.push(SubMesh {
-                name,
-                start_index,
-                index_count,
-                material_index: primitive.material().index().map(|i| i as u32),
-            });
+    if !flattened_any {
+        for mesh in document.meshes() {
+            append_mesh_primitives(
+                None,
+                mesh,
+                Matrix4::identity(),
+                &buffers,
+                &image_paths,
+                &mut vertices,
+                &mut indices,
+                &mut sub_meshes,
+                &mut mesh_bounds,
+                &mut has_mesh_bounds,
+            )?;
         }
     }
 
@@ -101,39 +101,139 @@ pub(super) fn parse_gltf(bytes: &[u8]) -> Result<MeshAsset, AssetLoadError> {
         vertices,
         indices,
         sub_meshes,
+        bounds: mesh_bounds,
     })
 }
 
-/// Collects buffer data from GLTF document.
-///
-/// For GLB files the first buffer comes from `blob`. For plain GLTF
-/// with external buffers, only embedded (data-URI) buffers are supported.
 #[cfg(feature = "native")]
-fn collect_buffer_data(
-    document: &gltf::Document,
-    blob: &mut Option<Vec<u8>>,
-) -> Result<Vec<Vec<u8>>, AssetLoadError> {
-    use crate::assets::loaders::gltf_utils::decode_data_uri;
+#[allow(clippy::too_many_arguments)]
+fn flatten_node(
+    node: gltf::Node,
+    parent_transform: Matrix4<f32>,
+    buffers: &[Vec<u8>],
+    image_paths: &[Option<String>],
+    vertices: &mut Vec<MeshVertex>,
+    indices: &mut Vec<u32>,
+    sub_meshes: &mut Vec<SubMesh>,
+    mesh_bounds: &mut MeshBounds,
+    has_mesh_bounds: &mut bool,
+    flattened_any: &mut bool,
+) -> Result<(), AssetLoadError> {
+    let world_transform = parent_transform * node_transform_matrix(node.transform().matrix());
 
-    let mut buffers = Vec::new();
-    for buffer in document.buffers() {
-        match buffer.source() {
-            gltf::buffer::Source::Bin => {
-                let data = blob.take().ok_or_else(|| {
-                    AssetLoadError::decode_failed("GLB missing binary blob for buffer")
-                })?;
-                buffers.push(data);
+    if let Some(mesh) = node.mesh() {
+        append_mesh_primitives(
+            Some(node.clone()),
+            mesh,
+            world_transform,
+            buffers,
+            image_paths,
+            vertices,
+            indices,
+            sub_meshes,
+            mesh_bounds,
+            has_mesh_bounds,
+        )?;
+        *flattened_any = true;
+    }
+
+    for child in node.children() {
+        flatten_node(
+            child,
+            world_transform,
+            buffers,
+            image_paths,
+            vertices,
+            indices,
+            sub_meshes,
+            mesh_bounds,
+            has_mesh_bounds,
+            flattened_any,
+        )?;
+    }
+
+    Ok(())
+}
+
+#[cfg(feature = "native")]
+#[allow(clippy::too_many_arguments)]
+fn append_mesh_primitives(
+    node: Option<gltf::Node>,
+    mesh: gltf::Mesh,
+    transform: Matrix4<f32>,
+    buffers: &[Vec<u8>],
+    image_paths: &[Option<String>],
+    vertices: &mut Vec<MeshVertex>,
+    indices: &mut Vec<u32>,
+    sub_meshes: &mut Vec<SubMesh>,
+    mesh_bounds: &mut MeshBounds,
+    has_mesh_bounds: &mut bool,
+) -> Result<(), AssetLoadError> {
+    for primitive in mesh.primitives() {
+        let reader = primitive.reader(|buffer| buffers.get(buffer.index()).map(|d| d.as_slice()));
+
+        let base_vertex = vertices.len() as u32;
+        let start_index = indices.len() as u32;
+
+        let positions: Vec<[f32; 3]> = reader
+            .read_positions()
+            .ok_or_else(|| {
+                AssetLoadError::decode_failed("GLTF primitive missing POSITION attribute")
+            })?
+            .map(|position| transform_position(transform, position))
+            .collect();
+
+        let default_normal = transform_normal(transform, [0.0, 0.0, 1.0]);
+        let normals: Vec<[f32; 3]> = reader
+            .read_normals()
+            .map(|normals| {
+                normals
+                    .map(|normal| transform_normal(transform, normal))
+                    .collect()
+            })
+            .unwrap_or_else(|| vec![default_normal; positions.len()]);
+
+        let uvs: Vec<[f32; 2]> = reader
+            .read_tex_coords(0)
+            .map(|coords| coords.into_f32().collect())
+            .unwrap_or_else(|| vec![[0.0, 0.0]; positions.len()]);
+
+        for i in 0..positions.len() {
+            vertices.push(MeshVertex {
+                position: positions[i],
+                normal: normals[i],
+                uv: uvs[i],
+            });
+        }
+
+        if let Some(idx_reader) = reader.read_indices() {
+            for idx in idx_reader.into_u32() {
+                indices.push(base_vertex + idx);
             }
-            gltf::buffer::Source::Uri(uri) => {
-                if uri.starts_with("data:") {
-                    buffers.push(decode_data_uri(uri)?);
-                } else {
-                    return Err(AssetLoadError::decode_failed(format!(
-                        "External GLTF buffer URIs are not supported: {uri}"
-                    )));
-                }
+        } else {
+            for i in 0..positions.len() as u32 {
+                indices.push(base_vertex + i);
             }
         }
+
+        let bounds = MeshBounds::from_positions(&positions);
+        if *has_mesh_bounds {
+            *mesh_bounds = mesh_bounds.union(bounds);
+        } else {
+            *mesh_bounds = bounds;
+            *has_mesh_bounds = true;
+        }
+
+        let index_count = indices.len() as u32 - start_index;
+        sub_meshes.push(SubMesh {
+            name: primitive_name(node.as_ref(), &mesh, &primitive),
+            start_index,
+            index_count,
+            material_index: primitive.material().index().map(|i| i as u32),
+            material: extract_material(primitive.material(), image_paths),
+            bounds,
+        });
     }
-    Ok(buffers)
+
+    Ok(())
 }

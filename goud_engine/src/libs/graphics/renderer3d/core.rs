@@ -9,19 +9,22 @@ use crate::libs::graphics::backend::BufferUsage;
 use crate::libs::graphics::backend::{RenderBackend, VertexLayout};
 
 use super::debug_draw::build_debug_draw_vertices;
-use super::mesh::{create_axis_mesh, create_grid_mesh, grid_vertex_layout, object_vertex_layout};
+use super::mesh::generate_plane_vertices;
 use super::mesh::{
-    generate_cube_vertices, generate_cylinder_vertices, generate_plane_vertices,
-    generate_sphere_vertices, upload_buffer,
+    create_axis_mesh, create_grid_mesh, create_postprocess_quad, grid_vertex_layout,
+    instance_vertex_layout, object_vertex_layout, postprocess_vertex_layout, upload_buffer,
 };
 use super::shaders::{
     resolve_grid_uniforms, resolve_main_uniforms, GridUniforms, MainUniforms, FRAGMENT_SHADER_3D,
     FRAGMENT_SHADER_3D_WGSL, GRID_FRAGMENT_SHADER, GRID_FRAGMENT_SHADER_WGSL, GRID_VERTEX_SHADER,
-    GRID_VERTEX_SHADER_WGSL, VERTEX_SHADER_3D, VERTEX_SHADER_3D_WGSL,
+    GRID_VERTEX_SHADER_WGSL, INSTANCED_FRAGMENT_SHADER_3D, INSTANCED_FRAGMENT_SHADER_3D_WGSL,
+    INSTANCED_VERTEX_SHADER_3D, INSTANCED_VERTEX_SHADER_3D_WGSL, POSTPROCESS_FRAGMENT_SHADER,
+    POSTPROCESS_FRAGMENT_SHADER_WGSL, POSTPROCESS_VERTEX_SHADER, POSTPROCESS_VERTEX_SHADER_WGSL,
+    VERTEX_SHADER_3D, VERTEX_SHADER_3D_WGSL,
 };
 use super::types::{
-    Camera3D, FogConfig, GridConfig, Light, Object3D, PrimitiveCreateInfo, PrimitiveType,
-    SkyboxConfig,
+    AntiAliasingMode, Camera3D, FogConfig, GridConfig, InstancedMesh, Light, Object3D,
+    ParticleEmitter, Renderer3DStats, SkyboxConfig,
 };
 
 use crate::libs::graphics::backend::ShaderHandle;
@@ -38,7 +41,9 @@ use cgmath::Vector3;
 pub struct Renderer3D {
     pub(super) backend: Box<dyn RenderBackend>,
     pub(super) shader_handle: ShaderHandle,
+    pub(super) instanced_shader_handle: ShaderHandle,
     pub(super) grid_shader_handle: ShaderHandle,
+    pub(super) postprocess_shader_handle: ShaderHandle,
     pub(super) grid_buffer: BufferHandle,
     pub(super) grid_vertex_count: i32,
     pub(super) axis_buffer: BufferHandle,
@@ -47,9 +52,13 @@ pub struct Renderer3D {
     pub(super) debug_draw_buffer_capacity_bytes: usize,
     pub(super) debug_draw_vertex_count: i32,
     pub(super) objects: HashMap<u32, Object3D>,
+    pub(super) instanced_meshes: HashMap<u32, InstancedMesh>,
+    pub(super) particle_emitters: HashMap<u32, ParticleEmitter>,
     pub(super) lights: HashMap<u32, Light>,
     pub(super) next_object_id: u32,
+    pub(super) next_instanced_mesh_id: u32,
     pub(super) next_light_id: u32,
+    pub(super) next_particle_emitter_id: u32,
     pub(super) camera: Camera3D,
     pub(super) window_width: u32,
     pub(super) window_height: u32,
@@ -58,9 +67,23 @@ pub struct Renderer3D {
     pub(super) skybox_config: SkyboxConfig,
     pub(super) fog_config: FogConfig,
     pub(super) uniforms: MainUniforms,
+    pub(super) instanced_uniforms: MainUniforms,
     pub(super) grid_uniforms: GridUniforms,
     pub(super) object_layout: VertexLayout,
+    pub(super) instance_layout: VertexLayout,
     pub(super) grid_layout: VertexLayout,
+    pub(super) particle_quad_buffer: BufferHandle,
+    pub(super) particle_quad_vertex_count: u32,
+    pub(super) postprocess_quad_buffer: BufferHandle,
+    pub(super) postprocess_layout: VertexLayout,
+    pub(super) postprocess_texture: Option<crate::libs::graphics::backend::TextureHandle>,
+    pub(super) postprocess_texture_size: (u32, u32),
+    pub(super) shadow_texture: Option<crate::libs::graphics::backend::TextureHandle>,
+    pub(super) shadow_map_size: u32,
+    pub(super) shadow_bias: f32,
+    pub(super) stats: Renderer3DStats,
+    pub(super) anti_aliasing_mode: AntiAliasingMode,
+    pub(super) msaa_samples: u32,
 }
 
 impl Renderer3D {
@@ -76,10 +99,26 @@ impl Renderer3D {
         } else {
             (VERTEX_SHADER_3D, FRAGMENT_SHADER_3D)
         };
+        let (instanced_vertex_shader, instanced_fragment_shader) = if use_wgpu_shaders {
+            (
+                INSTANCED_VERTEX_SHADER_3D_WGSL,
+                INSTANCED_FRAGMENT_SHADER_3D_WGSL,
+            )
+        } else {
+            (INSTANCED_VERTEX_SHADER_3D, INSTANCED_FRAGMENT_SHADER_3D)
+        };
         let (grid_vertex_shader, grid_fragment_shader) = if use_wgpu_shaders {
             (GRID_VERTEX_SHADER_WGSL, GRID_FRAGMENT_SHADER_WGSL)
         } else {
             (GRID_VERTEX_SHADER, GRID_FRAGMENT_SHADER)
+        };
+        let (postprocess_vertex_shader, postprocess_fragment_shader) = if use_wgpu_shaders {
+            (
+                POSTPROCESS_VERTEX_SHADER_WGSL,
+                POSTPROCESS_FRAGMENT_SHADER_WGSL,
+            )
+        } else {
+            (POSTPROCESS_VERTEX_SHADER, POSTPROCESS_FRAGMENT_SHADER)
         };
 
         let shader_handle = backend
@@ -87,19 +126,38 @@ impl Renderer3D {
             .map_err(|e| format!("Main 3D shader: {e}"))?;
         let uniforms = resolve_main_uniforms(backend.as_ref(), shader_handle);
 
+        let instanced_shader_handle = backend
+            .create_shader(instanced_vertex_shader, instanced_fragment_shader)
+            .map_err(|e| format!("Instanced 3D shader: {e}"))?;
+        let instanced_uniforms = resolve_main_uniforms(backend.as_ref(), instanced_shader_handle);
+
         let grid_shader_handle = backend
             .create_shader(grid_vertex_shader, grid_fragment_shader)
             .map_err(|e| format!("Grid shader: {e}"))?;
         let grid_uniforms = resolve_grid_uniforms(backend.as_ref(), grid_shader_handle);
+        let postprocess_shader_handle = backend
+            .create_shader(postprocess_vertex_shader, postprocess_fragment_shader)
+            .map_err(|e| format!("Postprocess shader: {e}"))?;
 
         let grid_layout = grid_vertex_layout();
+        let instance_layout = instance_vertex_layout();
+        let postprocess_layout = postprocess_vertex_layout();
         let (grid_buffer, grid_vertex_count) = create_grid_mesh(backend.as_mut(), 20.0, 20)?;
         let (axis_buffer, axis_vertex_count) = create_axis_mesh(backend.as_mut(), 5.0)?;
+        let particle_vertices = generate_plane_vertices(1.0, 1.0);
+        let particle_quad_vertex_count = (particle_vertices.len() / 8) as u32;
+        let particle_quad_buffer = upload_buffer(backend.as_mut(), &particle_vertices)
+            .map_err(|e| format!("Particle quad buffer: {e}"))?;
+        let postprocess_quad = create_postprocess_quad();
+        let postprocess_quad_buffer = upload_buffer(backend.as_mut(), &postprocess_quad)
+            .map_err(|e| format!("Postprocess quad buffer: {e}"))?;
 
         Ok(Self {
             backend,
             shader_handle,
+            instanced_shader_handle,
             grid_shader_handle,
+            postprocess_shader_handle,
             grid_buffer,
             grid_vertex_count,
             axis_buffer,
@@ -108,9 +166,13 @@ impl Renderer3D {
             debug_draw_buffer_capacity_bytes: 0,
             debug_draw_vertex_count: 0,
             objects: HashMap::new(),
+            instanced_meshes: HashMap::new(),
+            particle_emitters: HashMap::new(),
             lights: HashMap::new(),
             next_object_id: 1,
+            next_instanced_mesh_id: 1,
             next_light_id: 1,
+            next_particle_emitter_id: 1,
             camera: Camera3D::default(),
             window_width,
             window_height,
@@ -119,52 +181,29 @@ impl Renderer3D {
             skybox_config: SkyboxConfig::default(),
             fog_config: FogConfig::default(),
             uniforms,
+            instanced_uniforms,
             grid_uniforms,
             object_layout: object_vertex_layout(),
+            instance_layout,
             grid_layout,
+            particle_quad_buffer,
+            particle_quad_vertex_count,
+            postprocess_quad_buffer,
+            postprocess_layout,
+            postprocess_texture: None,
+            postprocess_texture_size: (0, 0),
+            shadow_texture: None,
+            shadow_map_size: 256,
+            shadow_bias: 0.005,
+            stats: Renderer3DStats::default(),
+            anti_aliasing_mode: AntiAliasingMode::Off,
+            msaa_samples: 1,
         })
     }
 
     // ========================================================================
     // Primitive creation
     // ========================================================================
-
-    /// Create a primitive object and return its ID.
-    pub fn create_primitive(&mut self, info: PrimitiveCreateInfo) -> u32 {
-        let vertices = match info.primitive_type {
-            PrimitiveType::Cube => generate_cube_vertices(info.width, info.height, info.depth),
-            PrimitiveType::Plane => generate_plane_vertices(info.width, info.depth),
-            PrimitiveType::Sphere => generate_sphere_vertices(info.width / 2.0, info.segments),
-            PrimitiveType::Cylinder => {
-                generate_cylinder_vertices(info.width / 2.0, info.height, info.segments)
-            }
-        };
-
-        let buffer = match upload_buffer(self.backend.as_mut(), &vertices) {
-            Ok(h) => h,
-            Err(e) => {
-                log::error!("Failed to create primitive buffer: {e}");
-                return 0;
-            }
-        };
-
-        let id = self.next_object_id;
-        self.next_object_id += 1;
-
-        self.objects.insert(
-            id,
-            Object3D {
-                buffer,
-                vertex_count: (vertices.len() / 8) as i32,
-                position: Vector3::new(0.0, 0.0, 0.0),
-                rotation: Vector3::new(0.0, 0.0, 0.0),
-                scale: Vector3::new(1.0, 1.0, 1.0),
-                texture_id: info.texture_id,
-            },
-        );
-
-        id
-    }
 
     // ========================================================================
     // Object manipulation
@@ -263,6 +302,46 @@ impl Renderer3D {
         self.camera.rotation = Vector3::new(pitch, yaw, roll);
     }
 
+    /// Returns the last frame's renderer stats.
+    pub fn stats(&self) -> Renderer3DStats {
+        self.stats
+    }
+
+    /// Returns the active anti-aliasing mode.
+    pub fn anti_aliasing_mode(&self) -> AntiAliasingMode {
+        self.anti_aliasing_mode
+    }
+
+    /// Returns the configured MSAA sample count.
+    pub fn msaa_samples(&self) -> u32 {
+        self.msaa_samples
+    }
+
+    /// Updates the anti-aliasing mode.
+    pub fn set_anti_aliasing_mode(&mut self, mode: AntiAliasingMode) -> Result<(), String> {
+        self.anti_aliasing_mode = mode;
+        self.backend.set_multisampling_enabled(mode.uses_msaa());
+        Ok(())
+    }
+
+    /// Updates the requested MSAA sample count.
+    pub fn set_msaa_samples(&mut self, samples: u32) {
+        self.msaa_samples = match samples {
+            2 | 4 | 8 => samples,
+            _ => 1,
+        };
+    }
+
+    /// Sets the directional shadow bias.
+    pub fn set_shadow_bias(&mut self, bias: f32) {
+        self.shadow_bias = bias.max(0.0);
+    }
+
+    /// Returns the directional shadow bias.
+    pub fn shadow_bias(&self) -> f32 {
+        self.shadow_bias
+    }
+
     // ========================================================================
     // Grid / Skybox / Fog configuration
     // ========================================================================
@@ -354,12 +433,29 @@ impl Drop for Renderer3D {
         for obj in self.objects.values() {
             self.backend.destroy_buffer(obj.buffer);
         }
+        for mesh in self.instanced_meshes.values() {
+            self.backend.destroy_buffer(mesh.mesh_buffer);
+            self.backend.destroy_buffer(mesh.instance_buffer);
+        }
+        for emitter in self.particle_emitters.values() {
+            self.backend.destroy_buffer(emitter.instance_buffer);
+        }
         self.backend.destroy_buffer(self.grid_buffer);
         self.backend.destroy_buffer(self.axis_buffer);
+        self.backend.destroy_buffer(self.particle_quad_buffer);
+        self.backend.destroy_buffer(self.postprocess_quad_buffer);
+        if let Some(texture) = self.postprocess_texture.take() {
+            self.backend.destroy_texture(texture);
+        }
+        if let Some(texture) = self.shadow_texture.take() {
+            self.backend.destroy_texture(texture);
+        }
         if self.backend.is_buffer_valid(self.debug_draw_buffer) {
             self.backend.destroy_buffer(self.debug_draw_buffer);
         }
         self.backend.destroy_shader(self.shader_handle);
+        self.backend.destroy_shader(self.instanced_shader_handle);
         self.backend.destroy_shader(self.grid_shader_handle);
+        self.backend.destroy_shader(self.postprocess_shader_handle);
     }
 }

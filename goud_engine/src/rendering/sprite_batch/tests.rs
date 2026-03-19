@@ -12,6 +12,7 @@ use crate::libs::graphics::backend::null::NullBackend;
 use crate::rendering::sprite_batch::batch::SpriteBatch;
 use crate::rendering::sprite_batch::config::SpriteBatchConfig;
 use crate::rendering::sprite_batch::types::{SpriteBatchEntry, SpriteInstance, SpriteVertex};
+use crate::rendering::RenderViewport;
 use image::{ImageBuffer, ImageFormat, Rgba};
 
 fn create_test_png(width: u32, height: u32) -> Vec<u8> {
@@ -36,6 +37,7 @@ fn test_sprite_batch_config_default() {
     assert_eq!(config.max_batch_size, 10000);
     assert!(config.enable_z_sorting);
     assert!(config.enable_batching);
+    assert!(config.enable_frustum_culling);
     assert!(!config.shader_asset.is_valid());
     assert!(!config.material_asset.is_valid());
 }
@@ -110,4 +112,82 @@ fn test_gather_sprites_resolves_sprite_sheet_frames() {
     assert_eq!(sprite.texture, texture);
     assert_eq!(sprite.source_rect, Some(Rect::new(8.0, 4.0, 16.0, 24.0)));
     assert_eq!(sprite.size, Vec2::new(16.0, 24.0));
+}
+
+#[test]
+fn test_gather_sprites_culls_entities_outside_viewport() {
+    let mut asset_server = AssetServer::new();
+    let mut world = World::new();
+    let entity = world.spawn_empty();
+    world.insert(entity, Transform2D::from_position(Vec2::new(512.0, 512.0)));
+    world.insert(
+        entity,
+        Sprite::new(AssetHandle::INVALID).with_custom_size(Vec2::new(32.0, 32.0)),
+    );
+
+    let mut batch = SpriteBatch::new(NullBackend::new(), SpriteBatchConfig::default()).unwrap();
+    batch.set_viewport(RenderViewport::fullscreen((128, 128)));
+    batch.gather_sprites(&world, &mut asset_server).unwrap();
+
+    assert!(batch.sprites.is_empty());
+    assert_eq!(batch.culled_count(), 1);
+}
+
+#[test]
+fn test_gather_sprites_keeps_entities_inside_viewport() {
+    let mut asset_server = AssetServer::new();
+    let mut world = World::new();
+    let entity = world.spawn_empty();
+    world.insert(entity, Transform2D::from_position(Vec2::new(32.0, 32.0)));
+    world.insert(
+        entity,
+        Sprite::new(AssetHandle::INVALID).with_custom_size(Vec2::new(32.0, 32.0)),
+    );
+
+    let mut batch = SpriteBatch::new(NullBackend::new(), SpriteBatchConfig::default()).unwrap();
+    batch.set_viewport(RenderViewport::fullscreen((128, 128)));
+    batch.gather_sprites(&world, &mut asset_server).unwrap();
+
+    assert_eq!(batch.sprites.len(), 1);
+    assert_eq!(batch.culled_count(), 0);
+}
+
+#[test]
+fn test_gather_sprites_culls_outside_viewport() {
+    let mut asset_server = AssetServer::new();
+    super::ensure_sprite_asset_loaders(&mut asset_server);
+    let texture =
+        asset_server.load_from_bytes::<TextureAsset>("textures/player.png", &create_test_png(4, 4));
+
+    let mut world = World::new();
+
+    let visible = world.spawn_empty();
+    world.insert(visible, Transform2D::from_position(Vec2::new(32.0, 32.0)));
+    world.insert(
+        visible,
+        Sprite::new(texture).with_custom_size(Vec2::new(16.0, 16.0)),
+    );
+
+    let culled = world.spawn_empty();
+    world.insert(culled, Transform2D::from_position(Vec2::new(400.0, 400.0)));
+    world.insert(
+        culled,
+        Sprite::new(texture).with_custom_size(Vec2::new(16.0, 16.0)),
+    );
+
+    let mut batch = SpriteBatch::new(NullBackend::new(), SpriteBatchConfig::default()).unwrap();
+    batch.set_viewport(RenderViewport {
+        x: 0,
+        y: 0,
+        width: 128,
+        height: 128,
+        logical_width: 128,
+        logical_height: 128,
+    });
+
+    batch.gather_sprites(&world, &mut asset_server).unwrap();
+
+    assert_eq!(batch.sprite_count(), 1);
+    assert_eq!(batch.culled_count(), 1);
+    assert_eq!(batch.sprites[0].entity, visible);
 }

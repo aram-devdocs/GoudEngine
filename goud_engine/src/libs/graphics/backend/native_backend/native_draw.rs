@@ -2,7 +2,7 @@ use crate::libs::error::GoudResult;
 
 use super::NativeRenderBackend;
 use crate::libs::graphics::backend::render_backend::DrawOps;
-use crate::libs::graphics::backend::types::{PrimitiveTopology, VertexLayout};
+use crate::libs::graphics::backend::types::{PrimitiveTopology, VertexBufferBinding, VertexLayout};
 
 impl DrawOps for NativeRenderBackend {
     fn set_vertex_attributes(&mut self, layout: &VertexLayout) {
@@ -11,6 +11,15 @@ impl DrawOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.set_vertex_attributes(layout),
             #[cfg(all(feature = "native", feature = "wgpu-backend"))]
             Self::Wgpu(backend) => backend.set_vertex_attributes(layout),
+        }
+    }
+
+    fn set_vertex_bindings(&mut self, bindings: &[VertexBufferBinding]) -> GoudResult<()> {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(backend) => backend.set_vertex_bindings(bindings),
+            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            Self::Wgpu(backend) => backend.set_vertex_bindings(bindings),
         }
     }
 

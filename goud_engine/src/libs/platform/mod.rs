@@ -101,6 +101,9 @@ pub struct WindowConfig {
 
     /// Allow the user to resize the window.
     pub resizable: bool,
+
+    /// Requested MSAA sample count for native window creation.
+    pub msaa_samples: u32,
 }
 
 impl Default for WindowConfig {
@@ -111,6 +114,7 @@ impl Default for WindowConfig {
             title: "GoudEngine".to_string(),
             vsync: true,
             resizable: true,
+            msaa_samples: 1,
         }
     }
 }
@@ -178,6 +182,7 @@ mod tests {
         assert_eq!(config.title, "GoudEngine");
         assert!(config.vsync);
         assert!(config.resizable);
+        assert_eq!(config.msaa_samples, 1);
     }
 
     #[test]
@@ -188,6 +193,7 @@ mod tests {
             title: "Test".to_string(),
             vsync: false,
             resizable: false,
+            msaa_samples: 4,
         };
         let cloned = config.clone();
         assert_eq!(config.width, cloned.width);
@@ -195,5 +201,6 @@ mod tests {
         assert_eq!(config.title, cloned.title);
         assert_eq!(config.vsync, cloned.vsync);
         assert_eq!(config.resizable, cloned.resizable);
+        assert_eq!(config.msaa_samples, cloned.msaa_samples);
     }
 }

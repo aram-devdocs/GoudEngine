@@ -10,7 +10,7 @@ use crate::libs::graphics::backend::render_backend::{
 use crate::libs::graphics::backend::types::{
     BufferHandle, BufferType, BufferUsage, DepthFunc, FrontFace, PrimitiveTopology,
     RenderTargetDesc, RenderTargetHandle, ShaderHandle, TextureFilter, TextureFormat,
-    TextureHandle, TextureWrap, VertexLayout,
+    TextureHandle, TextureWrap, VertexBufferBinding, VertexLayout,
 };
 
 use super::backend::{NullBufferMeta, NullRenderTargetMeta, NullTextureMeta};
@@ -112,6 +112,10 @@ impl StateOps for NullBackend {
 
     fn set_depth_mask(&mut self, enabled: bool) {
         self.depth_mask_enabled = enabled;
+    }
+
+    fn set_multisampling_enabled(&mut self, enabled: bool) {
+        self.multisampling_enabled = enabled;
     }
 
     fn set_line_width(&mut self, width: f32) {
@@ -408,12 +412,17 @@ impl DrawOps for NullBackend {
         // no-op
     }
 
+    fn set_vertex_bindings(&mut self, _bindings: &[VertexBufferBinding]) -> GoudResult<()> {
+        Ok(())
+    }
+
     fn draw_arrays(
         &mut self,
         _topology: PrimitiveTopology,
         _first: u32,
         _count: u32,
     ) -> GoudResult<()> {
+        self.draw_arrays_calls += 1;
         Ok(())
     }
 
@@ -423,6 +432,7 @@ impl DrawOps for NullBackend {
         _count: u32,
         _offset: usize,
     ) -> GoudResult<()> {
+        self.draw_indexed_calls += 1;
         Ok(())
     }
 
@@ -432,6 +442,7 @@ impl DrawOps for NullBackend {
         _count: u32,
         _offset: usize,
     ) -> GoudResult<()> {
+        self.draw_indexed_calls += 1;
         Ok(())
     }
 
@@ -442,6 +453,7 @@ impl DrawOps for NullBackend {
         _count: u32,
         _instance_count: u32,
     ) -> GoudResult<()> {
+        self.draw_arrays_instanced_calls += 1;
         Ok(())
     }
 
@@ -452,6 +464,7 @@ impl DrawOps for NullBackend {
         _offset: usize,
         _instance_count: u32,
     ) -> GoudResult<()> {
+        self.draw_indexed_instanced_calls += 1;
         Ok(())
     }
 }

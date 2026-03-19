@@ -3,6 +3,8 @@
 //! This module contains loaders for common asset types like textures,
 //! shaders, and audio files.
 
+use crate::assets::AssetServer;
+
 pub mod animation;
 pub mod audio;
 pub mod bitmap_font;
@@ -44,3 +46,18 @@ pub use mesh::{MeshAsset, MeshLoader, MeshVertex, SubMesh};
 pub use tiled_map::{
     visible_tile_range, MapObject, ObjectLayer, TileLayer, TiledMapAsset, TiledMapLoader,
 };
+
+pub(crate) fn ensure_3d_asset_loaders(asset_server: &mut AssetServer) {
+    if !asset_server.has_loader_for_type::<TextureAsset>() {
+        asset_server.register_loader(TextureLoader);
+    }
+    if !asset_server.has_loader_for_type::<ShaderAsset>() {
+        asset_server.register_loader(ShaderLoader::default());
+    }
+    if !asset_server.has_loader_for_type::<MaterialAsset>() {
+        asset_server.register_loader(MaterialLoader);
+    }
+    if !asset_server.has_loader_for_type::<MeshAsset>() {
+        asset_server.register_loader(MeshLoader);
+    }
+}

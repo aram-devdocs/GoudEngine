@@ -35,9 +35,9 @@ fn test_sprite_sheet_loader_parses_descriptor() {
     assert_eq!(asset.name.as_deref(), Some("player"));
     assert_eq!(asset.texture_path(), "textures/player.png");
     assert_eq!(asset.region("idle").unwrap().rect.height, 48.0);
-    assert!(context
-        .into_dependencies()
-        .contains(&"textures/player.png".to_string()));
+    let (dependencies, embedded_assets) = context.into_parts();
+    assert!(dependencies.contains(&"textures/player.png".to_string()));
+    assert!(embedded_assets.is_empty());
 }
 
 #[test]

@@ -57,6 +57,7 @@ mod traits;
 #[cfg(test)]
 mod tests;
 
+pub(crate) use context::EmbeddedAsset;
 pub use context::LoadContext;
 pub use error::AssetLoadError;
 pub use traits::{AssetLoader, ErasedAssetLoader, TypedAssetLoader};

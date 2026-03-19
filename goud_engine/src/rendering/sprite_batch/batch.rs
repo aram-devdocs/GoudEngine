@@ -16,6 +16,8 @@ use crate::libs::graphics::backend::RenderBackend;
 use crate::rendering::RenderViewport;
 use std::collections::HashMap;
 
+use super::culling::SpriteFrustum2D;
+
 /// High-performance sprite batch renderer.
 ///
 /// The SpriteBatch collects sprites, sorts them by texture and Z-layer,
@@ -55,6 +57,8 @@ pub struct SpriteBatch<B: RenderBackend> {
     pub viewport: RenderViewport,
     /// Signature of the currently compiled shader/material state.
     pub shader_signature: Option<u64>,
+    /// Number of sprites rejected by frustum culling this frame.
+    pub culled_count: usize,
 }
 
 impl<B: RenderBackend> SpriteBatch<B> {
@@ -78,6 +82,7 @@ impl<B: RenderBackend> SpriteBatch<B> {
             frame_count: 0,
             viewport: RenderViewport::default(),
             shader_signature: None,
+            culled_count: 0,
         })
     }
 
@@ -88,6 +93,7 @@ impl<B: RenderBackend> SpriteBatch<B> {
         self.sprites.clear();
         self.vertices.clear();
         self.batches.clear();
+        self.culled_count = 0;
         self.frame_count += 1;
     }
 
@@ -137,6 +143,8 @@ impl<B: RenderBackend> SpriteBatch<B> {
         asset_server: &mut AssetServer,
     ) -> GoudResult<()> {
         self.sprites.clear();
+        self.culled_count = 0;
+        let frustum = SpriteFrustum2D::from_viewport(self.viewport);
 
         let query: Query<(Entity, &Sprite, &Transform2D)> = Query::new(world);
 
@@ -165,10 +173,41 @@ impl<B: RenderBackend> SpriteBatch<B> {
                 sprite.flip_x,
                 sprite.flip_y,
             );
-            self.sprites.push(instance);
+            if !self.config.enable_frustum_culling || self.is_sprite_visible(&instance, &frustum) {
+                self.sprites.push(instance);
+            } else {
+                self.culled_count += 1;
+            }
         }
 
         Ok(())
+    }
+
+    fn is_sprite_visible(&self, sprite: &SpriteInstance, frustum: &SpriteFrustum2D) -> bool {
+        frustum.intersects_rect(&self.sprite_bounds(sprite))
+    }
+
+    fn sprite_bounds(&self, sprite: &SpriteInstance) -> Rect {
+        let half_size = sprite.size * 0.5;
+        let local_corners = [
+            Vec2::new(-half_size.x, -half_size.y),
+            Vec2::new(half_size.x, -half_size.y),
+            Vec2::new(half_size.x, half_size.y),
+            Vec2::new(-half_size.x, half_size.y),
+        ];
+
+        let mut min = Vec2::new(f32::INFINITY, f32::INFINITY);
+        let mut max = Vec2::new(f32::NEG_INFINITY, f32::NEG_INFINITY);
+
+        for corner in local_corners {
+            let world = sprite.transform.transform_point(corner);
+            min.x = min.x.min(world.x);
+            min.y = min.y.min(world.y);
+            max.x = max.x.max(world.x);
+            max.y = max.y.max(world.y);
+        }
+
+        Rect::from_min_max(min, max)
     }
 
     fn resolve_sprite_source(
@@ -396,6 +435,11 @@ impl<B: RenderBackend> SpriteBatch<B> {
         self.frame_count
     }
 
+    /// Returns how many sprites were rejected by frustum culling this frame.
+    pub fn culled_count(&self) -> usize {
+        self.culled_count
+    }
+
     /// Sets the active viewport used by this batch.
     pub fn set_viewport(&mut self, viewport: RenderViewport) {
         self.viewport = viewport;
@@ -437,6 +481,7 @@ impl<B: RenderBackend> crate::core::providers::diagnostics::DiagnosticsSource fo
             "sprite_count": sprites,
             "batch_count": batches,
             "batch_ratio": ratio,
+            "culled_count": self.culled_count(),
         })
     }
 }

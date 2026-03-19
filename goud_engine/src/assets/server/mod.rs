@@ -45,6 +45,7 @@
 
 mod async_operations;
 mod core;
+mod hot_reload_operations;
 mod loader_registry;
 mod operations;
 mod ref_counting;

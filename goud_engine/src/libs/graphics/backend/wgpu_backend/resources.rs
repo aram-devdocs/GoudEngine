@@ -6,7 +6,7 @@
 
 use super::{
     BlendFactor, BufferHandle, BufferType, CullFace, DepthFunc, FrontFace, PrimitiveTopology,
-    ShaderHandle, TextureHandle, VertexLayout,
+    ShaderHandle, TextureHandle, VertexBufferBinding,
 };
 use std::collections::HashMap;
 
@@ -50,9 +50,8 @@ pub(super) struct WgpuShaderMeta {
 /// A draw command recorded during the frame, replayed in `end_frame`.
 pub(super) struct DrawCommand {
     pub(super) shader: ShaderHandle,
-    pub(super) vertex_buffer: BufferHandle,
     pub(super) index_buffer: Option<BufferHandle>,
-    pub(super) vertex_layout: VertexLayout,
+    pub(super) vertex_bindings: Vec<VertexBufferBinding>,
     pub(super) bound_textures: Vec<(u32, TextureHandle)>,
     pub(super) topology: PrimitiveTopology,
     pub(super) depth_test: bool,
@@ -75,11 +74,11 @@ pub(super) enum DrawType {
     },
     Indexed {
         count: u32,
-        _offset: usize,
+        offset: usize,
     },
     IndexedU16 {
         count: u32,
-        _offset: usize,
+        offset: usize,
     },
     ArraysInstanced {
         first: u32,
@@ -88,9 +87,21 @@ pub(super) enum DrawType {
     },
     IndexedInstanced {
         count: u32,
-        _offset: usize,
+        offset: usize,
         instances: u32,
     },
+}
+
+impl DrawType {
+    pub(super) fn first_index(&self) -> u32 {
+        match self {
+            Self::Indexed { offset, .. } | Self::IndexedInstanced { offset, .. } => {
+                (offset / std::mem::size_of::<u32>()) as u32
+            }
+            Self::IndexedU16 { offset, .. } => (offset / std::mem::size_of::<u16>()) as u32,
+            _ => 0,
+        }
+    }
 }
 
 // =============================================================================
@@ -111,8 +122,7 @@ pub(super) struct PipelineKey {
     pub(super) cull_enabled: bool,
     pub(super) cull_face: u8,
     pub(super) front_face: u8,
-    pub(super) vertex_stride: u32,
-    pub(super) vertex_attrs: Vec<(u32, u8, u32, bool)>,
+    pub(super) vertex_buffers: Vec<(u32, u8, Vec<(u32, u8, u32, bool)>)>,
 }
 
 // =============================================================================

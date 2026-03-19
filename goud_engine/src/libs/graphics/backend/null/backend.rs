@@ -46,6 +46,7 @@ pub struct NullBackend {
     pub(super) blending_enabled: bool,
     pub(super) culling_enabled: bool,
     pub(super) depth_mask_enabled: bool,
+    pub(super) multisampling_enabled: bool,
     pub(super) viewport: (i32, i32, u32, u32),
     pub(super) default_viewport: (i32, i32, u32, u32),
     pub(super) line_width: f32,
@@ -66,6 +67,10 @@ pub struct NullBackend {
     // Shader management
     pub(super) shader_allocator: HandleAllocator<ShaderMarker>,
     pub(super) shader_create_calls: usize,
+    pub(super) draw_arrays_calls: usize,
+    pub(super) draw_indexed_calls: usize,
+    pub(super) draw_arrays_instanced_calls: usize,
+    pub(super) draw_indexed_instanced_calls: usize,
 }
 
 // SAFETY: NullBackend contains only pure Rust data (no raw pointers,
@@ -105,6 +110,7 @@ impl NullBackend {
             blending_enabled: false,
             culling_enabled: false,
             depth_mask_enabled: true,
+            multisampling_enabled: false,
             viewport: (0, 0, 800, 600),
             default_viewport: (0, 0, 800, 600),
             line_width: 1.0,
@@ -117,12 +123,36 @@ impl NullBackend {
             active_render_target: None,
             shader_allocator: HandleAllocator::new(),
             shader_create_calls: 0,
+            draw_arrays_calls: 0,
+            draw_indexed_calls: 0,
+            draw_arrays_instanced_calls: 0,
+            draw_indexed_instanced_calls: 0,
         }
     }
 
     /// Returns how many shader creation calls have occurred.
     pub fn shader_create_calls(&self) -> usize {
         self.shader_create_calls
+    }
+
+    /// Returns how many non-indexed draw calls have occurred.
+    pub fn draw_arrays_calls(&self) -> usize {
+        self.draw_arrays_calls
+    }
+
+    /// Returns how many indexed draw calls have occurred.
+    pub fn draw_indexed_calls(&self) -> usize {
+        self.draw_indexed_calls
+    }
+
+    /// Returns how many non-indexed instanced draw calls have occurred.
+    pub fn draw_arrays_instanced_calls(&self) -> usize {
+        self.draw_arrays_instanced_calls
+    }
+
+    /// Returns how many indexed instanced draw calls have occurred.
+    pub fn draw_indexed_instanced_calls(&self) -> usize {
+        self.draw_indexed_instanced_calls
     }
 }
 

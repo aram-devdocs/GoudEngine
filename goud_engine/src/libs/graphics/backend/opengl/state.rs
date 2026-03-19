@@ -1,6 +1,4 @@
-//! OpenGL render state management: frame control, clear, viewport, depth, blending, culling.
-//! Also wires up sub-trait implementations that forward to submodule helpers.
-
+//! OpenGL render state management and sub-trait forwarding helpers.
 use super::{
     super::{
         BackendInfo, BlendFactor, BufferOps, ClearOps, CullFace, DrawOps, FrameOps, RenderBackend,
@@ -10,7 +8,7 @@ use super::{
     conversions, gl_check_debug,
 };
 use crate::libs::error::GoudResult;
-use crate::libs::graphics::backend::types::{DepthFunc, FrontFace};
+use crate::libs::graphics::backend::types::{DepthFunc, FrontFace, VertexBufferBinding};
 
 mod readback;
 #[cfg(test)]
@@ -32,8 +30,6 @@ impl OpenGLBackend {
         readback::read_default_framebuffer_rgba8_standalone(width, height)
     }
 }
-
-// RenderBackend (supertrait -- lifecycle & info only)
 
 impl RenderBackend for OpenGLBackend {
     fn info(&self) -> &BackendInfo {
@@ -227,6 +223,18 @@ impl StateOps for OpenGLBackend {
         unsafe {
             gl::DepthMask(if enabled { gl::TRUE } else { gl::FALSE });
         }
+    }
+
+    fn set_multisampling_enabled(&mut self, enabled: bool) {
+        // SAFETY: MULTISAMPLE is a valid OpenGL capability enum.
+        unsafe {
+            if enabled {
+                gl::Enable(gl::MULTISAMPLE);
+            } else {
+                gl::Disable(gl::MULTISAMPLE);
+            }
+        }
+        gl_check_debug!("set_multisampling_enabled");
     }
 
     fn set_line_width(&mut self, width: f32) {
@@ -435,6 +443,10 @@ impl DrawOps for OpenGLBackend {
         layout: &crate::libs::graphics::backend::types::VertexLayout,
     ) {
         super::draw_calls::set_vertex_attributes(layout)
+    }
+
+    fn set_vertex_bindings(&mut self, bindings: &[VertexBufferBinding]) -> GoudResult<()> {
+        super::draw_calls::set_vertex_bindings(self, bindings)
     }
 
     fn draw_arrays(

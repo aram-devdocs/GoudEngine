@@ -1,19 +1,11 @@
-//! Sub-trait and RenderBackend implementations for WgpuBackend.
-//!
-//! Covers frame lifecycle, render state management, draw call dispatch,
-//! and uniform setters. Pipeline building lives in `pipeline.rs`.
-
+//! Sub-trait and RenderBackend implementations for `WgpuBackend`.
 use super::{
-    super::types::{BufferUsage, TextureFilter, TextureFormat, TextureWrap},
+    super::types::{BufferUsage, TextureFilter, TextureFormat, TextureWrap, VertexBufferBinding},
     BlendFactor, BufferHandle, BufferOps, BufferType, CullFace, DepthFunc, DrawOps, DrawType,
     FrameOps, FrameState, FrontFace, PipelineKey, PrimitiveTopology, ShaderHandle, ShaderOps,
     StateOps, TextureHandle, TextureOps, VertexLayout, WgpuBackend,
 };
 use crate::libs::error::{GoudError, GoudResult};
-
-// ========================================================================
-// FrameOps
-// ========================================================================
 
 impl FrameOps for WgpuBackend {
     fn begin_frame(&mut self) -> GoudResult<()> {
@@ -110,12 +102,13 @@ impl FrameOps for WgpuBackend {
                 let Some(pipeline) = self.pipeline_cache.get(key) else {
                     continue;
                 };
-                let Some(vb_meta) = self.buffers.get(&cmd.vertex_buffer) else {
-                    continue;
-                };
-
                 pass.set_pipeline(pipeline);
-                pass.set_vertex_buffer(0, vb_meta.buffer.slice(..));
+                for (slot, binding) in cmd.vertex_bindings.iter().enumerate() {
+                    let Some(vb_meta) = self.buffers.get(&binding.buffer) else {
+                        continue;
+                    };
+                    pass.set_vertex_buffer(slot as u32, vb_meta.buffer.slice(..));
+                }
 
                 if let Some(shader_meta) = self.shaders.get(&cmd.shader) {
                     pass.set_bind_group(0, &shader_meta.uniform_bind_group, &[]);
@@ -159,7 +152,8 @@ impl FrameOps for WgpuBackend {
                         pass.draw(first..first + count, 0..1);
                     }
                     DrawType::Indexed { count, .. } | DrawType::IndexedU16 { count, .. } => {
-                        pass.draw_indexed(0..count, 0, 0..1);
+                        let first = cmd.draw_type.first_index();
+                        pass.draw_indexed(first..first + count, 0, 0..1);
                     }
                     DrawType::ArraysInstanced {
                         first,
@@ -171,7 +165,8 @@ impl FrameOps for WgpuBackend {
                     DrawType::IndexedInstanced {
                         count, instances, ..
                     } => {
-                        pass.draw_indexed(0..count, 0, 0..instances);
+                        let first = cmd.draw_type.first_index();
+                        pass.draw_indexed(first..first + count, 0, 0..instances);
                     }
                 }
             }
@@ -208,6 +203,7 @@ impl FrameOps for WgpuBackend {
         }
         frame.surface_texture.present();
         self.draw_commands.clear();
+        self.flush_pending_buffer_destroys();
         Ok(())
     }
 }
@@ -256,6 +252,9 @@ impl StateOps for WgpuBackend {
     }
     fn set_depth_mask(&mut self, enabled: bool) {
         self.depth_write_enabled = enabled;
+    }
+    fn set_multisampling_enabled(&mut self, _enabled: bool) {
+        // Sample count is configured when pipelines and render targets are created.
     }
     fn set_line_width(&mut self, _width: f32) {
         // wgpu does not support variable line width (WebGPU spec limitation)
@@ -431,6 +430,11 @@ impl DrawOps for WgpuBackend {
         self.set_vertex_attributes_impl(layout);
     }
 
+    fn set_vertex_bindings(&mut self, bindings: &[VertexBufferBinding]) -> GoudResult<()> {
+        self.current_vertex_bindings = bindings.to_vec();
+        Ok(())
+    }
+
     fn draw_arrays(
         &mut self,
         _topology: PrimitiveTopology,
@@ -446,10 +450,7 @@ impl DrawOps for WgpuBackend {
         count: u32,
         offset: usize,
     ) -> GoudResult<()> {
-        self.record_draw(DrawType::Indexed {
-            count,
-            _offset: offset,
-        })
+        self.record_draw(DrawType::Indexed { count, offset })
     }
 
     fn draw_indexed_u16(
@@ -458,10 +459,7 @@ impl DrawOps for WgpuBackend {
         count: u32,
         offset: usize,
     ) -> GoudResult<()> {
-        self.record_draw(DrawType::IndexedU16 {
-            count,
-            _offset: offset,
-        })
+        self.record_draw(DrawType::IndexedU16 { count, offset })
     }
 
     fn draw_arrays_instanced(
@@ -487,7 +485,7 @@ impl DrawOps for WgpuBackend {
     ) -> GoudResult<()> {
         self.record_draw(DrawType::IndexedInstanced {
             count,
-            _offset: offset,
+            offset,
             instances: instance_count,
         })
     }

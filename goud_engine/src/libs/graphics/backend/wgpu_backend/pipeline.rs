@@ -8,6 +8,7 @@ use super::{
     convert, BlendFactor, CullFace, DepthFunc, FrontFace, PipelineKey, PrimitiveTopology,
     WgpuBackend,
 };
+use crate::libs::graphics::backend::VertexStepMode;
 
 impl WgpuBackend {
     /// Ensures all required pipelines in `cmd_keys` exist in the pipeline cache.
@@ -24,17 +25,6 @@ impl WgpuBackend {
                 Some(m) => m,
                 None => continue,
             };
-
-            let wgpu_attrs: Vec<wgpu::VertexAttribute> = cmd
-                .vertex_layout
-                .attributes
-                .iter()
-                .map(|a| wgpu::VertexAttribute {
-                    format: convert::map_vertex_format(a.attribute_type),
-                    offset: a.offset as u64,
-                    shader_location: a.location,
-                })
-                .collect();
 
             let pipeline_layout =
                 self.device
@@ -110,6 +100,36 @@ impl WgpuBackend {
                 _ => None,
             };
 
+            let wgpu_attr_storage: Vec<Vec<wgpu::VertexAttribute>> = cmd
+                .vertex_bindings
+                .iter()
+                .map(|binding| {
+                    binding
+                        .layout
+                        .attributes
+                        .iter()
+                        .map(|a| wgpu::VertexAttribute {
+                            format: convert::map_vertex_format(a.attribute_type),
+                            offset: a.offset as u64,
+                            shader_location: a.location,
+                        })
+                        .collect()
+                })
+                .collect();
+            let vertex_buffers: Vec<_> = cmd
+                .vertex_bindings
+                .iter()
+                .zip(wgpu_attr_storage.iter())
+                .map(|(binding, attrs)| wgpu::VertexBufferLayout {
+                    array_stride: binding.layout.stride as u64,
+                    step_mode: match binding.step_mode {
+                        VertexStepMode::Vertex => wgpu::VertexStepMode::Vertex,
+                        VertexStepMode::Instance => wgpu::VertexStepMode::Instance,
+                    },
+                    attributes: attrs,
+                })
+                .collect();
+
             let pipeline = self
                 .device
                 .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -118,11 +138,7 @@ impl WgpuBackend {
                     vertex: wgpu::VertexState {
                         module: &shader_meta.vertex_module,
                         entry_point: Some("main"),
-                        buffers: &[wgpu::VertexBufferLayout {
-                            array_stride: cmd.vertex_layout.stride as u64,
-                            step_mode: wgpu::VertexStepMode::Vertex,
-                            attributes: &wgpu_attrs,
-                        }],
+                        buffers: &vertex_buffers,
                         compilation_options: Default::default(),
                     },
                     fragment: Some(wgpu::FragmentState {

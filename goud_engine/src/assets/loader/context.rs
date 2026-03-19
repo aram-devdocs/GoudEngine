@@ -1,7 +1,9 @@
 //! Load context provided to asset loaders during loading.
 
-use crate::assets::AssetPath;
+use crate::assets::{AssetLoadError, AssetPath};
 use std::fmt;
+
+type AssetReader<'a> = dyn Fn(&str) -> Result<Vec<u8>, AssetLoadError> + 'a;
 
 /// Context provided to asset loaders during loading.
 ///
@@ -19,8 +21,21 @@ pub struct LoadContext<'a> {
     asset_path: AssetPath<'static>,
     /// Paths of assets that this asset depends on.
     dependencies: Vec<String>,
+    /// Byte-backed child assets emitted while loading this asset.
+    embedded_assets: Vec<EmbeddedAsset>,
+    /// Reader for sibling assets referenced during the current load.
+    reader: Option<&'a AssetReader<'a>>,
     /// Marker for lifetime (in the future, this will hold references to AssetServer).
     _marker: std::marker::PhantomData<&'a ()>,
+}
+
+/// Byte-backed child asset declared by a loader.
+#[derive(Clone, Debug)]
+pub struct EmbeddedAsset {
+    /// Logical asset path used for deduplication and dependency tracking.
+    pub path: String,
+    /// Raw asset bytes to feed back through the asset server.
+    pub bytes: Vec<u8>,
 }
 
 impl<'a> LoadContext<'a> {
@@ -29,6 +44,19 @@ impl<'a> LoadContext<'a> {
         Self {
             asset_path,
             dependencies: Vec::new(),
+            embedded_assets: Vec::new(),
+            reader: None,
+            _marker: std::marker::PhantomData,
+        }
+    }
+
+    /// Creates a new load context with a read callback for sibling assets.
+    pub(crate) fn with_reader(asset_path: AssetPath<'static>, reader: &'a AssetReader<'a>) -> Self {
+        Self {
+            asset_path,
+            dependencies: Vec::new(),
+            embedded_assets: Vec::new(),
+            reader: Some(reader),
             _marker: std::marker::PhantomData,
         }
     }
@@ -71,9 +99,38 @@ impl<'a> LoadContext<'a> {
         &self.dependencies
     }
 
+    /// Declares a byte-backed child asset emitted during this load.
+    ///
+    /// The asset server will materialize the child asset after the parent
+    /// asset loads, then record the generated path as a dependency edge.
+    pub fn add_embedded_asset(&mut self, path: impl Into<String>, bytes: impl Into<Vec<u8>>) {
+        let path = path.into();
+        self.dependencies.push(path.clone());
+        self.embedded_assets.push(EmbeddedAsset {
+            path,
+            bytes: bytes.into(),
+        });
+    }
+
+    /// Returns the byte-backed child assets declared during loading.
+    pub fn embedded_assets(&self) -> &[EmbeddedAsset] {
+        &self.embedded_assets
+    }
+
+    /// Reads a sibling asset through the current asset server source.
+    pub fn read_asset_bytes(&self, path: &str) -> Result<Vec<u8>, AssetLoadError> {
+        let reader = self.reader.ok_or_else(|| {
+            AssetLoadError::custom(format!(
+                "Asset loader cannot read dependency '{}' without an attached reader",
+                path
+            ))
+        })?;
+        reader(path)
+    }
+
     /// Consumes the context and returns the collected dependencies.
-    pub(crate) fn into_dependencies(self) -> Vec<String> {
-        self.dependencies
+    pub(crate) fn into_parts(self) -> (Vec<String>, Vec<EmbeddedAsset>) {
+        (self.dependencies, self.embedded_assets)
     }
 }
 
