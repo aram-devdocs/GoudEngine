@@ -46,8 +46,8 @@ def gen_components() -> None:
         for f in fields:
             fname = to_go_field(f["name"])
             ft = f.get("type", "f32")
-            # Special defaults: scale should be 1.0
-            if f["name"] in ("scaleX", "scaleY"):
+            # Special defaults: scale and color alpha should be 1.0
+            if f["name"] in ("scaleX", "scaleY", "colorR", "colorG", "colorB", "colorA"):
                 lines.append(f"\t\t{fname}: 1.0,")
             else:
                 lines.append(f"\t\t{fname}: {_go_zero(f)},")

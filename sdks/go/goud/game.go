@@ -544,22 +544,27 @@ func (g *Game) DrawSpriteRect(texture uint64, x, y, width, height, rotation, src
 
 // SetViewport Sets the rendering viewport
 func (g *Game) SetViewport(x int32, y int32, width uint32, height uint32) {
+	ffi.RendererSetViewport(g.ctx, x, y, width, height)
 }
 
 // EnableDepthTest Enables depth testing
 func (g *Game) EnableDepthTest() {
+	ffi.RendererEnableDepthTest(g.ctx)
 }
 
 // DisableDepthTest Disables depth testing
 func (g *Game) DisableDepthTest() {
+	ffi.RendererDisableDepthTest(g.ctx)
 }
 
 // ClearDepth Clears the depth buffer
 func (g *Game) ClearDepth() {
+	ffi.RendererClearDepth(g.ctx)
 }
 
 // DisableBlending Disables alpha blending
 func (g *Game) DisableBlending() {
+	ffi.RendererDisableBlending(g.ctx)
 }
 
 // GetRenderStats Returns rendering statistics for the current frame

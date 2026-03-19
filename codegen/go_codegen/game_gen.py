@@ -96,6 +96,16 @@ _BRIDGE_MAP = {
     "audioSetGlobalVolume": "ffi.AudioSetGlobalVolume(g.ctx, {volume})",
     "audioSetPlayerVolume": "ffi.AudioSetPlayerVolume(g.ctx, {playerId}, {volume})",
     "audioIsPlaying": "ffi.AudioIsPlaying(g.ctx, {playerId})",
+    "enableDepthTest": "ffi.RendererEnableDepthTest(g.ctx)",
+    "disableDepthTest": "ffi.RendererDisableDepthTest(g.ctx)",
+    "clearDepth": "ffi.RendererClearDepth(g.ctx)",
+    "disableBlending": "ffi.RendererDisableBlending(g.ctx)",
+    "enableBlending": "ffi.RendererEnableBlending(g.ctx)",
+    "setViewport": "ffi.RendererSetViewport(g.ctx, {x}, {y}, {width}, {height})",
+    "mapActionKey": "ffi.InputMapActionKey(g.ctx, {actionName}, int32({key}))",
+    "isActionPressed": "ffi.InputActionPressed(g.ctx, {actionName})",
+    "isActionJustPressed": "ffi.InputActionJustPressed(g.ctx, {actionName})",
+    "isActionJustReleased": "ffi.InputActionJustReleased(g.ctx, {actionName})",
 }
 
 
