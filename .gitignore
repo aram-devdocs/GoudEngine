@@ -3,6 +3,10 @@
 **/*.rs.bk
 Cargo.lock
 
+# Swift Package Manager
+.build/
+.swiftpm/
+
 # Python bytecode
 __pycache__/
 *.pyc
