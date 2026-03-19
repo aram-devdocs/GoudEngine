@@ -22,8 +22,8 @@
 //! - `lifecycle` - Entity spawn and despawn functions
 //! - `queries` - Entity liveness checks and counting
 
-pub(crate) mod lifecycle;
-pub(crate) mod queries;
+pub mod lifecycle;
+pub mod queries;
 
 #[cfg(test)]
 mod tests;

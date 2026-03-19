@@ -16,12 +16,12 @@
 //! - `events` -- Animation event add/read operations
 //! - `layer` -- AnimationLayerStack component operations
 
-pub(crate) mod control;
-pub(crate) mod controller;
-pub(crate) mod events;
-pub(crate) mod layer;
-pub(crate) mod skeletal;
-pub(crate) mod tween;
+pub mod control;
+pub mod controller;
+pub mod events;
+pub mod layer;
+pub mod skeletal;
+pub mod tween;
 
 use crate::core::error::{set_last_error, GoudError, ERR_INVALID_STATE};
 

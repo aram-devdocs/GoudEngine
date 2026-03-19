@@ -3,10 +3,10 @@
 //! Provides C-compatible functions for Rapier3D physics: body creation,
 //! collider attachment, forces, impulses, and simulation stepping.
 
-pub(crate) mod access;
-pub(crate) mod bodies;
-pub(crate) mod lifecycle;
-pub(crate) mod simulation;
+pub mod access;
+pub mod bodies;
+pub mod lifecycle;
+pub mod simulation;
 
 pub use bodies::{
     goud_physics3d_add_collider, goud_physics3d_add_rigid_body, goud_physics3d_add_rigid_body_ex,

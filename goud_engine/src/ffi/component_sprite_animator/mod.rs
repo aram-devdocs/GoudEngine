@@ -15,8 +15,8 @@
 //! - `factory`  -- clip builder new/add_frame/free and animator creation
 //! - `playback` -- read-only queries (current_frame, is_playing, is_finished)
 
-pub(crate) mod factory;
-pub(crate) mod playback;
+pub mod factory;
+pub mod playback;
 
 #[cfg(test)]
 mod tests;
