@@ -50,6 +50,9 @@ pub mod core;
 pub mod ecs;
 #[cfg(feature = "native")]
 pub mod ffi;
+/// JNI bridge used by the JVM-facing internal bindings.
+#[cfg(feature = "native")]
+pub mod jni;
 /// Low-level libraries for graphics, platform, and other systems.
 pub mod libs;
 /// High-level rendering systems (sprite batching) bridging ECS, assets, and graphics.

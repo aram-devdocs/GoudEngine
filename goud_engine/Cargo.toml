@@ -12,7 +12,7 @@ categories = ["game-engines", "graphics", "rendering"]
 
 [features]
 default = ["native"]
-native = ["wgpu-backend", "dep:rodio", "dep:notify", "dep:cc", "dep:bindgen", "dep:cbindgen", "dep:tiled", "dep:rayon", "dep:env_logger", "dep:toml", "dep:gltf", "dep:tobj", "net-udp", "net-tcp", "net-ws"]
+native = ["wgpu-backend", "dep:rodio", "dep:notify", "dep:cc", "dep:bindgen", "dep:cbindgen", "dep:tiled", "dep:rayon", "dep:env_logger", "dep:toml", "dep:gltf", "dep:tobj", "dep:jni", "net-udp", "net-tcp", "net-ws"]
 legacy-glfw-opengl = ["dep:gl", "dep:glfw"]
 lua = ["dep:mlua"]
 net-udp = []
@@ -34,6 +34,7 @@ env_logger = { version = "0.11.6", optional = true }
 gl = { version = "0.14.0", optional = true }
 glfw = { version = "0.59.0", optional = true }
 log = "0.4.17"
+jni = { version = "0.21.1", features = ["invocation"], optional = true }
 mlua = { version = "0.11", optional = true, default-features = false, features = ["lua54", "vendored"] }
 thiserror = "2.0.12"
 image = "0.25"
@@ -124,6 +125,11 @@ required-features = ["native"]
 name = "native_main_thread_ffi"
 path = "tests/native_main_thread_ffi.rs"
 harness = false
+required-features = ["native"]
+
+[[test]]
+name = "jni_smoke"
+path = "tests/jni_smoke.rs"
 required-features = ["native"]
 
 # [[bench]]
