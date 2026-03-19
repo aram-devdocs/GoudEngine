@@ -96,6 +96,7 @@ stage_header_copy "sdks/c/include"
 stage_header_copy "sdks/cpp/include"
 stage_header_copy "sdks/csharp/include"
 stage_header_copy "sdks/python/goud_engine/include"
+stage_header_copy "sdks/go/include"
 stage_file_copy "sdks/c/include/goud/goud.h" "sdks/cpp/include/goud/goud.h"
 
 # Copy native library based on platform

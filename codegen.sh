@@ -53,6 +53,7 @@ stage_header_copy "sdks/c/include"
 stage_header_copy "sdks/cpp/include"
 stage_header_copy "sdks/csharp/include"
 stage_header_copy "sdks/python/goud_engine/include"
+stage_header_copy "sdks/go/include"
 stage_header_copy "sdks/swift/Sources/CGoudEngine/include"
 stage_file_copy "sdks/c/include/goud/goud.h" "sdks/cpp/include/goud/goud.h"
 python3 scripts/validate_c_header.py
@@ -72,15 +73,19 @@ python3 codegen/gen_csharp.py
 echo "║ [8/14] Generating Python SDK..."
 python3 codegen/gen_python.py
 
-echo "║ [9/14] Regenerating TypeScript Node SDK..."
+echo "║ [9/14] Generating Go SDK cgo bindings..."
+python3 codegen/gen_go.py
+
+echo "║ [10/14] Regenerating TypeScript Node SDK..."
 python3 codegen/gen_ts_node.py
 
-echo "║ [10/14] Generating TypeScript Web SDK..."
+echo "║ [11/14] Generating TypeScript Web SDK..."
 python3 codegen/gen_ts_web.py
 
-echo "║ [11/14] Generating Swift SDK..."
+echo "║ [11b/14] Generating Swift SDK..."
 stage_header_copy "sdks/swift/Sources/CGoudEngine/include"
 python3 codegen/gen_swift.py
+
 
 echo "║ [12/14] Formatting generated Rust sources..."
 cargo fmt -p goud-engine-node
