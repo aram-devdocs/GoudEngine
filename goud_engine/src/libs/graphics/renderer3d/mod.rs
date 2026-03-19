@@ -11,13 +11,16 @@
 //! enabling backend-agnostic rendering (OpenGL, wgpu, etc.).
 
 mod core;
+mod core_materials;
 mod core_particles;
 mod core_primitives;
+mod core_skinned;
 mod debug_draw;
 mod material;
 mod mesh;
 mod postprocess;
 mod render;
+mod render_helpers;
 mod render_pass;
 mod shaders;
 mod shadow;
