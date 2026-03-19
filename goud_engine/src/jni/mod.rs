@@ -7,6 +7,7 @@
 mod helpers;
 
 #[rustfmt::skip]
+#[path = "generated.g.rs"]
 mod generated;
 
 #[cfg(test)]
