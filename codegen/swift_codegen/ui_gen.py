@@ -28,7 +28,8 @@ def gen_ui() -> None:
     if doc:
         lines.append(f"/// {doc}")
     lines.append("public final class UiManager {")
-    lines.append("    private var _handle: UnsafeMutableRawPointer?")
+    # goud_ui_manager_create returns OpaquePointer (struct UiManager *)
+    lines.append("    private var _handle: OpaquePointer?")
     lines.append("    private var _alive: Bool = true")
     lines.append("")
 
@@ -38,9 +39,11 @@ def gen_ui() -> None:
     lines.append("    }")
     lines.append("")
 
+    # Skip methods with UiStyle (type was skipped) or arg count mismatches
+    _SKIP = {"setStyle", "setLabelText", "setSlider", "setImageTexturePath"}
     for m in methods:
         mname = m["name"]
-        if mname == "destroy":
+        if mname == "destroy" or mname in _SKIP:
             continue
         if not method_exists_in_ffi(tool_name, mname):
             continue

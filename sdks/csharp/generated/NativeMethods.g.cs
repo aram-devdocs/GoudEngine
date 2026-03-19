@@ -92,7 +92,7 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct GoudFpsStats
+    public struct FpsStats
     {
         public float CurrentFps;
         public float MinFps;
@@ -151,7 +151,7 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct FfiPhysicsRaycastHit2D
+    public struct None
     {
         public ulong BodyHandle;
         public ulong ColliderHandle;
@@ -163,7 +163,7 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct FfiPhysicsCollisionEvent2D
+    public struct None
     {
         public ulong BodyA;
         public ulong BodyB;
@@ -171,7 +171,7 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct FfiVec3
+    public struct None
     {
         public float X;
         public float Y;
@@ -179,7 +179,7 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct FfiRenderCapabilities
+    public struct RenderCapabilities
     {
         public uint MaxTextureUnits;
         public uint MaxTextureSize;
@@ -192,7 +192,7 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct FfiPhysicsCapabilities
+    public struct PhysicsCapabilities
     {
         [MarshalAs(UnmanagedType.U1)]
         public bool SupportsContinuousCollision;
@@ -202,7 +202,7 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct FfiAudioCapabilities
+    public struct AudioCapabilities
     {
         [MarshalAs(UnmanagedType.U1)]
         public bool SupportsSpatial;
@@ -210,7 +210,7 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct FfiInputCapabilities
+    public struct InputCapabilities
     {
         [MarshalAs(UnmanagedType.U1)]
         public bool SupportsGamepad;
@@ -220,7 +220,7 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct FfiNetworkCapabilities
+    public struct NetworkCapabilities
     {
         [MarshalAs(UnmanagedType.U1)]
         public bool SupportsHosting;
@@ -245,7 +245,7 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct FfiNetworkSimulationConfig
+    public struct NetworkSimulationConfig
     {
         public uint OneWayLatencyMs;
         public uint JitterMs;
@@ -548,7 +548,7 @@ namespace GoudEngine
 
         // debug
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int goud_debug_get_fps_stats(GoudContextId context_id, ref GoudFpsStats out_stats);
+        public static extern int goud_debug_get_fps_stats(GoudContextId context_id, IntPtr out_stats);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_debug_set_fps_overlay_enabled(GoudContextId context_id, [MarshalAs(UnmanagedType.U1)] bool enabled);
@@ -1663,26 +1663,26 @@ namespace GoudEngine
         public static extern int goud_network_clear_overlay_handle(GoudContextId context_id);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int goud_network_set_simulation(GoudContextId _context_id, long handle, FfiNetworkSimulationConfig config);
+        public static extern int goud_network_set_simulation(GoudContextId _context_id, long handle, NetworkSimulationConfig config);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_network_clear_simulation(GoudContextId _context_id, long handle);
 
         // providers
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int goud_provider_render_capabilities(GoudContextId context_id, ref FfiRenderCapabilities @out);
+        public static extern int goud_provider_render_capabilities(GoudContextId context_id, IntPtr @out);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int goud_provider_physics_capabilities(GoudContextId context_id, ref FfiPhysicsCapabilities @out);
+        public static extern int goud_provider_physics_capabilities(GoudContextId context_id, IntPtr @out);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int goud_provider_audio_capabilities(GoudContextId context_id, ref FfiAudioCapabilities @out);
+        public static extern int goud_provider_audio_capabilities(GoudContextId context_id, IntPtr @out);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int goud_provider_input_capabilities(GoudContextId context_id, ref FfiInputCapabilities @out);
+        public static extern int goud_provider_input_capabilities(GoudContextId context_id, IntPtr @out);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int goud_provider_network_capabilities(GoudContextId context_id, ref FfiNetworkCapabilities @out);
+        public static extern int goud_provider_network_capabilities(GoudContextId context_id, IntPtr @out);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_provider_hot_swap_render(GoudContextId _context_id, int _provider_type);

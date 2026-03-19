@@ -73,7 +73,7 @@
       ]
     },
     "FpsStats": {
-      "ffi_name": "GoudFpsStats",
+      "ffi_name": "FpsStats",
       "fields": [
         "current_fps",
         "min_fps",
@@ -129,7 +129,7 @@
       ]
     },
     "PhysicsRaycastHit2D": {
-      "ffi_name": "FfiPhysicsRaycastHit2D",
+      "ffi_name": null,
       "fields": [
         "body_handle",
         "collider_handle",
@@ -141,7 +141,7 @@
       ]
     },
     "PhysicsCollisionEvent2D": {
-      "ffi_name": "FfiPhysicsCollisionEvent2D",
+      "ffi_name": null,
       "fields": [
         "body_a",
         "body_b",
@@ -149,7 +149,7 @@
       ]
     },
     "Vec3": {
-      "ffi_name": "FfiVec3",
+      "ffi_name": null,
       "fields": [
         "x",
         "y",
@@ -157,7 +157,7 @@
       ]
     },
     "RenderCapabilities": {
-      "ffi_name": "FfiRenderCapabilities",
+      "ffi_name": "RenderCapabilities",
       "fields": [
         "max_texture_units",
         "max_texture_size",
@@ -167,7 +167,7 @@
       ]
     },
     "PhysicsCapabilities": {
-      "ffi_name": "FfiPhysicsCapabilities",
+      "ffi_name": "PhysicsCapabilities",
       "fields": [
         "supports_continuous_collision",
         "supports_joints",
@@ -175,14 +175,14 @@
       ]
     },
     "AudioCapabilities": {
-      "ffi_name": "FfiAudioCapabilities",
+      "ffi_name": "AudioCapabilities",
       "fields": [
         "supports_spatial",
         "max_channels"
       ]
     },
     "InputCapabilities": {
-      "ffi_name": "FfiInputCapabilities",
+      "ffi_name": "InputCapabilities",
       "fields": [
         "supports_gamepad",
         "supports_touch",
@@ -190,7 +190,7 @@
       ]
     },
     "NetworkCapabilities": {
-      "ffi_name": "FfiNetworkCapabilities",
+      "ffi_name": "NetworkCapabilities",
       "fields": [
         "supports_hosting",
         "max_connections",
@@ -214,7 +214,7 @@
       ]
     },
     "NetworkSimulationConfig": {
-      "ffi_name": "FfiNetworkSimulationConfig",
+      "ffi_name": "NetworkSimulationConfig",
       "fields": [
         "one_way_latency_ms",
         "jitter_ms",
@@ -351,7 +351,7 @@
   "ctypes_mappings": {
     "*mut GoudContact": "ctypes.POINTER(GoudContact)",
     "*mut GoudRenderStats": "ctypes.POINTER(GoudRenderStats)",
-    "*mut FpsStats": "ctypes.POINTER(GoudFpsStats)",
+    "*mut FpsStats": "ctypes.POINTER(FpsStats)",
     "*const u64": "ctypes.POINTER(ctypes.c_uint64)",
     "*mut u64": "ctypes.POINTER(ctypes.c_uint64)",
     "*mut u8": "ctypes.POINTER(ctypes.c_uint8)",

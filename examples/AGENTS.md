@@ -10,6 +10,7 @@ Standalone example games demonstrating GoudEngine features, organized by SDK lan
 - `cpp/` — C++ examples: smoke test, CMake integration demo, Flappy Bird game
 - `csharp/` — C# example games (flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab, sandbox)
 - `python/` — Python example games (main.py demo, flappy_bird.py, sandbox.py)
+- `swift/` — Swift example games (flappy_bird — mirrors C# flappy_goud for parity testing)
 - `typescript/` — TypeScript example games (flappy_bird, feature_lab, sandbox — desktop + web targets)
 - `rust/` — Rust example games (flappy_bird, feature_lab, sandbox)
 
@@ -31,6 +32,7 @@ Standalone example games demonstrating GoudEngine features, organized by SDK lan
 ./dev.sh --sdk typescript --game sandbox      # TypeScript Sandbox (desktop)
 ./dev.sh --sdk cpp --game flappy_bird          # C++ Flappy Bird
 ./dev.sh --sdk cpp --game cmake_example       # C++ CMake integration demo
+./dev.sh --sdk swift --game flappy_bird        # Swift Flappy Bird
 cargo run -p flappy-bird                      # Rust Flappy Bird
 cargo run -p sandbox                          # Rust Sandbox
 ```

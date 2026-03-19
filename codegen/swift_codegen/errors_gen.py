@@ -26,9 +26,9 @@ def gen_errors() -> None:
     lines += [
         "import CGoudEngine",
         "",
-        "func readStringBuffer(_ call: (UnsafeMutablePointer<UInt8>?, Int32) -> Int32) -> String {",
-        "    let bufLen: Int32 = 256",
-        "    var buf = [UInt8](repeating: 0, count: Int(bufLen))",
+        "func readStringBuffer(_ call: (UnsafeMutablePointer<UInt8>?, Int) -> Int32) -> String {",
+        "    let bufLen: Int = 256",
+        "    var buf = [UInt8](repeating: 0, count: bufLen)",
         "    let written = call(&buf, bufLen)",
         '    guard written > 0 else { return \"\" }',
         '    return String(bytes: buf[..<Int(written)], encoding: .utf8) ?? \"\"',

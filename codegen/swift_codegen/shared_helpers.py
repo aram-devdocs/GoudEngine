@@ -15,6 +15,26 @@ from .context import (
 )
 
 
+_SWIFT_KEYWORDS = frozenset({
+    "protocol", "class", "struct", "enum", "func", "var", "let", "import",
+    "return", "if", "else", "for", "while", "do", "switch", "case", "break",
+    "continue", "default", "where", "in", "is", "as", "self", "Self", "true",
+    "false", "nil", "try", "catch", "throw", "throws", "guard", "defer",
+    "repeat", "typealias", "operator", "subscript", "init", "deinit",
+    "extension", "associatedtype", "static", "override", "private", "public",
+    "internal", "fileprivate", "open", "mutating", "nonmutating", "inout",
+    "lazy", "final", "required", "convenience", "dynamic", "optional",
+    "prefix", "postfix", "indirect", "some", "any", "Type",
+})
+
+
+def safe_swift_name(name: str) -> str:
+    """Escape a name with backticks if it is a Swift keyword."""
+    if name in _SWIFT_KEYWORDS:
+        return f"`{name}`"
+    return name
+
+
 def swift_type(schema_type: str) -> str:
     """Map a schema type to its Swift representation."""
     nullable = schema_type.endswith("?")
@@ -134,6 +154,8 @@ def convert_param_to_ffi(pname: str, ptype: str) -> str:
     base = ptype.rstrip("?")
     if base == "Entity":
         return f"{pname}.bits"
+    if is_handle_type(base):
+        return f"{pname}.bits"
     if base == "string":
         return f"{pname}Ptr"
     if base in ("bytes", "u8[]", "Data"):
@@ -160,8 +182,11 @@ def convert_return_from_ffi(expr: str, ret_type: str) -> str:
     base = ret_type.rstrip("?")
     if base == "Entity":
         return f"Entity(bits: {expr})"
+    if is_handle_type(base):
+        return f"{base}(bits: {expr})"
     if base == "bool":
-        return f"({expr} != 0)" if "CBool" not in expr else expr
+        # C bool imports as Swift Bool directly
+        return expr
     if base == "string":
         return f"String(cString: {expr})"
     if base.endswith("[]"):

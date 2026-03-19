@@ -16,31 +16,12 @@ public final class GoudContext {
     }
 
     public func isValid() -> Bool {
-        return (goud_context_is_valid(_ctx) != 0)
-    }
-
-    /// Queries the network provider's capabilities. Throws if no network provider is installed.
-    public func getNetworkCapabilities() -> NetworkCapabilities {
-        return NetworkCapabilities(ffi: goud_provider_network_capabilities(_ctx))
+        return goud_context_is_valid(_ctx)
     }
 
     /// Starts hosting on the given port with the selected transport protocol.
-    public func networkHost(protocol: Int32, port: UInt16) -> Int64 {
-        return goud_network_host(_ctx, protocol, port)
-    }
-
-    /// Connects to a remote host with the selected transport protocol.
-    public func networkConnect(protocol: Int32, address: String, port: UInt16) -> Int64 {
-        address.withCString { addressPtr in
-            return goud_network_connect(_ctx, protocol, addressPtr, port)
-        }
-    }
-
-    /// Connects to a remote host with the selected transport protocol and preserves the provider-assigned peer ID.
-    public func networkConnectWithPeer(protocol: Int32, address: String, port: UInt16) -> NetworkConnectResult {
-        address.withCString { addressPtr in
-            return NetworkConnectResult(ffi: goud_network_connect_with_peer(_ctx, protocol, addressPtr, port))
-        }
+    public func networkHost(`protocol`: Int32, port: UInt16) -> Int64 {
+        return goud_network_host(_ctx, `protocol`, port)
     }
 
     /// Disconnects a network host or connection handle.
@@ -48,32 +29,9 @@ public final class GoudContext {
         return goud_network_disconnect(_ctx, handle)
     }
 
-    /// Sends raw bytes to the given peer over a network handle and channel.
-    public func networkSend(handle: Int64, peerId: UInt64, data: Data, channel: UInt8) -> Int32 {
-        data.withUnsafeBytes { dataRawBuf in
-            let dataBasePtr = dataRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            return goud_network_send(_ctx, handle, peerId, dataBasePtr, channel)
-        }
-    }
-
-    /// Receives the next buffered payload produced by networkPoll.
-    public func networkReceive(handle: Int64) -> Data {
-        return goud_network_receive(_ctx, handle)
-    }
-
-    /// Receives the next buffered payload produced by networkPoll and preserves the sender peer ID.
-    public func networkReceivePacket(handle: Int64) -> NetworkPacket? {
-        return NetworkPacket(ffi: goud_network_receive(_ctx, handle))
-    }
-
     /// Polls the network handle and buffers inbound messages for retrieval.
     public func networkPoll(handle: Int64) -> Int32 {
         return goud_network_poll(_ctx, handle)
-    }
-
-    /// Returns aggregate network statistics for a network handle.
-    public func getNetworkStats(handle: Int64) -> NetworkStats {
-        return NetworkStats(ffi: goud_network_get_stats_v2(_ctx, handle))
     }
 
     /// Returns the number of connected peers for a network handle.
@@ -101,112 +59,72 @@ public final class GoudContext {
         return goud_network_clear_overlay_handle(_ctx)
     }
 
-    /// Returns the latest debugger snapshot JSON for this route.
-    public func getDebuggerSnapshotJson() -> String {
-        return String(cString: goud_debugger_get_snapshot_json(_ctx))
-    }
-
-    /// Returns the current process-wide debugger manifest JSON.
-    public func getDebuggerManifestJson() -> String {
-        return String(cString: goud_debugger_get_manifest_json(_ctx))
-    }
-
     /// Pauses or resumes the route-scoped debugger runtime.
     public func setDebuggerPaused(paused: Bool) {
-        goud_debugger_set_paused(_ctx, paused)
-    }
-
-    /// Consumes debugger-controlled frame or tick step budget for this route.
-    public func stepDebugger(kind: DebuggerStepKind, count: UInt32) {
-        goud_debugger_step(_ctx, Int32(kind.rawValue), count)
+        let _ = goud_debugger_set_paused(_ctx, paused)
     }
 
     /// Sets the debugger-owned time-scale multiplier for this route.
     public func setDebuggerTimeScale(scale: Float) {
-        goud_debugger_set_time_scale(_ctx, scale)
+        let _ = goud_debugger_set_time_scale(_ctx, scale)
     }
 
     /// Enables or disables runtime-owned debug draw for this route.
     public func setDebuggerDebugDrawEnabled(enabled: Bool) {
-        goud_debugger_set_debug_draw_enabled(_ctx, enabled)
+        let _ = goud_debugger_set_debug_draw_enabled(_ctx, enabled)
     }
 
     /// Queues one normalized keyboard event through the debugger control plane.
     public func injectDebuggerKeyEvent(key: Key, pressed: Bool) {
-        goud_debugger_inject_key_event(_ctx, Int32(key.rawValue), pressed)
+        let _ = goud_debugger_inject_key_event(_ctx, Int32(key.rawValue), pressed)
     }
 
     /// Queues one normalized mouse-button event through the debugger control plane.
     public func injectDebuggerMouseButton(button: MouseButton, pressed: Bool) {
-        goud_debugger_inject_mouse_button(_ctx, Int32(button.rawValue), pressed)
+        let _ = goud_debugger_inject_mouse_button(_ctx, Int32(button.rawValue), pressed)
     }
 
     /// Queues one normalized mouse-position event through the debugger control plane.
     public func injectDebuggerMousePosition(position: Vec2) {
-        goud_debugger_inject_mouse_position(_ctx, position.toFFI())
+        let _ = goud_debugger_inject_mouse_position(_ctx, position.toFFI())
     }
 
     /// Queues one normalized scroll event through the debugger control plane.
     public func injectDebuggerScroll(delta: Vec2) {
-        goud_debugger_inject_scroll(_ctx, delta.toFFI())
+        let _ = goud_debugger_inject_scroll(_ctx, delta.toFFI())
     }
 
     /// Enables or disables per-system debugger profiling for this route.
     public func setDebuggerProfilingEnabled(enabled: Bool) {
-        goud_debugger_set_profiling_enabled(_ctx, enabled)
+        let _ = goud_debugger_set_profiling_enabled(_ctx, enabled)
     }
 
     /// Selects one entity for expanded debugger inspector output.
     public func setDebuggerSelectedEntity(entityId: UInt64) {
-        goud_debugger_set_selected_entity(_ctx, entityId)
+        let _ = goud_debugger_set_selected_entity(_ctx, entityId)
     }
 
     /// Clears the selected debugger inspector entity for this route.
     public func clearDebuggerSelectedEntity() {
-        goud_debugger_clear_selected_entity(_ctx)
-    }
-
-    /// Returns debugger-owned aggregate memory statistics for this route.
-    public func getMemorySummary() -> MemorySummary {
-        return MemorySummary(ffi: goud_debugger_get_memory_summary(_ctx))
-    }
-
-    /// Captures the current frame plus debugger-owned metadata attachments for this route.
-    public func captureDebuggerFrame() -> DebuggerCapture {
-        return DebuggerCapture(ffi: goud_debugger_capture_frame_json(_ctx))
+        let _ = goud_debugger_clear_selected_entity(_ctx)
     }
 
     /// Starts debugger-owned normalized input recording for this route.
     public func startDebuggerRecording() {
-        goud_debugger_start_recording(_ctx)
-    }
-
-    /// Stops debugger-owned recording and returns the exported replay artifact.
-    public func stopDebuggerRecording() -> DebuggerReplayArtifact {
-        return DebuggerReplayArtifact(ffi: goud_debugger_stop_recording_json(_ctx))
+        let _ = goud_debugger_start_recording(_ctx)
     }
 
     /// Starts debugger-owned replay using previously exported recording bytes.
     public func startDebuggerReplay(recording: Data) {
         recording.withUnsafeBytes { recordingRawBuf in
-            let recordingBasePtr = recordingRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            goud_debugger_start_replay(_ctx, recordingBasePtr)
+            let recordingBasePtr = recordingRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
+            let _ = goud_debugger_start_replay(_ctx, recordingBasePtr, recording.count)
         }
     }
 
     /// Stops any active debugger-owned replay session for this route.
     public func stopDebuggerReplay() {
-        goud_debugger_stop_replay(_ctx)
-    }
-
-    /// Returns the current debugger replay status JSON for this route.
-    public func getDebuggerReplayStatusJson() -> String {
-        return String(cString: goud_debugger_get_replay_status_json(_ctx))
-    }
-
-    /// Returns the current debugger metrics-trace JSON for this route.
-    public func getDebuggerMetricsTraceJson() -> String {
-        return String(cString: goud_debugger_get_metrics_trace_json(_ctx))
+        let _ = goud_debugger_stop_replay(_ctx)
     }
 
     /// Creates a new empty entity
@@ -214,50 +132,9 @@ public final class GoudContext {
         return Entity(bits: goud_entity_spawn_empty(_ctx))
     }
 
-    /// Spawns multiple empty entities at once
-    public func spawnBatch(count: UInt32) -> [Entity] {
-        return goud_entity_spawn_batch(_ctx, count) /* TODO: array return needs manual FFI bridge */
-    }
-
-    /// Destroys an entity and all its components
-    public func despawn(entity: Entity) -> Bool {
-        return (goud_entity_despawn(_ctx, entity.bits) != 0)
-    }
-
-    /// Despawns multiple entities at once
-    public func despawnBatch(entities: [Entity]) -> UInt32 {
-        let entitiesBits = entities.map { $0.bits }
-        entitiesBits.withUnsafeBufferPointer { entitiesBuf in
-            let entitiesBasePtr = entitiesBuf.baseAddress!
-            return goud_entity_despawn_batch(_ctx, entitiesBasePtr)
-        }
-    }
-
-    /// Clones an entity, creating a new entity with copies of all cloneable components
-    public func cloneEntity(entity: Entity) -> Entity {
-        return Entity(bits: goud_entity_clone(_ctx, entity.bits))
-    }
-
-    /// Clones an entity and all its descendants recursively
-    public func cloneEntityRecursive(entity: Entity) -> Entity {
-        return Entity(bits: goud_entity_clone_recursive(_ctx, entity.bits))
-    }
-
     /// Returns true if the entity still exists
     public func isAlive(entity: Entity) -> Bool {
-        return (goud_entity_is_alive(_ctx, entity.bits) != 0)
-    }
-
-    /// Checks if multiple entities are alive, writing results to an output array
-    public func isAliveBatch(entities: [Entity], outResults: Data) -> UInt32 {
-        outResults.withUnsafeBytes { outResultsRawBuf in
-            let outResultsBasePtr = outResultsRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            let entitiesBits = entities.map { $0.bits }
-            entitiesBits.withUnsafeBufferPointer { entitiesBuf in
-                let entitiesBasePtr = entitiesBuf.baseAddress!
-                return goud_entity_is_alive_batch(_ctx, entitiesBasePtr, outResultsBasePtr)
-            }
-        }
+        return goud_entity_is_alive(_ctx, entity.bits)
     }
 
     /// Returns the number of living entities
@@ -265,101 +142,9 @@ public final class GoudContext {
         return goud_entity_count(_ctx)
     }
 
-    /// Registers a component type for generic operations
-    public func componentRegisterType(typeIdHash: UInt64, name: String, size: Int, align: Int) -> Bool {
-        name.withCString { namePtr in
-            return (goud_component_register_type(_ctx, typeIdHash, namePtr, size, align) != 0)
-        }
-    }
-
-    /// Adds a generic component to an entity
-    public func componentAdd(entity: Entity, typeIdHash: UInt64, dataPtr: UnsafeMutableRawPointer, dataSize: Int) -> Bool {
-        return (goud_component_add(_ctx, entity.bits, typeIdHash, dataPtr, dataSize) != 0)
-    }
-
-    /// Removes a generic component from an entity
-    public func componentRemove(entity: Entity, typeIdHash: UInt64) -> Bool {
-        return (goud_component_remove(_ctx, entity.bits, typeIdHash) != 0)
-    }
-
-    /// Checks if an entity has a generic component
-    public func componentHas(entity: Entity, typeIdHash: UInt64) -> Bool {
-        return (goud_component_has(_ctx, entity.bits, typeIdHash) != 0)
-    }
-
-    /// Gets a read-only pointer to a generic component
-    public func componentGet(entity: Entity, typeIdHash: UInt64) -> UnsafeMutableRawPointer {
-        return goud_component_get(_ctx, entity.bits, typeIdHash)
-    }
-
-    /// Gets a mutable pointer to a generic component
-    public func componentGetMut(entity: Entity, typeIdHash: UInt64) -> UnsafeMutableRawPointer {
-        return goud_component_get_mut(_ctx, entity.bits, typeIdHash)
-    }
-
-    /// Adds a generic component to multiple entities
-    public func componentAddBatch(entities: [Entity], typeIdHash: UInt64, dataPtr: UnsafeMutableRawPointer, componentSize: Int) -> UInt32 {
-        let entitiesBits = entities.map { $0.bits }
-        entitiesBits.withUnsafeBufferPointer { entitiesBuf in
-            let entitiesBasePtr = entitiesBuf.baseAddress!
-            return goud_component_add_batch(_ctx, entitiesBasePtr, typeIdHash, dataPtr, componentSize)
-        }
-    }
-
-    /// Removes a generic component from multiple entities
-    public func componentRemoveBatch(entities: [Entity], typeIdHash: UInt64) -> UInt32 {
-        let entitiesBits = entities.map { $0.bits }
-        entitiesBits.withUnsafeBufferPointer { entitiesBuf in
-            let entitiesBasePtr = entitiesBuf.baseAddress!
-            return goud_component_remove_batch(_ctx, entitiesBasePtr, typeIdHash)
-        }
-    }
-
-    /// Checks if multiple entities have a generic component
-    public func componentHasBatch(entities: [Entity], typeIdHash: UInt64, outResults: Data) -> UInt32 {
-        outResults.withUnsafeBytes { outResultsRawBuf in
-            let outResultsBasePtr = outResultsRawBuf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            let entitiesBits = entities.map { $0.bits }
-            entitiesBits.withUnsafeBufferPointer { entitiesBuf in
-                let entitiesBasePtr = entitiesBuf.baseAddress!
-                return goud_component_has_batch(_ctx, entitiesBasePtr, typeIdHash, outResultsBasePtr)
-            }
-        }
-    }
-
-    /// Creates a new named scene and returns its ID
-    public func sceneCreate(name: String) -> UInt32 {
-        name.withCString { namePtr in
-            return goud_scene_create(_ctx, namePtr)
-        }
-    }
-
     /// Destroys a scene by ID
     public func sceneDestroy(sceneId: UInt32) -> GoudResult {
         return goud_scene_destroy(_ctx, sceneId)
-    }
-
-    /// Looks up a scene ID by name
-    public func sceneGetByName(name: String) -> UInt32 {
-        name.withCString { namePtr in
-            return goud_scene_get_by_name(_ctx, namePtr)
-        }
-    }
-
-    /// Loads a scene from JSON data and returns its ID
-    public func loadScene(name: String, json: String) -> UInt32 {
-        name.withCString { namePtr in
-            json.withCString { jsonPtr in
-                return goud_scene_load(_ctx, namePtr, jsonPtr)
-            }
-        }
-    }
-
-    /// Unloads a scene by name
-    public func unloadScene(name: String) -> GoudResult {
-        name.withCString { namePtr in
-            return goud_scene_unload(_ctx, namePtr)
-        }
     }
 
     /// Sets whether a scene is active
@@ -374,7 +159,7 @@ public final class GoudContext {
 
     /// Checks if a scene is active
     public func sceneIsActive(sceneId: UInt32) -> Bool {
-        return (goud_scene_is_active(_ctx, sceneId) != 0)
+        return goud_scene_is_active(_ctx, sceneId)
     }
 
     /// Returns the number of scenes
@@ -404,7 +189,7 @@ public final class GoudContext {
 
     /// Returns whether a scene transition is currently active
     public func sceneTransitionIsActive() -> Bool {
-        return (goud_scene_transition_is_active(_ctx) != 0)
+        return goud_scene_transition_is_active(_ctx)
     }
 
     /// Advances the active transition by delta time

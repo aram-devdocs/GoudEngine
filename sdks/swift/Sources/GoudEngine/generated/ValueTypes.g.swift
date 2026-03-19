@@ -7,9 +7,13 @@ import CGoudEngine
 
 /// RGBA color with float components in 0.0-1.0 range
 public struct Color: Equatable {
+    /// Red channel
     public var r: Float
+    /// Green channel
     public var g: Float
+    /// Blue channel
     public var b: Float
+    /// Alpha channel
     public var a: Float
 
     public init(r: Float = 0, g: Float = 0, b: Float = 0, a: Float = 0) {
@@ -128,7 +132,7 @@ public struct Rect: Equatable {
 }
 
 /// 3x3 matrix in column-major order for 2D transforms.
-public struct Mat3x3: Equatable {
+public struct Mat3x3 {
     public var m: (Float, Float, Float, Float, Float, Float, Float, Float, Float)
 
     public init(m: (Float, Float, Float, Float, Float, Float, Float, Float, Float) = (0, 0, 0, 0, 0, 0, 0, 0, 0)) {
@@ -159,14 +163,27 @@ public struct Mat3x3: Equatable {
     }
 }
 
+extension Mat3x3: Equatable {
+    public static func == (lhs: Mat3x3, rhs: Mat3x3) -> Bool {
+        withUnsafeBytes(of: lhs.m) { l in withUnsafeBytes(of: rhs.m) { r in l.elementsEqual(r) } }
+    }
+}
+
 /// Data for a fired animation event read from the event queue
 public struct AnimationEventData: Equatable {
+    /// Entity whose animation fired the event
     public var entity: UInt64
+    /// Event name identifier
     public var name: String
+    /// Frame index that triggered the event
     public var frameIndex: UInt32
+    /// Payload discriminant (0=None, 1=Int, 2=Float, 3=String)
     public var payloadType: UInt32
+    /// Integer payload value (valid when payloadType==1)
     public var payloadInt: Int32
+    /// Float payload value (valid when payloadType==2)
     public var payloadFloat: Float
+    /// String payload value (valid when payloadType==3)
     public var payloadString: String
 
     public init(entity: UInt64 = 0, name: String = "", frameIndex: UInt32 = 0, payloadType: UInt32 = 0, payloadInt: Int32 = 0, payloadFloat: Float = 0, payloadString: String = "") {
@@ -183,9 +200,13 @@ public struct AnimationEventData: Equatable {
 
 /// Per-frame rendering statistics
 public struct RenderStats: Equatable {
+    /// Number of draw calls this frame
     public var drawCalls: UInt32
+    /// Number of triangles rendered
     public var triangles: UInt32
+    /// Number of texture bind operations
     public var textureBinds: UInt32
+    /// Number of shader bind operations
     public var shaderBinds: UInt32
 
     public init(drawCalls: UInt32 = 0, triangles: UInt32 = 0, textureBinds: UInt32 = 0, shaderBinds: UInt32 = 0) {
@@ -196,18 +217,18 @@ public struct RenderStats: Equatable {
     }
 
     internal init(ffi: GoudRenderStats) {
-        self.drawCalls = ffi.drawCalls
+        self.drawCalls = ffi.draw_calls
         self.triangles = ffi.triangles
-        self.textureBinds = ffi.textureBinds
-        self.shaderBinds = ffi.shaderBinds
+        self.textureBinds = ffi.texture_binds
+        self.shaderBinds = ffi.shader_binds
     }
 
     internal func toFFI() -> GoudRenderStats {
         var ffi = GoudRenderStats()
-        ffi.drawCalls = drawCalls
+        ffi.draw_calls = drawCalls
         ffi.triangles = triangles
-        ffi.textureBinds = textureBinds
-        ffi.shaderBinds = shaderBinds
+        ffi.texture_binds = textureBinds
+        ffi.shader_binds = shaderBinds
         return ffi
     }
 
@@ -230,19 +251,19 @@ public struct Contact: Equatable {
     }
 
     internal init(ffi: GoudContact) {
-        self.pointX = ffi.pointX
-        self.pointY = ffi.pointY
-        self.normalX = ffi.normalX
-        self.normalY = ffi.normalY
+        self.pointX = ffi.point_x
+        self.pointY = ffi.point_y
+        self.normalX = ffi.normal_x
+        self.normalY = ffi.normal_y
         self.penetration = ffi.penetration
     }
 
     internal func toFFI() -> GoudContact {
         var ffi = GoudContact()
-        ffi.pointX = pointX
-        ffi.pointY = pointY
-        ffi.normalX = normalX
-        ffi.normalY = normalY
+        ffi.point_x = pointX
+        ffi.point_y = pointY
+        ffi.normal_x = normalX
+        ffi.normal_y = normalY
         ffi.penetration = penetration
         return ffi
     }
@@ -251,12 +272,19 @@ public struct Contact: Equatable {
 
 /// Detailed payload for a 2D physics raycast hit
 public struct PhysicsRaycastHit2D: Equatable {
+    /// Rigid body handle hit by the ray
     public var bodyHandle: UInt64
+    /// Collider handle hit by the ray
     public var colliderHandle: UInt64
+    /// Hit point X coordinate in world space
     public var pointX: Float
+    /// Hit point Y coordinate in world space
     public var pointY: Float
+    /// Surface normal X component at hit point
     public var normalX: Float
+    /// Surface normal Y component at hit point
     public var normalY: Float
+    /// Distance from ray origin to hit point
     public var distance: Float
 
     public init(bodyHandle: UInt64 = 0, colliderHandle: UInt64 = 0, pointX: Float = 0, pointY: Float = 0, normalX: Float = 0, normalY: Float = 0, distance: Float = 0) {
@@ -269,54 +297,21 @@ public struct PhysicsRaycastHit2D: Equatable {
         self.distance = distance
     }
 
-    internal init(ffi: FfiPhysicsRaycastHit2D) {
-        self.bodyHandle = ffi.bodyHandle
-        self.colliderHandle = ffi.colliderHandle
-        self.pointX = ffi.pointX
-        self.pointY = ffi.pointY
-        self.normalX = ffi.normalX
-        self.normalY = ffi.normalY
-        self.distance = ffi.distance
-    }
-
-    internal func toFFI() -> FfiPhysicsRaycastHit2D {
-        var ffi = FfiPhysicsRaycastHit2D()
-        ffi.bodyHandle = bodyHandle
-        ffi.colliderHandle = colliderHandle
-        ffi.pointX = pointX
-        ffi.pointY = pointY
-        ffi.normalX = normalX
-        ffi.normalY = normalY
-        ffi.distance = distance
-        return ffi
-    }
-
 }
 
 /// 2D collision event payload from the physics event queue
 public struct PhysicsCollisionEvent2D: Equatable {
+    /// First body handle in the collision pair
     public var bodyA: UInt64
+    /// Second body handle in the collision pair
     public var bodyB: UInt64
+    /// Collision lifecycle kind: 0 = Enter, 1 = Stay, 2 = Exit
     public var kind: UInt32
 
     public init(bodyA: UInt64 = 0, bodyB: UInt64 = 0, kind: UInt32 = 0) {
         self.bodyA = bodyA
         self.bodyB = bodyB
         self.kind = kind
-    }
-
-    internal init(ffi: FfiPhysicsCollisionEvent2D) {
-        self.bodyA = ffi.bodyA
-        self.bodyB = ffi.bodyB
-        self.kind = ffi.kind
-    }
-
-    internal func toFFI() -> FfiPhysicsCollisionEvent2D {
-        var ffi = FfiPhysicsCollisionEvent2D()
-        ffi.bodyA = bodyA
-        ffi.bodyB = bodyB
-        ffi.kind = kind
-        return ffi
     }
 
 }
@@ -331,20 +326,6 @@ public struct Vec3: Equatable {
         self.x = x
         self.y = y
         self.z = z
-    }
-
-    internal init(ffi: FfiVec3) {
-        self.x = ffi.x
-        self.y = ffi.y
-        self.z = ffi.z
-    }
-
-    internal func toFFI() -> FfiVec3 {
-        var ffi = FfiVec3()
-        ffi.x = x
-        ffi.y = y
-        ffi.z = z
-        return ffi
     }
 
     public static func zero() -> Vec3 { Vec3(x: 0, y: 0, z: 0) }
@@ -369,10 +350,15 @@ public struct Entity: Equatable, Hashable {
 
 /// Frame timing statistics from the debug overlay rolling window
 public struct FpsStats: Equatable {
+    /// Current (most recent) frames per second
     public var currentFps: Float
+    /// Minimum FPS observed in the rolling window
     public var minFps: Float
+    /// Maximum FPS observed in the rolling window
     public var maxFps: Float
+    /// Average FPS across the rolling window
     public var avgFps: Float
+    /// Most recent frame time in milliseconds
     public var frameTimeMs: Float
 
     public init(currentFps: Float = 0, minFps: Float = 0, maxFps: Float = 0, avgFps: Float = 0, frameTimeMs: Float = 0) {
@@ -383,21 +369,21 @@ public struct FpsStats: Equatable {
         self.frameTimeMs = frameTimeMs
     }
 
-    internal init(ffi: GoudFpsStats) {
-        self.currentFps = ffi.currentFps
-        self.minFps = ffi.minFps
-        self.maxFps = ffi.maxFps
-        self.avgFps = ffi.avgFps
-        self.frameTimeMs = ffi.frameTimeMs
+    internal init(ffi: CGoudEngine.FpsStats) {
+        self.currentFps = ffi.current_fps
+        self.minFps = ffi.min_fps
+        self.maxFps = ffi.max_fps
+        self.avgFps = ffi.avg_fps
+        self.frameTimeMs = ffi.frame_time_ms
     }
 
-    internal func toFFI() -> GoudFpsStats {
-        var ffi = GoudFpsStats()
-        ffi.currentFps = currentFps
-        ffi.minFps = minFps
-        ffi.maxFps = maxFps
-        ffi.avgFps = avgFps
-        ffi.frameTimeMs = frameTimeMs
+    internal func toFFI() -> CGoudEngine.FpsStats {
+        var ffi = CGoudEngine.FpsStats()
+        ffi.current_fps = currentFps
+        ffi.min_fps = minFps
+        ffi.max_fps = maxFps
+        ffi.avg_fps = avgFps
+        ffi.frame_time_ms = frameTimeMs
         return ffi
     }
 
@@ -405,8 +391,11 @@ public struct FpsStats: Equatable {
 
 /// Pre-init debugger runtime configuration for desktop contexts.
 public struct DebuggerConfig: Equatable {
+    /// Enables the debugger runtime for the created game or context.
     public var enabled: Bool
+    /// Publishes the local attach manifest and endpoint when at least one route is attachable.
     public var publishLocalAttach: Bool
+    /// Optional debugger route label. Use an empty string to clear it.
     public var routeLabel: String
 
     public init(enabled: Bool = false, publishLocalAttach: Bool = false, routeLabel: String = "") {
@@ -417,14 +406,14 @@ public struct DebuggerConfig: Equatable {
 
     internal init(ffi: GoudDebuggerConfig) {
         self.enabled = ffi.enabled
-        self.publishLocalAttach = ffi.publishLocalAttach
-        self.routeLabel = String(cString: ffi.routeLabel)
+        self.publishLocalAttach = ffi.publish_local_attach
+        self.routeLabel = String(cString: ffi.route_label)
     }
 
     internal func toFFI() -> GoudDebuggerConfig {
         var ffi = GoudDebuggerConfig()
         ffi.enabled = enabled
-        ffi.publishLocalAttach = publishLocalAttach
+        ffi.publish_local_attach = publishLocalAttach
         return ffi
     }
 
@@ -432,6 +421,7 @@ public struct DebuggerConfig: Equatable {
 
 /// Pre-init configuration for headless context creation.
 public struct ContextConfig: Equatable {
+    /// Debugger runtime settings for the created context.
     public var debugger: DebuggerConfig
 
     public init(debugger: DebuggerConfig = DebuggerConfig()) {
@@ -452,7 +442,9 @@ public struct ContextConfig: Equatable {
 
 /// Tracked current and peak bytes for one debugger memory category.
 public struct MemoryCategoryStats: Equatable {
+    /// Current tracked bytes for the category.
     public var currentBytes: UInt64
+    /// Peak tracked bytes for the category.
     public var peakBytes: UInt64
 
     public init(currentBytes: UInt64 = 0, peakBytes: UInt64 = 0) {
@@ -461,14 +453,14 @@ public struct MemoryCategoryStats: Equatable {
     }
 
     internal init(ffi: GoudMemoryCategoryStats) {
-        self.currentBytes = ffi.currentBytes
-        self.peakBytes = ffi.peakBytes
+        self.currentBytes = ffi.current_bytes
+        self.peakBytes = ffi.peak_bytes
     }
 
     internal func toFFI() -> GoudMemoryCategoryStats {
         var ffi = GoudMemoryCategoryStats()
-        ffi.currentBytes = currentBytes
-        ffi.peakBytes = peakBytes
+        ffi.current_bytes = currentBytes
+        ffi.peak_bytes = peakBytes
         return ffi
     }
 
@@ -476,15 +468,25 @@ public struct MemoryCategoryStats: Equatable {
 
 /// Debugger-owned aggregate memory summary for one route.
 public struct MemorySummary: Equatable {
+    /// Tracked memory for rendering resources.
     public var rendering: MemoryCategoryStats
+    /// Tracked memory for asset storage.
     public var assets: MemoryCategoryStats
+    /// Tracked memory for ECS state and snapshots.
     public var ecs: MemoryCategoryStats
+    /// Tracked memory for UI state.
     public var ui: MemoryCategoryStats
+    /// Tracked memory for audio resources.
     public var audio: MemoryCategoryStats
+    /// Tracked memory for network buffers and state.
     public var network: MemoryCategoryStats
+    /// Tracked memory used by the debugger runtime.
     public var debugger: MemoryCategoryStats
+    /// Tracked memory not assigned to a specific category.
     public var other: MemoryCategoryStats
+    /// Sum of current bytes across all categories.
     public var totalCurrentBytes: UInt64
+    /// Sum of peak bytes across all categories.
     public var totalPeakBytes: UInt64
 
     public init(rendering: MemoryCategoryStats = MemoryCategoryStats(), assets: MemoryCategoryStats = MemoryCategoryStats(), ecs: MemoryCategoryStats = MemoryCategoryStats(), ui: MemoryCategoryStats = MemoryCategoryStats(), audio: MemoryCategoryStats = MemoryCategoryStats(), network: MemoryCategoryStats = MemoryCategoryStats(), debugger: MemoryCategoryStats = MemoryCategoryStats(), other: MemoryCategoryStats = MemoryCategoryStats(), totalCurrentBytes: UInt64 = 0, totalPeakBytes: UInt64 = 0) {
@@ -509,8 +511,8 @@ public struct MemorySummary: Equatable {
         self.network = MemoryCategoryStats(ffi: ffi.network)
         self.debugger = MemoryCategoryStats(ffi: ffi.debugger)
         self.other = MemoryCategoryStats(ffi: ffi.other)
-        self.totalCurrentBytes = ffi.totalCurrentBytes
-        self.totalPeakBytes = ffi.totalPeakBytes
+        self.totalCurrentBytes = ffi.total_current_bytes
+        self.totalPeakBytes = ffi.total_peak_bytes
     }
 
     internal func toFFI() -> GoudMemorySummary {
@@ -523,8 +525,8 @@ public struct MemorySummary: Equatable {
         ffi.network = network.toFFI()
         ffi.debugger = debugger.toFFI()
         ffi.other = other.toFFI()
-        ffi.totalCurrentBytes = totalCurrentBytes
-        ffi.totalPeakBytes = totalPeakBytes
+        ffi.total_current_bytes = totalCurrentBytes
+        ffi.total_peak_bytes = totalPeakBytes
         return ffi
     }
 
@@ -532,9 +534,13 @@ public struct MemorySummary: Equatable {
 
 /// Debugger frame capture artifact envelope returned directly by SDK calls.
 public struct DebuggerCapture: Equatable {
+    /// PNG-encoded framebuffer bytes for the requested frame.
     public var imagePng: Data
+    /// Capture metadata JSON including route, frame, timing, renderer, and debugger state.
     public var metadataJson: String
+    /// Debugger snapshot JSON captured alongside the frame.
     public var snapshotJson: String
+    /// Versioned metrics and trace JSON captured alongside the frame.
     public var metricsTraceJson: String
 
     public init(imagePng: Data = Data(), metadataJson: String = "", snapshotJson: String = "", metricsTraceJson: String = "") {
@@ -548,7 +554,9 @@ public struct DebuggerCapture: Equatable {
 
 /// Debugger replay recording artifact envelope returned directly by SDK calls.
 public struct DebuggerReplayArtifact: Equatable {
+    /// Replay manifest JSON describing determinism limits and runtime facts for the session.
     public var manifestJson: String
+    /// Replay recording bytes for later import into startDebuggerReplay.
     public var data: Data
 
     public init(manifestJson: String = "", data: Data = Data()) {
@@ -556,24 +564,6 @@ public struct DebuggerReplayArtifact: Equatable {
         self.data = data
     }
 
-}
-
-/// 2D physics simulation world
-public struct PhysicsWorld2D: Equatable, Hashable {
-    public let bits: UInt64
-
-    public init(bits: UInt64) {
-        self.bits = bits
-    }
-}
-
-/// 3D physics simulation world
-public struct PhysicsWorld3D: Equatable, Hashable {
-    public let bits: UInt64
-
-    public init(bits: UInt64) {
-        self.bits = bits
-    }
 }
 
 /// Handle to a rigid body in the physics simulation
@@ -614,10 +604,15 @@ public struct NetworkHandle: Equatable, Hashable {
 
 /// Capabilities reported by the active render provider
 public struct RenderCapabilities: Equatable {
+    /// Maximum number of texture units available
     public var maxTextureUnits: UInt32
+    /// Maximum texture dimension (width or height)
     public var maxTextureSize: UInt32
+    /// Whether hardware instancing is supported
     public var supportsInstancing: Bool
+    /// Whether compute shaders are supported
     public var supportsCompute: Bool
+    /// Whether multisample anti-aliasing is supported
     public var supportsMsaa: Bool
 
     public init(maxTextureUnits: UInt32 = 0, maxTextureSize: UInt32 = 0, supportsInstancing: Bool = false, supportsCompute: Bool = false, supportsMsaa: Bool = false) {
@@ -628,21 +623,21 @@ public struct RenderCapabilities: Equatable {
         self.supportsMsaa = supportsMsaa
     }
 
-    internal init(ffi: FfiRenderCapabilities) {
-        self.maxTextureUnits = ffi.maxTextureUnits
-        self.maxTextureSize = ffi.maxTextureSize
-        self.supportsInstancing = ffi.supportsInstancing
-        self.supportsCompute = ffi.supportsCompute
-        self.supportsMsaa = ffi.supportsMsaa
+    internal init(ffi: CGoudEngine.RenderCapabilities) {
+        self.maxTextureUnits = ffi.max_texture_units
+        self.maxTextureSize = ffi.max_texture_size
+        self.supportsInstancing = ffi.supports_instancing
+        self.supportsCompute = ffi.supports_compute
+        self.supportsMsaa = ffi.supports_msaa
     }
 
-    internal func toFFI() -> FfiRenderCapabilities {
-        var ffi = FfiRenderCapabilities()
-        ffi.maxTextureUnits = maxTextureUnits
-        ffi.maxTextureSize = maxTextureSize
-        ffi.supportsInstancing = supportsInstancing
-        ffi.supportsCompute = supportsCompute
-        ffi.supportsMsaa = supportsMsaa
+    internal func toFFI() -> CGoudEngine.RenderCapabilities {
+        var ffi = CGoudEngine.RenderCapabilities()
+        ffi.max_texture_units = maxTextureUnits
+        ffi.max_texture_size = maxTextureSize
+        ffi.supports_instancing = supportsInstancing
+        ffi.supports_compute = supportsCompute
+        ffi.supports_msaa = supportsMsaa
         return ffi
     }
 
@@ -650,8 +645,11 @@ public struct RenderCapabilities: Equatable {
 
 /// Capabilities reported by the active physics provider
 public struct PhysicsCapabilities: Equatable {
+    /// Whether continuous collision detection is supported
     public var supportsContinuousCollision: Bool
+    /// Whether joints are supported
     public var supportsJoints: Bool
+    /// Maximum number of physics bodies
     public var maxBodies: UInt32
 
     public init(supportsContinuousCollision: Bool = false, supportsJoints: Bool = false, maxBodies: UInt32 = 0) {
@@ -660,17 +658,17 @@ public struct PhysicsCapabilities: Equatable {
         self.maxBodies = maxBodies
     }
 
-    internal init(ffi: FfiPhysicsCapabilities) {
-        self.supportsContinuousCollision = ffi.supportsContinuousCollision
-        self.supportsJoints = ffi.supportsJoints
-        self.maxBodies = ffi.maxBodies
+    internal init(ffi: CGoudEngine.PhysicsCapabilities) {
+        self.supportsContinuousCollision = ffi.supports_continuous_collision
+        self.supportsJoints = ffi.supports_joints
+        self.maxBodies = ffi.max_bodies
     }
 
-    internal func toFFI() -> FfiPhysicsCapabilities {
-        var ffi = FfiPhysicsCapabilities()
-        ffi.supportsContinuousCollision = supportsContinuousCollision
-        ffi.supportsJoints = supportsJoints
-        ffi.maxBodies = maxBodies
+    internal func toFFI() -> CGoudEngine.PhysicsCapabilities {
+        var ffi = CGoudEngine.PhysicsCapabilities()
+        ffi.supports_continuous_collision = supportsContinuousCollision
+        ffi.supports_joints = supportsJoints
+        ffi.max_bodies = maxBodies
         return ffi
     }
 
@@ -678,7 +676,9 @@ public struct PhysicsCapabilities: Equatable {
 
 /// Capabilities reported by the active audio provider
 public struct AudioCapabilities: Equatable {
+    /// Whether spatial/3D audio is supported
     public var supportsSpatial: Bool
+    /// Maximum number of simultaneous audio channels
     public var maxChannels: UInt32
 
     public init(supportsSpatial: Bool = false, maxChannels: UInt32 = 0) {
@@ -686,15 +686,15 @@ public struct AudioCapabilities: Equatable {
         self.maxChannels = maxChannels
     }
 
-    internal init(ffi: FfiAudioCapabilities) {
-        self.supportsSpatial = ffi.supportsSpatial
-        self.maxChannels = ffi.maxChannels
+    internal init(ffi: CGoudEngine.AudioCapabilities) {
+        self.supportsSpatial = ffi.supports_spatial
+        self.maxChannels = ffi.max_channels
     }
 
-    internal func toFFI() -> FfiAudioCapabilities {
-        var ffi = FfiAudioCapabilities()
-        ffi.supportsSpatial = supportsSpatial
-        ffi.maxChannels = maxChannels
+    internal func toFFI() -> CGoudEngine.AudioCapabilities {
+        var ffi = CGoudEngine.AudioCapabilities()
+        ffi.supports_spatial = supportsSpatial
+        ffi.max_channels = maxChannels
         return ffi
     }
 
@@ -702,8 +702,11 @@ public struct AudioCapabilities: Equatable {
 
 /// Capabilities reported by the active input provider
 public struct InputCapabilities: Equatable {
+    /// Whether gamepad input is supported
     public var supportsGamepad: Bool
+    /// Whether touch input is supported
     public var supportsTouch: Bool
+    /// Maximum number of simultaneous gamepads
     public var maxGamepads: UInt32
 
     public init(supportsGamepad: Bool = false, supportsTouch: Bool = false, maxGamepads: UInt32 = 0) {
@@ -712,17 +715,17 @@ public struct InputCapabilities: Equatable {
         self.maxGamepads = maxGamepads
     }
 
-    internal init(ffi: FfiInputCapabilities) {
-        self.supportsGamepad = ffi.supportsGamepad
-        self.supportsTouch = ffi.supportsTouch
-        self.maxGamepads = ffi.maxGamepads
+    internal init(ffi: CGoudEngine.InputCapabilities) {
+        self.supportsGamepad = ffi.supports_gamepad
+        self.supportsTouch = ffi.supports_touch
+        self.maxGamepads = ffi.max_gamepads
     }
 
-    internal func toFFI() -> FfiInputCapabilities {
-        var ffi = FfiInputCapabilities()
-        ffi.supportsGamepad = supportsGamepad
-        ffi.supportsTouch = supportsTouch
-        ffi.maxGamepads = maxGamepads
+    internal func toFFI() -> CGoudEngine.InputCapabilities {
+        var ffi = CGoudEngine.InputCapabilities()
+        ffi.supports_gamepad = supportsGamepad
+        ffi.supports_touch = supportsTouch
+        ffi.max_gamepads = maxGamepads
         return ffi
     }
 
@@ -730,9 +733,13 @@ public struct InputCapabilities: Equatable {
 
 /// Capabilities reported by the active network provider
 public struct NetworkCapabilities: Equatable {
+    /// Whether this provider can act as a host
     public var supportsHosting: Bool
+    /// Maximum number of simultaneous connections
     public var maxConnections: UInt32
+    /// Maximum number of channels supported
     public var maxChannels: UInt8
+    /// Maximum size of a single message in bytes
     public var maxMessageSize: UInt32
 
     public init(supportsHosting: Bool = false, maxConnections: UInt32 = 0, maxChannels: UInt8 = 0, maxMessageSize: UInt32 = 0) {
@@ -742,19 +749,19 @@ public struct NetworkCapabilities: Equatable {
         self.maxMessageSize = maxMessageSize
     }
 
-    internal init(ffi: FfiNetworkCapabilities) {
-        self.supportsHosting = ffi.supportsHosting
-        self.maxConnections = ffi.maxConnections
-        self.maxChannels = ffi.maxChannels
-        self.maxMessageSize = ffi.maxMessageSize
+    internal init(ffi: CGoudEngine.NetworkCapabilities) {
+        self.supportsHosting = ffi.supports_hosting
+        self.maxConnections = ffi.max_connections
+        self.maxChannels = ffi.max_channels
+        self.maxMessageSize = ffi.max_message_size
     }
 
-    internal func toFFI() -> FfiNetworkCapabilities {
-        var ffi = FfiNetworkCapabilities()
-        ffi.supportsHosting = supportsHosting
-        ffi.maxConnections = maxConnections
-        ffi.maxChannels = maxChannels
-        ffi.maxMessageSize = maxMessageSize
+    internal func toFFI() -> CGoudEngine.NetworkCapabilities {
+        var ffi = CGoudEngine.NetworkCapabilities()
+        ffi.supports_hosting = supportsHosting
+        ffi.max_connections = maxConnections
+        ffi.max_channels = maxChannels
+        ffi.max_message_size = maxMessageSize
         return ffi
     }
 
@@ -762,15 +769,25 @@ public struct NetworkCapabilities: Equatable {
 
 /// Aggregate network statistics for a network handle
 public struct NetworkStats: Equatable {
+    /// Total bytes sent across all connections
     public var bytesSent: UInt64
+    /// Total bytes received across all connections
     public var bytesReceived: UInt64
+    /// Total packets sent across all connections
     public var packetsSent: UInt64
+    /// Total packets received across all connections
     public var packetsReceived: UInt64
+    /// Total packets lost across all connections
     public var packetsLost: UInt64
+    /// Most recent RTT sample in milliseconds
     public var rttMs: Float
+    /// Rolling send bandwidth in bytes per second
     public var sendBandwidthBytesPerSec: Float
+    /// Rolling receive bandwidth in bytes per second
     public var receiveBandwidthBytesPerSec: Float
+    /// Rolling packet loss percentage
     public var packetLossPercent: Float
+    /// Rolling RTT jitter in milliseconds
     public var jitterMs: Float
 
     public init(bytesSent: UInt64 = 0, bytesReceived: UInt64 = 0, packetsSent: UInt64 = 0, packetsReceived: UInt64 = 0, packetsLost: UInt64 = 0, rttMs: Float = 0, sendBandwidthBytesPerSec: Float = 0, receiveBandwidthBytesPerSec: Float = 0, packetLossPercent: Float = 0, jitterMs: Float = 0) {
@@ -787,30 +804,30 @@ public struct NetworkStats: Equatable {
     }
 
     internal init(ffi: FfiNetworkStats) {
-        self.bytesSent = ffi.bytesSent
-        self.bytesReceived = ffi.bytesReceived
-        self.packetsSent = ffi.packetsSent
-        self.packetsReceived = ffi.packetsReceived
-        self.packetsLost = ffi.packetsLost
-        self.rttMs = ffi.rttMs
-        self.sendBandwidthBytesPerSec = ffi.sendBandwidthBytesPerSec
-        self.receiveBandwidthBytesPerSec = ffi.receiveBandwidthBytesPerSec
-        self.packetLossPercent = ffi.packetLossPercent
-        self.jitterMs = ffi.jitterMs
+        self.bytesSent = ffi.bytes_sent
+        self.bytesReceived = ffi.bytes_received
+        self.packetsSent = ffi.packets_sent
+        self.packetsReceived = ffi.packets_received
+        self.packetsLost = ffi.packets_lost
+        self.rttMs = ffi.rtt_ms
+        self.sendBandwidthBytesPerSec = ffi.send_bandwidth_bytes_per_sec
+        self.receiveBandwidthBytesPerSec = ffi.receive_bandwidth_bytes_per_sec
+        self.packetLossPercent = ffi.packet_loss_percent
+        self.jitterMs = ffi.jitter_ms
     }
 
     internal func toFFI() -> FfiNetworkStats {
         var ffi = FfiNetworkStats()
-        ffi.bytesSent = bytesSent
-        ffi.bytesReceived = bytesReceived
-        ffi.packetsSent = packetsSent
-        ffi.packetsReceived = packetsReceived
-        ffi.packetsLost = packetsLost
-        ffi.rttMs = rttMs
-        ffi.sendBandwidthBytesPerSec = sendBandwidthBytesPerSec
-        ffi.receiveBandwidthBytesPerSec = receiveBandwidthBytesPerSec
-        ffi.packetLossPercent = packetLossPercent
-        ffi.jitterMs = jitterMs
+        ffi.bytes_sent = bytesSent
+        ffi.bytes_received = bytesReceived
+        ffi.packets_sent = packetsSent
+        ffi.packets_received = packetsReceived
+        ffi.packets_lost = packetsLost
+        ffi.rtt_ms = rttMs
+        ffi.send_bandwidth_bytes_per_sec = sendBandwidthBytesPerSec
+        ffi.receive_bandwidth_bytes_per_sec = receiveBandwidthBytesPerSec
+        ffi.packet_loss_percent = packetLossPercent
+        ffi.jitter_ms = jitterMs
         return ffi
     }
 
@@ -818,8 +835,11 @@ public struct NetworkStats: Equatable {
 
 /// Debug-only network simulation settings for a network handle
 public struct NetworkSimulationConfig: Equatable {
+    /// Artificial one-way latency in milliseconds
     public var oneWayLatencyMs: UInt32
+    /// Additional jitter range in milliseconds
     public var jitterMs: UInt32
+    /// Packet loss percentage in the range 0 to 100
     public var packetLossPercent: Float
 
     public init(oneWayLatencyMs: UInt32 = 0, jitterMs: UInt32 = 0, packetLossPercent: Float = 0) {
@@ -828,17 +848,17 @@ public struct NetworkSimulationConfig: Equatable {
         self.packetLossPercent = packetLossPercent
     }
 
-    internal init(ffi: FfiNetworkSimulationConfig) {
-        self.oneWayLatencyMs = ffi.oneWayLatencyMs
-        self.jitterMs = ffi.jitterMs
-        self.packetLossPercent = ffi.packetLossPercent
+    internal init(ffi: CGoudEngine.NetworkSimulationConfig) {
+        self.oneWayLatencyMs = ffi.one_way_latency_ms
+        self.jitterMs = ffi.jitter_ms
+        self.packetLossPercent = ffi.packet_loss_percent
     }
 
-    internal func toFFI() -> FfiNetworkSimulationConfig {
-        var ffi = FfiNetworkSimulationConfig()
-        ffi.oneWayLatencyMs = oneWayLatencyMs
-        ffi.jitterMs = jitterMs
-        ffi.packetLossPercent = packetLossPercent
+    internal func toFFI() -> CGoudEngine.NetworkSimulationConfig {
+        var ffi = CGoudEngine.NetworkSimulationConfig()
+        ffi.one_way_latency_ms = oneWayLatencyMs
+        ffi.jitter_ms = jitterMs
+        ffi.packet_loss_percent = packetLossPercent
         return ffi
     }
 
@@ -846,7 +866,9 @@ public struct NetworkSimulationConfig: Equatable {
 
 /// Peer-preserving connection result returned by networkConnectWithPeer
 public struct NetworkConnectResult: Equatable {
+    /// Opaque network handle created for the connection
     public var handle: Int64
+    /// Provider-assigned default remote peer ID
     public var peerId: UInt64
 
     public init(handle: Int64 = 0, peerId: UInt64 = 0) {
@@ -858,132 +880,14 @@ public struct NetworkConnectResult: Equatable {
 
 /// Inbound network payload with the sender peer ID preserved
 public struct NetworkPacket: Equatable {
+    /// Sender peer ID for the buffered payload
     public var peerId: UInt64
+    /// Buffered packet payload bytes
     public var data: Data
 
     public init(peerId: UInt64 = 0, data: Data = Data()) {
         self.peerId = peerId
         self.data = data
-    }
-
-}
-
-/// C-safe UI style payload for node-level visual overrides.
-public struct UiStyle: Equatable {
-    public var hasBackgroundColor: Bool
-    public var backgroundColor: Color
-    public var hasForegroundColor: Bool
-    public var foregroundColor: Color
-    public var hasBorderColor: Bool
-    public var borderColor: Color
-    public var hasBorderWidth: Bool
-    public var borderWidth: Float
-    public var hasFontFamily: Bool
-    public var fontFamilyPtr: UnsafeMutableRawPointer
-    public var fontFamilyLen: Int
-    public var hasFontSize: Bool
-    public var fontSize: Float
-    public var hasTexturePath: Bool
-    public var texturePathPtr: UnsafeMutableRawPointer
-    public var texturePathLen: Int
-    public var hasWidgetSpacing: Bool
-    public var widgetSpacing: Float
-
-    public init(hasBackgroundColor: Bool = false, backgroundColor: Color = Color(), hasForegroundColor: Bool = false, foregroundColor: Color = Color(), hasBorderColor: Bool = false, borderColor: Color = Color(), hasBorderWidth: Bool = false, borderWidth: Float = 0, hasFontFamily: Bool = false, fontFamilyPtr: UnsafeMutableRawPointer = 0, fontFamilyLen: Int = 0, hasFontSize: Bool = false, fontSize: Float = 0, hasTexturePath: Bool = false, texturePathPtr: UnsafeMutableRawPointer = 0, texturePathLen: Int = 0, hasWidgetSpacing: Bool = false, widgetSpacing: Float = 0) {
-        self.hasBackgroundColor = hasBackgroundColor
-        self.backgroundColor = backgroundColor
-        self.hasForegroundColor = hasForegroundColor
-        self.foregroundColor = foregroundColor
-        self.hasBorderColor = hasBorderColor
-        self.borderColor = borderColor
-        self.hasBorderWidth = hasBorderWidth
-        self.borderWidth = borderWidth
-        self.hasFontFamily = hasFontFamily
-        self.fontFamilyPtr = fontFamilyPtr
-        self.fontFamilyLen = fontFamilyLen
-        self.hasFontSize = hasFontSize
-        self.fontSize = fontSize
-        self.hasTexturePath = hasTexturePath
-        self.texturePathPtr = texturePathPtr
-        self.texturePathLen = texturePathLen
-        self.hasWidgetSpacing = hasWidgetSpacing
-        self.widgetSpacing = widgetSpacing
-    }
-
-    internal init(ffi: FfiUiStyle) {
-        self.hasBackgroundColor = ffi.hasBackgroundColor
-        self.backgroundColor = Color(ffi: ffi.backgroundColor)
-        self.hasForegroundColor = ffi.hasForegroundColor
-        self.foregroundColor = Color(ffi: ffi.foregroundColor)
-        self.hasBorderColor = ffi.hasBorderColor
-        self.borderColor = Color(ffi: ffi.borderColor)
-        self.hasBorderWidth = ffi.hasBorderWidth
-        self.borderWidth = ffi.borderWidth
-        self.hasFontFamily = ffi.hasFontFamily
-        self.fontFamilyPtr = ffi.fontFamilyPtr
-        self.fontFamilyLen = ffi.fontFamilyLen
-        self.hasFontSize = ffi.hasFontSize
-        self.fontSize = ffi.fontSize
-        self.hasTexturePath = ffi.hasTexturePath
-        self.texturePathPtr = ffi.texturePathPtr
-        self.texturePathLen = ffi.texturePathLen
-        self.hasWidgetSpacing = ffi.hasWidgetSpacing
-        self.widgetSpacing = ffi.widgetSpacing
-    }
-
-    internal func toFFI() -> FfiUiStyle {
-        var ffi = FfiUiStyle()
-        ffi.hasBackgroundColor = hasBackgroundColor
-        ffi.backgroundColor = backgroundColor.toFFI()
-        ffi.hasForegroundColor = hasForegroundColor
-        ffi.foregroundColor = foregroundColor.toFFI()
-        ffi.hasBorderColor = hasBorderColor
-        ffi.borderColor = borderColor.toFFI()
-        ffi.hasBorderWidth = hasBorderWidth
-        ffi.borderWidth = borderWidth
-        ffi.hasFontFamily = hasFontFamily
-        ffi.fontFamilyPtr = fontFamilyPtr
-        ffi.fontFamilyLen = fontFamilyLen
-        ffi.hasFontSize = hasFontSize
-        ffi.fontSize = fontSize
-        ffi.hasTexturePath = hasTexturePath
-        ffi.texturePathPtr = texturePathPtr
-        ffi.texturePathLen = texturePathLen
-        ffi.hasWidgetSpacing = hasWidgetSpacing
-        ffi.widgetSpacing = widgetSpacing
-        return ffi
-    }
-
-}
-
-/// UI event payload returned by deterministic polling APIs.
-public struct UiEvent: Equatable {
-    public var eventKind: UInt32
-    public var nodeId: UInt64
-    public var previousNodeId: UInt64
-    public var currentNodeId: UInt64
-
-    public init(eventKind: UInt32 = 0, nodeId: UInt64 = 0, previousNodeId: UInt64 = 0, currentNodeId: UInt64 = 0) {
-        self.eventKind = eventKind
-        self.nodeId = nodeId
-        self.previousNodeId = previousNodeId
-        self.currentNodeId = currentNodeId
-    }
-
-    internal init(ffi: FfiUiEvent) {
-        self.eventKind = ffi.eventKind
-        self.nodeId = ffi.nodeId
-        self.previousNodeId = ffi.previousNodeId
-        self.currentNodeId = ffi.currentNodeId
-    }
-
-    internal func toFFI() -> FfiUiEvent {
-        var ffi = FfiUiEvent()
-        ffi.eventKind = eventKind
-        ffi.nodeId = nodeId
-        ffi.previousNodeId = previousNodeId
-        ffi.currentNodeId = currentNodeId
-        return ffi
     }
 
 }

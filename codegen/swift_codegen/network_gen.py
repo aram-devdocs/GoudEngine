@@ -52,17 +52,10 @@ def _gen_sub_tool(lines: list[str], tool_name: str) -> None:
     lines.append("    }")
     lines.append("")
 
-    for m in methods:
-        mname = m["name"]
-        if mname == "destroy":
-            continue
-        if not method_exists_in_ffi(tool_name, mname):
-            continue
-        ffi_name = ffi_func_name(tool_name, mname)
-        if not ffi_name:
-            continue
-        method_lines = _gen_method(tool_name, m, ffi_name, "_ctx")
-        lines.extend(method_lines)
+    # TODO: Sub-tool methods need codegen improvements for expand_params,
+    # entity_params, and correct argument marshaling. Skipped for now;
+    # will be enabled in a follow-up when the codegen handles them.
+    lines.append("    // Methods will be generated once codegen handles sub-tool FFI patterns.")
 
     lines.append("}")
     lines.append("")

@@ -92,6 +92,9 @@ python3 codegen/gen_swift.py
 echo "║ [11c/14] Generating Lua SDK..."
 python3 codegen/gen_lua.py
 
+echo "║ [11d/14] Generating Kotlin SDK..."
+python3 codegen/gen_kotlin.py
+
 echo "║ [12/14] Formatting generated Rust sources..."
 cargo fmt -p goud-engine-node
 
