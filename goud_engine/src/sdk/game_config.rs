@@ -90,6 +90,11 @@ pub struct GameConfig {
     /// Debugger runtime configuration.
     pub debugger: DebuggerConfig,
 
+    /// Whether Lua script hot-reload is enabled.
+    ///
+    /// Defaults to `true` in debug builds and `false` in release builds.
+    pub lua_hot_reload: bool,
+
     /// Viewport aspect ratio lock.
     pub aspect_ratio_lock: AspectRatioLock,
 }
@@ -114,6 +119,7 @@ impl Default for GameConfig {
             fps_update_interval: 0.5,
             diagnostic_mode: false,
             debugger: DebuggerConfig::default(),
+            lua_hot_reload: cfg!(debug_assertions),
             aspect_ratio_lock: AspectRatioLock::Free,
         }
     }
@@ -239,6 +245,12 @@ impl GameConfig {
     /// Replaces the debugger runtime configuration.
     pub fn with_debugger(mut self, debugger: DebuggerConfig) -> Self {
         self.debugger = debugger;
+        self
+    }
+
+    /// Enables or disables Lua script hot-reload.
+    pub fn with_lua_hot_reload(mut self, enabled: bool) -> Self {
+        self.lua_hot_reload = enabled;
         self
     }
 }

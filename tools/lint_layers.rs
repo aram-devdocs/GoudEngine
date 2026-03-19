@@ -119,6 +119,22 @@ fn is_violation(from: Layer, to: Layer) -> bool {
     from < to
 }
 
+/// Files that are exempt from upward-import checks because they are
+/// in-process Lua bindings that intentionally import from the FFI layer.
+const LUA_EXEMPT_PREFIXES: &[&str] = &[
+    "sdk/game/instance/lua_bridge",
+    "sdk/game/instance/lua_bindings/tools.g",
+    "sdk/game/instance/lua_integration",
+    "sdk/lua_runner",
+];
+
+/// Returns true if a file is exempt from layer violation checks.
+fn is_exempt(relative_path: &str) -> bool {
+    LUA_EXEMPT_PREFIXES
+        .iter()
+        .any(|prefix| relative_path.starts_with(prefix))
+}
+
 /// Recursively collects all `.rs` files under a directory.
 fn collect_rs_files(dir: &Path, files: &mut Vec<PathBuf>) {
     let entries = match fs::read_dir(dir) {
@@ -157,6 +173,11 @@ fn main() {
             Ok(r) => r.to_string_lossy().to_string(),
             Err(_) => continue,
         };
+
+        // Exempt Lua in-process binding files from the Engine->FFI check.
+        if is_exempt(&relative) {
+            continue;
+        }
 
         let from_layer = match classify_file(&relative) {
             Some(l) => l,
