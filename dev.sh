@@ -138,7 +138,7 @@ while [[ "$#" -gt 0 ]]; do
         echo ""
         echo "Options:"
         echo "  --game <name>    Game to run (default: flappy_goud)"
-        echo "  --sdk <type>     SDK type: csharp, cpp, python, rust, typescript (default: csharp)"
+        echo "  --sdk <type>     SDK type: csharp, cpp, lua, python, rust, typescript (default: csharp)"
         echo "  --local          Use local feed when needed; direct-project C# examples use a fast local path"
         echo "  --skipBuild      Skip build step"
         echo "  --next           Run version increment and rebuild"
@@ -146,6 +146,7 @@ while [[ "$#" -gt 0 ]]; do
         echo ""
         echo "C# Games:       flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab, sandbox"
         echo "Python Demos:   python_demo, flappy_bird, sandbox (use --sdk python)"
+        echo "Lua Games:      flappy_bird (use --sdk lua)"
         echo "Rust SDK:       rust_demo (use --sdk rust)"
         echo "TypeScript:     flappy_bird (desktop), flappy_bird_web (web), feature_lab (desktop), feature_lab_web (web), sandbox (desktop), sandbox_web (web) (use --sdk typescript)"
         echo ""
@@ -178,10 +179,10 @@ done
 
 # Validate SDK type
 case $SDK_TYPE in
-"csharp" | "cpp" | "python" | "rust" | "typescript")
+"csharp" | "cpp" | "lua" | "python" | "rust" | "typescript")
     ;;
 *)
-    echo "Error: Invalid SDK type. Choose from: csharp, cpp, python, rust, typescript"
+    echo "Error: Invalid SDK type. Choose from: csharp, cpp, lua, python, rust, typescript"
     exit 1
     ;;
 esac
@@ -208,6 +209,18 @@ case $SDK_TYPE in
     *)
         echo "Error: Invalid C++ example selection."
         echo "Choose from: smoke, cmake_example, flappy_bird"
+        exit 1
+        ;;
+    esac
+    ;;
+"lua")
+    case $GAME in
+    "flappy_bird")
+        echo "Building and running Lua example: $GAME..."
+        ;;
+    *)
+        echo "Error: Invalid Lua example selection."
+        echo "Choose from: flappy_bird"
         exit 1
         ;;
     esac
@@ -274,6 +287,9 @@ if [ "$SKIP_BUILD" = false ]; then
         else
             bash "$SCRIPT_DIR/package.sh" --local
         fi
+    elif [ "$SDK_TYPE" = "lua" ]; then
+        echo "Building lua-runner..."
+        cargo build -p lua-runner
     elif [ "$SDK_TYPE" = "cpp" ]; then
         # Build native library for C++ examples
         if python_release_artifact_fresh; then
@@ -382,6 +398,11 @@ case $SDK_TYPE in
     echo "Running C++ example: $GAME..."
     cd "$CPP_EXAMPLE_DIR"
     "$CPP_BUILD_DIR/$GAME"
+    ;;
+
+"lua")
+    echo "Running Lua $GAME..."
+    cargo run -p lua-runner -- "$SCRIPT_DIR/examples/lua/$GAME/main.lua"
     ;;
 
 "python")

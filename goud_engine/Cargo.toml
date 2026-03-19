@@ -137,6 +137,16 @@ name = "lua_script_integration"
 path = "tests/lua_script_integration.rs"
 required-features = ["lua"]
 
+[[test]]
+name = "lua_tools_integration"
+path = "tests/lua_tools_integration.rs"
+required-features = ["lua", "native"]
+
+[[test]]
+name = "lua_hot_reload"
+path = "tests/lua_hot_reload.rs"
+required-features = ["lua", "native"]
+
 # [[bench]]
 # name = "physics_benchmarks"
 # harness = false

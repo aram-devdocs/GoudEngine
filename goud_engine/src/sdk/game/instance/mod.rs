@@ -5,8 +5,12 @@ mod debugger_frame;
 mod ecs_scene;
 #[cfg(feature = "lua")]
 mod lua_bindings;
+#[cfg(all(feature = "lua", feature = "native"))]
+mod lua_bridge;
+#[cfg(all(feature = "lua", feature = "native"))]
+pub(crate) mod lua_hot_reload;
 #[cfg(feature = "lua")]
-mod lua_runtime;
+pub(crate) mod lua_runtime;
 #[cfg(test)]
 mod tests;
 
@@ -107,6 +111,10 @@ pub struct GoudGame {
     #[cfg(feature = "lua")]
     // Kept alive for Drop: the embedded Lua VM lives as long as GoudGame.
     lua_runtime: LuaRuntime,
+
+    /// Optional Lua script hot-reload watcher (native + lua only).
+    #[cfg(all(feature = "lua", feature = "native"))]
+    lua_watcher: Option<lua_hot_reload::LuaScriptWatcher>,
 
     // =========================================================================
     // Native-only fields (require a desktop windowing and render backend)
@@ -223,6 +231,8 @@ impl GoudGame {
             window_resized_events: Events::new(),
             #[cfg(feature = "lua")]
             lua_runtime,
+            #[cfg(all(feature = "lua", feature = "native"))]
+            lua_watcher: None,
             #[cfg(feature = "native")]
             platform: None,
             #[cfg(feature = "native")]
@@ -361,6 +371,8 @@ impl GoudGame {
             window_resized_events: Events::new(),
             #[cfg(feature = "lua")]
             lua_runtime,
+            #[cfg(feature = "lua")]
+            lua_watcher: None,
             platform: Some(native_runtime.platform),
             render_backend: Some(render_backend),
             input_manager: InputManager::default(),
@@ -438,6 +450,71 @@ impl GoudGame {
     #[cfg(feature = "lua")]
     pub fn execute_lua(&self, source: &str, name: &str) -> GoudResult<()> {
         self.lua_runtime.execute_script(source, name)
+    }
+
+    /// Calls a Lua global function by name, if it exists.
+    ///
+    /// If the global is not defined this is a no-op and returns `Ok(())`.
+    #[cfg(feature = "lua")]
+    pub fn call_lua_global(&self, name: &str) -> GoudResult<()> {
+        self.lua_runtime.call_global(name)
+    }
+
+    /// Calls `on_update(dt)` if defined in the Lua environment.
+    #[cfg(feature = "lua")]
+    pub fn call_lua_update(&self, dt: f32) -> GoudResult<()> {
+        self.lua_runtime.call_update(dt)
+    }
+
+    /// Checks if a global Lua function exists.
+    #[cfg(feature = "lua")]
+    pub fn has_lua_global(&self, name: &str) -> bool {
+        self.lua_runtime.has_global(name)
+    }
+
+    /// Starts watching a directory for `.lua` file changes.
+    ///
+    /// Changed scripts will be automatically re-executed when
+    /// [`process_lua_hot_reload`](Self::process_lua_hot_reload) is called
+    /// each frame.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file-system watcher cannot be initialised.
+    #[cfg(all(feature = "lua", feature = "native"))]
+    pub fn watch_lua_dir(&mut self, path: impl AsRef<std::path::Path>) -> GoudResult<()> {
+        let watcher = lua_hot_reload::LuaScriptWatcher::new(path.as_ref())?;
+        self.lua_watcher = Some(watcher);
+        Ok(())
+    }
+
+    /// Polls the Lua hot-reload watcher and re-executes any changed scripts.
+    ///
+    /// Call this once per frame (e.g., at the start of the update loop).
+    /// If no watcher is active this is a no-op.
+    #[cfg(all(feature = "lua", feature = "native"))]
+    pub fn process_lua_hot_reload(&mut self) {
+        let changed = match self.lua_watcher.as_mut() {
+            Some(w) => w.poll_changes(),
+            None => return,
+        };
+
+        for path in changed {
+            let source = match std::fs::read_to_string(&path) {
+                Ok(s) => s,
+                Err(e) => {
+                    log::warn!("Failed to read changed Lua file {:?}: {}", path, e);
+                    continue;
+                }
+            };
+            let name = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("<unknown>");
+            if let Err(e) = self.lua_runtime.reload_script(&source, name) {
+                log::error!("Lua hot-reload error for {:?}: {}", path, e);
+            }
+        }
     }
 }
 
