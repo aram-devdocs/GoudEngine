@@ -21,7 +21,7 @@ use crate::core::error::{GoudError, GoudResult};
 use crate::ffi::renderer::goud_renderer_enable_blending;
 use crate::ffi::renderer::{goud_renderer_begin, goud_renderer_end};
 use crate::ffi::window::{
-    goud_window_clear, goud_window_destroy, goud_window_poll_events, goud_window_should_close,
+    goud_window_destroy, goud_window_poll_events, goud_window_should_close,
     goud_window_swap_buffers,
 };
 use crate::sdk::game::instance::lua_runtime::LuaRuntime;
