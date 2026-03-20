@@ -290,6 +290,10 @@ export class UiManager implements IUiManager {
   createButton(enabled = true): UiNodeId { const nodeId = this.createNode(1); this.setButtonEnabled(nodeId, enabled); return nodeId; }
   createImage(path: string): UiNodeId { const nodeId = this.createNode(3); this.setImageTexturePath(nodeId, path); return nodeId; }
   createSlider(min: number, max: number, value: number, enabled = true): UiNodeId { const nodeId = this.createNode(4); this.setSlider(nodeId, min, max, value, enabled); return nodeId; }
+
+  // TODO: wasm UI positioning -- these stub methods satisfy the IUiManager interface
+  setNodePosition(nodeId: UiNodeId, x: number, y: number): number { return 0; }
+  setNodeVisible(nodeId: UiNodeId, visible: boolean): number { return 0; }
 }
 
 class WebEntity implements IEntity {
@@ -950,6 +954,10 @@ export class GoudGame implements IGoudGame {
   distance(x1: number, y1: number, x2: number, y2: number): number { return this.handle.distance(x1, y1, x2, y2); }
   /** Squared distance between two points */
   distanceSquared(x1: number, y1: number, x2: number, y2: number): number { return this.handle.distance_squared(x1, y1, x2, y2); }
+
+  // TODO: wasm coordinate origin -- these stub methods satisfy the IGoudGame interface
+  setCoordinateOrigin(_origin: number): boolean { return true; }
+  getCoordinateOrigin(): number { return 0; }
 
   // TODO: wasm 3D -- these stub methods satisfy the IGoudGame interface
   createCube(_textureId: number, _width: number, _height: number, _depth: number): number { return 0; }
