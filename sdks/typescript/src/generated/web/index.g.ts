@@ -955,10 +955,6 @@ export class GoudGame implements IGoudGame {
   /** Squared distance between two points */
   distanceSquared(x1: number, y1: number, x2: number, y2: number): number { return this.handle.distance_squared(x1, y1, x2, y2); }
 
-  // TODO: wasm coordinate origin -- these stub methods satisfy the IGoudGame interface
-  setCoordinateOrigin(_origin: number): boolean { return true; }
-  getCoordinateOrigin(): number { return 0; }
-
   // TODO: wasm 3D -- these stub methods satisfy the IGoudGame interface
   createCube(_textureId: number, _width: number, _height: number, _depth: number): number { return 0; }
   createPlane(_textureId: number, _width: number, _depth: number): number { return 0; }
@@ -1077,6 +1073,10 @@ export class GoudGame implements IGoudGame {
       maxMessageSize: caps.max_message_size,
     };
   }
+
+  // TODO: wasm coordinate origin -- these stub methods satisfy the IGoudGame interface
+  setCoordinateOrigin(_origin: number): boolean { return true; }
+  getCoordinateOrigin(): number { return 0; }
 
   /** Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred. */
   checkHotSwapShortcut(): boolean { throw new Error('Not supported in WASM mode'); }
