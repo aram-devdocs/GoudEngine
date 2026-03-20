@@ -232,10 +232,28 @@ def _new_fake_generated_package(package_name, fake_lib):
 
     class FpsStats(ctypes.Structure):
         _fields_ = [
-            ("current", ctypes.c_float),
-            ("average", ctypes.c_float),
-            ("min", ctypes.c_float),
-            ("max", ctypes.c_float),
+            ("current_fps", ctypes.c_float),
+            ("min_fps", ctypes.c_float),
+            ("max_fps", ctypes.c_float),
+            ("avg_fps", ctypes.c_float),
+            ("frame_time_ms", ctypes.c_float),
+        ]
+
+    class RenderMetrics(ctypes.Structure):
+        _fields_ = [
+            ("draw_call_count", ctypes.c_uint32),
+            ("sprites_submitted", ctypes.c_uint32),
+            ("sprites_drawn", ctypes.c_uint32),
+            ("sprites_culled", ctypes.c_uint32),
+            ("batches_submitted", ctypes.c_uint32),
+            ("avg_sprites_per_batch", ctypes.c_float),
+            ("sprite_render_ms", ctypes.c_float),
+            ("text_render_ms", ctypes.c_float),
+            ("ui_render_ms", ctypes.c_float),
+            ("total_render_ms", ctypes.c_float),
+            ("text_draw_calls", ctypes.c_uint32),
+            ("text_glyph_count", ctypes.c_uint32),
+            ("ui_draw_calls", ctypes.c_uint32),
         ]
 
     ffi_mod.GoudContextId = GoudContextId
@@ -263,6 +281,7 @@ def _new_fake_generated_package(package_name, fake_lib):
     ffi_mod.GoudRenderStats = GoudRenderStats
     ffi_mod.GoudContact = GoudContact
     ffi_mod.FpsStats = FpsStats
+    ffi_mod.RenderMetrics = RenderMetrics
     ffi_mod.get_lib = lambda: fake_lib
     sys.modules[f"{package_name}._ffi"] = ffi_mod
 
