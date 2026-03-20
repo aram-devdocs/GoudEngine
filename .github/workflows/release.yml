@@ -590,10 +590,64 @@ jobs:
       - name: Publish goud-engine
         run: cargo publish -p goud-engine --token ${{ secrets.CRATES_IO_TOKEN }} || echo "Already published, skipping"
 
+  # ── Step 9: Publish to LuaRocks ──
+  publish-luarocks:
+    name: Publish LuaRocks
+    needs: [release-please, codegen-verify]
+    if: needs.release-please.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    environment: luarocks
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install luarocks
+        run: sudo apt-get update && sudo apt-get install -y luarocks
+
+      - name: Upload rockspec to LuaRocks
+        env:
+          VERSION: ${{ needs.release-please.outputs.version }}
+        run: |
+          cd sdks/lua
+          # Generate a versioned rockspec from the scm template
+          VERSIONED_SPEC="goudengine-${VERSION}-1.rockspec"
+          sed \
+            -e "s/version = \"scm-1\"/version = \"${VERSION}-1\"/" \
+            -e "s|branch = \"main\"|tag = \"v${VERSION}\"|" \
+            goudengine-scm-1.rockspec > "${VERSIONED_SPEC}"
+          luarocks upload "${VERSIONED_SPEC}" --api-key=${{ secrets.LUAROCKS_API_KEY }} || echo "Upload failed or already published, skipping"
+
+  # ── Step 10: Trigger Go module proxy ──
+  publish-go:
+    name: Publish Go Module
+    needs: [release-please, codegen-verify]
+    if: needs.release-please.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Trigger Go proxy cache
+        env:
+          VERSION: ${{ needs.release-please.outputs.version }}
+        run: |
+          # Request the module from the Go proxy to warm the cache
+          GOPROXY=https://proxy.golang.org GO111MODULE=on \
+            go list -m github.com/aram-devdocs/goud-engine-go/goud@v${VERSION} || \
+            echo "Go proxy cache warming attempted (may take a few minutes to propagate)"
+
+  # ── C/C++ Package Managers (vcpkg, Conan) ──
+  # vcpkg: Packages are distributed via native tarballs (see publish-native-tarballs).
+  #        To publish to vcpkg registry, submit a PR to microsoft/vcpkg with the port.
+  # Conan: Optional. If CONAN_LOGIN_USERNAME and CONAN_PASSWORD secrets are configured,
+  #        add a publish-conan job here. See docs/SECRETS_SETUP.md for details.
+
   # ── Summary ──
   release-summary:
     name: Release Summary
-    needs: [release-please, publish-npm, publish-nuget, publish-pypi, publish-kotlin, publish-crates, publish-native-tarballs]
+    needs: [release-please, publish-npm, publish-nuget, publish-pypi, publish-kotlin, publish-crates, publish-native-tarballs, publish-luarocks, publish-go]
     if: always() && needs.release-please.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -611,4 +665,6 @@ jobs:
           | Maven Central | \`goud-engine-kotlin\` | ${{ needs.publish-kotlin.result }} |
           | crates.io | \`goud-engine\` | ${{ needs.publish-crates.result }} |
           | GitHub Release | C/C++ tarballs | ${{ needs.publish-native-tarballs.result }} |
+          | LuaRocks | \`goudengine\` | ${{ needs.publish-luarocks.result }} |
+          | Go Proxy | \`goud-engine-go\` | ${{ needs.publish-go.result }} |
           EOF

@@ -27,7 +27,9 @@ mod visuals;
 
 pub use allocator::UiNodeAllocator;
 pub use component::{UiButton, UiComponent, UiImage, UiLabel, UiSlider};
-pub use layout::{UiAlign, UiAnchor, UiEdges, UiFlexDirection, UiFlexLayout, UiJustify, UiLayout};
+pub use layout::{
+    PositionMode, UiAlign, UiAnchor, UiEdges, UiFlexDirection, UiFlexLayout, UiJustify, UiLayout,
+};
 pub use manager::{UiEvent, UiManager};
 pub use node::UiNode;
 pub use node_id::UiNodeId;

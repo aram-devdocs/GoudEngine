@@ -301,6 +301,13 @@
         "Simple": 2
       }
     },
+    "CoordinateOrigin": {
+      "ffi_name": "u32",
+      "enum_values": {
+        "Center": 0,
+        "TopLeft": 1
+      }
+    },
     "UiStyle": {
       "ffi_name": "FfiUiStyle",
       "fields": [
@@ -448,6 +455,8 @@
       "goud_renderer_begin": {},
       "goud_renderer_end": {},
       "goud_renderer_enable_blending": {},
+      "goud_renderer_set_coordinate_origin": {},
+      "goud_renderer_get_coordinate_origin": {},
       "goud_renderer_draw_sprite": {},
       "goud_renderer_draw_quad": {},
       "goud_texture_load": {},
@@ -951,6 +960,8 @@
       "goud_ui_set_button_enabled": {},
       "goud_ui_set_image_texture_path": {},
       "goud_ui_set_slider": {},
+      "goud_ui_set_node_position": {},
+      "goud_ui_set_node_visible": {},
       "goud_ui_set_event_callback": {},
       "goud_ui_event_count": {},
       "goud_ui_event_read": {},

@@ -263,6 +263,66 @@ pub unsafe extern "C" fn goud_ui_set_slider(
     0
 }
 
+/// Sets absolute screen-space position for a UI node.
+///
+/// Switches the node to absolute positioning mode so it is no longer
+/// placed by the layout system.
+///
+/// # Returns
+/// * `0` on success
+/// * `-1` if manager is null
+/// * `-3` if node does not exist
+///
+/// # Safety
+/// `mgr` must be null (handled) or a valid exclusive pointer to `UiManager`.
+#[no_mangle]
+pub unsafe extern "C" fn goud_ui_set_node_position(
+    mgr: *mut UiManager,
+    node_id: u64,
+    x: f32,
+    y: f32,
+) -> i32 {
+    if mgr.is_null() {
+        return ERR_NULL_MANAGER;
+    }
+    // SAFETY: Caller guarantees `mgr` is a valid exclusive pointer.
+    let manager = unsafe { &mut *mgr };
+    let id = unpack_node_id(node_id);
+    let Some(node) = manager.get_node_mut(id) else {
+        return ERR_NODE_NOT_FOUND;
+    };
+    node.set_position(x, y);
+    0
+}
+
+/// Sets visibility for a UI node. Hidden nodes are not rendered.
+///
+/// # Returns
+/// * `0` on success
+/// * `-1` if manager is null
+/// * `-3` if node does not exist
+///
+/// # Safety
+/// `mgr` must be null (handled) or a valid exclusive pointer to `UiManager`.
+#[no_mangle]
+pub unsafe extern "C" fn goud_ui_set_node_visible(
+    mgr: *mut UiManager,
+    node_id: u64,
+    visible: bool,
+) -> i32 {
+    if mgr.is_null() {
+        return ERR_NULL_MANAGER;
+    }
+    // SAFETY: Caller guarantees `mgr` is a valid exclusive pointer.
+    let manager = unsafe { &mut *mgr };
+    let id = unpack_node_id(node_id);
+    let Some(node) = manager.get_node_mut(id) else {
+        return ERR_NODE_NOT_FOUND;
+    };
+    node.set_visible(visible);
+    0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -383,5 +443,57 @@ mod tests {
 
             goud_ui_manager_destroy(mgr);
         }
+    }
+
+    #[test]
+    fn test_set_node_position() {
+        let mgr = goud_ui_manager_create();
+        // SAFETY: `mgr` is valid for the duration of this scope.
+        unsafe {
+            let node = super::super::node::goud_ui_create_node(mgr, 0);
+            assert_eq!(goud_ui_set_node_position(mgr, node, 100.0, 200.0), 0);
+
+            let id = super::super::unpack_node_id(node);
+            let manager = &*mgr;
+            let node_ref = manager.get_node(id).unwrap();
+            assert_eq!(node_ref.position().x, 100.0);
+            assert_eq!(node_ref.position().y, 200.0);
+            assert_eq!(node_ref.position_mode(), crate::ui::PositionMode::Absolute);
+
+            goud_ui_manager_destroy(mgr);
+        }
+    }
+
+    #[test]
+    fn test_set_node_position_null_mgr() {
+        // SAFETY: Null is explicitly handled.
+        let result = unsafe { goud_ui_set_node_position(std::ptr::null_mut(), 0, 0.0, 0.0) };
+        assert_eq!(result, ERR_NULL_MANAGER);
+    }
+
+    #[test]
+    fn test_set_node_visible() {
+        let mgr = goud_ui_manager_create();
+        // SAFETY: `mgr` is valid for the duration of this scope.
+        unsafe {
+            let node = super::super::node::goud_ui_create_node(mgr, 0);
+
+            assert_eq!(goud_ui_set_node_visible(mgr, node, false), 0);
+            let id = super::super::unpack_node_id(node);
+            let manager = &*mgr;
+            assert!(!manager.get_node(id).unwrap().visible());
+
+            assert_eq!(goud_ui_set_node_visible(mgr, node, true), 0);
+            assert!(manager.get_node(id).unwrap().visible());
+
+            goud_ui_manager_destroy(mgr);
+        }
+    }
+
+    #[test]
+    fn test_set_node_visible_null_mgr() {
+        // SAFETY: Null is explicitly handled.
+        let result = unsafe { goud_ui_set_node_visible(std::ptr::null_mut(), 0, true) };
+        assert_eq!(result, ERR_NULL_MANAGER);
     }
 }

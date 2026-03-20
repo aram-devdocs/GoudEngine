@@ -3,6 +3,7 @@ use crate::core::error::set_last_error;
 use crate::ffi::context::GoudContextId;
 use crate::ffi::window::with_window_state;
 
+use super::super::immediate::get_coordinate_origin;
 use super::super::texture::GoudTextureHandle;
 use super::helpers::{map_draw_result, prepare_draw_state, prepare_textured_draw_state};
 use super::internal::{draw_quad_internal, draw_sprite_internal, draw_sprite_rect_internal};
@@ -12,12 +13,17 @@ use super::internal::{draw_quad_internal, draw_sprite_internal, draw_sprite_rect
 /// This is an immediate-mode draw call - the sprite is rendered immediately
 /// and not retained between frames.
 ///
+/// The meaning of `(x, y)` depends on the coordinate origin set via
+/// `goud_renderer_set_coordinate_origin`:
+/// - `Center` (default): `(x, y)` is the center of the sprite.
+/// - `TopLeft`: `(x, y)` is the top-left corner of the sprite.
+///
 /// # Arguments
 ///
 /// * `context_id` - The windowed context
 /// * `texture` - Texture handle from `goud_texture_load`
-/// * `x` - X position (center of sprite)
-/// * `y` - Y position (center of sprite)
+/// * `x` - X position (interpretation depends on coordinate origin)
+/// * `y` - Y position (interpretation depends on coordinate origin)
 /// * `width` - Width of the sprite
 /// * `height` - Height of the sprite
 /// * `rotation` - Rotation in radians
@@ -48,6 +54,9 @@ pub extern "C" fn goud_renderer_draw_sprite(
         }
     };
 
+    let origin = get_coordinate_origin(context_id);
+    let (x, y) = origin.adjust(x, y, width, height);
+
     let result = with_window_state(context_id, |window_state| {
         draw_sprite_internal(
             window_state,
@@ -77,12 +86,17 @@ pub extern "C" fn goud_renderer_draw_sprite(
 /// This is an immediate-mode draw call that supports sprite sheets by allowing
 /// you to specify which portion of the texture to render.
 ///
+/// The meaning of `(x, y)` depends on the coordinate origin set via
+/// `goud_renderer_set_coordinate_origin`:
+/// - `Center` (default): `(x, y)` is the center of the sprite.
+/// - `TopLeft`: `(x, y)` is the top-left corner of the sprite.
+///
 /// # Arguments
 ///
 /// * `context_id` - The windowed context
 /// * `texture` - Texture handle from `goud_texture_load`
-/// * `x` - X position (center of sprite)
-/// * `y` - Y position (center of sprite)
+/// * `x` - X position (interpretation depends on coordinate origin)
+/// * `y` - Y position (interpretation depends on coordinate origin)
 /// * `width` - Width of the sprite on screen
 /// * `height` - Height of the sprite on screen
 /// * `rotation` - Rotation in radians
@@ -128,6 +142,9 @@ pub extern "C" fn goud_renderer_draw_sprite_rect(
         }
     };
 
+    let origin = get_coordinate_origin(context_id);
+    let (x, y) = origin.adjust(x, y, width, height);
+
     let result = with_window_state(context_id, |window_state| {
         draw_sprite_rect_internal(
             window_state,
@@ -161,11 +178,16 @@ pub extern "C" fn goud_renderer_draw_sprite_rect(
 /// This is an immediate-mode draw call - the quad is rendered immediately
 /// and not retained between frames.
 ///
+/// The meaning of `(x, y)` depends on the coordinate origin set via
+/// `goud_renderer_set_coordinate_origin`:
+/// - `Center` (default): `(x, y)` is the center of the quad.
+/// - `TopLeft`: `(x, y)` is the top-left corner of the quad.
+///
 /// # Arguments
 ///
 /// * `context_id` - The windowed context
-/// * `x` - X position (center of quad)
-/// * `y` - Y position (center of quad)
+/// * `x` - X position (interpretation depends on coordinate origin)
+/// * `y` - Y position (interpretation depends on coordinate origin)
 /// * `width` - Width of the quad
 /// * `height` - Height of the quad
 /// * `r`, `g`, `b`, `a` - Color of the quad
@@ -192,6 +214,9 @@ pub extern "C" fn goud_renderer_draw_quad(
             return false;
         }
     };
+
+    let origin = get_coordinate_origin(context_id);
+    let (x, y) = origin.adjust(x, y, width, height);
 
     let result = with_window_state(context_id, |window_state| {
         draw_quad_internal(window_state, state_data, x, y, width, height, r, g, b, a)

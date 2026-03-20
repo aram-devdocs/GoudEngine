@@ -138,16 +138,20 @@ while [[ "$#" -gt 0 ]]; do
         echo ""
         echo "Options:"
         echo "  --game <name>    Game to run (default: flappy_goud)"
-        echo "  --sdk <type>     SDK type: csharp, cpp, go, kotlin, lua, python, rust, swift, typescript (default: csharp)"
+        echo "  --sdk <type>     SDK type: c, csharp, cpp, go, kotlin, lua, python, rust, swift, typescript (default: csharp)"
         echo "  --local          Use local feed when needed; direct-project C# examples use a fast local path"
         echo "  --skipBuild      Skip build step"
         echo "  --next           Run version increment and rebuild"
         echo "  -h, --help       Show this help message"
         echo ""
+        echo "C Games:        flappy_bird (use --sdk c)"
         echo "C# Games:       flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab, sandbox"
         echo "Python Demos:   python_demo, flappy_bird, sandbox (use --sdk python)"
-        echo "Go Games:       flappy_bird (use --sdk go)"
-        echo "Lua Games:      flappy_bird (use --sdk lua)"
+        echo "Go Games:       flappy_bird, sandbox, feature_lab (use --sdk go)"
+        echo "Kotlin Games:   flappy_bird, sandbox, feature_lab (use --sdk kotlin)"
+        echo "Lua Games:      flappy_bird, sandbox, feature_lab (use --sdk lua)"
+        echo "C++ Games:      smoke, cmake_example, flappy_bird, sandbox, feature_lab (use --sdk cpp)"
+        echo "Swift Games:    flappy_bird, sandbox, feature_lab (use --sdk swift)"
         echo "Rust SDK:       rust_demo (use --sdk rust)"
         echo "TypeScript:     flappy_bird (desktop), flappy_bird_web (web), feature_lab (desktop), feature_lab_web (web), sandbox (desktop), sandbox_web (web) (use --sdk typescript)"
         echo ""
@@ -155,10 +159,17 @@ while [[ "$#" -gt 0 ]]; do
         echo "  ./dev.sh --game flappy_goud            # Run C# Flappy Goud"
         echo "  ./dev.sh --sdk python --game python_demo  # Run Python demo"
         echo "  ./dev.sh --sdk python --game flappy_bird  # Run Python Flappy Bird"
+        echo "  ./dev.sh --sdk c --game flappy_bird        # Run C Flappy Bird"
         echo "  ./dev.sh --sdk cpp --game flappy_bird      # Run C++ Flappy Bird"
         echo "  ./dev.sh --sdk cpp --game cmake_example    # Run C++ CMake example"
+        echo "  ./dev.sh --sdk cpp --game sandbox          # Run C++ Sandbox"
+        echo "  ./dev.sh --sdk cpp --game feature_lab      # Run C++ Feature Lab"
         echo "  ./dev.sh --sdk go --game flappy_bird       # Run Go Flappy Bird"
+        echo "  ./dev.sh --sdk go --game sandbox          # Run Go Sandbox"
+        echo "  ./dev.sh --sdk go --game feature_lab      # Run Go Feature Lab"
         echo "  ./dev.sh --sdk swift --game flappy_bird   # Run Swift Flappy Bird"
+        echo "  ./dev.sh --sdk swift --game sandbox       # Run Swift Sandbox"
+        echo "  ./dev.sh --sdk swift --game feature_lab   # Run Swift Feature Lab"
         echo "  ./dev.sh --sdk rust                    # Run Rust SDK tests"
         echo "  ./dev.sh --sdk typescript --game flappy_bird      # TS desktop"
         echo "  ./dev.sh --sdk typescript --game flappy_bird_web  # TS web (browser)"
@@ -170,6 +181,10 @@ while [[ "$#" -gt 0 ]]; do
         echo "  ./dev.sh --sdk typescript --game sandbox         # TS Sandbox desktop"
         echo "  ./dev.sh --sdk typescript --game sandbox_web     # TS Sandbox web"
         echo "  ./dev.sh --sdk kotlin --game flappy_bird        # Kotlin Flappy Bird"
+        echo "  ./dev.sh --sdk kotlin --game sandbox            # Kotlin Sandbox"
+        echo "  ./dev.sh --sdk kotlin --game feature_lab        # Kotlin Feature Lab"
+        echo "  ./dev.sh --sdk lua --game sandbox              # Lua Sandbox"
+        echo "  ./dev.sh --sdk lua --game feature_lab          # Lua Feature Lab"
         exit 0
         ;;
     *)
@@ -183,10 +198,10 @@ done
 
 # Validate SDK type
 case $SDK_TYPE in
-"csharp" | "cpp" | "go" | "kotlin" | "lua" | "python" | "rust" | "swift" | "typescript")
+"c" | "csharp" | "cpp" | "go" | "kotlin" | "lua" | "python" | "rust" | "swift" | "typescript")
     ;;
 *)
-    echo "Error: Invalid SDK type. Choose from: csharp, cpp, go, kotlin, lua, python, rust, swift, typescript"
+    echo "Error: Invalid SDK type. Choose from: c, csharp, cpp, go, kotlin, lua, python, rust, swift, typescript"
     exit 1
     ;;
 esac
@@ -205,38 +220,50 @@ case $SDK_TYPE in
         ;;
     esac
     ;;
+"c")
+    case $GAME in
+    "flappy_bird")
+        echo "Building and running C example: $GAME..."
+        ;;
+    *)
+        echo "Error: Invalid C example selection."
+        echo "Choose from: flappy_bird"
+        exit 1
+        ;;
+    esac
+    ;;
 "cpp")
     case $GAME in
-    "smoke" | "cmake_example" | "flappy_bird")
+    "smoke" | "cmake_example" | "flappy_bird" | "sandbox" | "feature_lab")
         echo "Building and running C++ example: $GAME..."
         ;;
     *)
         echo "Error: Invalid C++ example selection."
-        echo "Choose from: smoke, cmake_example, flappy_bird"
+        echo "Choose from: smoke, cmake_example, flappy_bird, sandbox, feature_lab"
         exit 1
         ;;
     esac
     ;;
 "go")
     case $GAME in
-    "flappy_bird")
+    "flappy_bird" | "sandbox" | "feature_lab")
         echo "Building and running Go example: $GAME..."
         ;;
     *)
         echo "Error: Invalid Go example selection."
-        echo "Choose from: flappy_bird"
+        echo "Choose from: flappy_bird, sandbox, feature_lab"
         exit 1
         ;;
     esac
     ;;
 "lua")
     case $GAME in
-    "flappy_bird")
+    "flappy_bird" | "sandbox" | "feature_lab")
         echo "Building and running Lua example: $GAME..."
         ;;
     *)
         echo "Error: Invalid Lua example selection."
-        echo "Choose from: flappy_bird"
+        echo "Choose from: flappy_bird, sandbox, feature_lab"
         exit 1
         ;;
     esac
@@ -270,24 +297,24 @@ case $SDK_TYPE in
     ;;
 "kotlin")
     case $GAME in
-    "flappy_bird")
+    "flappy_bird" | "sandbox" | "feature_lab")
         echo "Building and running Kotlin example: $GAME..."
         ;;
     *)
         echo "Error: Invalid Kotlin example selection."
-        echo "Choose from: flappy_bird"
+        echo "Choose from: flappy_bird, sandbox, feature_lab"
         exit 1
         ;;
     esac
     ;;
 "swift")
     case $GAME in
-    "flappy_bird")
+    "flappy_bird" | "sandbox" | "feature_lab")
         echo "Building and running Swift example: $GAME..."
         ;;
     *)
         echo "Error: Invalid Swift example selection."
-        echo "Choose from: flappy_bird"
+        echo "Choose from: flappy_bird, sandbox, feature_lab"
         exit 1
         ;;
     esac
@@ -330,6 +357,14 @@ if [ "$SKIP_BUILD" = false ]; then
     elif [ "$SDK_TYPE" = "lua" ]; then
         echo "Building lua-runner..."
         cargo build -p lua-runner
+    elif [ "$SDK_TYPE" = "c" ]; then
+        # Build native library for C examples
+        if python_release_artifact_fresh; then
+            echo "Skipping native rebuild; release artifact is fresh."
+        else
+            echo "Building native library..."
+            cargo build --release
+        fi
     elif [ "$SDK_TYPE" = "cpp" ]; then
         # Build native library for C++ examples
         if python_release_artifact_fresh; then
@@ -433,6 +468,24 @@ case $SDK_TYPE in
         "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" build --no-restore --nologo
     fi
     "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" run --no-build --nologo
+    ;;
+
+"c")
+    C_EXAMPLE_DIR="$SCRIPT_DIR/examples/c/$GAME"
+    C_BUILD_DIR="$C_EXAMPLE_DIR/build"
+
+    echo "Configuring C example: $GAME..."
+    cmake -B "$C_BUILD_DIR" \
+        -DGOUD_ENGINE_ROOT="$SCRIPT_DIR" \
+        -DCMAKE_BUILD_TYPE=Release \
+        "$C_EXAMPLE_DIR"
+
+    echo "Building C example: $GAME..."
+    cmake --build "$C_BUILD_DIR" --config Release
+
+    echo "Running C example: $GAME..."
+    cd "$C_EXAMPLE_DIR"
+    "$C_BUILD_DIR/flappy_bird"
     ;;
 
 "cpp")

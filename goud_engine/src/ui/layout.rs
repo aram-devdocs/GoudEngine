@@ -1,5 +1,21 @@
 //! UI layout primitives shared by nodes and the UI manager.
 
+/// Whether a node uses layout-relative or absolute screen-space positioning.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PositionMode {
+    /// Node position is computed by the layout system (default).
+    Relative,
+    /// Node position is set explicitly via `set_position()`.
+    Absolute,
+}
+
+impl Default for PositionMode {
+    #[inline]
+    fn default() -> Self {
+        Self::Relative
+    }
+}
+
 /// Node anchoring relative to the parent content rect.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UiAnchor {

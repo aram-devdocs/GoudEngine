@@ -1,6 +1,6 @@
 {
-  "version": "0.0.833",
-  "description": "Universal GoudEngine SDK schema. Every SDK (C#, Python, TypeScript) is generated from this single file. Same tools, same methods, same inputs, same outputs.",
+  "version": "0.0.832",
+  "description": "Universal GoudEngine SDK schema. Every SDK (C#, Python, TypeScript, Rust, Go, Kotlin, Swift, Lua, C++) is generated from this single file. Same tools, same methods, same inputs, same outputs.",
   "types": {
     "Color": {
       "kind": "value",
@@ -2825,6 +2825,14 @@
     }
   },
   "enums": {
+    "CoordinateOrigin": {
+      "doc": "Coordinate origin for draw calls. Controls how (x, y) position is interpreted in DrawQuad and DrawSprite.",
+      "underlying": "u32",
+      "values": {
+        "Center": 0,
+        "TopLeft": 1
+      }
+    },
     "Key": {
       "doc": "Keyboard key codes matching GLFW values",
       "underlying": "i32",
@@ -3947,8 +3955,26 @@
           "wasm_signature": "draw_text(font_handle: number, text: string, x: number, y: number, font_size: number, alignment: number, max_width: number, line_spacing: number, direction: number, r: number, g: number, b: number, a: number): boolean"
         },
         {
+          "name": "setCoordinateOrigin",
+          "doc": "Set the coordinate origin for subsequent DrawQuad and DrawSprite calls. Center (0) means (x,y) is the center of the shape (default). TopLeft (1) means (x,y) is the top-left corner.",
+          "params": [
+            {
+              "name": "origin",
+              "type": "u32",
+              "doc": "0 = Center (default), 1 = TopLeft"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "getCoordinateOrigin",
+          "doc": "Get the current coordinate origin setting. Returns 0 for Center, 1 for TopLeft.",
+          "params": [],
+          "returns": "u32"
+        },
+        {
           "name": "drawSprite",
-          "doc": "Draws a textured sprite",
+          "doc": "Draws a textured sprite. Position (x,y) interpretation depends on the coordinate origin setting (center by default).",
           "params": [
             {
               "name": "texture",
@@ -5124,6 +5150,24 @@
           "doc": "Disables alpha blending",
           "params": [],
           "returns": "void"
+        },
+        {
+          "name": "setCoordinateOrigin",
+          "doc": "Set the coordinate origin for subsequent DrawQuad and DrawSprite calls. Center means (x,y) is the center of the shape (default). TopLeft means (x,y) is the top-left corner.",
+          "params": [
+            {
+              "name": "origin",
+              "type": "CoordinateOrigin",
+              "doc": "The coordinate origin to use"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "getCoordinateOrigin",
+          "doc": "Get the current coordinate origin setting.",
+          "params": [],
+          "returns": "CoordinateOrigin"
         },
         {
           "name": "getRenderStats",
@@ -10269,6 +10313,40 @@
           "returns": "i32"
         },
         {
+          "name": "setNodePosition",
+          "doc": "Set absolute screen-space position for a UI node. Switches the node to absolute positioning mode.",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setNodeVisible",
+          "doc": "Set visibility for a UI node. Hidden nodes are not rendered.",
+          "params": [
+            {
+              "name": "nodeId",
+              "type": "u64"
+            },
+            {
+              "name": "visible",
+              "type": "bool"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
           "name": "eventCount",
           "doc": "Returns the number of UI events captured in the latest update tick",
           "params": [],
@@ -11067,6 +11145,15 @@
         },
         "disableBlending": {
           "ffi": "goud_renderer_disable_blending"
+        },
+        "setCoordinateOrigin": {
+          "ffi": "goud_renderer_set_coordinate_origin",
+          "enum_params": {
+            "origin": "u32"
+          }
+        },
+        "getCoordinateOrigin": {
+          "ffi": "goud_renderer_get_coordinate_origin"
         },
         "getRenderStats": {
           "ffi": "goud_renderer_get_stats",
@@ -13081,6 +13168,12 @@
         },
         "setSlider": {
           "ffi": "goud_ui_set_slider"
+        },
+        "setNodePosition": {
+          "ffi": "goud_ui_set_node_position"
+        },
+        "setNodeVisible": {
+          "ffi": "goud_ui_set_node_visible"
         },
         "eventCount": {
           "ffi": "goud_ui_event_count"

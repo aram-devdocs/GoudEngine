@@ -3120,6 +3120,14 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_renderer_get_coordinate_origin": {
+      "source_file": "ffi/renderer/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
     "goud_renderer_get_stats": {
       "source_file": "ffi/renderer/handles.rs",
       "params": [
@@ -3128,6 +3136,15 @@
       ],
       "return_type": "bool",
       "is_unsafe": true
+    },
+    "goud_renderer_set_coordinate_origin": {
+      "source_file": "ffi/renderer/lifecycle.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "origin: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
     },
     "goud_renderer_set_viewport": {
       "source_file": "ffi/renderer/lifecycle.rs",
@@ -4794,6 +4811,27 @@
       "return_type": "i32",
       "is_unsafe": true
     },
+    "goud_ui_set_node_position": {
+      "source_file": "ffi/ui/widget.rs",
+      "params": [
+        "mgr: *mut UiManager",
+        "node_id: u64",
+        "x: f32",
+        "y: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_ui_set_node_visible": {
+      "source_file": "ffi/ui/widget.rs",
+      "params": [
+        "mgr: *mut UiManager",
+        "node_id: u64",
+        "visible: bool"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_ui_set_parent": {
       "source_file": "ffi/ui/node.rs",
       "params": [
@@ -4973,5 +5011,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 498
+  "total_count": 502
 }

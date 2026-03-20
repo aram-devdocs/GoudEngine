@@ -252,6 +252,64 @@ pub extern "C" fn goud_renderer_clear_depth(context_id: GoudContextId) {
     });
 }
 
+// ============================================================================
+// Coordinate Origin
+// ============================================================================
+
+/// Sets the coordinate origin for subsequent `DrawQuad` and `DrawSprite` calls.
+///
+/// # Arguments
+///
+/// * `context_id` - The windowed context
+/// * `origin` - `0` = Center (default), `1` = TopLeft
+///
+/// # Returns
+///
+/// `true` on success, `false` if the origin value is invalid or the context is bad.
+#[no_mangle]
+pub extern "C" fn goud_renderer_set_coordinate_origin(
+    context_id: GoudContextId,
+    origin: u32,
+) -> bool {
+    use super::immediate::{set_coordinate_origin, CoordinateOrigin};
+
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return false;
+    }
+
+    match CoordinateOrigin::from_u32(origin) {
+        Some(o) => {
+            set_coordinate_origin(context_id, o);
+            true
+        }
+        None => {
+            set_last_error(GoudError::InvalidHandle);
+            false
+        }
+    }
+}
+
+/// Returns the current coordinate origin setting for the given context.
+///
+/// # Arguments
+///
+/// * `context_id` - The windowed context
+///
+/// # Returns
+///
+/// `0` = Center, `1` = TopLeft.  Returns `0` (Center) for invalid contexts.
+#[no_mangle]
+pub extern "C" fn goud_renderer_get_coordinate_origin(context_id: GoudContextId) -> u32 {
+    use super::immediate::{get_coordinate_origin, CoordinateOrigin};
+
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        return CoordinateOrigin::Center as u32;
+    }
+
+    get_coordinate_origin(context_id) as u32
+}
+
 #[cfg(test)]
 mod tests {
     use super::update_network_overlay_for_frame_end;

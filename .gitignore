@@ -100,5 +100,14 @@ flappy-web-*.png
 # Python SDK build output
 sdks/python/dist/
 
+# CMake build directories (C/C++ examples and SDK tests)
+**/build/CMakeCache.txt
+**/build/CMakeFiles/
+**/build/Makefile
+**/build/cmake_install.cmake
+examples/c/*/build/
+examples/cpp/*/build/
+sdks/c/tests/build/
+
 # Claude worktrees (ephemeral, per-session)
 .claude/worktrees/
