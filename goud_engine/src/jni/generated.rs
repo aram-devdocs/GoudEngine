@@ -660,6 +660,69 @@ pub(crate) fn write_back_RenderCapabilities<'local>(env: &mut jni::JNIEnv<'local
     set_RenderCapabilities_fields(env, obj, value)
 }
 
+pub(crate) fn set_RenderMetrics_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::sdk::debug_overlay::RenderMetrics) -> crate::jni::helpers::JniCallResult<()> {
+    crate::jni::helpers::ensure_no_pending_exception(env)?;
+    crate::jni::helpers::set_int_field(env, obj, "drawCallCount", value.draw_call_count as i32)?;
+    crate::jni::helpers::set_int_field(env, obj, "spritesSubmitted", value.sprites_submitted as i32)?;
+    crate::jni::helpers::set_int_field(env, obj, "spritesDrawn", value.sprites_drawn as i32)?;
+    crate::jni::helpers::set_int_field(env, obj, "spritesCulled", value.sprites_culled as i32)?;
+    crate::jni::helpers::set_int_field(env, obj, "batchesSubmitted", value.batches_submitted as i32)?;
+    crate::jni::helpers::set_float_field(env, obj, "avgSpritesPerBatch", value.avg_sprites_per_batch)?;
+    crate::jni::helpers::set_float_field(env, obj, "spriteRenderMs", value.sprite_render_ms)?;
+    crate::jni::helpers::set_float_field(env, obj, "textRenderMs", value.text_render_ms)?;
+    crate::jni::helpers::set_float_field(env, obj, "uiRenderMs", value.ui_render_ms)?;
+    crate::jni::helpers::set_float_field(env, obj, "totalRenderMs", value.total_render_ms)?;
+    crate::jni::helpers::set_int_field(env, obj, "textDrawCalls", value.text_draw_calls as i32)?;
+    crate::jni::helpers::set_int_field(env, obj, "textGlyphCount", value.text_glyph_count as i32)?;
+    crate::jni::helpers::set_int_field(env, obj, "uiDrawCalls", value.ui_draw_calls as i32)?;
+    Ok(())
+}
+
+pub(crate) fn new_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, value: crate::sdk::debug_overlay::RenderMetrics) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/RenderMetrics")?;
+    set_RenderMetrics_fields(env, &obj, value)?;
+    Ok(obj)
+}
+
+pub(crate) fn read_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<crate::sdk::debug_overlay::RenderMetrics> {
+    if obj.is_null() {
+        crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
+        return Err(());
+    }
+    let field_drawCallCount = crate::jni::helpers::get_int_field(env, obj, "drawCallCount")? as _;
+    let field_spritesSubmitted = crate::jni::helpers::get_int_field(env, obj, "spritesSubmitted")? as _;
+    let field_spritesDrawn = crate::jni::helpers::get_int_field(env, obj, "spritesDrawn")? as _;
+    let field_spritesCulled = crate::jni::helpers::get_int_field(env, obj, "spritesCulled")? as _;
+    let field_batchesSubmitted = crate::jni::helpers::get_int_field(env, obj, "batchesSubmitted")? as _;
+    let field_avgSpritesPerBatch = crate::jni::helpers::get_float_field(env, obj, "avgSpritesPerBatch")? as _;
+    let field_spriteRenderMs = crate::jni::helpers::get_float_field(env, obj, "spriteRenderMs")? as _;
+    let field_textRenderMs = crate::jni::helpers::get_float_field(env, obj, "textRenderMs")? as _;
+    let field_uiRenderMs = crate::jni::helpers::get_float_field(env, obj, "uiRenderMs")? as _;
+    let field_totalRenderMs = crate::jni::helpers::get_float_field(env, obj, "totalRenderMs")? as _;
+    let field_textDrawCalls = crate::jni::helpers::get_int_field(env, obj, "textDrawCalls")? as _;
+    let field_textGlyphCount = crate::jni::helpers::get_int_field(env, obj, "textGlyphCount")? as _;
+    let field_uiDrawCalls = crate::jni::helpers::get_int_field(env, obj, "uiDrawCalls")? as _;
+    Ok(crate::sdk::debug_overlay::RenderMetrics {
+        draw_call_count: field_drawCallCount,
+        sprites_submitted: field_spritesSubmitted,
+        sprites_drawn: field_spritesDrawn,
+        sprites_culled: field_spritesCulled,
+        batches_submitted: field_batchesSubmitted,
+        avg_sprites_per_batch: field_avgSpritesPerBatch,
+        sprite_render_ms: field_spriteRenderMs,
+        text_render_ms: field_textRenderMs,
+        ui_render_ms: field_uiRenderMs,
+        total_render_ms: field_totalRenderMs,
+        text_draw_calls: field_textDrawCalls,
+        text_glyph_count: field_textGlyphCount,
+        ui_draw_calls: field_uiDrawCalls,
+    })
+}
+
+pub(crate) fn write_back_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::sdk::debug_overlay::RenderMetrics) -> crate::jni::helpers::JniCallResult<()> {
+    set_RenderMetrics_fields(env, obj, value)
+}
+
 pub(crate) fn set_RenderStats_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::renderer::GoudRenderStats) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
     crate::jni::helpers::set_int_field(env, obj, "drawCalls", value.draw_calls as i32)?;
@@ -3648,6 +3711,30 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getFpsStats<'
                 return Err(());
             }
             Ok(new_FpsStats(env, out_stats)?.into_raw())
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getRenderMetrics<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+) -> jni::sys::jobject {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_getRenderMetrics", crate::jni::helpers::null_object(), |env| -> crate::jni::helpers::JniCallResult<jni::sys::jobject> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let mut out_metrics = unsafe { // SAFETY: zeroed out-parameter storage is only used before the FFI call writes it.
+        std::mem::zeroed()
+    };
+            let status = unsafe { // SAFETY: out-parameter storage and marshaled inputs remain valid for the duration of the FFI call.
+        crate::ffi::debug::goud_render_get_metrics(goud_context_id_from_jlong(contextId), &mut out_metrics as _)
+    };
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_render_get_metrics", None);
+                return Err(());
+            }
+            Ok(new_RenderMetrics(env, out_metrics)?.into_raw())
     })
 }
 

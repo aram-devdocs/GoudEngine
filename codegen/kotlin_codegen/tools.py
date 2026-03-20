@@ -99,12 +99,26 @@ def _return_convert(ret: str, expr: str) -> str:
         return f"com.goudengine.types.Rect.fromNative({expr})"
     if base in ("Transform2D", "Sprite", "Text", "SpriteAnimator"):
         return f"com.goudengine.components.{base}({expr})"
+    # Generic value type conversion: internal.Type -> types.Type via matching constructor
+    from .helpers import schema
+    if base in schema.get("types", {}) and schema["types"][base].get("kind") == "value":
+        fields = schema["types"][base].get("fields", [])
+        if fields:
+            from .helpers import to_camel
+            args = ", ".join(f"{expr}.{to_camel(f['name'])}" for f in fields)
+            return f"com.goudengine.types.{base}({args})"
     return expr
 
 
 def _needs_return_wrap(ret: str) -> bool:
     base = _strip_array(ret.rstrip("?"))
-    return _is_entity(base) or base in _CARRIER_TYPES
+    if _is_entity(base) or base in _CARRIER_TYPES:
+        return True
+    # Value types with fields need internal->types conversion
+    from .helpers import schema
+    if base in schema.get("types", {}) and schema["types"][base].get("kind") == "value":
+        return bool(schema["types"][base].get("fields"))
+    return False
 
 
 def _kt_return_type(ret: str) -> str:
@@ -226,6 +240,7 @@ def _gen_tool_class(tool_name: str, is_windowed: bool = False):
         f"package com.goudengine.core",
         "",
         f"import com.goudengine.internal.{native_cls}",
+        "import com.goudengine.types.*",
         "",
     ]
 

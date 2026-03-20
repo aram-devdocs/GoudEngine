@@ -33,6 +33,66 @@ pub struct FpsStats {
 }
 
 // =============================================================================
+// Render Metrics
+// =============================================================================
+
+/// Per-frame render metrics for draw call counting, culling stats, and timing.
+///
+/// Populated each frame from `SpriteBatch`, `TextBatch`, and `UiRenderSystem`
+/// statistics. All timing values are in milliseconds.
+#[derive(Debug, Clone, Copy, Default)]
+#[repr(C)]
+pub struct RenderMetrics {
+    /// Total draw calls across all render subsystems.
+    pub draw_call_count: u32,
+    /// Total sprites submitted before culling.
+    pub sprites_submitted: u32,
+    /// Sprites that passed culling and were drawn.
+    pub sprites_drawn: u32,
+    /// Sprites rejected by frustum culling.
+    pub sprites_culled: u32,
+    /// Number of sprite batches submitted.
+    pub batches_submitted: u32,
+    /// Average sprites per batch (batch efficiency).
+    pub avg_sprites_per_batch: f32,
+    /// Time spent rendering sprites (ms).
+    pub sprite_render_ms: f32,
+    /// Time spent rendering text (ms).
+    pub text_render_ms: f32,
+    /// Time spent rendering UI (ms).
+    pub ui_render_ms: f32,
+    /// Total render phase time (ms). Currently only includes UI render time;
+    /// sprite and text phase timing will be added in a future update.
+    pub total_render_ms: f32,
+    /// Draw calls from text rendering.
+    pub text_draw_calls: u32,
+    /// Glyphs rendered this frame.
+    pub text_glyph_count: u32,
+    /// Draw calls from UI rendering.
+    pub ui_draw_calls: u32,
+}
+
+impl From<crate::core::debugger::RenderMetricsV1> for RenderMetrics {
+    fn from(rm: crate::core::debugger::RenderMetricsV1) -> Self {
+        Self {
+            draw_call_count: rm.draw_call_count,
+            sprites_submitted: rm.sprites_submitted,
+            sprites_drawn: rm.sprites_drawn,
+            sprites_culled: rm.sprites_culled,
+            batches_submitted: rm.batches_submitted,
+            avg_sprites_per_batch: rm.avg_sprites_per_batch,
+            sprite_render_ms: rm.sprite_render_ms,
+            text_render_ms: rm.text_render_ms,
+            ui_render_ms: rm.ui_render_ms,
+            total_render_ms: rm.total_render_ms,
+            text_draw_calls: rm.text_draw_calls,
+            text_glyph_count: rm.text_glyph_count,
+            ui_draw_calls: rm.ui_draw_calls,
+        }
+    }
+}
+
+// =============================================================================
 // Overlay Corner
 // =============================================================================
 
@@ -364,5 +424,34 @@ mod tests {
         assert_eq!(stats.max_fps, 0.0);
         assert_eq!(stats.avg_fps, 0.0);
         assert_eq!(stats.frame_time_ms, 0.0);
+    }
+
+    #[test]
+    fn test_render_metrics_default_is_zeroed() {
+        let m = RenderMetrics::default();
+        assert_eq!(m.draw_call_count, 0);
+        assert_eq!(m.sprites_submitted, 0);
+        assert_eq!(m.sprites_drawn, 0);
+        assert_eq!(m.sprites_culled, 0);
+        assert_eq!(m.batches_submitted, 0);
+        assert_eq!(m.avg_sprites_per_batch, 0.0);
+        assert_eq!(m.sprite_render_ms, 0.0);
+        assert_eq!(m.text_render_ms, 0.0);
+        assert_eq!(m.ui_render_ms, 0.0);
+        assert_eq!(m.total_render_ms, 0.0);
+        assert_eq!(m.text_draw_calls, 0);
+        assert_eq!(m.text_glyph_count, 0);
+        assert_eq!(m.ui_draw_calls, 0);
+    }
+
+    #[test]
+    fn test_render_metrics_submitted_equals_drawn_plus_culled() {
+        let m = RenderMetrics {
+            sprites_submitted: 100,
+            sprites_drawn: 75,
+            sprites_culled: 25,
+            ..Default::default()
+        };
+        assert_eq!(m.sprites_submitted, m.sprites_drawn + m.sprites_culled);
     }
 }

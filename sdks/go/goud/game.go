@@ -587,6 +587,11 @@ func (g *Game) GetFpsStats() FpsStats {
 	return FpsStats{}
 }
 
+// GetRenderMetrics Returns per-frame render metrics including draw calls, culling stats, batch efficiency, and timing
+func (g *Game) GetRenderMetrics() RenderMetrics {
+	return RenderMetrics{}
+}
+
 // SetFpsOverlayEnabled Enables or disables the FPS debug overlay
 func (g *Game) SetFpsOverlayEnabled(enabled bool) {
 }

@@ -96,6 +96,7 @@ public final class GoudGameNative {
     public static native void disableBlending(long contextId);
     public static native RenderStats getRenderStats(long contextId);
     public static native FpsStats getFpsStats(long contextId);
+    public static native RenderMetrics getRenderMetrics(long contextId);
     public static native void setFpsOverlayEnabled(long contextId, boolean enabled);
     public static native void setFpsUpdateInterval(long contextId, float interval);
     public static native void setFpsOverlayCorner(long contextId, int corner);

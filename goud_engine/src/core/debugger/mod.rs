@@ -154,6 +154,8 @@ pub use snapshot::NetworkStatsV1;
 #[doc(inline)]
 pub use snapshot::ProfilerSampleV1;
 #[doc(inline)]
+pub use snapshot::RenderMetricsV1;
+#[doc(inline)]
 pub use snapshot::RenderStatsV1;
 #[doc(inline)]
 pub use snapshot::RouteSummaryV1;

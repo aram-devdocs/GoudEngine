@@ -2249,6 +2249,77 @@
         }
       ]
     },
+    "RenderMetrics": {
+      "kind": "value",
+      "doc": "Per-frame render metrics: draw call counts, culling stats, batch efficiency, and per-category timing",
+      "fields": [
+        {
+          "name": "drawCallCount",
+          "type": "u32",
+          "doc": "Total draw calls across all render subsystems"
+        },
+        {
+          "name": "spritesSubmitted",
+          "type": "u32",
+          "doc": "Total sprites submitted before culling"
+        },
+        {
+          "name": "spritesDrawn",
+          "type": "u32",
+          "doc": "Sprites that passed culling and were drawn"
+        },
+        {
+          "name": "spritesCulled",
+          "type": "u32",
+          "doc": "Sprites rejected by frustum culling"
+        },
+        {
+          "name": "batchesSubmitted",
+          "type": "u32",
+          "doc": "Number of sprite batches submitted"
+        },
+        {
+          "name": "avgSpritesPerBatch",
+          "type": "f32",
+          "doc": "Average sprites per batch (batch efficiency)"
+        },
+        {
+          "name": "spriteRenderMs",
+          "type": "f32",
+          "doc": "Time spent rendering sprites in milliseconds"
+        },
+        {
+          "name": "textRenderMs",
+          "type": "f32",
+          "doc": "Time spent rendering text in milliseconds"
+        },
+        {
+          "name": "uiRenderMs",
+          "type": "f32",
+          "doc": "Time spent rendering UI in milliseconds"
+        },
+        {
+          "name": "totalRenderMs",
+          "type": "f32",
+          "doc": "Total render phase time in milliseconds"
+        },
+        {
+          "name": "textDrawCalls",
+          "type": "u32",
+          "doc": "Draw calls from text rendering"
+        },
+        {
+          "name": "textGlyphCount",
+          "type": "u32",
+          "doc": "Glyphs rendered this frame"
+        },
+        {
+          "name": "uiDrawCalls",
+          "type": "u32",
+          "doc": "Draw calls from UI rendering"
+        }
+      ]
+    },
     "DebuggerConfig": {
       "kind": "value",
       "doc": "Pre-init debugger runtime configuration for desktop contexts.",
@@ -5164,6 +5235,12 @@
           "doc": "Returns FPS statistics from the debug overlay rolling window",
           "params": [],
           "returns": "FpsStats"
+        },
+        {
+          "name": "getRenderMetrics",
+          "doc": "Returns per-frame render metrics including draw calls, culling stats, batch efficiency, and timing",
+          "params": [],
+          "returns": "RenderMetrics"
         },
         {
           "name": "setFpsOverlayEnabled",
@@ -11156,6 +11233,16 @@
             }
           ],
           "returns_struct": "FpsStats"
+        },
+        "getRenderMetrics": {
+          "ffi": "goud_render_get_metrics",
+          "out_params": [
+            {
+              "name": "metrics",
+              "type": "RenderMetrics"
+            }
+          ],
+          "returns_struct": "RenderMetrics"
         },
         "setFpsOverlayEnabled": {
           "ffi": "goud_debug_set_fps_overlay_enabled"

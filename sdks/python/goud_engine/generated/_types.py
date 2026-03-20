@@ -1391,6 +1391,26 @@ class FpsStats:
     def __repr__(self):
         return f"FpsStats(current_fps={self.current_fps}, min_fps={self.min_fps}, max_fps={self.max_fps}, avg_fps={self.avg_fps}, frame_time_ms={self.frame_time_ms})"
 
+class RenderMetrics:
+    """Per-frame render metrics: draw call counts, culling stats, batch efficiency, and per-category timing"""
+    def __init__(self, draw_call_count: int = 0, sprites_submitted: int = 0, sprites_drawn: int = 0, sprites_culled: int = 0, batches_submitted: int = 0, avg_sprites_per_batch: float = 0.0, sprite_render_ms: float = 0.0, text_render_ms: float = 0.0, ui_render_ms: float = 0.0, total_render_ms: float = 0.0, text_draw_calls: int = 0, text_glyph_count: int = 0, ui_draw_calls: int = 0):
+        self.draw_call_count = draw_call_count
+        self.sprites_submitted = sprites_submitted
+        self.sprites_drawn = sprites_drawn
+        self.sprites_culled = sprites_culled
+        self.batches_submitted = batches_submitted
+        self.avg_sprites_per_batch = avg_sprites_per_batch
+        self.sprite_render_ms = sprite_render_ms
+        self.text_render_ms = text_render_ms
+        self.ui_render_ms = ui_render_ms
+        self.total_render_ms = total_render_ms
+        self.text_draw_calls = text_draw_calls
+        self.text_glyph_count = text_glyph_count
+        self.ui_draw_calls = ui_draw_calls
+
+    def __repr__(self):
+        return f"RenderMetrics(draw_call_count={self.draw_call_count}, sprites_submitted={self.sprites_submitted}, sprites_drawn={self.sprites_drawn}, sprites_culled={self.sprites_culled}, batches_submitted={self.batches_submitted}, avg_sprites_per_batch={self.avg_sprites_per_batch}, sprite_render_ms={self.sprite_render_ms}, text_render_ms={self.text_render_ms}, ui_render_ms={self.ui_render_ms}, total_render_ms={self.total_render_ms}, text_draw_calls={self.text_draw_calls}, text_glyph_count={self.text_glyph_count}, ui_draw_calls={self.ui_draw_calls})"
+
 class DebuggerConfig:
     """Pre-init debugger runtime configuration for desktop contexts."""
     def __init__(self, enabled: bool = False, publish_local_attach: bool = False, route_label: str = ""):

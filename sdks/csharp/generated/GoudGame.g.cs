@@ -808,6 +808,14 @@ namespace GoudEngine
             return new FpsStats(_stats.CurrentFps, _stats.MinFps, _stats.MaxFps, _stats.AvgFps, _stats.FrameTimeMs);
         }
 
+        /// <summary>Returns per-frame render metrics including draw calls, culling stats, batch efficiency, and timing</summary>
+        public RenderMetrics GetRenderMetrics()
+        {
+            RenderMetrics _metrics = default;
+            NativeMethods.goud_render_get_metrics(_ctx, ref _metrics);
+            return new RenderMetrics(_metrics.DrawCallCount, _metrics.SpritesSubmitted, _metrics.SpritesDrawn, _metrics.SpritesCulled, _metrics.BatchesSubmitted, _metrics.AvgSpritesPerBatch, _metrics.SpriteRenderMs, _metrics.TextRenderMs, _metrics.UiRenderMs, _metrics.TotalRenderMs, _metrics.TextDrawCalls, _metrics.TextGlyphCount, _metrics.UiDrawCalls);
+        }
+
         /// <summary>Enables or disables the FPS debug overlay</summary>
         public void SetFpsOverlayEnabled(bool enabled)
         {

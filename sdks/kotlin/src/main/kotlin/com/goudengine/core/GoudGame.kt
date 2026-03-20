@@ -2,6 +2,7 @@
 package com.goudengine.core
 
 import com.goudengine.internal.GoudGameNative
+import com.goudengine.types.*
 
 /** Main game engine instance. Creates a window, manages rendering, input, and ECS. */
 class GoudGame internal constructor(internal val contextId: Long) : AutoCloseable {
@@ -299,6 +300,11 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
 
     fun disableBlending() {
         GoudGameNative.disableBlending(contextId)
+    }
+
+    fun getRenderMetrics(): RenderMetrics {
+        val r = GoudGameNative.getRenderMetrics(contextId)
+        return com.goudengine.types.RenderMetrics(r.drawCallCount, r.spritesSubmitted, r.spritesDrawn, r.spritesCulled, r.batchesSubmitted, r.avgSpritesPerBatch, r.spriteRenderMs, r.textRenderMs, r.uiRenderMs, r.totalRenderMs, r.textDrawCalls, r.textGlyphCount, r.uiDrawCalls)
     }
 
     fun setFpsOverlayEnabled(enabled: Boolean) {

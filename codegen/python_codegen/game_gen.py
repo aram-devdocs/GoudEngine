@@ -19,7 +19,7 @@ def gen_game() -> None:
         "    RenderCapabilities, PhysicsCapabilities, AudioCapabilities, InputCapabilities, NetworkStats,",
         "    NetworkSimulationConfig, NetworkConnectResult, NetworkPacket, NetworkCapabilities,",
         "    DebuggerConfig, ContextConfig, MemoryCategoryStats, MemorySummary,",
-        "    DebuggerCapture, DebuggerReplayArtifact)",
+        "    DebuggerCapture, DebuggerReplayArtifact, FpsStats, RenderMetrics)",
         "from ._errors import GoudError",
         "from ._keys import DebuggerStepKind, Key, MouseButton, PhysicsBackend2D",
         "",

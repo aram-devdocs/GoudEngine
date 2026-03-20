@@ -141,6 +141,23 @@ class FpsStats(ctypes.Structure):
         ("frame_time_ms", ctypes.c_float)
     ]
 
+class RenderMetrics(ctypes.Structure):
+    _fields_ = [
+        ("draw_call_count", ctypes.c_uint32),
+        ("sprites_submitted", ctypes.c_uint32),
+        ("sprites_drawn", ctypes.c_uint32),
+        ("sprites_culled", ctypes.c_uint32),
+        ("batches_submitted", ctypes.c_uint32),
+        ("avg_sprites_per_batch", ctypes.c_float),
+        ("sprite_render_ms", ctypes.c_float),
+        ("text_render_ms", ctypes.c_float),
+        ("ui_render_ms", ctypes.c_float),
+        ("total_render_ms", ctypes.c_float),
+        ("text_draw_calls", ctypes.c_uint32),
+        ("text_glyph_count", ctypes.c_uint32),
+        ("ui_draw_calls", ctypes.c_uint32)
+    ]
+
 class GoudDebuggerConfig(ctypes.Structure):
     _fields_ = [
         ("enabled", ctypes.c_bool),
@@ -466,6 +483,8 @@ def _setup():
     # debug
     _lib.goud_debug_get_fps_stats.argtypes = [GoudContextId, ctypes.POINTER(FpsStats)]
     _lib.goud_debug_get_fps_stats.restype = ctypes.c_int32
+    _lib.goud_render_get_metrics.argtypes = [GoudContextId, ctypes.POINTER(RenderMetrics)]
+    _lib.goud_render_get_metrics.restype = ctypes.c_int32
     _lib.goud_debug_set_fps_overlay_enabled.argtypes = [GoudContextId, ctypes.c_bool]
     _lib.goud_debug_set_fps_overlay_enabled.restype = ctypes.c_int32
     _lib.goud_debug_set_fps_update_interval.argtypes = [GoudContextId, ctypes.c_float]

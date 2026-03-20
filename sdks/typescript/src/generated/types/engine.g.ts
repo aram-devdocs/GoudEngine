@@ -20,6 +20,8 @@ export interface IPhysicsRaycastHit2D { bodyHandle: number; colliderHandle: numb
 export interface IPhysicsCollisionEvent2D { bodyA: number; bodyB: number; kind: number; }
 /** Frame timing statistics from the debug overlay rolling window */
 export interface IFpsStats { currentFps: number; minFps: number; maxFps: number; avgFps: number; frameTimeMs: number; }
+/** Per-frame render metrics: draw call counts, culling stats, batch efficiency, and per-category timing */
+export interface IRenderMetrics { drawCallCount: number; spritesSubmitted: number; spritesDrawn: number; spritesCulled: number; batchesSubmitted: number; avgSpritesPerBatch: number; spriteRenderMs: number; textRenderMs: number; uiRenderMs: number; totalRenderMs: number; textDrawCalls: number; textGlyphCount: number; uiDrawCalls: number; }
 /** Pre-init debugger runtime configuration for desktop contexts. */
 export interface IDebuggerConfig { enabled: boolean; publishLocalAttach: boolean; routeLabel: string; }
 /** Pre-init configuration for headless context creation. */
@@ -344,6 +346,8 @@ export interface IGoudGame {
   getRenderStats(): IRenderStats;
   /** Returns FPS statistics from the debug overlay rolling window */
   getFpsStats(): IFpsStats;
+  /** Returns per-frame render metrics including draw calls, culling stats, batch efficiency, and timing */
+  getRenderMetrics(): IRenderMetrics;
   /** Enables or disables the FPS debug overlay */
   setFpsOverlayEnabled(enabled: boolean): void;
   /** Sets how often FPS statistics are recomputed */

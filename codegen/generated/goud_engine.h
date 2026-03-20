@@ -609,6 +609,64 @@ typedef struct FpsStats {
 } FpsStats;
 
 /**
+ * Per-frame render metrics for draw call counting, culling stats, and timing.
+ */
+typedef struct RenderMetrics {
+    /**
+     * Total draw calls across all render subsystems.
+     */
+    uint32_t draw_call_count;
+    /**
+     * Total sprites submitted before culling.
+     */
+    uint32_t sprites_submitted;
+    /**
+     * Sprites that passed culling and were drawn.
+     */
+    uint32_t sprites_drawn;
+    /**
+     * Sprites rejected by frustum culling.
+     */
+    uint32_t sprites_culled;
+    /**
+     * Number of sprite batches submitted.
+     */
+    uint32_t batches_submitted;
+    /**
+     * Average sprites per batch (batch efficiency).
+     */
+    float avg_sprites_per_batch;
+    /**
+     * Time spent rendering sprites (ms).
+     */
+    float sprite_render_ms;
+    /**
+     * Time spent rendering text (ms).
+     */
+    float text_render_ms;
+    /**
+     * Time spent rendering UI (ms).
+     */
+    float ui_render_ms;
+    /**
+     * Total render phase time (ms). Currently only includes UI render time;
+     */
+    float total_render_ms;
+    /**
+     * Draw calls from text rendering.
+     */
+    uint32_t text_draw_calls;
+    /**
+     * Glyphs rendered this frame.
+     */
+    uint32_t text_glyph_count;
+    /**
+     * Draw calls from UI rendering.
+     */
+    uint32_t ui_draw_calls;
+} RenderMetrics;
+
+/**
  * FFI-safe memory stats for a single debugger memory category.
  */
 typedef struct GoudMemoryCategoryStats {
@@ -3880,6 +3938,11 @@ struct FfiColor goud_color_with_alpha(struct FfiColor color, float alpha);
  * Retrieves the current FPS statistics from the debug overlay.
  */
 int32_t goud_debug_get_fps_stats(struct GoudContextId context_id, struct FpsStats *out_stats);
+
+/**
+ * Retrieves per-frame render metrics (draw calls, culling, timing).
+ */
+int32_t goud_render_get_metrics(struct GoudContextId context_id, struct RenderMetrics *out_metrics);
 
 /**
  * Enables or disables the FPS overlay.

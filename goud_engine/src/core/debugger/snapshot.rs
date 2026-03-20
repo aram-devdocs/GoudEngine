@@ -179,11 +179,65 @@ pub struct NetworkStatsV1 {
     pub bytes_received: u64,
 }
 
+/// Per-frame render metrics for the debugger snapshot.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+pub struct RenderMetricsV1 {
+    /// Total draw calls across all render subsystems.
+    pub draw_call_count: u32,
+    /// Total sprites submitted before culling.
+    pub sprites_submitted: u32,
+    /// Sprites that passed culling and were drawn.
+    pub sprites_drawn: u32,
+    /// Sprites rejected by frustum culling.
+    pub sprites_culled: u32,
+    /// Number of sprite batches submitted.
+    pub batches_submitted: u32,
+    /// Average sprites per batch (batch efficiency).
+    pub avg_sprites_per_batch: f32,
+    /// Time spent rendering sprites (ms).
+    pub sprite_render_ms: f32,
+    /// Time spent rendering text (ms).
+    pub text_render_ms: f32,
+    /// Time spent rendering UI (ms).
+    pub ui_render_ms: f32,
+    /// Total render phase time (ms).
+    pub total_render_ms: f32,
+    /// Draw calls from text rendering.
+    pub text_draw_calls: u32,
+    /// Glyphs rendered this frame.
+    pub text_glyph_count: u32,
+    /// Draw calls from UI rendering.
+    pub ui_draw_calls: u32,
+}
+
+impl From<crate::sdk::debug_overlay::RenderMetrics> for RenderMetricsV1 {
+    fn from(rm: crate::sdk::debug_overlay::RenderMetrics) -> Self {
+        Self {
+            draw_call_count: rm.draw_call_count,
+            sprites_submitted: rm.sprites_submitted,
+            sprites_drawn: rm.sprites_drawn,
+            sprites_culled: rm.sprites_culled,
+            batches_submitted: rm.batches_submitted,
+            avg_sprites_per_batch: rm.avg_sprites_per_batch,
+            sprite_render_ms: rm.sprite_render_ms,
+            text_render_ms: rm.text_render_ms,
+            ui_render_ms: rm.ui_render_ms,
+            total_render_ms: rm.total_render_ms,
+            text_draw_calls: rm.text_draw_calls,
+            text_glyph_count: rm.text_glyph_count,
+            ui_draw_calls: rm.ui_draw_calls,
+        }
+    }
+}
+
 /// Snapshot stats section.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotStatsV1 {
     /// Per-frame render counters.
     pub render: RenderStatsV1,
+    /// Detailed per-frame render metrics (draw calls, culling, timing).
+    #[serde(default)]
+    pub render_metrics: RenderMetricsV1,
     /// Aggregate memory counters.
     pub memory: MemoryStatsV1,
     /// Aggregate network counters.

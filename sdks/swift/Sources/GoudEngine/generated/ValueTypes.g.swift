@@ -389,6 +389,87 @@ public struct FpsStats: Equatable {
 
 }
 
+/// Per-frame render metrics: draw call counts, culling stats, batch efficiency, and per-category timing
+public struct RenderMetrics: Equatable {
+    /// Total draw calls across all render subsystems
+    public var drawCallCount: UInt32
+    /// Total sprites submitted before culling
+    public var spritesSubmitted: UInt32
+    /// Sprites that passed culling and were drawn
+    public var spritesDrawn: UInt32
+    /// Sprites rejected by frustum culling
+    public var spritesCulled: UInt32
+    /// Number of sprite batches submitted
+    public var batchesSubmitted: UInt32
+    /// Average sprites per batch (batch efficiency)
+    public var avgSpritesPerBatch: Float
+    /// Time spent rendering sprites in milliseconds
+    public var spriteRenderMs: Float
+    /// Time spent rendering text in milliseconds
+    public var textRenderMs: Float
+    /// Time spent rendering UI in milliseconds
+    public var uiRenderMs: Float
+    /// Total render phase time in milliseconds
+    public var totalRenderMs: Float
+    /// Draw calls from text rendering
+    public var textDrawCalls: UInt32
+    /// Glyphs rendered this frame
+    public var textGlyphCount: UInt32
+    /// Draw calls from UI rendering
+    public var uiDrawCalls: UInt32
+
+    public init(drawCallCount: UInt32 = 0, spritesSubmitted: UInt32 = 0, spritesDrawn: UInt32 = 0, spritesCulled: UInt32 = 0, batchesSubmitted: UInt32 = 0, avgSpritesPerBatch: Float = 0, spriteRenderMs: Float = 0, textRenderMs: Float = 0, uiRenderMs: Float = 0, totalRenderMs: Float = 0, textDrawCalls: UInt32 = 0, textGlyphCount: UInt32 = 0, uiDrawCalls: UInt32 = 0) {
+        self.drawCallCount = drawCallCount
+        self.spritesSubmitted = spritesSubmitted
+        self.spritesDrawn = spritesDrawn
+        self.spritesCulled = spritesCulled
+        self.batchesSubmitted = batchesSubmitted
+        self.avgSpritesPerBatch = avgSpritesPerBatch
+        self.spriteRenderMs = spriteRenderMs
+        self.textRenderMs = textRenderMs
+        self.uiRenderMs = uiRenderMs
+        self.totalRenderMs = totalRenderMs
+        self.textDrawCalls = textDrawCalls
+        self.textGlyphCount = textGlyphCount
+        self.uiDrawCalls = uiDrawCalls
+    }
+
+    internal init(ffi: CGoudEngine.RenderMetrics) {
+        self.drawCallCount = ffi.draw_call_count
+        self.spritesSubmitted = ffi.sprites_submitted
+        self.spritesDrawn = ffi.sprites_drawn
+        self.spritesCulled = ffi.sprites_culled
+        self.batchesSubmitted = ffi.batches_submitted
+        self.avgSpritesPerBatch = ffi.avg_sprites_per_batch
+        self.spriteRenderMs = ffi.sprite_render_ms
+        self.textRenderMs = ffi.text_render_ms
+        self.uiRenderMs = ffi.ui_render_ms
+        self.totalRenderMs = ffi.total_render_ms
+        self.textDrawCalls = ffi.text_draw_calls
+        self.textGlyphCount = ffi.text_glyph_count
+        self.uiDrawCalls = ffi.ui_draw_calls
+    }
+
+    internal func toFFI() -> CGoudEngine.RenderMetrics {
+        var ffi = CGoudEngine.RenderMetrics()
+        ffi.draw_call_count = drawCallCount
+        ffi.sprites_submitted = spritesSubmitted
+        ffi.sprites_drawn = spritesDrawn
+        ffi.sprites_culled = spritesCulled
+        ffi.batches_submitted = batchesSubmitted
+        ffi.avg_sprites_per_batch = avgSpritesPerBatch
+        ffi.sprite_render_ms = spriteRenderMs
+        ffi.text_render_ms = textRenderMs
+        ffi.ui_render_ms = uiRenderMs
+        ffi.total_render_ms = totalRenderMs
+        ffi.text_draw_calls = textDrawCalls
+        ffi.text_glyph_count = textGlyphCount
+        ffi.ui_draw_calls = uiDrawCalls
+        return ffi
+    }
+
+}
+
 /// Pre-init debugger runtime configuration for desktop contexts.
 public struct DebuggerConfig: Equatable {
     /// Enables the debugger runtime for the created game or context.

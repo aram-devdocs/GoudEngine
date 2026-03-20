@@ -498,6 +498,9 @@ namespace GoudEngine
         public static extern int goud_debug_get_fps_stats(GoudContextId context_id, ref FpsStats out_stats);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_render_get_metrics(GoudContextId context_id, ref RenderMetrics out_metrics);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_debug_set_fps_overlay_enabled(GoudContextId context_id, [MarshalAs(UnmanagedType.U1)] bool enabled);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

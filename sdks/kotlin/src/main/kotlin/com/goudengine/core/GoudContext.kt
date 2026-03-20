@@ -2,6 +2,7 @@
 package com.goudengine.core
 
 import com.goudengine.internal.GoudContextNative
+import com.goudengine.types.*
 
 /** Headless engine context for CI tests and non-windowed entity management. */
 class GoudContext internal constructor(internal val contextId: Long) : AutoCloseable {

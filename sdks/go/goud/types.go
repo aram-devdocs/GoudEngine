@@ -388,6 +388,42 @@ func NewFpsStats(currentFps float32, minFps float32, maxFps float32, avgFps floa
 	}
 }
 
+// RenderMetrics Per-frame render metrics: draw call counts, culling stats, batch efficiency, and per-category timing
+type RenderMetrics struct {
+	DrawCallCount uint32
+	SpritesSubmitted uint32
+	SpritesDrawn uint32
+	SpritesCulled uint32
+	BatchesSubmitted uint32
+	AvgSpritesPerBatch float32
+	SpriteRenderMs float32
+	TextRenderMs float32
+	UiRenderMs float32
+	TotalRenderMs float32
+	TextDrawCalls uint32
+	TextGlyphCount uint32
+	UiDrawCalls uint32
+}
+
+// NewRenderMetrics creates a new RenderMetrics.
+func NewRenderMetrics(drawCallCount uint32, spritesSubmitted uint32, spritesDrawn uint32, spritesCulled uint32, batchesSubmitted uint32, avgSpritesPerBatch float32, spriteRenderMs float32, textRenderMs float32, uiRenderMs float32, totalRenderMs float32, textDrawCalls uint32, textGlyphCount uint32, uiDrawCalls uint32) RenderMetrics {
+	return RenderMetrics{
+		DrawCallCount: drawCallCount,
+		SpritesSubmitted: spritesSubmitted,
+		SpritesDrawn: spritesDrawn,
+		SpritesCulled: spritesCulled,
+		BatchesSubmitted: batchesSubmitted,
+		AvgSpritesPerBatch: avgSpritesPerBatch,
+		SpriteRenderMs: spriteRenderMs,
+		TextRenderMs: textRenderMs,
+		UiRenderMs: uiRenderMs,
+		TotalRenderMs: totalRenderMs,
+		TextDrawCalls: textDrawCalls,
+		TextGlyphCount: textGlyphCount,
+		UiDrawCalls: uiDrawCalls,
+	}
+}
+
 // DebuggerConfig Pre-init debugger runtime configuration for desktop contexts.
 type DebuggerConfig struct {
 	Enabled bool

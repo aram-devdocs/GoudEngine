@@ -630,11 +630,10 @@ def test_generated_game_runtime_with_fake_lib():
     _ = game.is_mouse_button_pressed(0)
     _ = game.is_mouse_button_just_pressed(0)
     _ = game.is_mouse_button_just_released(0)
-    try:
-        _ = game.get_fps_stats()
-    except NameError:
-        # Some generated variants reference GoudFpsStats without importing it.
-        pass
+    fps = game.get_fps_stats()
+    assert fps.current_fps == 0.0
+    rm = game.get_render_metrics()
+    assert rm.draw_call_count == 0
     game.set_fps_overlay_enabled(True)
     game.set_fps_update_interval(0.25)
     _ = game.set_fps_overlay_corner(0)

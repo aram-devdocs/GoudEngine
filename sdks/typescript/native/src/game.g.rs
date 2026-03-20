@@ -35,7 +35,7 @@ use goud_engine::ffi::debug::{
     goud_debugger_set_profiling_enabled, goud_debugger_set_selected_entity,
     goud_debugger_set_time_scale, goud_debugger_start_recording, goud_debugger_start_replay,
     goud_debugger_step, goud_debugger_stop_recording_json, goud_debugger_stop_replay,
-    GoudDebuggerStepKind, GoudMemoryCategoryStats, GoudMemorySummary,
+    goud_render_get_metrics, GoudDebuggerStepKind, GoudMemoryCategoryStats, GoudMemorySummary,
 };
 use goud_engine::ffi::entity::{
     goud_entity_count, goud_entity_despawn, goud_entity_is_alive, goud_entity_spawn_batch,
@@ -123,7 +123,7 @@ use goud_engine::ffi::window::{
     goud_window_get_size, goud_window_poll_events, goud_window_set_should_close,
     goud_window_should_close, goud_window_swap_buffers,
 };
-use goud_engine::sdk::debug_overlay::FpsStats;
+use goud_engine::sdk::debug_overlay::{FpsStats, RenderMetrics};
 use goud_engine::ui::UiManager as EngineUiManager;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
@@ -193,6 +193,24 @@ pub struct NapiFpsStats {
     pub max_fps: f64,
     pub avg_fps: f64,
     pub frame_time_ms: f64,
+}
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiRenderMetrics {
+    pub draw_call_count: u32,
+    pub sprites_submitted: u32,
+    pub sprites_drawn: u32,
+    pub sprites_culled: u32,
+    pub batches_submitted: u32,
+    pub avg_sprites_per_batch: f64,
+    pub sprite_render_ms: f64,
+    pub text_render_ms: f64,
+    pub ui_render_ms: f64,
+    pub total_render_ms: f64,
+    pub text_draw_calls: u32,
+    pub text_glyph_count: u32,
+    pub ui_draw_calls: u32,
 }
 
 #[napi(object)]
@@ -715,6 +733,28 @@ impl GoudGame {
             max_fps: stats.max_fps as f64,
             avg_fps: stats.avg_fps as f64,
             frame_time_ms: stats.frame_time_ms as f64,
+        }
+    }
+
+    #[napi]
+    pub fn get_render_metrics(&self) -> NapiRenderMetrics {
+        let mut metrics = RenderMetrics::default();
+        // SAFETY: Passing a valid mutable reference as out-pointer.
+        unsafe { goud_render_get_metrics(self.context_id, &mut metrics) };
+        NapiRenderMetrics {
+            draw_call_count: metrics.draw_call_count,
+            sprites_submitted: metrics.sprites_submitted,
+            sprites_drawn: metrics.sprites_drawn,
+            sprites_culled: metrics.sprites_culled,
+            batches_submitted: metrics.batches_submitted,
+            avg_sprites_per_batch: metrics.avg_sprites_per_batch as f64,
+            sprite_render_ms: metrics.sprite_render_ms as f64,
+            text_render_ms: metrics.text_render_ms as f64,
+            ui_render_ms: metrics.ui_render_ms as f64,
+            total_render_ms: metrics.total_render_ms as f64,
+            text_draw_calls: metrics.text_draw_calls,
+            text_glyph_count: metrics.text_glyph_count,
+            ui_draw_calls: metrics.ui_draw_calls,
         }
     }
 
