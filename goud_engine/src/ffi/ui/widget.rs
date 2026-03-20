@@ -292,6 +292,7 @@ pub unsafe extern "C" fn goud_ui_set_node_position(
         return ERR_NODE_NOT_FOUND;
     };
     node.set_position(x, y);
+    manager.mark_layout_dirty();
     0
 }
 
@@ -320,6 +321,7 @@ pub unsafe extern "C" fn goud_ui_set_node_visible(
         return ERR_NODE_NOT_FOUND;
     };
     node.set_visible(visible);
+    manager.mark_layout_dirty();
     0
 }
 
