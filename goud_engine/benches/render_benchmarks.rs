@@ -104,11 +104,13 @@ fn capture_frame_metrics(n: usize) -> RenderFrameMetrics {
 
     let draw_calls = count_draw_calls(&batch.sprites);
     let texture_size = Vec2::new(64.0, 64.0);
-    for sprite in batch.sprites.clone().iter() {
+    let sprites = std::mem::take(&mut batch.sprites);
+    for sprite in &sprites {
         batch
             .generate_sprite_vertices(sprite, texture_size)
             .unwrap();
     }
+    batch.sprites = sprites;
 
     let vertex_count = batch.vertices.len();
     let vertex_buffer_bytes =
@@ -118,7 +120,7 @@ fn capture_frame_metrics(n: usize) -> RenderFrameMetrics {
         entity_count: n,
         sprite_count: batch.sprite_count(),
         draw_calls,
-        batch_count: batch.batch_count().max(draw_calls),
+        batch_count: draw_calls,
         batch_ratio: if draw_calls > 0 {
             batch.sprite_count() as f32 / draw_calls as f32
         } else {
@@ -149,13 +151,15 @@ fn bench_render_full_frame(c: &mut Criterion) {
                 batch.gather_sprites(&world, &mut asset_server).unwrap();
                 batch.sort_sprites();
                 let texture_size = Vec2::new(64.0, 64.0);
-                let sprites_snapshot: Vec<SpriteInstance> = batch.sprites.clone();
-                for sprite in &sprites_snapshot {
+                let sprites = std::mem::take(&mut batch.sprites);
+                for sprite in &sprites {
                     batch
                         .generate_sprite_vertices(sprite, texture_size)
                         .unwrap();
                 }
-                black_box((batch.sprite_count(), batch.vertices.len()));
+                let count = sprites.len();
+                batch.sprites = sprites;
+                black_box((count, batch.vertices.len()));
             });
         });
     }
@@ -210,14 +214,16 @@ fn bench_render_frame_percentiles(c: &mut Criterion) {
                     batch.begin();
                     batch.gather_sprites(&world, &mut asset_server).unwrap();
                     batch.sort_sprites();
-                    let sprites_snapshot: Vec<SpriteInstance> = batch.sprites.clone();
                     let texture_size = Vec2::new(64.0, 64.0);
-                    for sprite in &sprites_snapshot {
+                    let sprites = std::mem::take(&mut batch.sprites);
+                    for sprite in &sprites {
                         batch
                             .generate_sprite_vertices(sprite, texture_size)
                             .unwrap();
                     }
-                    black_box(batch.sprite_count());
+                    let count = sprites.len();
+                    batch.sprites = sprites;
+                    black_box(count);
                     total += start.elapsed();
                 }
                 total
@@ -247,13 +253,15 @@ fn bench_render_scaling(c: &mut Criterion) {
                 batch.gather_sprites(&world, &mut asset_server).unwrap();
                 batch.sort_sprites();
                 let texture_size = Vec2::new(64.0, 64.0);
-                let sprites_snapshot: Vec<SpriteInstance> = batch.sprites.clone();
-                for sprite in &sprites_snapshot {
+                let sprites = std::mem::take(&mut batch.sprites);
+                for sprite in &sprites {
                     batch
                         .generate_sprite_vertices(sprite, texture_size)
                         .unwrap();
                 }
-                black_box((batch.sprite_count(), batch.vertices.len()));
+                let count = sprites.len();
+                batch.sprites = sprites;
+                black_box((count, batch.vertices.len()));
             });
         });
     }
@@ -337,6 +345,4 @@ fn main() {
     metrics_benches();
     percentile_benches();
     scaling_benches();
-
-    Criterion::default().configure_from_args().final_summary();
 }

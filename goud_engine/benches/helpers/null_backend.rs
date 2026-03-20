@@ -13,6 +13,9 @@ use goud_engine::libs::graphics::backend::{
     ShaderOps, StateOps, TextureOps,
 };
 
+/// A no-op render backend for benchmarking CPU-side sprite batch operations.
+///
+/// All GPU operations return dummy/default values. No actual GPU calls are made.
 pub struct NullBackend {
     info: BackendInfo,
 }
