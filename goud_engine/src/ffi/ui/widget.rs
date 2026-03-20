@@ -454,7 +454,6 @@ mod tests {
         unsafe {
             let node = super::super::node::goud_ui_create_node(mgr, 0);
             assert_eq!(goud_ui_set_node_position(mgr, node, 100.0, 200.0), 0);
-
             let id = super::super::unpack_node_id(node);
             let manager = &*mgr;
             let node_ref = manager.get_node(id).unwrap();
@@ -484,7 +483,6 @@ mod tests {
             let id = super::super::unpack_node_id(node);
             let manager = &*mgr;
             assert!(!manager.get_node(id).unwrap().visible());
-
             assert_eq!(goud_ui_set_node_visible(mgr, node, true), 0);
             assert!(manager.get_node(id).unwrap().visible());
 
