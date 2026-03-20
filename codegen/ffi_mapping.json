@@ -496,6 +496,7 @@
     },
     "debug": {
       "goud_debug_get_fps_stats": {},
+      "goud_render_get_metrics": {},
       "goud_debug_set_fps_overlay_enabled": {},
       "goud_debug_set_fps_update_interval": {},
       "goud_debug_set_fps_overlay_corner": {},
