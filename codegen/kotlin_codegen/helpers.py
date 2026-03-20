@@ -79,6 +79,7 @@ ENUM_SUBDIRS = {
     "EasingType": "animation", "NetworkProtocol": "network", "TransitionType": "animation",
     "TextAlignment": "core", "TextDirection": "core", "BlendMode": "core",
     "EventPayloadType": "animation",
+    "RpcDirection": "network",
 }
 
 JAVA_CARRIERS = {
@@ -93,6 +94,7 @@ JAVA_CARRIERS = {
     "DebuggerConfig", "MemoryCategoryStats", "MemorySummary",
     "DebuggerCapture", "DebuggerReplayArtifact",
     "UiStyle", "UiEvent",
+    "P2pMeshConfig", "RollbackConfig",
 }
 
 

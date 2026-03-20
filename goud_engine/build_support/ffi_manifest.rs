@@ -119,6 +119,9 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/network/lifecycle.rs",
     "src/ffi/network/stats.rs",
     "src/ffi/network/controls.rs",
+    "src/ffi/network/p2p.rs",
+    "src/ffi/network/rollback.rs",
+    "src/ffi/network/rpc.rs",
     // providers module
     "src/ffi/providers.rs",
     // plugin module

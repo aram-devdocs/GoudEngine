@@ -1,4 +1,6 @@
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 
 use crate::ecs::World;
@@ -143,6 +145,7 @@ impl WasmGame {
             audio_state: audio::WasmAudioState::new(),
             network_state: network::WasmNetworkState::new(),
             debugger_route: None,
+            pending_textures: Rc::new(RefCell::new(Vec::new())),
         })
     }
 }

@@ -156,6 +156,23 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct FfiP2pMeshConfig
+    {
+        public uint MaxPeers;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool HostMigration;
+        public int Topology;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiRollbackConfig
+    {
+        public uint MaxRollbackFrames;
+        public uint InputDelayFrames;
+        public byte DesyncDetection;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct FfiSpriteAnimator
     {
         public uint CurrentFrame;
@@ -1590,6 +1607,72 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_network_clear_simulation(GoudContextId _context_id, long handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_p2p_create_mesh(GoudContextId context_id, int protocol, ushort port, FfiP2pMeshConfig config);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_p2p_join_mesh(GoudContextId context_id, int protocol, IntPtr addr_ptr, int addr_len, ushort port, FfiP2pMeshConfig config);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_p2p_leave_mesh(GoudContextId _context_id, long handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_p2p_get_peers(GoudContextId _context_id, long handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ulong goud_p2p_get_host(GoudContextId _context_id, long handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_rollback_create(FfiRollbackConfig config, byte local_player, IntPtr player_ids_ptr, uint num_players, IntPtr state_ptr, ulong advance_fn, ulong hash_fn, ulong clone_fn, ulong free_fn);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_rollback_destroy(long handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_rollback_advance_frame(long handle, IntPtr input_ptr, uint input_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_rollback_receive_remote_input(long handle, byte player_id, ulong frame, IntPtr input_ptr, uint input_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_rollback_should_rollback(long handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_rollback_resimulate(long handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_rollback_confirmed_frame(long handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_rollback_current_frame(long handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_rollback_check_desync(long handle, ulong remote_hash, ulong frame);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_rpc_create(ulong timeout_ms, uint max_payload);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_rpc_destroy(long handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_rpc_register(long handle, ushort rpc_id, IntPtr name_ptr, int name_len, int direction);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_rpc_call(long handle, ulong peer_id, ushort rpc_id, IntPtr payload_ptr, int payload_len, ref ulong call_id_out);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_rpc_poll(long handle, float delta_secs);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_rpc_process_incoming(long handle, ulong peer_id, IntPtr data_ptr, int data_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_rpc_receive_response(long handle, ulong call_id, IntPtr out_ptr, int out_len, ref int out_written);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_rpc_drain_one(long handle, IntPtr out_buf, int buf_len, ref ulong out_peer_id);
 
         // providers
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

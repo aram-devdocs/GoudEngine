@@ -150,6 +150,69 @@ See [`docs/src/guides/debugger-runtime.md`](../../docs/src/guides/debugger-runti
 - Dual targets: Node.js desktop (napi-rs) and web browser (wasm-bindgen)
 - Structured error diagnostics with error codes and recovery hints
 
+## Public API Reference
+
+### Core Classes
+
+| Class | Description | Node | Web |
+|-------|-------------|------|-----|
+| `GoudGame` | Window, game loop, rendering, input, ECS | Yes | Yes |
+| `GoudContext` | Headless context (no window) for testing/tools | Yes | No |
+| `NetworkManager` | Host/connect networking wrapper | Yes | Partial |
+| `NetworkEndpoint` | Send/receive on a network connection | Yes | Yes |
+| `DiagnosticMode` | Toggle backtrace capture on errors | Yes | No-op |
+
+### Value Types (shared across both targets)
+
+| Type | Description |
+|------|-------------|
+| `Color` | RGBA float color. Factory methods: `Color.white()`, `Color.fromHex(0xFF0000)`, `Color.rgb(r, g, b)` |
+| `Vec2` | 2D vector with `add`, `sub`, `scale`, `normalize`, `dot`, `distance`, `lerp` |
+| `Vec3` | 3D vector |
+| `Rect` | Axis-aligned rectangle (x, y, width, height) |
+
+### Enums
+
+| Enum | Description |
+|------|-------------|
+| `Key` | Keyboard key codes (`Key.Space`, `Key.Escape`, `Key.W`, etc.) |
+| `MouseButton` | Mouse buttons (`MouseButton.Left`, `MouseButton.Right`, `MouseButton.Middle`) |
+| `RendererType` | `Renderer2D` or `Renderer3D` |
+| `NetworkProtocol` | `Udp`, `Tcp`, `WebSocket`, `WebRtc` |
+| `RecoveryClass` | Error recovery classification: `Recoverable`, `Fatal`, `Degraded` |
+
+### Error Types
+
+All engine errors extend `GoudError` with structured metadata:
+
+```typescript
+import { GoudError, GoudResourceError, RecoveryClass } from "goudengine";
+
+try {
+  game.loadTexture("missing.png");
+} catch (e) {
+  if (e instanceof GoudResourceError) {
+    console.error(`[${e.code}] ${e.message}`);
+    console.error(`Recovery: ${e.recoveryHint}`);
+    if (e.recovery === RecoveryClass.Fatal) {
+      process.exit(1);
+    }
+  }
+}
+```
+
+Error subclasses: `GoudContextError`, `GoudResourceError`, `GoudGraphicsError`, `GoudEntityError`, `GoudInputError`, `GoudSystemError`, `GoudProviderError`, `GoudInternalError`. Each error carries a numeric `code`, human-readable `category`, `subsystem`, `operation`, `recovery` class, and `recoveryHint` string.
+
+### Interfaces
+
+The SDK exports `I`-prefixed interfaces for all data structures (`IVec2`, `IColor`, `IRect`, `ITransform2DData`, `ISpriteData`, `IRenderStats`, `IFpsStats`, `IContact`, `INetworkPacket`, etc.). Use these when you need structural typing without importing the concrete class:
+
+```typescript
+function moveEntity(pos: IVec2, velocity: IVec2, dt: number): Vec2 {
+  return new Vec2(pos.x + velocity.x * dt, pos.y + velocity.y * dt);
+}
+```
+
 ## Flappy Bird Example
 
 A condensed Node.js version showing the core patterns — game loop, physics, sprite rendering,
@@ -285,6 +348,21 @@ You can also import a specific target explicitly:
 import { GoudGame } from "goudengine/node";  // Force Node backend
 import { GoudGame } from "goudengine/web";   // Force Web backend
 ```
+
+### Feature Comparison
+
+| Feature | Node.js | Web/WASM |
+|---------|---------|----------|
+| Game loop | Synchronous `while` loop | `game.run(callback)` (rAF-driven) |
+| Game creation | `new GoudGame(...)` | `await GoudGame.create(...)` |
+| Texture loading | Filesystem path | `fetch()` from page origin |
+| GoudContext (headless) | Supported | Not supported |
+| Debugger runtime | Full support | Throws unsupported error |
+| Networking: host | Supported | Not supported |
+| Networking: client | UDP, TCP, WebSocket, WebRTC | WebSocket only |
+| Diagnostics/backtrace | Full support | No-op |
+| Touch input | N/A | Auto-mapped to mouse button 0 |
+| Float precision | f64 JS to f32 Rust conversion | f32 native via wasm-bindgen |
 
 ## Build from Source
 

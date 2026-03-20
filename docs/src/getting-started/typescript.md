@@ -10,7 +10,7 @@ The TypeScript SDK ships a single npm package (`goudengine`) with two backends:
 
 Both backends expose the same TypeScript API. Game logic written for one target works on the other.
 
-Other getting-started guides: [C#](csharp.md) · [Python](python.md) · [Rust](rust.md)
+Other getting-started guides: [C#](csharp.md) · [Python](python.md) · [Rust](rust.md) · [Go](go.md) · [Kotlin](kotlin.md) · [Lua](lua.md)
 
 ---
 

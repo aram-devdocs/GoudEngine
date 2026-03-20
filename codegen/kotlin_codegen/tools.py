@@ -35,7 +35,7 @@ _UNSUPPORTED_TYPES = {
     "PhysicsCapabilities", "AudioCapabilities", "InputCapabilities",
     "RenderStats", "FpsStats", "Contact", "PhysicsRaycastHit2D",
     "PhysicsCollisionEvent2D", "MemoryCategoryStats",
-    "bytes", "object", "ptr",
+    "object", "ptr",
 }
 
 
@@ -79,7 +79,7 @@ def _param_convert(pname: str, ptype: str) -> str:
         return f"{pname}.value"
     if base in ("Transform2D", "Sprite", "Text", "SpriteAnimator"):
         return f"{pname}.native"
-    if base in ("Color", "Vec2", "Vec3", "Rect"):
+    if base in ("Color", "Vec2", "Vec3", "Rect", "P2pMeshConfig", "RollbackConfig"):
         return f"{pname}.toNative()"
     return pname
 
@@ -149,6 +149,8 @@ def _kt_param_type(ptype: str) -> str:
         return "com.goudengine.types.Rect"
     if base in ("Transform2D", "Sprite", "Text", "SpriteAnimator"):
         return f"com.goudengine.components.{base}"
+    if base in ("P2pMeshConfig", "RollbackConfig"):
+        return f"com.goudengine.types.{base}"
     return kt_type(_strip_array(ptype) if ptype.endswith("[]") else ptype)
 
 

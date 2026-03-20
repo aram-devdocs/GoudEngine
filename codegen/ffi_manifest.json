@@ -1783,6 +1783,57 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_p2p_create_mesh": {
+      "source_file": "ffi/network/p2p.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "protocol: i32",
+        "port: u16",
+        "config: FfiP2pMeshConfig"
+      ],
+      "return_type": "i64",
+      "is_unsafe": false
+    },
+    "goud_p2p_get_host": {
+      "source_file": "ffi/network/p2p.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "handle: i64"
+      ],
+      "return_type": "u64",
+      "is_unsafe": false
+    },
+    "goud_p2p_get_peers": {
+      "source_file": "ffi/network/p2p.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "handle: i64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_p2p_join_mesh": {
+      "source_file": "ffi/network/p2p.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "protocol: i32",
+        "addr_ptr: *const u8",
+        "addr_len: i32",
+        "port: u16",
+        "config: FfiP2pMeshConfig"
+      ],
+      "return_type": "i64",
+      "is_unsafe": true
+    },
+    "goud_p2p_leave_mesh": {
+      "source_file": "ffi/network/p2p.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "handle: i64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_physics3d_add_collider": {
       "source_file": "ffi/physics/physics3d/bodies.rs",
       "params": [
@@ -3089,6 +3140,179 @@
       ],
       "return_type": "()",
       "is_unsafe": false
+    },
+    "goud_rollback_advance_frame": {
+      "source_file": "ffi/network/rollback.rs",
+      "params": [
+        "handle: i64",
+        "input_ptr: *const u8",
+        "input_len: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_rollback_check_desync": {
+      "source_file": "ffi/network/rollback.rs",
+      "params": [
+        "handle: i64",
+        "remote_hash: u64",
+        "frame: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_rollback_confirmed_frame": {
+      "source_file": "ffi/network/rollback.rs",
+      "params": [
+        "handle: i64"
+      ],
+      "return_type": "i64",
+      "is_unsafe": false
+    },
+    "goud_rollback_create": {
+      "source_file": "ffi/network/rollback.rs",
+      "params": [
+        "config: FfiRollbackConfig",
+        "local_player: u8",
+        "player_ids_ptr: *const u8",
+        "num_players: u32",
+        "state_ptr: *mut u8",
+        "advance_fn: u64",
+        "hash_fn: u64",
+        "clone_fn: u64",
+        "free_fn: u64"
+      ],
+      "return_type": "i64",
+      "is_unsafe": true
+    },
+    "goud_rollback_current_frame": {
+      "source_file": "ffi/network/rollback.rs",
+      "params": [
+        "handle: i64"
+      ],
+      "return_type": "i64",
+      "is_unsafe": false
+    },
+    "goud_rollback_destroy": {
+      "source_file": "ffi/network/rollback.rs",
+      "params": [
+        "handle: i64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_rollback_receive_remote_input": {
+      "source_file": "ffi/network/rollback.rs",
+      "params": [
+        "handle: i64",
+        "player_id: u8",
+        "frame: u64",
+        "input_ptr: *const u8",
+        "input_len: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_rollback_resimulate": {
+      "source_file": "ffi/network/rollback.rs",
+      "params": [
+        "handle: i64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_rollback_should_rollback": {
+      "source_file": "ffi/network/rollback.rs",
+      "params": [
+        "handle: i64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_rpc_call": {
+      "source_file": "ffi/network/rpc.rs",
+      "params": [
+        "handle: i64",
+        "peer_id: u64",
+        "rpc_id: u16",
+        "payload_ptr: *const u8",
+        "payload_len: i32",
+        "call_id_out: *mut u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_rpc_create": {
+      "source_file": "ffi/network/rpc.rs",
+      "params": [
+        "timeout_ms: u64",
+        "max_payload: u32"
+      ],
+      "return_type": "i64",
+      "is_unsafe": false
+    },
+    "goud_rpc_destroy": {
+      "source_file": "ffi/network/rpc.rs",
+      "params": [
+        "handle: i64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_rpc_drain_one": {
+      "source_file": "ffi/network/rpc.rs",
+      "params": [
+        "handle: i64",
+        "out_buf: *mut u8",
+        "buf_len: i32",
+        "out_peer_id: *mut u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_rpc_poll": {
+      "source_file": "ffi/network/rpc.rs",
+      "params": [
+        "handle: i64",
+        "delta_secs: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_rpc_process_incoming": {
+      "source_file": "ffi/network/rpc.rs",
+      "params": [
+        "handle: i64",
+        "peer_id: u64",
+        "data_ptr: *const u8",
+        "data_len: i32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_rpc_receive_response": {
+      "source_file": "ffi/network/rpc.rs",
+      "params": [
+        "handle: i64",
+        "call_id: u64",
+        "out_ptr: *mut u8",
+        "out_len: i32",
+        "out_written: *mut i32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_rpc_register": {
+      "source_file": "ffi/network/rpc.rs",
+      "params": [
+        "handle: i64",
+        "rpc_id: u16",
+        "name_ptr: *const u8",
+        "name_len: i32",
+        "direction: i32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
     },
     "goud_scene_count": {
       "source_file": "ffi/scene.rs",
@@ -4749,5 +4973,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 476
+  "total_count": 498
 }

@@ -176,4 +176,4 @@ Source is in [`examples/swift/flappy_bird/`](https://github.com/aram-devdocs/Gou
 - [Example Showcase](../guides/showcase.md) — current cross-language parity matrix
 - [SDK-first architecture](../architecture/sdk-first.md) — how the engine layers fit together
 - [Development guide](../development/guide.md) — building from source, version management, git hooks
-- Other getting started guides: [C#](csharp.md) · [Python](python.md) · [TypeScript](typescript.md) · [Rust](rust.md)
+- Other getting started guides: [C#](csharp.md) · [Python](python.md) · [TypeScript](typescript.md) · [Rust](rust.md) · [Go](go.md) · [Kotlin](kotlin.md) · [Lua](lua.md)

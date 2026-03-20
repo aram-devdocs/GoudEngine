@@ -156,7 +156,7 @@ def gen_web_wrapper():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IDebuggerCapture, IDebuggerReplayArtifact, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
+        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IDebuggerCapture, IDebuggerReplayArtifact, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, IP2pMeshConfig, IRollbackConfig, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "import { PhysicsBackend2D, RenderBackendKind, WindowBackendKind } from '../types/input.g.js';",
         "import { attachInputHandlers } from './input.g.js';",
@@ -164,7 +164,7 @@ def gen_web_wrapper():
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton, PhysicsBackend2D, RenderBackendKind, WindowBackendKind } from '../types/input.g.js';",
         "export { Rect } from '../types/math.g.js';",
-        "export type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IDebuggerCapture, IDebuggerReplayArtifact, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
+        "export type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IDebuggerCapture, IDebuggerReplayArtifact, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, IP2pMeshConfig, IRollbackConfig, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
         "",
         "const PRELOAD_TEXTURE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'tga', 'dds']);",
         "const PRELOAD_FONT_EXTENSIONS = new Set(['ttf', 'otf', 'woff', 'woff2', 'fnt']);",
@@ -942,6 +942,81 @@ def gen_web_wrapper():
     lines.append("  }")
     lines.append("  clearNetworkOverlayHandle(): number {")
     lines.append("    return this.handle.clear_network_overlay_handle();")
+    lines.append("  }")
+    lines.append("")
+
+    # P2P mesh stubs (not supported in WASM mode)
+    lines.append("  p2pCreateMesh(_protocol: number, _port: number, _config: IP2pMeshConfig): number {")
+    lines.append("    throw new Error('P2P mesh is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  p2pJoinMesh(_protocol: number, _address: string, _port: number, _config: IP2pMeshConfig): number {")
+    lines.append("    throw new Error('P2P mesh is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  p2pLeaveMesh(_handle: number): number {")
+    lines.append("    throw new Error('P2P mesh is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  p2pGetPeers(_handle: number): number {")
+    lines.append("    throw new Error('P2P mesh is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  p2pGetHost(_handle: number): number {")
+    lines.append("    throw new Error('P2P mesh is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("")
+
+    # Rollback stubs (not supported in WASM mode)
+    lines.append("  rollbackCreate(_config: IRollbackConfig, _localPlayer: number, _playerIds: Uint8Array, _statePtr: number, _advanceFn: number, _hashFn: number, _cloneFn: number, _freeFn: number): number {")
+    lines.append("    throw new Error('Rollback netcode is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  rollbackDestroy(_handle: number): number {")
+    lines.append("    throw new Error('Rollback netcode is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  rollbackAdvanceFrame(_handle: number, _input: Uint8Array): number {")
+    lines.append("    throw new Error('Rollback netcode is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  rollbackReceiveRemoteInput(_handle: number, _playerId: number, _frame: number, _input: Uint8Array): number {")
+    lines.append("    throw new Error('Rollback netcode is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  rollbackShouldRollback(_handle: number): number {")
+    lines.append("    throw new Error('Rollback netcode is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  rollbackResimulate(_handle: number): number {")
+    lines.append("    throw new Error('Rollback netcode is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  rollbackConfirmedFrame(_handle: number): number {")
+    lines.append("    throw new Error('Rollback netcode is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  rollbackCurrentFrame(_handle: number): number {")
+    lines.append("    throw new Error('Rollback netcode is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  rollbackCheckDesync(_handle: number, _remoteHash: number, _frame: number): number {")
+    lines.append("    throw new Error('Rollback netcode is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("")
+
+    # RPC stubs (not supported in WASM mode)
+    lines.append("  rpcCreate(_timeoutMs: number, _maxPayload: number): number {")
+    lines.append("    throw new Error('RPC framework is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  rpcDestroy(_handle: number): number {")
+    lines.append("    throw new Error('RPC framework is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  rpcRegister(_handle: number, _rpcId: number, _name: string, _direction: number): number {")
+    lines.append("    throw new Error('RPC framework is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  rpcCall(_handle: number, _peerId: number, _rpcId: number, _payload: Uint8Array): number {")
+    lines.append("    throw new Error('RPC framework is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  rpcPoll(_handle: number, _deltaSecs: number): number {")
+    lines.append("    throw new Error('RPC framework is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  rpcProcessIncoming(_handle: number, _peerId: number, _data: Uint8Array): number {")
+    lines.append("    throw new Error('RPC framework is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  rpcReceiveResponse(_handle: number, _callId: number): Uint8Array {")
+    lines.append("    throw new Error('RPC framework is not supported in WASM mode');")
+    lines.append("  }")
+    lines.append("  rpcDrainOne(_handle: number): Uint8Array {")
+    lines.append("    throw new Error('RPC framework is not supported in WASM mode');")
     lines.append("  }")
     lines.append("")
 

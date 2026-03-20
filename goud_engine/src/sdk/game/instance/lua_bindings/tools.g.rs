@@ -68,6 +68,9 @@ use crate::ffi::network::goud_network_host;
 use crate::ffi::network::goud_network_peer_count;
 use crate::ffi::network::goud_network_poll;
 use crate::ffi::network::goud_network_set_overlay_handle;
+use crate::ffi::network::goud_p2p_get_host;
+use crate::ffi::network::goud_p2p_get_peers;
+use crate::ffi::network::goud_p2p_leave_mesh;
 #[cfg(feature = "rapier3d")]
 use crate::ffi::physics::goud_physics3d_add_collider;
 #[cfg(feature = "rapier3d")]
@@ -177,6 +180,15 @@ use crate::ffi::renderer::goud_renderer_disable_blending;
 use crate::ffi::renderer::goud_renderer_disable_depth_test;
 use crate::ffi::renderer::goud_renderer_enable_depth_test;
 use crate::ffi::renderer::goud_renderer_set_viewport;
+use crate::ffi::network::goud_rollback_check_desync;
+use crate::ffi::network::goud_rollback_confirmed_frame;
+use crate::ffi::network::goud_rollback_current_frame;
+use crate::ffi::network::goud_rollback_destroy;
+use crate::ffi::network::goud_rollback_resimulate;
+use crate::ffi::network::goud_rollback_should_rollback;
+use crate::ffi::network::goud_rpc_create;
+use crate::ffi::network::goud_rpc_destroy;
+use crate::ffi::network::goud_rpc_poll;
 use crate::ffi::scene::goud_scene_count;
 use crate::ffi::scene::goud_scene_destroy;
 use crate::ffi::scene::goud_scene_get_current;
@@ -676,6 +688,66 @@ pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> 
         Ok(goud_provider_check_hot_swap_shortcut(ctx) as i64)
     })?;
     tbl.set("check_hot_swap_shortcut", f_check_hot_swap_shortcut)?;
+    // GoudGame.p2pLeaveMesh
+    let f_p2p_leave_mesh = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_p2p_leave_mesh(ctx, arg0) as i64)
+    })?;
+    tbl.set("p2p_leave_mesh", f_p2p_leave_mesh)?;
+    // GoudGame.p2pGetPeers
+    let f_p2p_get_peers = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_p2p_get_peers(ctx, arg0) as i64)
+    })?;
+    tbl.set("p2p_get_peers", f_p2p_get_peers)?;
+    // GoudGame.p2pGetHost
+    let f_p2p_get_host = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_p2p_get_host(ctx, arg0) as i64)
+    })?;
+    tbl.set("p2p_get_host", f_p2p_get_host)?;
+    // GoudGame.rollbackDestroy
+    let f_rollback_destroy = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_rollback_destroy(arg0) as i64)
+    })?;
+    tbl.set("rollback_destroy", f_rollback_destroy)?;
+    // GoudGame.rollbackShouldRollback
+    let f_rollback_should_rollback = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_rollback_should_rollback(arg0) as i64)
+    })?;
+    tbl.set("rollback_should_rollback", f_rollback_should_rollback)?;
+    // GoudGame.rollbackResimulate
+    let f_rollback_resimulate = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_rollback_resimulate(arg0) as i64)
+    })?;
+    tbl.set("rollback_resimulate", f_rollback_resimulate)?;
+    // GoudGame.rollbackConfirmedFrame
+    let f_rollback_confirmed_frame = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_rollback_confirmed_frame(arg0) as i64)
+    })?;
+    tbl.set("rollback_confirmed_frame", f_rollback_confirmed_frame)?;
+    // GoudGame.rollbackCurrentFrame
+    let f_rollback_current_frame = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_rollback_current_frame(arg0) as i64)
+    })?;
+    tbl.set("rollback_current_frame", f_rollback_current_frame)?;
+    // GoudGame.rollbackCheckDesync
+    let f_rollback_check_desync = lua.create_function(move |_, (arg0, arg1, arg2): (i64, i64, i64)| {
+        Ok(goud_rollback_check_desync(arg0, arg1 as u64, arg2 as u64) as i64)
+    })?;
+    tbl.set("rollback_check_desync", f_rollback_check_desync)?;
+    // GoudGame.rpcCreate
+    let f_rpc_create = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
+        Ok(goud_rpc_create(arg0 as u64, arg1 as u32) as i64)
+    })?;
+    tbl.set("rpc_create", f_rpc_create)?;
+    // GoudGame.rpcDestroy
+    let f_rpc_destroy = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_rpc_destroy(arg0) as i64)
+    })?;
+    tbl.set("rpc_destroy", f_rpc_destroy)?;
+    // GoudGame.rpcPoll
+    let f_rpc_poll = lua.create_function(move |_, (arg0, arg1): (i64, f64)| {
+        Ok(goud_rpc_poll(arg0, arg1 as f32) as i64)
+    })?;
+    tbl.set("rpc_poll", f_rpc_poll)?;
     globals.set("goud_game", tbl)?;
     Ok(())
 }
@@ -1207,6 +1279,66 @@ pub(crate) fn register_network_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> {
         Ok(goud_network_peer_count(ctx, arg0) as i64)
     })?;
     tbl.set("peer_count", f_peer_count)?;
+    // Network.p2pLeaveMesh
+    let f_p2p_leave_mesh = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_p2p_leave_mesh(ctx, arg0) as i64)
+    })?;
+    tbl.set("p2p_leave_mesh", f_p2p_leave_mesh)?;
+    // Network.p2pGetPeers
+    let f_p2p_get_peers = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_p2p_get_peers(ctx, arg0) as i64)
+    })?;
+    tbl.set("p2p_get_peers", f_p2p_get_peers)?;
+    // Network.p2pGetHost
+    let f_p2p_get_host = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_p2p_get_host(ctx, arg0) as i64)
+    })?;
+    tbl.set("p2p_get_host", f_p2p_get_host)?;
+    // Network.rollbackDestroy
+    let f_rollback_destroy = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_rollback_destroy(arg0) as i64)
+    })?;
+    tbl.set("rollback_destroy", f_rollback_destroy)?;
+    // Network.rollbackShouldRollback
+    let f_rollback_should_rollback = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_rollback_should_rollback(arg0) as i64)
+    })?;
+    tbl.set("rollback_should_rollback", f_rollback_should_rollback)?;
+    // Network.rollbackResimulate
+    let f_rollback_resimulate = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_rollback_resimulate(arg0) as i64)
+    })?;
+    tbl.set("rollback_resimulate", f_rollback_resimulate)?;
+    // Network.rollbackConfirmedFrame
+    let f_rollback_confirmed_frame = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_rollback_confirmed_frame(arg0) as i64)
+    })?;
+    tbl.set("rollback_confirmed_frame", f_rollback_confirmed_frame)?;
+    // Network.rollbackCurrentFrame
+    let f_rollback_current_frame = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_rollback_current_frame(arg0) as i64)
+    })?;
+    tbl.set("rollback_current_frame", f_rollback_current_frame)?;
+    // Network.rollbackCheckDesync
+    let f_rollback_check_desync = lua.create_function(move |_, (arg0, arg1, arg2): (i64, i64, i64)| {
+        Ok(goud_rollback_check_desync(arg0, arg1 as u64, arg2 as u64) as i64)
+    })?;
+    tbl.set("rollback_check_desync", f_rollback_check_desync)?;
+    // Network.rpcCreate
+    let f_rpc_create = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
+        Ok(goud_rpc_create(arg0 as u64, arg1 as u32) as i64)
+    })?;
+    tbl.set("rpc_create", f_rpc_create)?;
+    // Network.rpcDestroy
+    let f_rpc_destroy = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_rpc_destroy(arg0) as i64)
+    })?;
+    tbl.set("rpc_destroy", f_rpc_destroy)?;
+    // Network.rpcPoll
+    let f_rpc_poll = lua.create_function(move |_, (arg0, arg1): (i64, f64)| {
+        Ok(goud_rpc_poll(arg0, arg1 as f32) as i64)
+    })?;
+    tbl.set("rpc_poll", f_rpc_poll)?;
     globals.set("network", tbl)?;
     Ok(())
 }

@@ -26,6 +26,12 @@ class GoudContext internal constructor(internal val contextId: Long) : AutoClose
     fun networkDisconnect(handle: Long): Int =
         GoudContextNative.networkDisconnect(contextId, handle)
 
+    fun networkSend(handle: Long, peerId: Long, data: ByteArray, channel: Int): Int =
+        GoudContextNative.networkSend(contextId, handle, peerId, data, channel)
+
+    fun networkReceive(handle: Long): ByteArray =
+        GoudContextNative.networkReceive(contextId, handle)
+
     fun networkPoll(handle: Long): Int =
         GoudContextNative.networkPoll(contextId, handle)
 
@@ -87,6 +93,10 @@ class GoudContext internal constructor(internal val contextId: Long) : AutoClose
 
     fun startDebuggerRecording() {
         GoudContextNative.startDebuggerRecording(contextId)
+    }
+
+    fun startDebuggerReplay(recording: ByteArray) {
+        GoudContextNative.startDebuggerReplay(contextId, recording)
     }
 
     fun stopDebuggerReplay() {

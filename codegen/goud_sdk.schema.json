@@ -1,5 +1,5 @@
 {
-  "version": "0.0.832",
+  "version": "0.0.833",
   "description": "Universal GoudEngine SDK schema. Every SDK (C#, Python, TypeScript) is generated from this single file. Same tools, same methods, same inputs, same outputs.",
   "types": {
     "Color": {
@@ -2780,6 +2780,48 @@
           "type": "u64"
         }
       ]
+    },
+    "P2pMeshConfig": {
+      "kind": "value",
+      "doc": "Configuration for P2P mesh networking",
+      "fields": [
+        {
+          "name": "maxPeers",
+          "type": "u32",
+          "doc": "Maximum number of peers including self"
+        },
+        {
+          "name": "hostMigration",
+          "type": "bool",
+          "doc": "Whether host migration is enabled"
+        },
+        {
+          "name": "topology",
+          "type": "i32",
+          "doc": "Mesh topology: 0 = FullMesh, 1 = Star"
+        }
+      ]
+    },
+    "RollbackConfig": {
+      "kind": "value",
+      "doc": "Configuration for rollback netcode session",
+      "fields": [
+        {
+          "name": "maxRollbackFrames",
+          "type": "u32",
+          "doc": "Maximum number of rollback frames"
+        },
+        {
+          "name": "inputDelayFrames",
+          "type": "u32",
+          "doc": "Input delay frames"
+        },
+        {
+          "name": "desyncDetection",
+          "type": "u8",
+          "doc": "Whether desync detection is enabled (0 = false, nonzero = true)"
+        }
+      ]
     }
   },
   "enums": {
@@ -3144,6 +3186,14 @@
         "Int": 1,
         "Float": 2,
         "String": 3
+      }
+    },
+    "RpcDirection": {
+      "doc": "Direction constraint for an RPC handler",
+      "values": {
+        "ServerToClient": 0,
+        "ClientToServer": 1,
+        "Bidirectional": 2
       }
     }
   },
@@ -4674,15 +4724,42 @@
           "name": "createMaterial",
           "doc": "Creates a 3D material",
           "params": [
-            { "name": "materialType", "type": "i32" },
-            { "name": "r", "type": "f32" },
-            { "name": "g", "type": "f32" },
-            { "name": "b", "type": "f32" },
-            { "name": "a", "type": "f32" },
-            { "name": "shininess", "type": "f32" },
-            { "name": "metallic", "type": "f32" },
-            { "name": "roughness", "type": "f32" },
-            { "name": "ao", "type": "f32" }
+            {
+              "name": "materialType",
+              "type": "i32"
+            },
+            {
+              "name": "r",
+              "type": "f32"
+            },
+            {
+              "name": "g",
+              "type": "f32"
+            },
+            {
+              "name": "b",
+              "type": "f32"
+            },
+            {
+              "name": "a",
+              "type": "f32"
+            },
+            {
+              "name": "shininess",
+              "type": "f32"
+            },
+            {
+              "name": "metallic",
+              "type": "f32"
+            },
+            {
+              "name": "roughness",
+              "type": "f32"
+            },
+            {
+              "name": "ao",
+              "type": "f32"
+            }
           ],
           "returns": "u32"
         },
@@ -4690,16 +4767,46 @@
           "name": "updateMaterial",
           "doc": "Updates a 3D material",
           "params": [
-            { "name": "materialId", "type": "u32" },
-            { "name": "materialType", "type": "i32" },
-            { "name": "r", "type": "f32" },
-            { "name": "g", "type": "f32" },
-            { "name": "b", "type": "f32" },
-            { "name": "a", "type": "f32" },
-            { "name": "shininess", "type": "f32" },
-            { "name": "metallic", "type": "f32" },
-            { "name": "roughness", "type": "f32" },
-            { "name": "ao", "type": "f32" }
+            {
+              "name": "materialId",
+              "type": "u32"
+            },
+            {
+              "name": "materialType",
+              "type": "i32"
+            },
+            {
+              "name": "r",
+              "type": "f32"
+            },
+            {
+              "name": "g",
+              "type": "f32"
+            },
+            {
+              "name": "b",
+              "type": "f32"
+            },
+            {
+              "name": "a",
+              "type": "f32"
+            },
+            {
+              "name": "shininess",
+              "type": "f32"
+            },
+            {
+              "name": "metallic",
+              "type": "f32"
+            },
+            {
+              "name": "roughness",
+              "type": "f32"
+            },
+            {
+              "name": "ao",
+              "type": "f32"
+            }
           ],
           "returns": "bool"
         },
@@ -4707,7 +4814,10 @@
           "name": "removeMaterial",
           "doc": "Removes a 3D material",
           "params": [
-            { "name": "materialId", "type": "u32" }
+            {
+              "name": "materialId",
+              "type": "u32"
+            }
           ],
           "returns": "bool"
         },
@@ -4715,8 +4825,14 @@
           "name": "setObjectMaterial",
           "doc": "Binds a material to an object",
           "params": [
-            { "name": "objectId", "type": "u32" },
-            { "name": "materialId", "type": "u32" }
+            {
+              "name": "objectId",
+              "type": "u32"
+            },
+            {
+              "name": "materialId",
+              "type": "u32"
+            }
           ],
           "returns": "bool"
         },
@@ -4724,7 +4840,10 @@
           "name": "getObjectMaterial",
           "doc": "Gets the material ID bound to an object",
           "params": [
-            { "name": "objectId", "type": "u32" }
+            {
+              "name": "objectId",
+              "type": "u32"
+            }
           ],
           "returns": "u32"
         },
@@ -4732,8 +4851,14 @@
           "name": "createSkinnedMesh",
           "doc": "Creates a skinned mesh from raw vertex data",
           "params": [
-            { "name": "verticesPtr", "type": "ptr" },
-            { "name": "vertexCount", "type": "u32" }
+            {
+              "name": "verticesPtr",
+              "type": "ptr"
+            },
+            {
+              "name": "vertexCount",
+              "type": "u32"
+            }
           ],
           "returns": "u32"
         },
@@ -4741,7 +4866,10 @@
           "name": "removeSkinnedMesh",
           "doc": "Removes a skinned mesh",
           "params": [
-            { "name": "meshId", "type": "u32" }
+            {
+              "name": "meshId",
+              "type": "u32"
+            }
           ],
           "returns": "bool"
         },
@@ -4749,10 +4877,22 @@
           "name": "setSkinnedMeshPosition",
           "doc": "Sets the position of a skinned mesh",
           "params": [
-            { "name": "meshId", "type": "u32" },
-            { "name": "x", "type": "f32" },
-            { "name": "y", "type": "f32" },
-            { "name": "z", "type": "f32" }
+            {
+              "name": "meshId",
+              "type": "u32"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            }
           ],
           "returns": "bool"
         },
@@ -4760,10 +4900,22 @@
           "name": "setSkinnedMeshRotation",
           "doc": "Sets the rotation of a skinned mesh",
           "params": [
-            { "name": "meshId", "type": "u32" },
-            { "name": "x", "type": "f32" },
-            { "name": "y", "type": "f32" },
-            { "name": "z", "type": "f32" }
+            {
+              "name": "meshId",
+              "type": "u32"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            }
           ],
           "returns": "bool"
         },
@@ -4771,10 +4923,22 @@
           "name": "setSkinnedMeshScale",
           "doc": "Sets the scale of a skinned mesh",
           "params": [
-            { "name": "meshId", "type": "u32" },
-            { "name": "x", "type": "f32" },
-            { "name": "y", "type": "f32" },
-            { "name": "z", "type": "f32" }
+            {
+              "name": "meshId",
+              "type": "u32"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            }
           ],
           "returns": "bool"
         },
@@ -4782,9 +4946,18 @@
           "name": "setSkinnedMeshBones",
           "doc": "Updates bone matrices for a skinned mesh",
           "params": [
-            { "name": "meshId", "type": "u32" },
-            { "name": "matricesPtr", "type": "ptr" },
-            { "name": "boneCount", "type": "u32" }
+            {
+              "name": "meshId",
+              "type": "u32"
+            },
+            {
+              "name": "matricesPtr",
+              "type": "ptr"
+            },
+            {
+              "name": "boneCount",
+              "type": "u32"
+            }
           ],
           "returns": "bool"
         },
@@ -4792,8 +4965,14 @@
           "name": "addBloomPass",
           "doc": "Adds a bloom pass to the post-processing pipeline",
           "params": [
-            { "name": "threshold", "type": "f32" },
-            { "name": "intensity", "type": "f32" }
+            {
+              "name": "threshold",
+              "type": "f32"
+            },
+            {
+              "name": "intensity",
+              "type": "f32"
+            }
           ],
           "returns": "i32"
         },
@@ -4801,7 +4980,10 @@
           "name": "addBlurPass",
           "doc": "Adds a Gaussian blur pass",
           "params": [
-            { "name": "radius", "type": "u32" }
+            {
+              "name": "radius",
+              "type": "u32"
+            }
           ],
           "returns": "i32"
         },
@@ -4809,9 +4991,18 @@
           "name": "addColorGradePass",
           "doc": "Adds a color grading pass",
           "params": [
-            { "name": "exposure", "type": "f32" },
-            { "name": "contrast", "type": "f32" },
-            { "name": "saturation", "type": "f32" }
+            {
+              "name": "exposure",
+              "type": "f32"
+            },
+            {
+              "name": "contrast",
+              "type": "f32"
+            },
+            {
+              "name": "saturation",
+              "type": "f32"
+            }
           ],
           "returns": "i32"
         },
@@ -4819,7 +5010,10 @@
           "name": "removePostprocessPass",
           "doc": "Removes a post-processing pass by index",
           "params": [
-            { "name": "index", "type": "u32" }
+            {
+              "name": "index",
+              "type": "u32"
+            }
           ],
           "returns": "bool"
         },
@@ -6319,6 +6513,364 @@
           "doc": "Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred.",
           "params": [],
           "returns": "bool"
+        },
+        {
+          "name": "p2pCreateMesh",
+          "doc": "Creates a P2P mesh host on the given port using the specified transport.",
+          "params": [
+            {
+              "name": "protocol",
+              "type": "i32"
+            },
+            {
+              "name": "port",
+              "type": "u16"
+            },
+            {
+              "name": "config",
+              "type": "P2pMeshConfig"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "p2pJoinMesh",
+          "doc": "Joins an existing P2P mesh at the given address.",
+          "params": [
+            {
+              "name": "protocol",
+              "type": "i32"
+            },
+            {
+              "name": "address",
+              "type": "string"
+            },
+            {
+              "name": "port",
+              "type": "u16"
+            },
+            {
+              "name": "config",
+              "type": "P2pMeshConfig"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "p2pLeaveMesh",
+          "doc": "Leaves the P2P mesh and destroys the network instance.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "p2pGetPeers",
+          "doc": "Returns the number of connected peers in the mesh.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "p2pGetHost",
+          "doc": "Returns the host peer's ID, or 0 on error.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "u64"
+        },
+        {
+          "name": "rollbackCreate",
+          "doc": "Creates a new rollback netcode session. Returns a positive handle on success.",
+          "params": [
+            {
+              "name": "config",
+              "type": "RollbackConfig"
+            },
+            {
+              "name": "localPlayer",
+              "type": "u8"
+            },
+            {
+              "name": "playerIds",
+              "type": "bytes"
+            },
+            {
+              "name": "statePtr",
+              "type": "u64"
+            },
+            {
+              "name": "advanceFn",
+              "type": "u64"
+            },
+            {
+              "name": "hashFn",
+              "type": "u64"
+            },
+            {
+              "name": "cloneFn",
+              "type": "u64"
+            },
+            {
+              "name": "freeFn",
+              "type": "u64"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "rollbackDestroy",
+          "doc": "Destroys a rollback session and frees all associated resources.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rollbackAdvanceFrame",
+          "doc": "Advances the rollback simulation by one frame with the given local input.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "input",
+              "type": "bytes"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rollbackReceiveRemoteInput",
+          "doc": "Receives a confirmed remote input for a specific player and frame.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "playerId",
+              "type": "u8"
+            },
+            {
+              "name": "frame",
+              "type": "u64"
+            },
+            {
+              "name": "input",
+              "type": "bytes"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rollbackShouldRollback",
+          "doc": "Returns 1 if a rollback is pending, 0 otherwise.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rollbackResimulate",
+          "doc": "Performs rollback and resimulation. Returns the number of frames resimulated.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rollbackConfirmedFrame",
+          "doc": "Returns the latest confirmed frame.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "rollbackCurrentFrame",
+          "doc": "Returns the current simulation frame.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "rollbackCheckDesync",
+          "doc": "Checks for desync at the given frame. Returns 0=in sync, 1=desync, 2=frame not available.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "remoteHash",
+              "type": "u64"
+            },
+            {
+              "name": "frame",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rpcCreate",
+          "doc": "Creates an RPC framework instance.",
+          "params": [
+            {
+              "name": "timeoutMs",
+              "type": "u64"
+            },
+            {
+              "name": "maxPayload",
+              "type": "u32"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "rpcDestroy",
+          "doc": "Destroys an RPC framework instance.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rpcRegister",
+          "doc": "Registers an RPC handler with the given direction constraint.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "rpcId",
+              "type": "u16"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "direction",
+              "type": "i32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rpcCall",
+          "doc": "Initiates an RPC call to a peer. Returns the call ID via out parameter.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "peerId",
+              "type": "u64"
+            },
+            {
+              "name": "rpcId",
+              "type": "u16"
+            },
+            {
+              "name": "payload",
+              "type": "bytes"
+            }
+          ],
+          "returns": "u64"
+        },
+        {
+          "name": "rpcPoll",
+          "doc": "Advances the RPC framework: checks timeouts and processes pending calls.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "deltaSecs",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rpcProcessIncoming",
+          "doc": "Feeds raw incoming data to the RPC framework for processing.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "peerId",
+              "type": "u64"
+            },
+            {
+              "name": "data",
+              "type": "bytes"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rpcReceiveResponse",
+          "doc": "Attempts to retrieve the response for a pending RPC call.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "callId",
+              "type": "u64"
+            }
+          ],
+          "returns": "bytes"
+        },
+        {
+          "name": "rpcDrainOne",
+          "doc": "Drains outbound RPC messages and copies the next one into the caller's buffer.",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "bytes"
         }
       ],
       "wasm_interface": [
@@ -9110,6 +9662,364 @@
             }
           ],
           "returns": "i32"
+        },
+        {
+          "name": "p2pCreateMesh",
+          "doc": "Creates a P2P mesh host",
+          "params": [
+            {
+              "name": "protocol",
+              "type": "i32"
+            },
+            {
+              "name": "port",
+              "type": "u16"
+            },
+            {
+              "name": "config",
+              "type": "P2pMeshConfig"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "p2pJoinMesh",
+          "doc": "Joins an existing P2P mesh",
+          "params": [
+            {
+              "name": "protocol",
+              "type": "i32"
+            },
+            {
+              "name": "address",
+              "type": "string"
+            },
+            {
+              "name": "port",
+              "type": "u16"
+            },
+            {
+              "name": "config",
+              "type": "P2pMeshConfig"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "p2pLeaveMesh",
+          "doc": "Leaves a P2P mesh",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "p2pGetPeers",
+          "doc": "Gets connected peer count",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "p2pGetHost",
+          "doc": "Gets the host peer ID",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "u64"
+        },
+        {
+          "name": "rollbackCreate",
+          "doc": "Creates a rollback netcode session",
+          "params": [
+            {
+              "name": "config",
+              "type": "RollbackConfig"
+            },
+            {
+              "name": "localPlayer",
+              "type": "u8"
+            },
+            {
+              "name": "playerIds",
+              "type": "bytes"
+            },
+            {
+              "name": "statePtr",
+              "type": "u64"
+            },
+            {
+              "name": "advanceFn",
+              "type": "u64"
+            },
+            {
+              "name": "hashFn",
+              "type": "u64"
+            },
+            {
+              "name": "cloneFn",
+              "type": "u64"
+            },
+            {
+              "name": "freeFn",
+              "type": "u64"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "rollbackDestroy",
+          "doc": "Destroys a rollback session",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rollbackAdvanceFrame",
+          "doc": "Advances simulation one frame",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "input",
+              "type": "bytes"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rollbackReceiveRemoteInput",
+          "doc": "Receives remote input for a player/frame",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "playerId",
+              "type": "u8"
+            },
+            {
+              "name": "frame",
+              "type": "u64"
+            },
+            {
+              "name": "input",
+              "type": "bytes"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rollbackShouldRollback",
+          "doc": "Checks if rollback is pending",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rollbackResimulate",
+          "doc": "Performs rollback and resimulation",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rollbackConfirmedFrame",
+          "doc": "Gets the latest confirmed frame",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "rollbackCurrentFrame",
+          "doc": "Gets the current simulation frame",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "rollbackCheckDesync",
+          "doc": "Checks for desync at a frame",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "remoteHash",
+              "type": "u64"
+            },
+            {
+              "name": "frame",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rpcCreate",
+          "doc": "Creates an RPC framework",
+          "params": [
+            {
+              "name": "timeoutMs",
+              "type": "u64"
+            },
+            {
+              "name": "maxPayload",
+              "type": "u32"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "rpcDestroy",
+          "doc": "Destroys an RPC framework",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rpcRegister",
+          "doc": "Registers an RPC handler",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "rpcId",
+              "type": "u16"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "direction",
+              "type": "i32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rpcCall",
+          "doc": "Initiates an RPC call",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "peerId",
+              "type": "u64"
+            },
+            {
+              "name": "rpcId",
+              "type": "u16"
+            },
+            {
+              "name": "payload",
+              "type": "bytes"
+            }
+          ],
+          "returns": "u64"
+        },
+        {
+          "name": "rpcPoll",
+          "doc": "Polls the RPC framework",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "deltaSecs",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rpcProcessIncoming",
+          "doc": "Feeds incoming data to RPC",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "peerId",
+              "type": "u64"
+            },
+            {
+              "name": "data",
+              "type": "bytes"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "rpcReceiveResponse",
+          "doc": "Gets response for pending RPC call",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            },
+            {
+              "name": "callId",
+              "type": "u64"
+            }
+          ],
+          "returns": "bytes"
+        },
+        {
+          "name": "rpcDrainOne",
+          "doc": "Drains one outbound RPC message",
+          "params": [
+            {
+              "name": "handle",
+              "type": "i64"
+            }
+          ],
+          "returns": "bytes"
         }
       ]
     },
@@ -10671,6 +11581,97 @@
         "checkHotSwapShortcut": {
           "ffi": "goud_provider_check_hot_swap_shortcut",
           "returns_bool_from_i32": true
+        },
+        "p2pCreateMesh": {
+          "ffi": "goud_p2p_create_mesh"
+        },
+        "p2pJoinMesh": {
+          "ffi": "goud_p2p_join_mesh",
+          "string_params": [
+            "address"
+          ]
+        },
+        "p2pLeaveMesh": {
+          "ffi": "goud_p2p_leave_mesh"
+        },
+        "p2pGetPeers": {
+          "ffi": "goud_p2p_get_peers"
+        },
+        "p2pGetHost": {
+          "ffi": "goud_p2p_get_host"
+        },
+        "rollbackCreate": {
+          "ffi": "goud_rollback_create",
+          "no_context": true
+        },
+        "rollbackDestroy": {
+          "ffi": "goud_rollback_destroy",
+          "no_context": true
+        },
+        "rollbackAdvanceFrame": {
+          "ffi": "goud_rollback_advance_frame",
+          "no_context": true
+        },
+        "rollbackReceiveRemoteInput": {
+          "ffi": "goud_rollback_receive_remote_input",
+          "no_context": true
+        },
+        "rollbackShouldRollback": {
+          "ffi": "goud_rollback_should_rollback",
+          "no_context": true
+        },
+        "rollbackResimulate": {
+          "ffi": "goud_rollback_resimulate",
+          "no_context": true
+        },
+        "rollbackConfirmedFrame": {
+          "ffi": "goud_rollback_confirmed_frame",
+          "no_context": true
+        },
+        "rollbackCurrentFrame": {
+          "ffi": "goud_rollback_current_frame",
+          "no_context": true
+        },
+        "rollbackCheckDesync": {
+          "ffi": "goud_rollback_check_desync",
+          "no_context": true
+        },
+        "rpcCreate": {
+          "ffi": "goud_rpc_create",
+          "no_context": true
+        },
+        "rpcDestroy": {
+          "ffi": "goud_rpc_destroy",
+          "no_context": true
+        },
+        "rpcRegister": {
+          "ffi": "goud_rpc_register",
+          "no_context": true,
+          "string_params": [
+            "name"
+          ]
+        },
+        "rpcCall": {
+          "ffi": "goud_rpc_call",
+          "no_context": true
+        },
+        "rpcPoll": {
+          "ffi": "goud_rpc_poll",
+          "no_context": true
+        },
+        "rpcProcessIncoming": {
+          "ffi": "goud_rpc_process_incoming",
+          "no_context": true
+        },
+        "rpcReceiveResponse": {
+          "ffi": "goud_rpc_receive_response",
+          "no_context": true,
+          "out_buffer": true
+        },
+        "rpcDrainOne": {
+          "ffi": "goud_rpc_drain_one",
+          "no_context": true,
+          "out_buffer": true
         }
       },
       "properties": {
@@ -11859,6 +12860,97 @@
         },
         "peerCount": {
           "ffi": "goud_network_peer_count"
+        },
+        "p2pCreateMesh": {
+          "ffi": "goud_p2p_create_mesh"
+        },
+        "p2pJoinMesh": {
+          "ffi": "goud_p2p_join_mesh",
+          "string_params": [
+            "address"
+          ]
+        },
+        "p2pLeaveMesh": {
+          "ffi": "goud_p2p_leave_mesh"
+        },
+        "p2pGetPeers": {
+          "ffi": "goud_p2p_get_peers"
+        },
+        "p2pGetHost": {
+          "ffi": "goud_p2p_get_host"
+        },
+        "rollbackCreate": {
+          "ffi": "goud_rollback_create",
+          "no_context": true
+        },
+        "rollbackDestroy": {
+          "ffi": "goud_rollback_destroy",
+          "no_context": true
+        },
+        "rollbackAdvanceFrame": {
+          "ffi": "goud_rollback_advance_frame",
+          "no_context": true
+        },
+        "rollbackReceiveRemoteInput": {
+          "ffi": "goud_rollback_receive_remote_input",
+          "no_context": true
+        },
+        "rollbackShouldRollback": {
+          "ffi": "goud_rollback_should_rollback",
+          "no_context": true
+        },
+        "rollbackResimulate": {
+          "ffi": "goud_rollback_resimulate",
+          "no_context": true
+        },
+        "rollbackConfirmedFrame": {
+          "ffi": "goud_rollback_confirmed_frame",
+          "no_context": true
+        },
+        "rollbackCurrentFrame": {
+          "ffi": "goud_rollback_current_frame",
+          "no_context": true
+        },
+        "rollbackCheckDesync": {
+          "ffi": "goud_rollback_check_desync",
+          "no_context": true
+        },
+        "rpcCreate": {
+          "ffi": "goud_rpc_create",
+          "no_context": true
+        },
+        "rpcDestroy": {
+          "ffi": "goud_rpc_destroy",
+          "no_context": true
+        },
+        "rpcRegister": {
+          "ffi": "goud_rpc_register",
+          "no_context": true,
+          "string_params": [
+            "name"
+          ]
+        },
+        "rpcCall": {
+          "ffi": "goud_rpc_call",
+          "no_context": true
+        },
+        "rpcPoll": {
+          "ffi": "goud_rpc_poll",
+          "no_context": true
+        },
+        "rpcProcessIncoming": {
+          "ffi": "goud_rpc_process_incoming",
+          "no_context": true
+        },
+        "rpcReceiveResponse": {
+          "ffi": "goud_rpc_receive_response",
+          "no_context": true,
+          "out_buffer": true
+        },
+        "rpcDrainOne": {
+          "ffi": "goud_rpc_drain_one",
+          "no_context": true,
+          "out_buffer": true
         }
       }
     },

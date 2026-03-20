@@ -81,6 +81,7 @@ pub(super) fn read_frame(stream: &mut TcpStream) -> Result<ReadOutcome, String> 
 
 pub(super) fn spawn_io_thread(
     cid: ConnectionId,
+    gen: u64,
     mut stream: TcpStream,
     event_tx: mpsc::Sender<InternalTcpEvent>,
     running: Arc<AtomicBool>,
@@ -97,6 +98,7 @@ pub(super) fn spawn_io_thread(
                     let _ = event_tx.send(InternalTcpEvent::Disconnected(
                         cid,
                         DisconnectReason::RemoteClose,
+                        gen,
                     ));
                     break;
                 }
@@ -105,6 +107,7 @@ pub(super) fn spawn_io_thread(
                     let _ = event_tx.send(InternalTcpEvent::Disconnected(
                         cid,
                         DisconnectReason::Error(err),
+                        gen,
                     ));
                     break;
                 }
@@ -119,6 +122,7 @@ pub(super) fn spawn_io_thread(
                             let _ = event_tx.send(InternalTcpEvent::Disconnected(
                                 cid,
                                 DisconnectReason::Error(e.to_string()),
+                                gen,
                             ));
                             return;
                         }

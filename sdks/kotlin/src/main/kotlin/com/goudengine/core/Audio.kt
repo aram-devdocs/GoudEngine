@@ -5,6 +5,15 @@ import com.goudengine.internal.AudioNative
 
 class Audio(private val contextId: Long) {
 
+    fun play(data: ByteArray): Long =
+        AudioNative.play(contextId, data)
+
+    fun playOnChannel(data: ByteArray, channel: Int): Long =
+        AudioNative.playOnChannel(contextId, data, channel)
+
+    fun playWithSettings(data: ByteArray, volume: Float, speed: Float, looping: Boolean, channel: Int): Long =
+        AudioNative.playWithSettings(contextId, data, volume, speed, looping, channel)
+
     fun stop(playerId: Long): Int =
         AudioNative.stop(contextId, playerId)
 

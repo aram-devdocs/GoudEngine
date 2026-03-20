@@ -58,6 +58,8 @@ IFACE_TYPES = {
     "GoudContext": "IGoudContext",
     "PhysicsWorld2D": "IPhysicsWorld2D",
     "PhysicsWorld3D": "IPhysicsWorld3D",
+    "P2pMeshConfig": "IP2pMeshConfig",
+    "RollbackConfig": "IRollbackConfig",
 }
 
 TS_EXCLUDE_METHODS = {

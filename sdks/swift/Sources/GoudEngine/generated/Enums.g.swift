@@ -228,3 +228,10 @@ public enum EventPayloadType: Int32 {
     case FLOAT = 2
     case STRING = 3
 }
+
+/// Direction constraint for an RPC handler
+public enum RpcDirection: Int32 {
+    case SERVER_TO_CLIENT = 0
+    case CLIENT_TO_SERVER = 1
+    case BIDIRECTIONAL = 2
+}

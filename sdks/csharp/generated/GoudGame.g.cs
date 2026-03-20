@@ -1811,6 +1811,161 @@ namespace GoudEngine
             return NativeMethods.goud_provider_check_hot_swap_shortcut(_ctx) != 0;
         }
 
+        /// <summary>Creates a P2P mesh host on the given port using the specified transport.</summary>
+        public long P2pCreateMesh(int protocol, ushort port, P2pMeshConfig config)
+        {
+            var _configFfi = new FfiP2pMeshConfig
+            {
+                MaxPeers = config.MaxPeers,
+                HostMigration = config.HostMigration,
+                Topology = config.Topology
+            };
+            return NativeMethods.goud_p2p_create_mesh(_ctx, protocol, port, _configFfi);
+        }
+
+        /// <summary>Joins an existing P2P mesh at the given address.</summary>
+        public long P2pJoinMesh(int protocol, string address, ushort port, P2pMeshConfig config)
+        {
+            unsafe
+            {
+                var addressBytes = System.Text.Encoding.UTF8.GetBytes(address);
+            var _configFfi = new FfiP2pMeshConfig
+            {
+                MaxPeers = config.MaxPeers,
+                HostMigration = config.HostMigration,
+                Topology = config.Topology
+            };
+                fixed (byte* addressPtr = addressBytes)
+                {
+                    return NativeMethods.goud_p2p_join_mesh(_ctx, protocol, addressBytes.Length == 0 ? IntPtr.Zero : (IntPtr)addressPtr, (int)addressBytes.Length, port, _configFfi);
+                }
+            }
+        }
+
+        /// <summary>Leaves the P2P mesh and destroys the network instance.</summary>
+        public int P2pLeaveMesh(long handle)
+        {
+            return NativeMethods.goud_p2p_leave_mesh(_ctx, handle);
+        }
+
+        /// <summary>Returns the number of connected peers in the mesh.</summary>
+        public int P2pGetPeers(long handle)
+        {
+            return NativeMethods.goud_p2p_get_peers(_ctx, handle);
+        }
+
+        /// <summary>Returns the host peer's ID, or 0 on error.</summary>
+        public ulong P2pGetHost(long handle)
+        {
+            return NativeMethods.goud_p2p_get_host(_ctx, handle);
+        }
+
+        /// <summary>Destroys a rollback session and frees all associated resources.</summary>
+        public int RollbackDestroy(long handle)
+        {
+            return NativeMethods.goud_rollback_destroy(handle);
+        }
+
+        /// <summary>Advances the rollback simulation by one frame with the given local input.</summary>
+        public int RollbackAdvanceFrame(long handle, byte[] input)
+        {
+            unsafe
+            {
+                var inputBytes = input ?? Array.Empty<byte>();
+                fixed (byte* inputPtr = inputBytes)
+                {
+                    return NativeMethods.goud_rollback_advance_frame(handle, inputBytes.Length == 0 ? IntPtr.Zero : (IntPtr)inputPtr, (uint)inputBytes.Length);
+                }
+            }
+        }
+
+        /// <summary>Receives a confirmed remote input for a specific player and frame.</summary>
+        public int RollbackReceiveRemoteInput(long handle, byte playerId, ulong frame, byte[] input)
+        {
+            unsafe
+            {
+                var inputBytes = input ?? Array.Empty<byte>();
+                fixed (byte* inputPtr = inputBytes)
+                {
+                    return NativeMethods.goud_rollback_receive_remote_input(handle, playerId, frame, inputBytes.Length == 0 ? IntPtr.Zero : (IntPtr)inputPtr, (uint)inputBytes.Length);
+                }
+            }
+        }
+
+        /// <summary>Returns 1 if a rollback is pending, 0 otherwise.</summary>
+        public int RollbackShouldRollback(long handle)
+        {
+            return NativeMethods.goud_rollback_should_rollback(handle);
+        }
+
+        /// <summary>Performs rollback and resimulation. Returns the number of frames resimulated.</summary>
+        public int RollbackResimulate(long handle)
+        {
+            return NativeMethods.goud_rollback_resimulate(handle);
+        }
+
+        /// <summary>Returns the latest confirmed frame.</summary>
+        public long RollbackConfirmedFrame(long handle)
+        {
+            return NativeMethods.goud_rollback_confirmed_frame(handle);
+        }
+
+        /// <summary>Returns the current simulation frame.</summary>
+        public long RollbackCurrentFrame(long handle)
+        {
+            return NativeMethods.goud_rollback_current_frame(handle);
+        }
+
+        /// <summary>Checks for desync at the given frame. Returns 0=in sync, 1=desync, 2=frame not available.</summary>
+        public int RollbackCheckDesync(long handle, ulong remoteHash, ulong frame)
+        {
+            return NativeMethods.goud_rollback_check_desync(handle, remoteHash, frame);
+        }
+
+        /// <summary>Creates an RPC framework instance.</summary>
+        public long RpcCreate(ulong timeoutMs, uint maxPayload)
+        {
+            return NativeMethods.goud_rpc_create(timeoutMs, maxPayload);
+        }
+
+        /// <summary>Destroys an RPC framework instance.</summary>
+        public int RpcDestroy(long handle)
+        {
+            return NativeMethods.goud_rpc_destroy(handle);
+        }
+
+        /// <summary>Registers an RPC handler with the given direction constraint.</summary>
+        public int RpcRegister(long handle, ushort rpcId, string name, int direction)
+        {
+            unsafe
+            {
+                var nameBytes = System.Text.Encoding.UTF8.GetBytes(name);
+                fixed (byte* namePtr = nameBytes)
+                {
+                    return NativeMethods.goud_rpc_register(handle, rpcId, nameBytes.Length == 0 ? IntPtr.Zero : (IntPtr)namePtr, (int)nameBytes.Length, direction);
+                }
+            }
+        }
+
+        /// <summary>Advances the RPC framework: checks timeouts and processes pending calls.</summary>
+        public int RpcPoll(long handle, float deltaSecs)
+        {
+            return NativeMethods.goud_rpc_poll(handle, deltaSecs);
+        }
+
+        /// <summary>Feeds raw incoming data to the RPC framework for processing.</summary>
+        public int RpcProcessIncoming(long handle, ulong peerId, byte[] data)
+        {
+            unsafe
+            {
+                var dataBytes = data ?? Array.Empty<byte>();
+                fixed (byte* dataPtr = dataBytes)
+                {
+                    return NativeMethods.goud_rpc_process_incoming(handle, peerId, dataBytes.Length == 0 ? IntPtr.Zero : (IntPtr)dataPtr, (int)dataBytes.Length);
+                }
+            }
+        }
+
         public void Dispose() => Destroy();
     }
 }

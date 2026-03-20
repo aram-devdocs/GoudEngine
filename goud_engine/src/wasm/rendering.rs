@@ -10,7 +10,7 @@ use crate::rendering::text::{
 };
 
 use super::sprite_renderer::create_texture_entry;
-use super::{WasmGame, WasmRenderStats};
+use super::{PendingTexture, WasmGame, WasmRenderStats};
 
 // ---------------------------------------------------------------------------
 // Drawing
@@ -110,6 +110,54 @@ impl WasmGame {
         let idx = rs.textures.len();
         rs.textures.push(Some(entry));
         Ok((idx + 1) as u32)
+    }
+
+    /// Registers a texture from raw bytes using deferred GPU upload.
+    ///
+    /// Unlike `register_texture_from_bytes`, this method decodes the image
+    /// and creates the GPU texture entry, then pushes it into a pending
+    /// queue instead of immediately inserting it into the render state's
+    /// texture list.  The texture becomes available on the next
+    /// `begin_frame` call, which drains the pending queue.
+    ///
+    /// This is safe to call from async callbacks (e.g. after a `fetch`
+    /// completes) because the pending queue is behind an `Rc<RefCell<>>`
+    /// that does not require `&mut WasmGame` to push into.
+    ///
+    /// Returns the texture handle (1-based), or an error.
+    pub fn register_texture_from_bytes_deferred(&mut self, data: &[u8]) -> Result<u32, JsValue> {
+        let rs = self
+            .render_state
+            .as_mut()
+            .ok_or_else(|| JsValue::from_str("Rendering not initialized"))?;
+
+        let img = image::load_from_memory(data)
+            .map_err(|e| JsValue::from_str(&format!("Image decode error: {e}")))?;
+        let rgba = img.to_rgba8();
+        let (width, height) = rgba.dimensions();
+
+        let entry = create_texture_entry(
+            &rs.device,
+            &rs.queue,
+            &rs.renderer.texture_bind_group_layout,
+            &rs.renderer.sampler,
+            width,
+            height,
+            &rgba,
+        );
+
+        // Reserve a slot synchronously so the handle is stable.
+        let handle = self.reserve_texture_handle();
+        if handle == 0 {
+            return Err(JsValue::from_str("Rendering not initialized"));
+        }
+
+        // Push into the pending queue for drain in begin_frame.
+        self.pending_textures
+            .borrow_mut()
+            .push(PendingTexture { entry, handle });
+
+        Ok(handle)
     }
 
     /// Releases a previously registered texture handle.

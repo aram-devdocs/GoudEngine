@@ -891,3 +891,65 @@ public struct NetworkPacket: Equatable {
     }
 
 }
+
+/// Configuration for P2P mesh networking
+public struct P2pMeshConfig: Equatable {
+    /// Maximum number of peers including self
+    public var maxPeers: UInt32
+    /// Whether host migration is enabled
+    public var hostMigration: Bool
+    /// Mesh topology: 0 = FullMesh, 1 = Star
+    public var topology: Int32
+
+    public init(maxPeers: UInt32 = 0, hostMigration: Bool = false, topology: Int32 = 0) {
+        self.maxPeers = maxPeers
+        self.hostMigration = hostMigration
+        self.topology = topology
+    }
+
+    internal init(ffi: FfiP2pMeshConfig) {
+        self.maxPeers = ffi.max_peers
+        self.hostMigration = ffi.host_migration
+        self.topology = ffi.topology
+    }
+
+    internal func toFFI() -> FfiP2pMeshConfig {
+        var ffi = FfiP2pMeshConfig()
+        ffi.max_peers = maxPeers
+        ffi.host_migration = hostMigration
+        ffi.topology = topology
+        return ffi
+    }
+
+}
+
+/// Configuration for rollback netcode session
+public struct RollbackConfig: Equatable {
+    /// Maximum number of rollback frames
+    public var maxRollbackFrames: UInt32
+    /// Input delay frames
+    public var inputDelayFrames: UInt32
+    /// Whether desync detection is enabled (0 = false, nonzero = true)
+    public var desyncDetection: UInt8
+
+    public init(maxRollbackFrames: UInt32 = 0, inputDelayFrames: UInt32 = 0, desyncDetection: UInt8 = 0) {
+        self.maxRollbackFrames = maxRollbackFrames
+        self.inputDelayFrames = inputDelayFrames
+        self.desyncDetection = desyncDetection
+    }
+
+    internal init(ffi: FfiRollbackConfig) {
+        self.maxRollbackFrames = ffi.max_rollback_frames
+        self.inputDelayFrames = ffi.input_delay_frames
+        self.desyncDetection = ffi.desync_detection
+    }
+
+    internal func toFFI() -> FfiRollbackConfig {
+        var ffi = FfiRollbackConfig()
+        ffi.max_rollback_frames = maxRollbackFrames
+        ffi.input_delay_frames = inputDelayFrames
+        ffi.desync_detection = desyncDetection
+        return ffi
+    }
+
+}

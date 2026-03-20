@@ -4,7 +4,7 @@
 
 This guide covers installing the Python SDK, opening a window, drawing a sprite, and handling input.
 
-See also: [C# guide](csharp.md) · [TypeScript guide](typescript.md) · [Rust guide](rust.md)
+See also: [C# guide](csharp.md) · [TypeScript guide](typescript.md) · [Rust guide](rust.md) · [Go guide](go.md) · [Kotlin guide](kotlin.md) · [Lua guide](lua.md)
 
 ## Prerequisites
 

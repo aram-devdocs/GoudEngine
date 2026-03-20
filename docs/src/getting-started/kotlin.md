@@ -1,0 +1,218 @@
+# Getting Started -- Kotlin SDK
+
+> **Alpha** -- GoudEngine is under active development. APIs change frequently. [Report issues](https://github.com/aram-devdocs/GoudEngine/issues)
+
+This guide covers installing the Kotlin SDK, opening a window, drawing a sprite, and handling input.
+
+See also: [C# guide](csharp.md) -- [Python guide](python.md) -- [TypeScript guide](typescript.md) -- [Rust guide](rust.md) -- [Swift guide](swift.md) -- [Go guide](go.md)
+
+## Prerequisites
+
+- JDK 17 or later (Temurin recommended)
+- Gradle 8.5+ (wrapper included in the SDK)
+- [Rust toolchain](https://rustup.rs/) -- needed to build the native engine library
+
+## Building the Native Library
+
+The Kotlin SDK wraps the native Rust engine through JNI. Build the engine first:
+
+```bash
+git clone https://github.com/aram-devdocs/GoudEngine.git
+cd GoudEngine
+cargo build --release -p goud-engine-core
+```
+
+This produces the native library that the Kotlin JNI layer loads at runtime.
+
+## Installation
+
+### Gradle (from source)
+
+Add the SDK as a local dependency. In your `build.gradle.kts`:
+
+```kotlin
+dependencies {
+    implementation(files("path/to/sdks/kotlin/build/libs/goud-engine-kotlin-0.0.832.jar"))
+}
+```
+
+### Maven Central (when published)
+
+```kotlin
+dependencies {
+    implementation("com.goudengine:goud-engine-kotlin:0.0.832")
+}
+```
+
+### Build the SDK jar
+
+```bash
+cd sdks/kotlin
+./gradlew build --no-daemon
+```
+
+The Gradle build task automatically compiles the native Rust library and bundles it into the jar under `native/`.
+
+## First Project
+
+Create a Kotlin file with a minimal window that closes on Escape:
+
+```kotlin
+import com.goudengine.core.EngineConfig
+import com.goudengine.core.GoudEngine
+import com.goudengine.core.GoudGame
+
+fun main() {
+    GoudEngine.ensureLoaded()
+
+    val game = EngineConfig.create()
+        .title("My First Game")
+        .width(800)
+        .height(600)
+        .build()
+
+    while (!game.shouldClose()) {
+        game.beginFrame()
+        // draw here
+        game.endFrame()
+    }
+
+    game.destroy()
+}
+```
+
+Build and run:
+
+```bash
+./gradlew run
+```
+
+A window opens at 800x600 and closes when you press Escape.
+
+`beginFrame` clears the screen and prepares the frame. `endFrame` swaps buffers and polls events. Everything you draw goes between those two calls.
+
+## Drawing a Sprite
+
+Load textures once before the loop. Drawing happens between `beginFrame` and `endFrame`.
+
+```kotlin
+import com.goudengine.core.EngineConfig
+import com.goudengine.core.GoudEngine
+import com.goudengine.types.Color
+
+fun main() {
+    GoudEngine.ensureLoaded()
+
+    val game = EngineConfig.create()
+        .title("Sprite Demo")
+        .width(800)
+        .height(600)
+        .build()
+
+    val texture = game.loadTexture("assets/player.png")
+
+    while (!game.shouldClose()) {
+        game.beginFrame()
+
+        game.drawSprite(texture, 400f, 300f, 64f, 64f, 0f, Color.white())
+
+        game.endFrame()
+    }
+
+    game.destroy()
+}
+```
+
+Put your image files in an `assets/` folder next to your project. The path is relative to the working directory.
+
+## Handling Input
+
+`isKeyJustPressed` returns true only on the frame the key goes down. Use `isKeyPressed` for held-down detection.
+
+```kotlin
+import com.goudengine.input.Key
+import com.goudengine.input.MouseButton
+
+// One-shot: true only on the frame the key goes down
+if (game.isKeyJustPressed(Key.Space.value)) {
+    // jump
+}
+
+// Held: true every frame the key is down
+if (game.isKeyPressed(Key.W.value)) {
+    y -= speed * game.deltaTime
+}
+if (game.isKeyPressed(Key.S.value)) {
+    y += speed * game.deltaTime
+}
+
+// Mouse
+if (game.isMouseButtonPressed(MouseButton.Left.value)) {
+    val pos = game.getMousePosition()
+    // use pos.x, pos.y
+}
+```
+
+`deltaTime` is the elapsed seconds since the last frame. Use it to make movement frame-rate independent.
+
+## Value Types
+
+The SDK provides Kotlin data classes for common types:
+
+```kotlin
+import com.goudengine.types.Vec2
+import com.goudengine.types.Vec3
+import com.goudengine.types.Color
+import com.goudengine.types.Rect
+
+val position = Vec2(100f, 200f)
+val direction = position.normalize()
+val distance = position.distance(Vec2.zero())
+
+val color = Color.rgb(1f, 0f, 0f) // red
+val transparent = color.withAlpha(0.5f)
+
+val bounds = Rect(0f, 0f, 100f, 50f)
+val inside = bounds.contains(Vec2(50f, 25f)) // true
+```
+
+## Running an Example Game
+
+The repository includes a complete Flappy Bird clone in Kotlin:
+
+```bash
+git clone https://github.com/aram-devdocs/GoudEngine.git
+cd GoudEngine
+cargo build --release
+./dev.sh --sdk kotlin --game flappy_bird
+```
+
+Source is in [`examples/kotlin/flappy_bird/`](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/kotlin/flappy_bird/).
+
+## API Documentation
+
+Generate HTML docs with Dokka:
+
+```bash
+cd sdks/kotlin
+./gradlew dokkaHtml --no-daemon
+# output in build/dokka/html/
+```
+
+## Code Generation
+
+All Java/Kotlin source files under `src/main/java/com/goudengine/internal/` and the Kotlin wrapper classes are auto-generated by `codegen/gen_kotlin.py`. Do not hand-edit generated files. Regenerate with:
+
+```bash
+python3 codegen/gen_kotlin.py
+```
+
+## Next Steps
+
+- [Kotlin SDK docs](https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/kotlin/docs/) -- SDK-specific documentation
+- [Kotlin examples source](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/kotlin/) -- complete game source code
+- [Build Your First Game](../guides/build-your-first-game.md) -- end-to-end minimal game walkthrough
+- [Example Showcase](../guides/showcase.md) -- current cross-language parity matrix
+- [SDK-first architecture](../architecture/sdk-first.md) -- how the engine layers fit together
+- [Development guide](../development/guide.md) -- building from source, version management, git hooks
+- Other getting started guides: [C#](csharp.md) -- [Python](python.md) -- [TypeScript](typescript.md) -- [Rust](rust.md) -- [Swift](swift.md) -- [Go](go.md) -- [Lua](lua.md)

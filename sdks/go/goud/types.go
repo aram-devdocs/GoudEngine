@@ -713,3 +713,35 @@ func NewUiEvent(eventKind uint32, nodeId uint64, previousNodeId uint64, currentN
 		CurrentNodeId: currentNodeId,
 	}
 }
+
+// P2pMeshConfig Configuration for P2P mesh networking
+type P2pMeshConfig struct {
+	MaxPeers uint32
+	HostMigration bool
+	Topology int32
+}
+
+// NewP2pMeshConfig creates a new P2pMeshConfig.
+func NewP2pMeshConfig(maxPeers uint32, hostMigration bool, topology int32) P2pMeshConfig {
+	return P2pMeshConfig{
+		MaxPeers: maxPeers,
+		HostMigration: hostMigration,
+		Topology: topology,
+	}
+}
+
+// RollbackConfig Configuration for rollback netcode session
+type RollbackConfig struct {
+	MaxRollbackFrames uint32
+	InputDelayFrames uint32
+	DesyncDetection uint8
+}
+
+// NewRollbackConfig creates a new RollbackConfig.
+func NewRollbackConfig(maxRollbackFrames uint32, inputDelayFrames uint32, desyncDetection uint8) RollbackConfig {
+	return RollbackConfig{
+		MaxRollbackFrames: maxRollbackFrames,
+		InputDelayFrames: inputDelayFrames,
+		DesyncDetection: desyncDetection,
+	}
+}

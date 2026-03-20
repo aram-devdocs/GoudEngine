@@ -227,3 +227,10 @@ export enum EventPayloadType {
   Float = 2,
   String = 3,
 }
+
+/** Direction constraint for an RPC handler */
+export enum RpcDirection {
+  ServerToClient = 0,
+  ClientToServer = 1,
+  Bidirectional = 2,
+}

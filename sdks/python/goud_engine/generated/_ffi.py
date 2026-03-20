@@ -240,6 +240,20 @@ class NetworkSimulationConfig(ctypes.Structure):
         ("packet_loss_percent", ctypes.c_float)
     ]
 
+class FfiP2pMeshConfig(ctypes.Structure):
+    _fields_ = [
+        ("max_peers", ctypes.c_uint32),
+        ("host_migration", ctypes.c_bool),
+        ("topology", ctypes.c_int32)
+    ]
+
+class FfiRollbackConfig(ctypes.Structure):
+    _fields_ = [
+        ("max_rollback_frames", ctypes.c_uint32),
+        ("input_delay_frames", ctypes.c_uint32),
+        ("desync_detection", ctypes.c_uint8)
+    ]
+
 class FfiMat3x3(ctypes.Structure):
     _fields_ = [
         ("m", ctypes.c_float * 9)
@@ -1191,6 +1205,50 @@ def _setup():
         _lib.goud_network_set_simulation.restype = ctypes.c_int32
         _lib.goud_network_clear_simulation.argtypes = [GoudContextId, ctypes.c_int64]
         _lib.goud_network_clear_simulation.restype = ctypes.c_int32
+        _lib.goud_p2p_create_mesh.argtypes = [GoudContextId, ctypes.c_int32, ctypes.c_uint16, FfiP2pMeshConfig]
+        _lib.goud_p2p_create_mesh.restype = ctypes.c_int64
+        _lib.goud_p2p_join_mesh.argtypes = [GoudContextId, ctypes.c_int32, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.c_uint16, FfiP2pMeshConfig]
+        _lib.goud_p2p_join_mesh.restype = ctypes.c_int64
+        _lib.goud_p2p_leave_mesh.argtypes = [GoudContextId, ctypes.c_int64]
+        _lib.goud_p2p_leave_mesh.restype = ctypes.c_int32
+        _lib.goud_p2p_get_peers.argtypes = [GoudContextId, ctypes.c_int64]
+        _lib.goud_p2p_get_peers.restype = ctypes.c_int32
+        _lib.goud_p2p_get_host.argtypes = [GoudContextId, ctypes.c_int64]
+        _lib.goud_p2p_get_host.restype = ctypes.c_uint64
+        _lib.goud_rollback_create.argtypes = [FfiRollbackConfig, ctypes.c_uint8, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64]
+        _lib.goud_rollback_create.restype = ctypes.c_int64
+        _lib.goud_rollback_destroy.argtypes = [ctypes.c_int64]
+        _lib.goud_rollback_destroy.restype = ctypes.c_int32
+        _lib.goud_rollback_advance_frame.argtypes = [ctypes.c_int64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32]
+        _lib.goud_rollback_advance_frame.restype = ctypes.c_int32
+        _lib.goud_rollback_receive_remote_input.argtypes = [ctypes.c_int64, ctypes.c_uint8, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32]
+        _lib.goud_rollback_receive_remote_input.restype = ctypes.c_int32
+        _lib.goud_rollback_should_rollback.argtypes = [ctypes.c_int64]
+        _lib.goud_rollback_should_rollback.restype = ctypes.c_int32
+        _lib.goud_rollback_resimulate.argtypes = [ctypes.c_int64]
+        _lib.goud_rollback_resimulate.restype = ctypes.c_int32
+        _lib.goud_rollback_confirmed_frame.argtypes = [ctypes.c_int64]
+        _lib.goud_rollback_confirmed_frame.restype = ctypes.c_int64
+        _lib.goud_rollback_current_frame.argtypes = [ctypes.c_int64]
+        _lib.goud_rollback_current_frame.restype = ctypes.c_int64
+        _lib.goud_rollback_check_desync.argtypes = [ctypes.c_int64, ctypes.c_uint64, ctypes.c_uint64]
+        _lib.goud_rollback_check_desync.restype = ctypes.c_int32
+        _lib.goud_rpc_create.argtypes = [ctypes.c_uint64, ctypes.c_uint32]
+        _lib.goud_rpc_create.restype = ctypes.c_int64
+        _lib.goud_rpc_destroy.argtypes = [ctypes.c_int64]
+        _lib.goud_rpc_destroy.restype = ctypes.c_int32
+        _lib.goud_rpc_register.argtypes = [ctypes.c_int64, ctypes.c_uint16, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.c_int32]
+        _lib.goud_rpc_register.restype = ctypes.c_int32
+        _lib.goud_rpc_call.argtypes = [ctypes.c_int64, ctypes.c_uint64, ctypes.c_uint16, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.POINTER(ctypes.c_uint64)]
+        _lib.goud_rpc_call.restype = ctypes.c_int32
+        _lib.goud_rpc_poll.argtypes = [ctypes.c_int64, ctypes.c_float]
+        _lib.goud_rpc_poll.restype = ctypes.c_int32
+        _lib.goud_rpc_process_incoming.argtypes = [ctypes.c_int64, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32]
+        _lib.goud_rpc_process_incoming.restype = ctypes.c_int32
+        _lib.goud_rpc_receive_response.argtypes = [ctypes.c_int64, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.POINTER(ctypes.c_int32)]
+        _lib.goud_rpc_receive_response.restype = ctypes.c_int32
+        _lib.goud_rpc_drain_one.argtypes = [ctypes.c_int64, ctypes.POINTER(ctypes.c_uint8), ctypes.c_int32, ctypes.POINTER(ctypes.c_uint64)]
+        _lib.goud_rpc_drain_one.restype = ctypes.c_int32
     except AttributeError:
         pass  # feature not compiled in
 

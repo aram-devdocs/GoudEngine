@@ -221,6 +221,22 @@
         "packet_loss_percent"
       ]
     },
+    "P2pMeshConfig": {
+      "ffi_name": "FfiP2pMeshConfig",
+      "fields": [
+        "max_peers",
+        "host_migration",
+        "topology"
+      ]
+    },
+    "RollbackConfig": {
+      "ffi_name": "FfiRollbackConfig",
+      "fields": [
+        "max_rollback_frames",
+        "input_delay_frames",
+        "desync_detection"
+      ]
+    },
     "Mat3x3": {
       "ffi_name": "FfiMat3x3",
       "fields": [
@@ -846,7 +862,29 @@
       "goud_network_set_overlay_handle": {},
       "goud_network_clear_overlay_handle": {},
       "goud_network_set_simulation": {},
-      "goud_network_clear_simulation": {}
+      "goud_network_clear_simulation": {},
+      "goud_p2p_create_mesh": {},
+      "goud_p2p_join_mesh": {},
+      "goud_p2p_leave_mesh": {},
+      "goud_p2p_get_peers": {},
+      "goud_p2p_get_host": {},
+      "goud_rollback_create": {},
+      "goud_rollback_destroy": {},
+      "goud_rollback_advance_frame": {},
+      "goud_rollback_receive_remote_input": {},
+      "goud_rollback_should_rollback": {},
+      "goud_rollback_resimulate": {},
+      "goud_rollback_confirmed_frame": {},
+      "goud_rollback_current_frame": {},
+      "goud_rollback_check_desync": {},
+      "goud_rpc_create": {},
+      "goud_rpc_destroy": {},
+      "goud_rpc_register": {},
+      "goud_rpc_call": {},
+      "goud_rpc_poll": {},
+      "goud_rpc_process_incoming": {},
+      "goud_rpc_receive_response": {},
+      "goud_rpc_drain_one": {}
     },
     "providers": {
       "goud_provider_render_capabilities": {},

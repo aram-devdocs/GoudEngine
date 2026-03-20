@@ -77,5 +77,15 @@ pub mod ws_network;
 #[cfg(feature = "net-ws")]
 pub use ws_network::WsNetProvider;
 
+/// WebRTC data channel transport provider implementing `NetworkProvider`.
+#[cfg(feature = "net-webrtc")]
+pub mod webrtc_network;
+#[cfg(feature = "net-webrtc")]
+pub use webrtc_network::WebRtcNetProvider;
+
+/// Peer-to-peer full-mesh networking layer.
+pub mod p2p_mesh;
+pub use p2p_mesh::P2pMesh;
+
 #[cfg(test)]
 mod network_contract_tests;

@@ -4,7 +4,7 @@ The Rust SDK links directly against the engine with no FFI overhead. It re-expor
 `goud_engine::sdk::*` from a single crate, so all engine types are available through
 `use goudengine::*;`.
 
-Other SDKs: [C#](csharp.md) · [Python](python.md) · [TypeScript](typescript.md)
+Other SDKs: [C#](csharp.md) · [Python](python.md) · [TypeScript](typescript.md) · [Go](go.md) · [Kotlin](kotlin.md) · [Lua](lua.md)
 
 ---
 
@@ -54,7 +54,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-goud-engine = "0.0.825"
+goud-engine = "0.0.832"
 ```
 
 ---

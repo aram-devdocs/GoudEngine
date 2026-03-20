@@ -214,5 +214,11 @@ pub(crate) fn register_enum_constants(lua: &Lua) -> LuaResult<()> {
     tbl.set("float", 2_i64)?;
     tbl.set("string", 3_i64)?;
     globals.set("event_payload_type", tbl)?;
+    // RpcDirection
+    let tbl = lua.create_table()?;
+    tbl.set("server_to_client", 0_i64)?;
+    tbl.set("client_to_server", 1_i64)?;
+    tbl.set("bidirectional", 2_i64)?;
+    globals.set("rpc_direction", tbl)?;
     Ok(())
 }

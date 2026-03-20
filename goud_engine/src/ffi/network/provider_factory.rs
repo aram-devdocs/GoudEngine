@@ -7,6 +7,8 @@ use crate::libs::providers::impls::NetworkSimProvider;
 use crate::libs::providers::impls::TcpNetProvider;
 #[cfg(feature = "net-udp")]
 use crate::libs::providers::impls::UdpNetProvider;
+#[cfg(feature = "net-webrtc")]
+use crate::libs::providers::impls::WebRtcNetProvider;
 #[cfg(feature = "net-ws")]
 use crate::libs::providers::impls::WsNetProvider;
 
@@ -14,12 +16,14 @@ use crate::libs::providers::impls::WsNetProvider;
 pub(super) const PROTOCOL_UDP: i32 = 0;
 pub(super) const PROTOCOL_WS: i32 = 1;
 pub(super) const PROTOCOL_TCP: i32 = 2;
+pub(super) const PROTOCOL_WEBRTC: i32 = 3;
 
 pub(super) fn create_provider(protocol: i32) -> Result<Box<dyn NetworkProvider>, i32> {
     match protocol {
         PROTOCOL_UDP => create_udp_provider(),
         PROTOCOL_WS => create_ws_provider(),
         PROTOCOL_TCP => create_tcp_provider(),
+        PROTOCOL_WEBRTC => create_webrtc_provider(),
         _ => {
             set_last_error(GoudError::InvalidState(format!(
                 "Unknown protocol: {}",
@@ -93,6 +97,19 @@ fn create_tcp_provider() -> Result<Box<dyn NetworkProvider>, i32> {
 fn create_ws_provider() -> Result<Box<dyn NetworkProvider>, i32> {
     set_last_error(GoudError::InvalidState(
         "WebSocket networking not available (net-ws feature disabled)".to_string(),
+    ));
+    Err(ERR_INVALID_STATE)
+}
+
+#[cfg(feature = "net-webrtc")]
+fn create_webrtc_provider() -> Result<Box<dyn NetworkProvider>, i32> {
+    init_provider(WebRtcNetProvider::new())
+}
+
+#[cfg(not(feature = "net-webrtc"))]
+fn create_webrtc_provider() -> Result<Box<dyn NetworkProvider>, i32> {
+    set_last_error(GoudError::InvalidState(
+        "WebRTC networking not available (net-webrtc feature disabled)".to_string(),
     ));
     Err(ERR_INVALID_STATE)
 }

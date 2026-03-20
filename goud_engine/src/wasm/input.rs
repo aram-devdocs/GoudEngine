@@ -13,27 +13,42 @@ use super::WasmGame;
 #[wasm_bindgen]
 impl WasmGame {
     /// Marks a key as pressed for the current frame.
+    ///
+    /// Only records a "just pressed" event when the key was not already held.
+    /// This prevents browser key-repeat `keydown` events from re-triggering
+    /// `is_key_just_pressed` on subsequent frames.
     pub fn press_key(&mut self, key_code: u32) {
-        self.keys_current.insert(key_code);
-        self.keys_pressed_buffer.insert(key_code);
+        if self.keys_current.insert(key_code) {
+            // `insert` returns true when the value was newly inserted.
+            self.keys_pressed_buffer.insert(key_code);
+        }
     }
 
     /// Marks a key as released for the current frame.
+    ///
+    /// Only records a "just released" event when the key was actually held.
     pub fn release_key(&mut self, key_code: u32) {
-        self.keys_current.remove(&key_code);
-        self.keys_released_buffer.insert(key_code);
+        if self.keys_current.remove(&key_code) {
+            self.keys_released_buffer.insert(key_code);
+        }
     }
 
     /// Marks a mouse button as pressed for the current frame.
+    ///
+    /// Only records a "just pressed" event when the button was not already held.
     pub fn press_mouse_button(&mut self, button: u32) {
-        self.mouse_buttons_current.insert(button);
-        self.mouse_pressed_buffer.insert(button);
+        if self.mouse_buttons_current.insert(button) {
+            self.mouse_pressed_buffer.insert(button);
+        }
     }
 
     /// Marks a mouse button as released for the current frame.
+    ///
+    /// Only records a "just released" event when the button was actually held.
     pub fn release_mouse_button(&mut self, button: u32) {
-        self.mouse_buttons_current.remove(&button);
-        self.mouse_released_buffer.insert(button);
+        if self.mouse_buttons_current.remove(&button) {
+            self.mouse_released_buffer.insert(button);
+        }
     }
 
     /// Updates the current mouse position in logical coordinates.
