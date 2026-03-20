@@ -17,7 +17,7 @@ The release pipeline uses six GitHub environments:
 
 ### npm Environment
 
-**NPM_TOKEN**
+#### `NPM_TOKEN`
 - Where to obtain: [npmjs.com > Account Settings > Auth Tokens](https://npmjs.com/settings)
 - Type: Granular access token
 - Scope: Allow publish to package `goudengine`
@@ -25,7 +25,7 @@ The release pipeline uses six GitHub environments:
 
 ### nuget Environment
 
-**NUGET_API_KEY**
+#### `NUGET_API_KEY`
 - Where to obtain: [nuget.org > Account > API Keys](https://www.nuget.org/account/apikeys)
 - Type: API key with "Push new packages and package versions" scope
 - Scope: Package `GoudEngine`
@@ -48,19 +48,19 @@ Used by: `publish-pypi` job to publish Python SDK to PyPI
 
 ### maven Environment
 
-**MAVEN_USERNAME**
+#### `MAVEN_USERNAME`
 - Where to obtain: [Maven Central Repository > Account > User Token](https://s01.oss.sonatype.org/)
 - Type: JIRA/OSS account username or user token (username format)
 - Scope: Publish to `com.goudengine:goud-engine-kotlin`
 - Used by: `publish-kotlin` Gradle plugin configuration
 
-**MAVEN_PASSWORD**
+#### `MAVEN_PASSWORD`
 - Where to obtain: [Maven Central Repository > Account > User Token](https://s01.oss.sonatype.org/)
 - Type: User token password (not your account password)
 - Scope: Paired with `MAVEN_USERNAME`
 - Used by: `publish-kotlin` Gradle plugin configuration
 
-**GPG_PRIVATE_KEY**
+#### `GPG_PRIVATE_KEY`
 - Where to obtain: Export from your local GPG keyring
   ```bash
   gpg --armor --export-secret-key YOUR_KEY_ID | base64 | tr -d '\n'
@@ -69,7 +69,7 @@ Used by: `publish-pypi` job to publish Python SDK to PyPI
 - Scope: Used to sign Maven artifacts before upload
 - Used by: `publish-kotlin` Gradle plugin for artifact signing
 
-**GPG_PASSPHRASE**
+#### `GPG_PASSPHRASE`
 - Where to obtain: The passphrase you set when creating the GPG key
 - Type: Plaintext passphrase (GitHub Actions will only expose it during the Maven publish step)
 - Scope: Unlocks the GPG private key during signing
@@ -77,7 +77,7 @@ Used by: `publish-pypi` job to publish Python SDK to PyPI
 
 ### crates-io Environment
 
-**CRATES_IO_TOKEN**
+#### `CRATES_IO_TOKEN`
 - Where to obtain: [crates.io > Account Settings > API Tokens](https://crates.io/me)
 - Type: API token with "publish-update" scope minimum
 - Scope: Publish to crates: `goud-engine`, `goud-engine-core`, `goud_engine_macros`
@@ -85,7 +85,7 @@ Used by: `publish-pypi` job to publish Python SDK to PyPI
 
 ### luarocks Environment
 
-**LUAROCKS_API_KEY**
+#### `LUAROCKS_API_KEY`
 - Where to obtain: [luarocks.org > Account > Settings](https://luarocks.org/settings)
 - Type: API key with upload scope
 - Scope: Publish to LuaRocks module `goudengine`
@@ -97,12 +97,12 @@ Used by: `publish-pypi` job to publish Python SDK to PyPI
 
 For optional C++ Conan distribution:
 
-**CONAN_LOGIN_USERNAME** (optional)
+#### `CONAN_LOGIN_USERNAME` (optional)
 - Where to obtain: Conan Center Index account or self-hosted Conan server
 - Type: Conan registry username
 - Scope: Publish C++ bindings to Conan Center
 
-**CONAN_PASSWORD** (optional)
+#### `CONAN_PASSWORD` (optional)
 - Where to obtain: Conan Center Index account or self-hosted Conan server
 - Type: Conan registry password
 - Scope: Paired with `CONAN_LOGIN_USERNAME`
