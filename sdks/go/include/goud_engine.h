@@ -1581,6 +1581,16 @@ void goud_renderer_disable_depth_test(struct GoudContextId context_id);
 void goud_renderer_clear_depth(struct GoudContextId context_id);
 
 /**
+ * Sets the coordinate origin for subsequent `DrawQuad` and `DrawSprite` calls.
+ */
+bool goud_renderer_set_coordinate_origin(struct GoudContextId context_id, uint32_t origin);
+
+/**
+ * Returns the current coordinate origin setting for the given context.
+ */
+uint32_t goud_renderer_get_coordinate_origin(struct GoudContextId context_id);
+
+/**
  * Draws UTF-8 text in immediate mode.
  */
 bool goud_renderer_draw_text(struct GoudContextId context_id, GoudFontHandle font_handle, const char *text, float x, float y, float font_size, uint8_t alignment, float max_width, float line_spacing, uint8_t direction, float r, float g, float b, float a);
@@ -3406,6 +3416,16 @@ int32_t goud_ui_set_image_texture_path(struct UiManager *mgr, uint64_t node_id, 
  * Sets or creates a slider component and updates range/value/enabled.
  */
 int32_t goud_ui_set_slider(struct UiManager *mgr, uint64_t node_id, float min, float max, float value, bool enabled);
+
+/**
+ * Sets absolute screen-space position for a UI node.
+ */
+int32_t goud_ui_set_node_position(struct UiManager *mgr, uint64_t node_id, float x, float y);
+
+/**
+ * Sets visibility for a UI node. Hidden nodes are not rendered.
+ */
+int32_t goud_ui_set_node_visible(struct UiManager *mgr, uint64_t node_id, bool visible);
 
 /* === Debugger === */
 

@@ -435,6 +435,13 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer_set_coordinate_origin(GoudContextId context_id, uint origin);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_renderer_get_coordinate_origin(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
         public static extern bool goud_renderer_draw_sprite(GoudContextId context_id, ulong texture, float x, float y, float width, float height, float rotation, float r, float g, float b, float a);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -1851,6 +1858,12 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_ui_set_slider(IntPtr mgr, ulong node_id, float min, float max, float value, [MarshalAs(UnmanagedType.U1)] bool enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_ui_set_node_position(IntPtr mgr, ulong node_id, float x, float y);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_ui_set_node_visible(IntPtr mgr, ulong node_id, [MarshalAs(UnmanagedType.U1)] bool visible);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_ui_set_event_callback(IntPtr mgr, IntPtr callback, IntPtr user_data);

@@ -1,7 +1,9 @@
 use crate::core::math::{Rect, Vec2};
 
 use super::UiManager;
-use crate::ui::layout::{UiAlign, UiAnchor, UiEdges, UiFlexDirection, UiJustify, UiLayout};
+use crate::ui::layout::{
+    PositionMode, UiAlign, UiAnchor, UiEdges, UiFlexDirection, UiJustify, UiLayout,
+};
 use crate::ui::node::UiNode;
 use crate::ui::node_id::UiNodeId;
 
@@ -40,7 +42,14 @@ impl UiManager {
                 _ => return,
             };
 
-            let node_rect = resolve_anchored_rect(node, parent_content_rect);
+            let mut node_rect = resolve_anchored_rect(node, parent_content_rect);
+
+            // Absolute positioning overrides the layout-computed position.
+            if node.position_mode() == PositionMode::Absolute {
+                node_rect.x = node.position().x;
+                node_rect.y = node.position().y;
+            }
+
             let content_rect = inset_rect(node_rect, node.padding());
             let layout = node.layout();
             let children = node.children().to_vec();

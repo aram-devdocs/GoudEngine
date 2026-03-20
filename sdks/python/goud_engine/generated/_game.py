@@ -151,8 +151,16 @@ class GoudGame:
         if color is None: color = Color.white()
         return self._lib.goud_renderer_draw_text(self._ctx, font_handle, text.encode('utf-8'), x, y, font_size, int(alignment), max_width, line_spacing, int(direction), color.r, color.g, color.b, color.a)
 
+    def set_coordinate_origin(self, origin):
+        """Set the coordinate origin for subsequent DrawQuad and DrawSprite calls. Center (0) means (x,y) is the center of the shape (default). TopLeft (1) means (x,y) is the top-left corner."""
+        return self._lib.goud_renderer_set_coordinate_origin(self._ctx, origin)
+
+    def get_coordinate_origin(self):
+        """Get the current coordinate origin setting. Returns 0 for Center, 1 for TopLeft."""
+        return self._lib.goud_renderer_get_coordinate_origin(self._ctx)
+
     def draw_sprite(self, texture, x, y, width, height, rotation = 0, color = None):
-        """Draws a textured sprite"""
+        """Draws a textured sprite. Position (x,y) interpretation depends on the coordinate origin setting (center by default)."""
         if color is None: color = Color.white()
         self._lib.goud_renderer_draw_sprite(self._ctx, texture, x, y, width, height, rotation, color.r, color.g, color.b, color.a)
 

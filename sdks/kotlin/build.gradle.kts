@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.goudengine"
-version = "0.0.833"
+version = "0.0.832"
 
 repositories {
     mavenCentral()

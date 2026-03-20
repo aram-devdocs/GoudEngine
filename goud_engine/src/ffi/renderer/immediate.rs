@@ -10,6 +10,49 @@ use crate::libs::graphics::backend::types::{VertexAttribute, VertexAttributeType
 use crate::libs::graphics::backend::{BufferOps, ShaderOps};
 
 // ============================================================================
+// Coordinate Origin
+// ============================================================================
+
+/// Coordinate origin for immediate-mode draw calls (DrawQuad, DrawSprite).
+///
+/// Controls how the `(x, y)` position parameter is interpreted:
+/// - `Center` (default): `(x, y)` is the center of the quad/sprite.
+/// - `TopLeft`: `(x, y)` is the top-left corner of the quad/sprite.
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum CoordinateOrigin {
+    /// `(x, y)` is the center of the shape (default, legacy behavior).
+    #[default]
+    Center = 0,
+    /// `(x, y)` is the top-left corner of the shape.
+    TopLeft = 1,
+}
+
+impl CoordinateOrigin {
+    /// Converts a raw `u32` value into a `CoordinateOrigin`.
+    /// Returns `None` for unknown values.
+    pub fn from_u32(value: u32) -> Option<Self> {
+        match value {
+            0 => Some(Self::Center),
+            1 => Some(Self::TopLeft),
+            _ => None,
+        }
+    }
+
+    /// Adjusts draw coordinates based on the origin setting.
+    ///
+    /// When `TopLeft`, converts top-left coordinates to center coordinates
+    /// so the existing model matrix (which assumes center origin) works correctly.
+    #[inline]
+    pub fn adjust(self, x: f32, y: f32, width: f32, height: f32) -> (f32, f32) {
+        match self {
+            Self::Center => (x, y),
+            Self::TopLeft => (x + width / 2.0, y + height / 2.0),
+        }
+    }
+}
+
+// ============================================================================
 // Immediate-Mode State
 // ============================================================================
 
@@ -17,6 +60,10 @@ use crate::libs::graphics::backend::{BufferOps, ShaderOps};
 // We use (index, generation) as a key to avoid needing access to private fields.
 thread_local! {
     pub(super) static IMMEDIATE_STATE: std::cell::RefCell<std::collections::HashMap<(u32, u32), ImmediateRenderState>> =
+        std::cell::RefCell::new(std::collections::HashMap::new());
+
+    /// Per-context coordinate origin setting for immediate-mode draw calls.
+    pub(super) static COORDINATE_ORIGIN: std::cell::RefCell<std::collections::HashMap<(u32, u32), CoordinateOrigin>> =
         std::cell::RefCell::new(std::collections::HashMap::new());
 }
 
@@ -246,6 +293,25 @@ pub(super) fn ensure_immediate_state(context_id: GoudContextId) -> Result<(), Go
 }
 
 // ============================================================================
+// Coordinate Origin Accessors
+// ============================================================================
+
+/// Returns the current coordinate origin for the given context.
+/// Defaults to `CoordinateOrigin::Center` if not explicitly set.
+pub(super) fn get_coordinate_origin(context_id: GoudContextId) -> CoordinateOrigin {
+    let context_key = (context_id.index(), context_id.generation());
+    COORDINATE_ORIGIN.with(|cell| cell.borrow().get(&context_key).copied().unwrap_or_default())
+}
+
+/// Sets the coordinate origin for the given context.
+pub(super) fn set_coordinate_origin(context_id: GoudContextId, origin: CoordinateOrigin) {
+    let context_key = (context_id.index(), context_id.generation());
+    COORDINATE_ORIGIN.with(|cell| {
+        cell.borrow_mut().insert(context_key, origin);
+    });
+}
+
+// ============================================================================
 // Math Helpers
 // ============================================================================
 
@@ -299,4 +365,48 @@ pub(super) fn model_matrix(x: f32, y: f32, width: f32, height: f32, rotation: f3
         0.0,
         1.0,
     ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::CoordinateOrigin;
+
+    #[test]
+    fn test_coordinate_origin_default_is_center() {
+        assert_eq!(CoordinateOrigin::default(), CoordinateOrigin::Center);
+    }
+
+    #[test]
+    fn test_coordinate_origin_from_u32() {
+        assert_eq!(
+            CoordinateOrigin::from_u32(0),
+            Some(CoordinateOrigin::Center)
+        );
+        assert_eq!(
+            CoordinateOrigin::from_u32(1),
+            Some(CoordinateOrigin::TopLeft)
+        );
+        assert_eq!(CoordinateOrigin::from_u32(2), None);
+        assert_eq!(CoordinateOrigin::from_u32(u32::MAX), None);
+    }
+
+    #[test]
+    fn test_coordinate_origin_adjust_center_is_noop() {
+        let (ax, ay) = CoordinateOrigin::Center.adjust(100.0, 200.0, 50.0, 30.0);
+        assert_eq!(ax, 100.0);
+        assert_eq!(ay, 200.0);
+    }
+
+    #[test]
+    fn test_coordinate_origin_adjust_topleft_offsets_by_half_size() {
+        let (ax, ay) = CoordinateOrigin::TopLeft.adjust(100.0, 200.0, 50.0, 30.0);
+        assert_eq!(ax, 125.0); // 100 + 50/2
+        assert_eq!(ay, 215.0); // 200 + 30/2
+    }
+
+    #[test]
+    fn test_coordinate_origin_repr_values() {
+        assert_eq!(CoordinateOrigin::Center as u32, 0);
+        assert_eq!(CoordinateOrigin::TopLeft as u32, 1);
+    }
 }

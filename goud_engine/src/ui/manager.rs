@@ -276,7 +276,8 @@ impl UiManager {
         UiInteractionState::Normal
     }
 
-    fn mark_layout_dirty(&mut self) {
+    /// Marks the layout as needing recomputation on the next update.
+    pub fn mark_layout_dirty(&mut self) {
         self.layout_dirty = true;
     }
 

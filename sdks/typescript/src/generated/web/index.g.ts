@@ -290,6 +290,10 @@ export class UiManager implements IUiManager {
   createButton(enabled = true): UiNodeId { const nodeId = this.createNode(1); this.setButtonEnabled(nodeId, enabled); return nodeId; }
   createImage(path: string): UiNodeId { const nodeId = this.createNode(3); this.setImageTexturePath(nodeId, path); return nodeId; }
   createSlider(min: number, max: number, value: number, enabled = true): UiNodeId { const nodeId = this.createNode(4); this.setSlider(nodeId, min, max, value, enabled); return nodeId; }
+
+  // TODO: wasm UI positioning -- these stub methods satisfy the IUiManager interface
+  setNodePosition(nodeId: UiNodeId, x: number, y: number): number { return 0; }
+  setNodeVisible(nodeId: UiNodeId, visible: boolean): number { return 0; }
 }
 
 class WebEntity implements IEntity {
@@ -524,7 +528,7 @@ export class GoudGame implements IGoudGame {
     const c = color ?? Color.white();
     return this.handle.draw_text(fontHandle, text, x, y, fontSize, alignment, maxWidth, lineSpacing, direction, c.r, c.g, c.b, c.a);
   }
-  /** Draws a textured sprite */
+  /** Draws a textured sprite. Position (x,y) interpretation depends on the coordinate origin setting (center by default). */
   drawSprite(texture: number, x: number, y: number, width: number, height: number, rotation = 0, color?: IColor): void {
     const c = color ?? Color.white();
     this.handle.draw_sprite(texture, x, y, width, height, rotation, c.r, c.g, c.b, c.a);
@@ -1069,6 +1073,10 @@ export class GoudGame implements IGoudGame {
       maxMessageSize: caps.max_message_size,
     };
   }
+
+  // TODO: wasm coordinate origin -- these stub methods satisfy the IGoudGame interface
+  setCoordinateOrigin(_origin: number): boolean { return true; }
+  getCoordinateOrigin(): number { return 0; }
 
   /** Checks if the hot-swap keyboard shortcut (F5) was pressed and cycles the render provider to null. Debug builds only. Returns true if a swap occurred. */
   checkHotSwapShortcut(): boolean { throw new Error('Not supported in WASM mode'); }

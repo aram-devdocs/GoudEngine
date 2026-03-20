@@ -83,7 +83,17 @@ public final class GoudGame {
         }
     }
 
-    /// Draws a textured sprite
+    /// Set the coordinate origin for subsequent DrawQuad and DrawSprite calls. Center (0) means (x,y) is the center of the shape (default). TopLeft (1) means (x,y) is the top-left corner.
+    public func setCoordinateOrigin(origin: UInt32) -> Bool {
+        return goud_renderer_set_coordinate_origin(_ctx, UInt32(origin.rawValue))
+    }
+
+    /// Get the current coordinate origin setting. Returns 0 for Center, 1 for TopLeft.
+    public func getCoordinateOrigin() -> UInt32 {
+        return goud_renderer_get_coordinate_origin(_ctx)
+    }
+
+    /// Draws a textured sprite. Position (x,y) interpretation depends on the coordinate origin setting (center by default).
     public func drawSprite(texture: UInt64, x: Float, y: Float, width: Float, height: Float, rotation: Float = 0, color: Color = Color.white()) {
         let _ = goud_renderer_draw_sprite(_ctx, texture, x, y, width, height, rotation, color.r, color.g, color.b, color.a)
     }
@@ -708,20 +718,20 @@ public final class GoudGame {
     public func rollbackCreate(config: RollbackConfig, localPlayer: UInt8, playerIds: Data, statePtr: UInt64, advanceFn: UInt64, hashFn: UInt64, cloneFn: UInt64, freeFn: UInt64) -> Int64 {
         playerIds.withUnsafeBytes { playerIdsRawBuf in
             let playerIdsBasePtr = playerIdsRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            return goud_rollback_create(_ctx, config.toFFI(), localPlayer, playerIdsBasePtr, playerIds.count, statePtr, advanceFn, hashFn, cloneFn, freeFn)
+            return goud_rollback_create(config.toFFI(), localPlayer, playerIdsBasePtr, playerIds.count, statePtr, advanceFn, hashFn, cloneFn, freeFn)
         }
     }
 
     /// Destroys a rollback session and frees all associated resources.
     public func rollbackDestroy(handle: Int64) -> Int32 {
-        return goud_rollback_destroy(_ctx, handle)
+        return goud_rollback_destroy(handle)
     }
 
     /// Advances the rollback simulation by one frame with the given local input.
     public func rollbackAdvanceFrame(handle: Int64, input: Data) -> Int32 {
         input.withUnsafeBytes { inputRawBuf in
             let inputBasePtr = inputRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            return goud_rollback_advance_frame(_ctx, handle, inputBasePtr, input.count)
+            return goud_rollback_advance_frame(handle, inputBasePtr, input.count)
         }
     }
 
@@ -729,49 +739,49 @@ public final class GoudGame {
     public func rollbackReceiveRemoteInput(handle: Int64, playerId: UInt8, frame: UInt64, input: Data) -> Int32 {
         input.withUnsafeBytes { inputRawBuf in
             let inputBasePtr = inputRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            return goud_rollback_receive_remote_input(_ctx, handle, playerId, frame, inputBasePtr, input.count)
+            return goud_rollback_receive_remote_input(handle, playerId, frame, inputBasePtr, input.count)
         }
     }
 
     /// Returns 1 if a rollback is pending, 0 otherwise.
     public func rollbackShouldRollback(handle: Int64) -> Int32 {
-        return goud_rollback_should_rollback(_ctx, handle)
+        return goud_rollback_should_rollback(handle)
     }
 
     /// Performs rollback and resimulation. Returns the number of frames resimulated.
     public func rollbackResimulate(handle: Int64) -> Int32 {
-        return goud_rollback_resimulate(_ctx, handle)
+        return goud_rollback_resimulate(handle)
     }
 
     /// Returns the latest confirmed frame.
     public func rollbackConfirmedFrame(handle: Int64) -> Int64 {
-        return goud_rollback_confirmed_frame(_ctx, handle)
+        return goud_rollback_confirmed_frame(handle)
     }
 
     /// Returns the current simulation frame.
     public func rollbackCurrentFrame(handle: Int64) -> Int64 {
-        return goud_rollback_current_frame(_ctx, handle)
+        return goud_rollback_current_frame(handle)
     }
 
     /// Checks for desync at the given frame. Returns 0=in sync, 1=desync, 2=frame not available.
     public func rollbackCheckDesync(handle: Int64, remoteHash: UInt64, frame: UInt64) -> Int32 {
-        return goud_rollback_check_desync(_ctx, handle, remoteHash, frame)
+        return goud_rollback_check_desync(handle, remoteHash, frame)
     }
 
     /// Creates an RPC framework instance.
     public func rpcCreate(timeoutMs: UInt64, maxPayload: UInt32) -> Int64 {
-        return goud_rpc_create(_ctx, timeoutMs, maxPayload)
+        return goud_rpc_create(timeoutMs, maxPayload)
     }
 
     /// Destroys an RPC framework instance.
     public func rpcDestroy(handle: Int64) -> Int32 {
-        return goud_rpc_destroy(_ctx, handle)
+        return goud_rpc_destroy(handle)
     }
 
     /// Registers an RPC handler with the given direction constraint.
     public func rpcRegister(handle: Int64, rpcId: UInt16, name: String, direction: Int32) -> Int32 {
         name.withCString { namePtr in
-            return goud_rpc_register(_ctx, handle, rpcId, namePtr, direction)
+            return goud_rpc_register(handle, rpcId, namePtr, direction)
         }
     }
 
@@ -779,20 +789,20 @@ public final class GoudGame {
     public func rpcCall(handle: Int64, peerId: UInt64, rpcId: UInt16, payload: Data) -> UInt64 {
         payload.withUnsafeBytes { payloadRawBuf in
             let payloadBasePtr = payloadRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            return goud_rpc_call(_ctx, handle, peerId, rpcId, payloadBasePtr, payload.count)
+            return goud_rpc_call(handle, peerId, rpcId, payloadBasePtr, payload.count)
         }
     }
 
     /// Advances the RPC framework: checks timeouts and processes pending calls.
     public func rpcPoll(handle: Int64, deltaSecs: Float) -> Int32 {
-        return goud_rpc_poll(_ctx, handle, deltaSecs)
+        return goud_rpc_poll(handle, deltaSecs)
     }
 
     /// Feeds raw incoming data to the RPC framework for processing.
     public func rpcProcessIncoming(handle: Int64, peerId: UInt64, data: Data) -> Int32 {
         data.withUnsafeBytes { dataRawBuf in
             let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            return goud_rpc_process_incoming(_ctx, handle, peerId, dataBasePtr, data.count)
+            return goud_rpc_process_incoming(handle, peerId, dataBasePtr, data.count)
         }
     }
 

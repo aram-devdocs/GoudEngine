@@ -6,7 +6,7 @@
 use crate::core::math::{Rect, Vec2};
 
 use super::component::UiComponent;
-use super::layout::{UiAnchor, UiEdges, UiLayout};
+use super::layout::{PositionMode, UiAnchor, UiEdges, UiLayout};
 use super::node_id::UiNodeId;
 use super::theme::UiStyleOverrides;
 
@@ -18,6 +18,10 @@ pub struct UiNode {
     children: Vec<UiNodeId>,
     component: Option<UiComponent>,
     anchor: UiAnchor,
+    /// Absolute screen-space position. Only used when `position_mode` is `Absolute`.
+    position: Vec2,
+    /// Whether this node uses absolute or layout-relative positioning.
+    position_mode: PositionMode,
     size: Vec2,
     margin: UiEdges,
     padding: UiEdges,
@@ -39,6 +43,8 @@ impl UiNode {
             children: Vec::new(),
             component: None,
             anchor: UiAnchor::TopLeft,
+            position: Vec2::zero(),
+            position_mode: PositionMode::default(),
             size: Vec2::zero(),
             margin: UiEdges::ZERO,
             padding: UiEdges::ZERO,
@@ -116,6 +122,31 @@ impl UiNode {
     #[inline]
     pub fn set_anchor(&mut self, anchor: UiAnchor) {
         self.anchor = anchor;
+    }
+
+    /// Returns this node's absolute position.
+    #[inline]
+    pub fn position(&self) -> Vec2 {
+        self.position
+    }
+
+    /// Sets this node's absolute position and switches to absolute positioning mode.
+    #[inline]
+    pub fn set_position(&mut self, x: f32, y: f32) {
+        self.position = Vec2::new(x, y);
+        self.position_mode = PositionMode::Absolute;
+    }
+
+    /// Returns this node's positioning mode.
+    #[inline]
+    pub fn position_mode(&self) -> PositionMode {
+        self.position_mode
+    }
+
+    /// Sets this node's positioning mode.
+    #[inline]
+    pub fn set_position_mode(&mut self, mode: PositionMode) {
+        self.position_mode = mode;
     }
 
     /// Returns the explicit size for this node.
@@ -248,6 +279,7 @@ impl UiNode {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ui::layout::PositionMode;
     use crate::ui::{UiButton, UiFlexDirection, UiFlexLayout, UiJustify};
 
     #[test]
@@ -260,6 +292,8 @@ mod tests {
         assert!(node.children().is_empty());
         assert!(node.component().is_none());
         assert_eq!(node.anchor(), UiAnchor::TopLeft);
+        assert_eq!(node.position(), Vec2::zero());
+        assert_eq!(node.position_mode(), PositionMode::Relative);
         assert_eq!(node.size(), Vec2::zero());
         assert_eq!(node.margin(), UiEdges::ZERO);
         assert_eq!(node.padding(), UiEdges::ZERO);
@@ -315,6 +349,21 @@ mod tests {
 
         node.set_component(Some(UiComponent::Button(UiButton::default())));
         assert!(node.focusable());
+    }
+
+    #[test]
+    fn test_set_position_switches_to_absolute() {
+        let id = UiNodeId::new(0, 1);
+        let mut node = UiNode::new(id);
+
+        assert_eq!(node.position_mode(), PositionMode::Relative);
+        node.set_position(100.0, 200.0);
+        assert_eq!(node.position(), Vec2::new(100.0, 200.0));
+        assert_eq!(node.position_mode(), PositionMode::Absolute);
+
+        // Can switch back to relative.
+        node.set_position_mode(PositionMode::Relative);
+        assert_eq!(node.position_mode(), PositionMode::Relative);
     }
 
     #[test]

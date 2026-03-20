@@ -71,7 +71,8 @@ pub use handles::{
 pub use lifecycle::{
     goud_renderer_begin, goud_renderer_clear_depth, goud_renderer_disable_blending,
     goud_renderer_disable_depth_test, goud_renderer_enable_blending,
-    goud_renderer_enable_depth_test, goud_renderer_end, goud_renderer_set_viewport,
+    goud_renderer_enable_depth_test, goud_renderer_end, goud_renderer_get_coordinate_origin,
+    goud_renderer_set_coordinate_origin, goud_renderer_set_viewport,
 };
 
 pub use texture::{

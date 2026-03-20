@@ -7,11 +7,14 @@ Standalone example games demonstrating GoudEngine features, organized by SDK lan
 ## Structure
 
 - `c/` — C smoke examples for the native wrapper layer
-- `cpp/` — C++ examples: smoke test, CMake integration demo, Flappy Bird game
+- `cpp/` — C++ examples: smoke test, CMake integration demo, Flappy Bird game, sandbox, feature_lab
 - `csharp/` — C# example games (flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab, sandbox)
 - `python/` — Python example games (main.py demo, flappy_bird.py, sandbox.py)
-- `swift/` — Swift example games (flappy_bird — mirrors C# flappy_goud for parity testing)
+- `swift/` — Swift example games (flappy_bird, sandbox, feature_lab)
 - `typescript/` — TypeScript example games (flappy_bird, feature_lab, sandbox — desktop + web targets)
+- `go/` — Go example games (flappy_bird, sandbox, feature_lab)
+- `kotlin/` — Kotlin example games (flappy_bird, sandbox, feature_lab)
+- `lua/` — Lua example games (flappy_bird, sandbox, feature_lab)
 - `rust/` — Rust example games (flappy_bird, feature_lab, sandbox)
 
 ## Running
@@ -32,7 +35,20 @@ Standalone example games demonstrating GoudEngine features, organized by SDK lan
 ./dev.sh --sdk typescript --game sandbox      # TypeScript Sandbox (desktop)
 ./dev.sh --sdk cpp --game flappy_bird          # C++ Flappy Bird
 ./dev.sh --sdk cpp --game cmake_example       # C++ CMake integration demo
+./dev.sh --sdk cpp --game sandbox             # C++ Sandbox
+./dev.sh --sdk cpp --game feature_lab         # C++ Feature Lab (headless)
 ./dev.sh --sdk swift --game flappy_bird        # Swift Flappy Bird
+./dev.sh --sdk swift --game sandbox            # Swift Sandbox
+./dev.sh --sdk swift --game feature_lab        # Swift Feature Lab (headless)
+./dev.sh --sdk go --game flappy_bird          # Go Flappy Bird
+./dev.sh --sdk go --game sandbox              # Go Sandbox
+./dev.sh --sdk go --game feature_lab          # Go Feature Lab (headless)
+./dev.sh --sdk kotlin --game flappy_bird      # Kotlin Flappy Bird
+./dev.sh --sdk kotlin --game sandbox          # Kotlin Sandbox
+./dev.sh --sdk kotlin --game feature_lab      # Kotlin Feature Lab (headless)
+./dev.sh --sdk lua --game flappy_bird         # Lua Flappy Bird
+./dev.sh --sdk lua --game sandbox             # Lua Sandbox
+./dev.sh --sdk lua --game feature_lab         # Lua Feature Lab (headless)
 cargo run -p flappy-bird                      # Rust Flappy Bird
 cargo run -p sandbox                          # Rust Sandbox
 ```

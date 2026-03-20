@@ -66,6 +66,16 @@ public final class UiManager {
         return goud_ui_set_button_enabled(_handle!, nodeId, enabled)
     }
 
+    /// Set absolute screen-space position for a UI node. Switches the node to absolute positioning mode.
+    public func setNodePosition(nodeId: UInt64, x: Float, y: Float) -> Int32 {
+        return goud_ui_set_node_position(_handle!, nodeId, x, y)
+    }
+
+    /// Set visibility for a UI node. Hidden nodes are not rendered.
+    public func setNodeVisible(nodeId: UInt64, visible: Bool) -> Int32 {
+        return goud_ui_set_node_visible(_handle!, nodeId, visible)
+    }
+
     /// Returns the number of UI events captured in the latest update tick
     public func eventCount() -> UInt32 {
         return goud_ui_event_count(_handle!)

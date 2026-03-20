@@ -1884,12 +1884,22 @@ func GoudRendererEnd(context_id C.GoudContextId) bool {
 	return bool(C.goud_renderer_end(context_id))
 }
 
+// GoudRendererGetCoordinateOrigin wraps goud_renderer_get_coordinate_origin.
+func GoudRendererGetCoordinateOrigin(context_id C.GoudContextId) uint32 {
+	return uint32(C.goud_renderer_get_coordinate_origin(context_id))
+}
+
 // GoudRendererGetStats wraps goud_renderer_get_stats.
 func GoudRendererGetStats(context_id C.GoudContextId, out_stats *C.GoudRenderStats) bool {
 	if out_stats == nil {
 		return false
 	}
 	return bool(C.goud_renderer_get_stats(context_id, out_stats))
+}
+
+// GoudRendererSetCoordinateOrigin wraps goud_renderer_set_coordinate_origin.
+func GoudRendererSetCoordinateOrigin(context_id C.GoudContextId, origin uint32) bool {
+	return bool(C.goud_renderer_set_coordinate_origin(context_id, C.uint32_t(origin)))
 }
 
 // GoudRendererSetViewport wraps goud_renderer_set_viewport.
@@ -1916,14 +1926,14 @@ func GoudRollbackConfirmedFrame(handle int64) int64 {
 }
 
 // GoudRollbackCreate wraps goud_rollback_create.
-func GoudRollbackCreate(config C.FfiRollbackConfig, local_player uint8, player_ids_ptr *C.uint8_t, num_players uint32, state_ptr *C.uint8_t, advance_fn C.FfiAdvanceFn, hash_fn C.FfiHashFn, clone_fn C.FfiCloneFn, free_fn C.FfiFreeFn) int64 {
+func GoudRollbackCreate(config C.FfiRollbackConfig, local_player uint8, player_ids_ptr *C.uint8_t, num_players uint32, state_ptr *C.uint8_t, advance_fn uint64, hash_fn uint64, clone_fn uint64, free_fn uint64) int64 {
 	if player_ids_ptr == nil {
 		return -1
 	}
 	if state_ptr == nil {
 		return -1
 	}
-	return int64(C.goud_rollback_create(config, C.uint8_t(local_player), player_ids_ptr, C.uint32_t(num_players), state_ptr, advance_fn, hash_fn, clone_fn, free_fn))
+	return int64(C.goud_rollback_create(config, C.uint8_t(local_player), player_ids_ptr, C.uint32_t(num_players), state_ptr, C.uint64_t(advance_fn), C.uint64_t(hash_fn), C.uint64_t(clone_fn), C.uint64_t(free_fn)))
 }
 
 // GoudRollbackCurrentFrame wraps goud_rollback_current_frame.
@@ -3195,6 +3205,22 @@ func GoudUiSetLabelText(mgr *C.UiManager, node_id uint64, text_ptr *C.uint8_t, t
 		return -1
 	}
 	return int32(C.goud_ui_set_label_text(mgr, C.uint64_t(node_id), text_ptr, C.size_t(text_len)))
+}
+
+// GoudUiSetNodePosition wraps goud_ui_set_node_position.
+func GoudUiSetNodePosition(mgr *C.UiManager, node_id uint64, x float32, y float32) int32 {
+	if mgr == nil {
+		return -1
+	}
+	return int32(C.goud_ui_set_node_position(mgr, C.uint64_t(node_id), C.float(x), C.float(y)))
+}
+
+// GoudUiSetNodeVisible wraps goud_ui_set_node_visible.
+func GoudUiSetNodeVisible(mgr *C.UiManager, node_id uint64, visible bool) int32 {
+	if mgr == nil {
+		return -1
+	}
+	return int32(C.goud_ui_set_node_visible(mgr, C.uint64_t(node_id), C._Bool(visible)))
 }
 
 // GoudUiSetParent wraps goud_ui_set_parent.

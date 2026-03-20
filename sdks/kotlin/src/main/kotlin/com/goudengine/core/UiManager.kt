@@ -57,6 +57,12 @@ class UiManager private constructor(private var handle: Long) : AutoCloseable {
     fun setSlider(nodeId: Long, min: Float, max: Float, value: Float, enabled: Boolean): Int =
         UiManagerNative.setSlider(handle, nodeId, min, max, value, enabled)
 
+    fun setNodePosition(nodeId: Long, x: Float, y: Float): Int =
+        UiManagerNative.setNodePosition(handle, nodeId, x, y)
+
+    fun setNodeVisible(nodeId: Long, visible: Boolean): Int =
+        UiManagerNative.setNodeVisible(handle, nodeId, visible)
+
     fun eventCount(): Int =
         UiManagerNative.eventCount(handle)
 

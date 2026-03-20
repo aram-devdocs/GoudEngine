@@ -234,7 +234,17 @@ export class GoudGame implements IGoudGame {
     return this.native.drawText(fontHandle, text, x, y, fontSize, alignment, maxWidth, lineSpacing, direction, c.r, c.g, c.b, c.a);
   }
 
-  /** Draws a textured sprite */
+  /** Set the coordinate origin for subsequent DrawQuad and DrawSprite calls. Center (0) means (x,y) is the center of the shape (default). TopLeft (1) means (x,y) is the top-left corner. */
+  setCoordinateOrigin(origin: number): boolean {
+    return (this.native as any).setCoordinateOrigin(origin);
+  }
+
+  /** Get the current coordinate origin setting. Returns 0 for Center, 1 for TopLeft. */
+  getCoordinateOrigin(): number {
+    return (this.native as any).getCoordinateOrigin();
+  }
+
+  /** Draws a textured sprite. Position (x,y) interpretation depends on the coordinate origin setting (center by default). */
   drawSprite(texture: number, x: number, y: number, width: number, height: number, rotation?: number, color?: IColor): void {
     const c = color ?? Color.white();
     this.native.drawSprite(texture, x, y, width, height, rotation, c.r, c.g, c.b, c.a);
@@ -1951,6 +1961,16 @@ export class UiManager implements IUiManager {
   /** Sets or creates a slider widget and updates range/value/enabled */
   setSlider(nodeId: UiNodeId, min: number, max: number, value: number, enabled: boolean): number {
     return this.native.setSlider(toNativeUiNodeId(nodeId), min, max, value, enabled);
+  }
+
+  /** Set absolute screen-space position for a UI node. Switches the node to absolute positioning mode. */
+  setNodePosition(nodeId: UiNodeId, x: number, y: number): number {
+    return this.native.setNodePosition(toNativeUiNodeId(nodeId), x, y);
+  }
+
+  /** Set visibility for a UI node. Hidden nodes are not rendered. */
+  setNodeVisible(nodeId: UiNodeId, visible: boolean): number {
+    return this.native.setNodeVisible(toNativeUiNodeId(nodeId), visible);
   }
 
   /** Returns the number of UI events captured in the latest update tick */

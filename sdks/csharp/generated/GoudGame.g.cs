@@ -168,7 +168,19 @@ namespace GoudEngine
             return NativeMethods.goud_renderer_draw_text(_ctx, fontHandle, text, x, y, fontSize, (byte)alignment, maxWidth, lineSpacing, (byte)direction, c.R, c.G, c.B, c.A);
         }
 
-        /// <summary>Draws a textured sprite</summary>
+        /// <summary>Set the coordinate origin for subsequent DrawQuad and DrawSprite calls. Center (0) means (x,y) is the center of the shape (default). TopLeft (1) means (x,y) is the top-left corner.</summary>
+        public bool SetCoordinateOrigin(uint origin)
+        {
+            return NativeMethods.goud_renderer_set_coordinate_origin(_ctx, origin);
+        }
+
+        /// <summary>Get the current coordinate origin setting. Returns 0 for Center, 1 for TopLeft.</summary>
+        public uint GetCoordinateOrigin()
+        {
+            return NativeMethods.goud_renderer_get_coordinate_origin(_ctx);
+        }
+
+        /// <summary>Draws a textured sprite. Position (x,y) interpretation depends on the coordinate origin setting (center by default).</summary>
         public void DrawSprite(ulong texture, float x, float y, float width, float height, float rotation = 0, Color? color = null)
         {
             var c = color ?? Color.White();

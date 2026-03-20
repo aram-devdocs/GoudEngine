@@ -2,6 +2,15 @@
 
 package goud
 
+// CoordinateOrigin Coordinate origin for draw calls. Controls how (x, y) position is interpreted in DrawQuad and DrawSprite.
+type CoordinateOrigin uint32
+
+// CoordinateOrigin constants.
+const (
+	CoordinateOriginCenter CoordinateOrigin = 0
+	CoordinateOriginTopLeft CoordinateOrigin = 1
+)
+
 // Key Keyboard key codes matching GLFW values
 type Key int32
 

@@ -179,6 +179,8 @@ use crate::ffi::renderer::goud_renderer_clear_depth;
 use crate::ffi::renderer::goud_renderer_disable_blending;
 use crate::ffi::renderer::goud_renderer_disable_depth_test;
 use crate::ffi::renderer::goud_renderer_enable_depth_test;
+use crate::ffi::renderer::goud_renderer_get_coordinate_origin;
+use crate::ffi::renderer::goud_renderer_set_coordinate_origin;
 use crate::ffi::renderer::goud_renderer_set_viewport;
 use crate::ffi::network::goud_rollback_check_desync;
 use crate::ffi::network::goud_rollback_confirmed_frame;
@@ -455,6 +457,16 @@ pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> 
         Ok(())
     })?;
     tbl.set("disable_blending", f_disable_blending)?;
+    // GoudGame.setCoordinateOrigin
+    let f_set_coordinate_origin = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_renderer_set_coordinate_origin(ctx, arg0 as u32))
+    })?;
+    tbl.set("set_coordinate_origin", f_set_coordinate_origin)?;
+    // GoudGame.getCoordinateOrigin
+    let f_get_coordinate_origin = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer_get_coordinate_origin(ctx) as i64)
+    })?;
+    tbl.set("get_coordinate_origin", f_get_coordinate_origin)?;
     // GoudGame.setFpsOverlayEnabled
     let f_set_fps_overlay_enabled = lua.create_function(move |_, arg0: bool| {
         Ok(goud_debug_set_fps_overlay_enabled(ctx, arg0) as i64)
