@@ -5152,24 +5152,6 @@
           "returns": "void"
         },
         {
-          "name": "setCoordinateOrigin",
-          "doc": "Set the coordinate origin for subsequent DrawQuad and DrawSprite calls. Center means (x,y) is the center of the shape (default). TopLeft means (x,y) is the top-left corner.",
-          "params": [
-            {
-              "name": "origin",
-              "type": "CoordinateOrigin",
-              "doc": "The coordinate origin to use"
-            }
-          ],
-          "returns": "bool"
-        },
-        {
-          "name": "getCoordinateOrigin",
-          "doc": "Get the current coordinate origin setting.",
-          "params": [],
-          "returns": "CoordinateOrigin"
-        },
-        {
           "name": "getRenderStats",
           "doc": "Returns rendering statistics for the current frame",
           "params": [],
