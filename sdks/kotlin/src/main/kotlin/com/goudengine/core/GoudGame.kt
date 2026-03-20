@@ -301,6 +301,9 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
         GoudGameNative.disableBlending(contextId)
     }
 
+    fun getRenderMetrics(): RenderMetrics =
+        GoudGameNative.getRenderMetrics(contextId)
+
     fun setFpsOverlayEnabled(enabled: Boolean) {
         GoudGameNative.setFpsOverlayEnabled(contextId, enabled)
     }

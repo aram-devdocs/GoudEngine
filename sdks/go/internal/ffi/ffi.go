@@ -1640,6 +1640,14 @@ func GoudProviderRenderCapabilities(context_id C.GoudContextId, out *C.RenderCap
 	return int32(C.goud_provider_render_capabilities(context_id, out))
 }
 
+// GoudRenderGetMetrics wraps goud_render_get_metrics.
+func GoudRenderGetMetrics(context_id C.GoudContextId, out_metrics *C.RenderMetrics) int32 {
+	if out_metrics == nil {
+		return -1
+	}
+	return int32(C.goud_render_get_metrics(context_id, out_metrics))
+}
+
 // GoudRenderer3dAddBloomPass wraps goud_renderer3d_add_bloom_pass.
 func GoudRenderer3dAddBloomPass(context_id C.GoudContextId, threshold float32, intensity float32) int32 {
 	return int32(C.goud_renderer3d_add_bloom_pass(context_id, C.float(threshold), C.float(intensity)))

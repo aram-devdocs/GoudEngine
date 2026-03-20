@@ -483,6 +483,8 @@ def _setup():
     # debug
     _lib.goud_debug_get_fps_stats.argtypes = [GoudContextId, ctypes.POINTER(FpsStats)]
     _lib.goud_debug_get_fps_stats.restype = ctypes.c_int32
+    _lib.goud_render_get_metrics.argtypes = [GoudContextId, ctypes.POINTER(RenderMetrics)]
+    _lib.goud_render_get_metrics.restype = ctypes.c_int32
     _lib.goud_debug_set_fps_overlay_enabled.argtypes = [GoudContextId, ctypes.c_bool]
     _lib.goud_debug_set_fps_overlay_enabled.restype = ctypes.c_int32
     _lib.goud_debug_set_fps_update_interval.argtypes = [GoudContextId, ctypes.c_float]
