@@ -226,6 +226,7 @@ def _gen_tool_class(tool_name: str, is_windowed: bool = False):
         f"package com.goudengine.core",
         "",
         f"import com.goudengine.internal.{native_cls}",
+        "import com.goudengine.types.*",
         "",
     ]
 

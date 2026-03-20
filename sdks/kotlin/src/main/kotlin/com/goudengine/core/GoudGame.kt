@@ -2,6 +2,7 @@
 package com.goudengine.core
 
 import com.goudengine.internal.GoudGameNative
+import com.goudengine.types.*
 
 /** Main game engine instance. Creates a window, manages rendering, input, and ECS. */
 class GoudGame internal constructor(internal val contextId: Long) : AutoCloseable {

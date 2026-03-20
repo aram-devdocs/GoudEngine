@@ -649,7 +649,7 @@ typedef struct RenderMetrics {
      */
     float ui_render_ms;
     /**
-     * Total render phase time (ms).
+     * Total render phase time (ms). Currently only includes UI render time;
      */
     float total_render_ms;
     /**
