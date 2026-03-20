@@ -210,6 +210,26 @@ pub struct RenderMetricsV1 {
     pub ui_draw_calls: u32,
 }
 
+impl From<crate::sdk::debug_overlay::RenderMetrics> for RenderMetricsV1 {
+    fn from(rm: crate::sdk::debug_overlay::RenderMetrics) -> Self {
+        Self {
+            draw_call_count: rm.draw_call_count,
+            sprites_submitted: rm.sprites_submitted,
+            sprites_drawn: rm.sprites_drawn,
+            sprites_culled: rm.sprites_culled,
+            batches_submitted: rm.batches_submitted,
+            avg_sprites_per_batch: rm.avg_sprites_per_batch,
+            sprite_render_ms: rm.sprite_render_ms,
+            text_render_ms: rm.text_render_ms,
+            ui_render_ms: rm.ui_render_ms,
+            total_render_ms: rm.total_render_ms,
+            text_draw_calls: rm.text_draw_calls,
+            text_glyph_count: rm.text_glyph_count,
+            ui_draw_calls: rm.ui_draw_calls,
+        }
+    }
+}
+
 /// Snapshot stats section.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotStatsV1 {

@@ -167,21 +167,8 @@ impl GoudGame {
         }
 
         // 2c. Capture render metrics for snapshot (before closure captures).
-        let render_metrics_for_snapshot = crate::core::debugger::RenderMetricsV1 {
-            draw_call_count: self.render_metrics.draw_call_count,
-            sprites_submitted: self.render_metrics.sprites_submitted,
-            sprites_drawn: self.render_metrics.sprites_drawn,
-            sprites_culled: self.render_metrics.sprites_culled,
-            batches_submitted: self.render_metrics.batches_submitted,
-            avg_sprites_per_batch: self.render_metrics.avg_sprites_per_batch,
-            sprite_render_ms: self.render_metrics.sprite_render_ms,
-            text_render_ms: self.render_metrics.text_render_ms,
-            ui_render_ms: self.render_metrics.ui_render_ms,
-            total_render_ms: self.render_metrics.total_render_ms,
-            text_draw_calls: self.render_metrics.text_draw_calls,
-            text_glyph_count: self.render_metrics.text_glyph_count,
-            ui_draw_calls: self.render_metrics.ui_draw_calls,
-        };
+        let render_metrics_for_snapshot: crate::core::debugger::RenderMetricsV1 =
+            self.render_metrics.into();
 
         // 3. Push to snapshot.
         debugger::with_snapshot_mut(&route_id, |snapshot| {

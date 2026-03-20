@@ -31,6 +31,7 @@ pub use debugger_runtime::{
     goud_debugger_set_profiling_enabled, goud_debugger_set_selected_entity,
     GoudMemoryCategoryStats, GoudMemorySummary,
 };
+
 /// Retrieves the current FPS statistics from the debug overlay.
 ///
 /// # Arguments
@@ -116,32 +117,20 @@ pub unsafe extern "C" fn goud_render_get_metrics(
         return -2;
     }
 
-    // Read render metrics from the debugger snapshot if available.
-    let metrics = debugger::snapshot_for_context(context_id)
-        .map(|snapshot| {
-            let rm = snapshot.stats.render_metrics;
-            RenderMetrics {
-                draw_call_count: rm.draw_call_count,
-                sprites_submitted: rm.sprites_submitted,
-                sprites_drawn: rm.sprites_drawn,
-                sprites_culled: rm.sprites_culled,
-                batches_submitted: rm.batches_submitted,
-                avg_sprites_per_batch: rm.avg_sprites_per_batch,
-                sprite_render_ms: rm.sprite_render_ms,
-                text_render_ms: rm.text_render_ms,
-                ui_render_ms: rm.ui_render_ms,
-                total_render_ms: rm.total_render_ms,
-                text_draw_calls: rm.text_draw_calls,
-                text_glyph_count: rm.text_glyph_count,
-                ui_draw_calls: rm.ui_draw_calls,
-            }
-        })
-        .unwrap_or_default();
+    with_window_state(context_id, |_state| {
+        let metrics = debugger::snapshot_for_context(context_id)
+            .map(|snapshot| RenderMetrics::from(snapshot.stats.render_metrics))
+            .unwrap_or_default();
 
-    // SAFETY: Caller guarantees out_metrics is a valid, aligned pointer.
-    // We write a Copy type so no drop concerns.
-    *out_metrics = metrics;
-    0
+        // SAFETY: Caller guarantees out_metrics is a valid, aligned pointer.
+        // We write a Copy type so no drop concerns.
+        *out_metrics = metrics;
+        0
+    })
+    .unwrap_or_else(|| {
+        set_last_error(GoudError::InvalidContext);
+        -1
+    })
 }
 
 /// Enables or disables the FPS overlay.
