@@ -27,10 +27,10 @@ class Network(private val contextId: Long) {
         NetworkNative.peerCount(contextId, handle)
 
     fun p2pCreateMesh(protocol: Int, port: Int, config: com.goudengine.types.P2pMeshConfig): Long =
-        NetworkNative.p2pCreateMesh(contextId, protocol, port, config)
+        NetworkNative.p2pCreateMesh(contextId, protocol, port, config.toNative())
 
     fun p2pJoinMesh(protocol: Int, address: String, port: Int, config: com.goudengine.types.P2pMeshConfig): Long =
-        NetworkNative.p2pJoinMesh(contextId, protocol, address, port, config)
+        NetworkNative.p2pJoinMesh(contextId, protocol, address, port, config.toNative())
 
     fun p2pLeaveMesh(handle: Long): Int =
         NetworkNative.p2pLeaveMesh(contextId, handle)
@@ -42,54 +42,54 @@ class Network(private val contextId: Long) {
         NetworkNative.p2pGetHost(contextId, handle)
 
     fun rollbackCreate(config: com.goudengine.types.RollbackConfig, localPlayer: Int, playerIds: ByteArray, statePtr: Long, advanceFn: Long, hashFn: Long, cloneFn: Long, freeFn: Long): Long =
-        NetworkNative.rollbackCreate(contextId, config, localPlayer, playerIds, statePtr, advanceFn, hashFn, cloneFn, freeFn)
+        NetworkNative.rollbackCreate(config.toNative(), localPlayer, playerIds, statePtr, advanceFn, hashFn, cloneFn, freeFn)
 
     fun rollbackDestroy(handle: Long): Int =
-        NetworkNative.rollbackDestroy(contextId, handle)
+        NetworkNative.rollbackDestroy(handle)
 
     fun rollbackAdvanceFrame(handle: Long, input: ByteArray): Int =
-        NetworkNative.rollbackAdvanceFrame(contextId, handle, input)
+        NetworkNative.rollbackAdvanceFrame(handle, input)
 
     fun rollbackReceiveRemoteInput(handle: Long, playerId: Int, frame: Long, input: ByteArray): Int =
-        NetworkNative.rollbackReceiveRemoteInput(contextId, handle, playerId, frame, input)
+        NetworkNative.rollbackReceiveRemoteInput(handle, playerId, frame, input)
 
     fun rollbackShouldRollback(handle: Long): Int =
-        NetworkNative.rollbackShouldRollback(contextId, handle)
+        NetworkNative.rollbackShouldRollback(handle)
 
     fun rollbackResimulate(handle: Long): Int =
-        NetworkNative.rollbackResimulate(contextId, handle)
+        NetworkNative.rollbackResimulate(handle)
 
     fun rollbackConfirmedFrame(handle: Long): Long =
-        NetworkNative.rollbackConfirmedFrame(contextId, handle)
+        NetworkNative.rollbackConfirmedFrame(handle)
 
     fun rollbackCurrentFrame(handle: Long): Long =
-        NetworkNative.rollbackCurrentFrame(contextId, handle)
+        NetworkNative.rollbackCurrentFrame(handle)
 
     fun rollbackCheckDesync(handle: Long, remoteHash: Long, frame: Long): Int =
-        NetworkNative.rollbackCheckDesync(contextId, handle, remoteHash, frame)
+        NetworkNative.rollbackCheckDesync(handle, remoteHash, frame)
 
     fun rpcCreate(timeoutMs: Long, maxPayload: Int): Long =
-        NetworkNative.rpcCreate(contextId, timeoutMs, maxPayload)
+        NetworkNative.rpcCreate(timeoutMs, maxPayload)
 
     fun rpcDestroy(handle: Long): Int =
-        NetworkNative.rpcDestroy(contextId, handle)
+        NetworkNative.rpcDestroy(handle)
 
     fun rpcRegister(handle: Long, rpcId: Int, name: String, direction: Int): Int =
-        NetworkNative.rpcRegister(contextId, handle, rpcId, name, direction)
+        NetworkNative.rpcRegister(handle, rpcId, name, direction)
 
     fun rpcCall(handle: Long, peerId: Long, rpcId: Int, payload: ByteArray): Long =
-        NetworkNative.rpcCall(contextId, handle, peerId, rpcId, payload)
+        NetworkNative.rpcCall(handle, peerId, rpcId, payload)
 
     fun rpcPoll(handle: Long, deltaSecs: Float): Int =
-        NetworkNative.rpcPoll(contextId, handle, deltaSecs)
+        NetworkNative.rpcPoll(handle, deltaSecs)
 
     fun rpcProcessIncoming(handle: Long, peerId: Long, data: ByteArray): Int =
-        NetworkNative.rpcProcessIncoming(contextId, handle, peerId, data)
+        NetworkNative.rpcProcessIncoming(handle, peerId, data)
 
     fun rpcReceiveResponse(handle: Long, callId: Long): ByteArray =
-        NetworkNative.rpcReceiveResponse(contextId, handle, callId)
+        NetworkNative.rpcReceiveResponse(handle, callId)
 
     fun rpcDrainOne(handle: Long): ByteArray =
-        NetworkNative.rpcDrainOne(contextId, handle)
+        NetworkNative.rpcDrainOne(handle)
 
 }

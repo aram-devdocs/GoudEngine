@@ -1860,25 +1860,6 @@ namespace GoudEngine
             return NativeMethods.goud_p2p_get_host(_ctx, handle);
         }
 
-        /// <summary>Creates a new rollback netcode session. Returns a positive handle on success.</summary>
-        public long RollbackCreate(RollbackConfig config, byte localPlayer, byte[] playerIds, ulong statePtr, ulong advanceFn, ulong hashFn, ulong cloneFn, ulong freeFn)
-        {
-            unsafe
-            {
-            var _configFfi = new FfiRollbackConfig
-            {
-                MaxRollbackFrames = config.MaxRollbackFrames,
-                InputDelayFrames = config.InputDelayFrames,
-                DesyncDetection = config.DesyncDetection
-            };
-                var playerIdsBytes = playerIds ?? Array.Empty<byte>();
-                fixed (byte* playerIdsPtr = playerIdsBytes)
-                {
-                    return NativeMethods.goud_rollback_create(_configFfi, localPlayer, playerIdsBytes.Length == 0 ? IntPtr.Zero : (IntPtr)playerIdsPtr, (uint)playerIdsBytes.Length, statePtr, advanceFn, hashFn, cloneFn, freeFn);
-                }
-            }
-        }
-
         /// <summary>Destroys a rollback session and frees all associated resources.</summary>
         public int RollbackDestroy(long handle)
         {
@@ -1966,19 +1947,6 @@ namespace GoudEngine
             }
         }
 
-        /// <summary>Initiates an RPC call to a peer. Returns the call ID via out parameter.</summary>
-        public ulong RpcCall(long handle, ulong peerId, ushort rpcId, byte[] payload)
-        {
-            unsafe
-            {
-                var payloadBytes = payload ?? Array.Empty<byte>();
-                fixed (byte* payloadPtr = payloadBytes)
-                {
-                    return NativeMethods.goud_rpc_call(handle, peerId, rpcId, payloadBytes.Length == 0 ? IntPtr.Zero : (IntPtr)payloadPtr, (int)payloadBytes.Length);
-                }
-            }
-        }
-
         /// <summary>Advances the RPC framework: checks timeouts and processes pending calls.</summary>
         public int RpcPoll(long handle, float deltaSecs)
         {
@@ -1994,56 +1962,6 @@ namespace GoudEngine
                 fixed (byte* dataPtr = dataBytes)
                 {
                     return NativeMethods.goud_rpc_process_incoming(handle, peerId, dataBytes.Length == 0 ? IntPtr.Zero : (IntPtr)dataPtr, (int)dataBytes.Length);
-                }
-            }
-        }
-
-        /// <summary>Attempts to retrieve the response for a pending RPC call.</summary>
-        public byte[] RpcReceiveResponse(long handle, ulong callId)
-        {
-            const int _bufferSize = 65536;
-            var buf = new byte[_bufferSize];
-            ulong _peerId = 0;
-            unsafe
-            {
-                fixed (byte* bufPtr = buf)
-                {
-                    int _written = NativeMethods.goud_rpc_receive_response(handle, callId, (IntPtr)bufPtr, buf.Length, ref _peerId);
-                    if (_written < 0)
-                    {
-                        var _ex = GoudException.FromLastError();
-                        if (_ex != null) throw _ex;
-                        throw new InvalidOperationException($"goud_rpc_receive_response failed with status {_written}.");
-                    }
-                    if (_written == 0) return Array.Empty<byte>();
-                    var result = new byte[_written];
-                    Array.Copy(buf, result, _written);
-                    return result;
-                }
-            }
-        }
-
-        /// <summary>Drains outbound RPC messages and copies the next one into the caller's buffer.</summary>
-        public byte[] RpcDrainOne(long handle)
-        {
-            const int _bufferSize = 65536;
-            var buf = new byte[_bufferSize];
-            ulong _peerId = 0;
-            unsafe
-            {
-                fixed (byte* bufPtr = buf)
-                {
-                    int _written = NativeMethods.goud_rpc_drain_one(handle, (IntPtr)bufPtr, buf.Length, ref _peerId);
-                    if (_written < 0)
-                    {
-                        var _ex = GoudException.FromLastError();
-                        if (_ex != null) throw _ex;
-                        throw new InvalidOperationException($"goud_rpc_drain_one failed with status {_written}.");
-                    }
-                    if (_written == 0) return Array.Empty<byte>();
-                    var result = new byte[_written];
-                    Array.Copy(buf, result, _written);
-                    return result;
                 }
             }
         }

@@ -517,10 +517,10 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
         GoudGameNative.checkHotSwapShortcut(contextId)
 
     fun p2pCreateMesh(protocol: Int, port: Int, config: com.goudengine.types.P2pMeshConfig): Long =
-        GoudGameNative.p2pCreateMesh(contextId, protocol, port, config)
+        GoudGameNative.p2pCreateMesh(contextId, protocol, port, config.toNative())
 
     fun p2pJoinMesh(protocol: Int, address: String, port: Int, config: com.goudengine.types.P2pMeshConfig): Long =
-        GoudGameNative.p2pJoinMesh(contextId, protocol, address, port, config)
+        GoudGameNative.p2pJoinMesh(contextId, protocol, address, port, config.toNative())
 
     fun p2pLeaveMesh(handle: Long): Int =
         GoudGameNative.p2pLeaveMesh(contextId, handle)
@@ -532,7 +532,7 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
         GoudGameNative.p2pGetHost(contextId, handle)
 
     fun rollbackCreate(config: com.goudengine.types.RollbackConfig, localPlayer: Int, playerIds: ByteArray, statePtr: Long, advanceFn: Long, hashFn: Long, cloneFn: Long, freeFn: Long): Long =
-        GoudGameNative.rollbackCreate(config, localPlayer, playerIds, statePtr, advanceFn, hashFn, cloneFn, freeFn)
+        GoudGameNative.rollbackCreate(config.toNative(), localPlayer, playerIds, statePtr, advanceFn, hashFn, cloneFn, freeFn)
 
     fun rollbackDestroy(handle: Long): Int =
         GoudGameNative.rollbackDestroy(handle)

@@ -5911,7 +5911,6 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_p2pGetHost<'l
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackCreate<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     config: jni::objects::JObject<'local>,
     localPlayer: jni::sys::jint,
     playerIds: jni::objects::JByteArray<'local>,
@@ -5927,7 +5926,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackCreat
             let mut config_raw = read_RollbackConfig(env, &config, "config")?;
             let playerIds_bytes = crate::jni::helpers::require_bytes(env, playerIds, "playerIds")?;
             let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
-        crate::ffi::network::rollback::goud_rollback_create(goud_context_id_from_jlong(contextId), config_raw, localPlayer as _, if playerIds_bytes.is_empty() { std::ptr::null() } else { playerIds_bytes.as_ptr() } as _, playerIds_bytes.len() as _, statePtr as _, advanceFn as _, hashFn as _, cloneFn as _, freeFn as _)
+        crate::ffi::network::rollback::goud_rollback_create(config_raw, localPlayer as _, if playerIds_bytes.is_empty() { std::ptr::null() } else { playerIds_bytes.as_ptr() } as _, playerIds_bytes.len() as _, statePtr as _, advanceFn as _, hashFn as _, cloneFn as _, freeFn as _)
     };
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rollback_create", None);
@@ -5942,13 +5941,12 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackCreat
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackDestroy<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
 ) -> jni::sys::jint {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_rollbackDestroy", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::network::rollback::goud_rollback_destroy(goud_context_id_from_jlong(contextId), handle as _);
+            let result = crate::ffi::network::rollback::goud_rollback_destroy(handle as _);
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rollback_destroy", Some(result as i64));
                 return Err(());
@@ -5962,7 +5960,6 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackDestr
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackAdvanceFrame<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
     input: jni::objects::JByteArray<'local>,
 ) -> jni::sys::jint {
@@ -5971,7 +5968,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackAdvan
             crate::jni::helpers::clear_last_error();
             let input_bytes = crate::jni::helpers::require_bytes(env, input, "input")?;
             let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
-        crate::ffi::network::rollback::goud_rollback_advance_frame(goud_context_id_from_jlong(contextId), handle as _, if input_bytes.is_empty() { std::ptr::null() } else { input_bytes.as_ptr() } as _)
+        crate::ffi::network::rollback::goud_rollback_advance_frame(handle as _, if input_bytes.is_empty() { std::ptr::null() } else { input_bytes.as_ptr() } as _, input_bytes.len() as _)
     };
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rollback_advance_frame", Some(result as i64));
@@ -5986,7 +5983,6 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackAdvan
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackReceiveRemoteInput<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
     playerId: jni::sys::jint,
     frame: jni::sys::jlong,
@@ -5997,7 +5993,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackRecei
             crate::jni::helpers::clear_last_error();
             let input_bytes = crate::jni::helpers::require_bytes(env, input, "input")?;
             let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
-        crate::ffi::network::rollback::goud_rollback_receive_remote_input(goud_context_id_from_jlong(contextId), handle as _, playerId as _, frame as _, if input_bytes.is_empty() { std::ptr::null() } else { input_bytes.as_ptr() } as _)
+        crate::ffi::network::rollback::goud_rollback_receive_remote_input(handle as _, playerId as _, frame as _, if input_bytes.is_empty() { std::ptr::null() } else { input_bytes.as_ptr() } as _, input_bytes.len() as _)
     };
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rollback_receive_remote_input", Some(result as i64));
@@ -6012,13 +6008,12 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackRecei
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackShouldRollback<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
 ) -> jni::sys::jint {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_rollbackShouldRollback", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::network::rollback::goud_rollback_should_rollback(goud_context_id_from_jlong(contextId), handle as _);
+            let result = crate::ffi::network::rollback::goud_rollback_should_rollback(handle as _);
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rollback_should_rollback", Some(result as i64));
                 return Err(());
@@ -6032,13 +6027,12 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackShoul
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackResimulate<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
 ) -> jni::sys::jint {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_rollbackResimulate", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::network::rollback::goud_rollback_resimulate(goud_context_id_from_jlong(contextId), handle as _);
+            let result = crate::ffi::network::rollback::goud_rollback_resimulate(handle as _);
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rollback_resimulate", Some(result as i64));
                 return Err(());
@@ -6052,13 +6046,12 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackResim
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackConfirmedFrame<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
 ) -> jni::sys::jlong {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_rollbackConfirmedFrame", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jlong> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::network::rollback::goud_rollback_confirmed_frame(goud_context_id_from_jlong(contextId), handle as _);
+            let result = crate::ffi::network::rollback::goud_rollback_confirmed_frame(handle as _);
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rollback_confirmed_frame", None);
                 return Err(());
@@ -6072,13 +6065,12 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackConfi
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackCurrentFrame<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
 ) -> jni::sys::jlong {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_rollbackCurrentFrame", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jlong> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::network::rollback::goud_rollback_current_frame(goud_context_id_from_jlong(contextId), handle as _);
+            let result = crate::ffi::network::rollback::goud_rollback_current_frame(handle as _);
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rollback_current_frame", None);
                 return Err(());
@@ -6092,7 +6084,6 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackCurre
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackCheckDesync<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
     remoteHash: jni::sys::jlong,
     frame: jni::sys::jlong,
@@ -6100,7 +6091,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackCheck
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_rollbackCheckDesync", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::network::rollback::goud_rollback_check_desync(goud_context_id_from_jlong(contextId), handle as _, remoteHash as _, frame as _);
+            let result = crate::ffi::network::rollback::goud_rollback_check_desync(handle as _, remoteHash as _, frame as _);
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rollback_check_desync", Some(result as i64));
                 return Err(());
@@ -6114,14 +6105,13 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rollbackCheck
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rpcCreate<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     timeoutMs: jni::sys::jlong,
     maxPayload: jni::sys::jint,
 ) -> jni::sys::jlong {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_rpcCreate", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jlong> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::network::rpc::goud_rpc_create(goud_context_id_from_jlong(contextId), timeoutMs as _, maxPayload as _);
+            let result = crate::ffi::network::rpc::goud_rpc_create(timeoutMs as _, maxPayload as _);
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rpc_create", None);
                 return Err(());
@@ -6135,13 +6125,12 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rpcCreate<'lo
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rpcDestroy<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
 ) -> jni::sys::jint {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_rpcDestroy", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::network::rpc::goud_rpc_destroy(goud_context_id_from_jlong(contextId), handle as _);
+            let result = crate::ffi::network::rpc::goud_rpc_destroy(handle as _);
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rpc_destroy", Some(result as i64));
                 return Err(());
@@ -6155,7 +6144,6 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rpcDestroy<'l
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rpcRegister<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
     rpcId: jni::sys::jint,
     name: jni::objects::JString<'local>,
@@ -6166,7 +6154,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rpcRegister<'
             crate::jni::helpers::clear_last_error();
             let name_bytes = crate::jni::helpers::require_string_bytes(env, name, "name")?;
             let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
-        crate::ffi::network::rpc::goud_rpc_register(goud_context_id_from_jlong(contextId), handle as _, rpcId as _, if name_bytes.is_empty() { std::ptr::null() } else { name_bytes.as_ptr() } as _, name_bytes.len() as _, direction as _)
+        crate::ffi::network::rpc::goud_rpc_register(handle as _, rpcId as _, if name_bytes.is_empty() { std::ptr::null() } else { name_bytes.as_ptr() } as _, name_bytes.len() as _, direction as _)
     };
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rpc_register", Some(result as i64));
@@ -6181,7 +6169,6 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rpcRegister<'
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rpcCall<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
     peerId: jni::sys::jlong,
     rpcId: jni::sys::jint,
@@ -6192,7 +6179,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rpcCall<'loca
             crate::jni::helpers::clear_last_error();
             let payload_bytes = crate::jni::helpers::require_bytes(env, payload, "payload")?;
             let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
-        crate::ffi::network::rpc::goud_rpc_call(goud_context_id_from_jlong(contextId), handle as _, peerId as _, rpcId as _, if payload_bytes.is_empty() { std::ptr::null() } else { payload_bytes.as_ptr() } as _, payload_bytes.len() as _)
+        crate::ffi::network::rpc::goud_rpc_call(handle as _, peerId as _, rpcId as _, if payload_bytes.is_empty() { std::ptr::null() } else { payload_bytes.as_ptr() } as _, payload_bytes.len() as _)
     };
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rpc_call", None);
@@ -6207,14 +6194,13 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rpcCall<'loca
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rpcPoll<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
     deltaSecs: jni::sys::jfloat,
 ) -> jni::sys::jint {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_rpcPoll", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::network::rpc::goud_rpc_poll(goud_context_id_from_jlong(contextId), handle as _, deltaSecs as _);
+            let result = crate::ffi::network::rpc::goud_rpc_poll(handle as _, deltaSecs as _);
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rpc_poll", Some(result as i64));
                 return Err(());
@@ -6228,7 +6214,6 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rpcPoll<'loca
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rpcProcessIncoming<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
     peerId: jni::sys::jlong,
     data: jni::objects::JByteArray<'local>,
@@ -6238,7 +6223,7 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rpcProcessInc
             crate::jni::helpers::clear_last_error();
             let data_bytes = crate::jni::helpers::require_bytes(env, data, "data")?;
             let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
-        crate::ffi::network::rpc::goud_rpc_process_incoming(goud_context_id_from_jlong(contextId), handle as _, peerId as _, if data_bytes.is_empty() { std::ptr::null() } else { data_bytes.as_ptr() } as _)
+        crate::ffi::network::rpc::goud_rpc_process_incoming(handle as _, peerId as _, if data_bytes.is_empty() { std::ptr::null() } else { data_bytes.as_ptr() } as _, data_bytes.len() as _)
     };
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rpc_process_incoming", Some(result as i64));
@@ -6253,20 +6238,13 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rpcProcessInc
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rpcReceiveResponse<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
     callId: jni::sys::jlong,
 ) -> jni::sys::jbyteArray {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_rpcReceiveResponse", crate::jni::helpers::null_byte_array(), |env| -> crate::jni::helpers::JniCallResult<jni::sys::jbyteArray> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let mut caps: crate::core::providers::network_types::NetworkCapabilities = unsafe { // SAFETY: zeroed provider capability storage is immediately filled by the FFI call.
-        std::mem::zeroed()
-    };
-            unsafe { // SAFETY: the provider capability out-parameter points to local stack storage for the duration of the FFI call.
-        crate::ffi::providers::goud_provider_network_capabilities(goud_context_id_from_jlong(contextId), &mut caps as _);
-    }
-            let buffer_size = if caps.max_message_size == 0 { 65536usize } else { caps.max_message_size as usize };
+            let buffer_size = 65536usize;
             let mut buffer = vec![0u8; buffer_size];
             let mut peer_id: u64 = 0;
             let written = unsafe { // SAFETY: the receive buffer and peer id out-parameter remain valid for the duration of the FFI call.
@@ -6293,19 +6271,12 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rpcReceiveRes
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_rpcDrainOne<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
 ) -> jni::sys::jbyteArray {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_rpcDrainOne", crate::jni::helpers::null_byte_array(), |env| -> crate::jni::helpers::JniCallResult<jni::sys::jbyteArray> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let mut caps: crate::core::providers::network_types::NetworkCapabilities = unsafe { // SAFETY: zeroed provider capability storage is immediately filled by the FFI call.
-        std::mem::zeroed()
-    };
-            unsafe { // SAFETY: the provider capability out-parameter points to local stack storage for the duration of the FFI call.
-        crate::ffi::providers::goud_provider_network_capabilities(goud_context_id_from_jlong(contextId), &mut caps as _);
-    }
-            let buffer_size = if caps.max_message_size == 0 { 65536usize } else { caps.max_message_size as usize };
+            let buffer_size = 65536usize;
             let mut buffer = vec![0u8; buffer_size];
             let mut peer_id: u64 = 0;
             let written = unsafe { // SAFETY: the receive buffer and peer id out-parameter remain valid for the duration of the FFI call.
@@ -11723,7 +11694,6 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_p2pGetHost<'lo
 pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackCreate<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     config: jni::objects::JObject<'local>,
     localPlayer: jni::sys::jint,
     playerIds: jni::objects::JByteArray<'local>,
@@ -11739,7 +11709,7 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackCreate
             let mut config_raw = read_RollbackConfig(env, &config, "config")?;
             let playerIds_bytes = crate::jni::helpers::require_bytes(env, playerIds, "playerIds")?;
             let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
-        crate::ffi::network::rollback::goud_rollback_create(goud_context_id_from_jlong(contextId), config_raw, localPlayer as _, if playerIds_bytes.is_empty() { std::ptr::null() } else { playerIds_bytes.as_ptr() } as _, playerIds_bytes.len() as _, statePtr as _, advanceFn as _, hashFn as _, cloneFn as _, freeFn as _)
+        crate::ffi::network::rollback::goud_rollback_create(config_raw, localPlayer as _, if playerIds_bytes.is_empty() { std::ptr::null() } else { playerIds_bytes.as_ptr() } as _, playerIds_bytes.len() as _, statePtr as _, advanceFn as _, hashFn as _, cloneFn as _, freeFn as _)
     };
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rollback_create", None);
@@ -11754,13 +11724,12 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackCreate
 pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackDestroy<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
 ) -> jni::sys::jint {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_NetworkNative_rollbackDestroy", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::network::rollback::goud_rollback_destroy(goud_context_id_from_jlong(contextId), handle as _);
+            let result = crate::ffi::network::rollback::goud_rollback_destroy(handle as _);
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rollback_destroy", Some(result as i64));
                 return Err(());
@@ -11774,7 +11743,6 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackDestro
 pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackAdvanceFrame<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
     input: jni::objects::JByteArray<'local>,
 ) -> jni::sys::jint {
@@ -11783,7 +11751,7 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackAdvanc
             crate::jni::helpers::clear_last_error();
             let input_bytes = crate::jni::helpers::require_bytes(env, input, "input")?;
             let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
-        crate::ffi::network::rollback::goud_rollback_advance_frame(goud_context_id_from_jlong(contextId), handle as _, if input_bytes.is_empty() { std::ptr::null() } else { input_bytes.as_ptr() } as _)
+        crate::ffi::network::rollback::goud_rollback_advance_frame(handle as _, if input_bytes.is_empty() { std::ptr::null() } else { input_bytes.as_ptr() } as _, input_bytes.len() as _)
     };
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rollback_advance_frame", Some(result as i64));
@@ -11798,7 +11766,6 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackAdvanc
 pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackReceiveRemoteInput<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
     playerId: jni::sys::jint,
     frame: jni::sys::jlong,
@@ -11809,7 +11776,7 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackReceiv
             crate::jni::helpers::clear_last_error();
             let input_bytes = crate::jni::helpers::require_bytes(env, input, "input")?;
             let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
-        crate::ffi::network::rollback::goud_rollback_receive_remote_input(goud_context_id_from_jlong(contextId), handle as _, playerId as _, frame as _, if input_bytes.is_empty() { std::ptr::null() } else { input_bytes.as_ptr() } as _)
+        crate::ffi::network::rollback::goud_rollback_receive_remote_input(handle as _, playerId as _, frame as _, if input_bytes.is_empty() { std::ptr::null() } else { input_bytes.as_ptr() } as _, input_bytes.len() as _)
     };
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rollback_receive_remote_input", Some(result as i64));
@@ -11824,13 +11791,12 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackReceiv
 pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackShouldRollback<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
 ) -> jni::sys::jint {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_NetworkNative_rollbackShouldRollback", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::network::rollback::goud_rollback_should_rollback(goud_context_id_from_jlong(contextId), handle as _);
+            let result = crate::ffi::network::rollback::goud_rollback_should_rollback(handle as _);
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rollback_should_rollback", Some(result as i64));
                 return Err(());
@@ -11844,13 +11810,12 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackShould
 pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackResimulate<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
 ) -> jni::sys::jint {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_NetworkNative_rollbackResimulate", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::network::rollback::goud_rollback_resimulate(goud_context_id_from_jlong(contextId), handle as _);
+            let result = crate::ffi::network::rollback::goud_rollback_resimulate(handle as _);
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rollback_resimulate", Some(result as i64));
                 return Err(());
@@ -11864,13 +11829,12 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackResimu
 pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackConfirmedFrame<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
 ) -> jni::sys::jlong {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_NetworkNative_rollbackConfirmedFrame", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jlong> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::network::rollback::goud_rollback_confirmed_frame(goud_context_id_from_jlong(contextId), handle as _);
+            let result = crate::ffi::network::rollback::goud_rollback_confirmed_frame(handle as _);
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rollback_confirmed_frame", None);
                 return Err(());
@@ -11884,13 +11848,12 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackConfir
 pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackCurrentFrame<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
 ) -> jni::sys::jlong {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_NetworkNative_rollbackCurrentFrame", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jlong> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::network::rollback::goud_rollback_current_frame(goud_context_id_from_jlong(contextId), handle as _);
+            let result = crate::ffi::network::rollback::goud_rollback_current_frame(handle as _);
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rollback_current_frame", None);
                 return Err(());
@@ -11904,7 +11867,6 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackCurren
 pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackCheckDesync<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
     remoteHash: jni::sys::jlong,
     frame: jni::sys::jlong,
@@ -11912,7 +11874,7 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackCheckD
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_NetworkNative_rollbackCheckDesync", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::network::rollback::goud_rollback_check_desync(goud_context_id_from_jlong(contextId), handle as _, remoteHash as _, frame as _);
+            let result = crate::ffi::network::rollback::goud_rollback_check_desync(handle as _, remoteHash as _, frame as _);
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rollback_check_desync", Some(result as i64));
                 return Err(());
@@ -11926,14 +11888,13 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rollbackCheckD
 pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rpcCreate<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     timeoutMs: jni::sys::jlong,
     maxPayload: jni::sys::jint,
 ) -> jni::sys::jlong {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_NetworkNative_rpcCreate", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jlong> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::network::rpc::goud_rpc_create(goud_context_id_from_jlong(contextId), timeoutMs as _, maxPayload as _);
+            let result = crate::ffi::network::rpc::goud_rpc_create(timeoutMs as _, maxPayload as _);
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rpc_create", None);
                 return Err(());
@@ -11947,13 +11908,12 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rpcCreate<'loc
 pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rpcDestroy<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
 ) -> jni::sys::jint {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_NetworkNative_rpcDestroy", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::network::rpc::goud_rpc_destroy(goud_context_id_from_jlong(contextId), handle as _);
+            let result = crate::ffi::network::rpc::goud_rpc_destroy(handle as _);
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rpc_destroy", Some(result as i64));
                 return Err(());
@@ -11967,7 +11927,6 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rpcDestroy<'lo
 pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rpcRegister<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
     rpcId: jni::sys::jint,
     name: jni::objects::JString<'local>,
@@ -11978,7 +11937,7 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rpcRegister<'l
             crate::jni::helpers::clear_last_error();
             let name_bytes = crate::jni::helpers::require_string_bytes(env, name, "name")?;
             let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
-        crate::ffi::network::rpc::goud_rpc_register(goud_context_id_from_jlong(contextId), handle as _, rpcId as _, if name_bytes.is_empty() { std::ptr::null() } else { name_bytes.as_ptr() } as _, name_bytes.len() as _, direction as _)
+        crate::ffi::network::rpc::goud_rpc_register(handle as _, rpcId as _, if name_bytes.is_empty() { std::ptr::null() } else { name_bytes.as_ptr() } as _, name_bytes.len() as _, direction as _)
     };
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rpc_register", Some(result as i64));
@@ -11993,7 +11952,6 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rpcRegister<'l
 pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rpcCall<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
     peerId: jni::sys::jlong,
     rpcId: jni::sys::jint,
@@ -12004,7 +11962,7 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rpcCall<'local
             crate::jni::helpers::clear_last_error();
             let payload_bytes = crate::jni::helpers::require_bytes(env, payload, "payload")?;
             let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
-        crate::ffi::network::rpc::goud_rpc_call(goud_context_id_from_jlong(contextId), handle as _, peerId as _, rpcId as _, if payload_bytes.is_empty() { std::ptr::null() } else { payload_bytes.as_ptr() } as _, payload_bytes.len() as _)
+        crate::ffi::network::rpc::goud_rpc_call(handle as _, peerId as _, rpcId as _, if payload_bytes.is_empty() { std::ptr::null() } else { payload_bytes.as_ptr() } as _, payload_bytes.len() as _)
     };
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rpc_call", None);
@@ -12019,14 +11977,13 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rpcCall<'local
 pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rpcPoll<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
     deltaSecs: jni::sys::jfloat,
 ) -> jni::sys::jint {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_NetworkNative_rpcPoll", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::network::rpc::goud_rpc_poll(goud_context_id_from_jlong(contextId), handle as _, deltaSecs as _);
+            let result = crate::ffi::network::rpc::goud_rpc_poll(handle as _, deltaSecs as _);
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rpc_poll", Some(result as i64));
                 return Err(());
@@ -12040,7 +11997,6 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rpcPoll<'local
 pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rpcProcessIncoming<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
     peerId: jni::sys::jlong,
     data: jni::objects::JByteArray<'local>,
@@ -12050,7 +12006,7 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rpcProcessInco
             crate::jni::helpers::clear_last_error();
             let data_bytes = crate::jni::helpers::require_bytes(env, data, "data")?;
             let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
-        crate::ffi::network::rpc::goud_rpc_process_incoming(goud_context_id_from_jlong(contextId), handle as _, peerId as _, if data_bytes.is_empty() { std::ptr::null() } else { data_bytes.as_ptr() } as _)
+        crate::ffi::network::rpc::goud_rpc_process_incoming(handle as _, peerId as _, if data_bytes.is_empty() { std::ptr::null() } else { data_bytes.as_ptr() } as _, data_bytes.len() as _)
     };
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_rpc_process_incoming", Some(result as i64));
@@ -12065,20 +12021,13 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rpcProcessInco
 pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rpcReceiveResponse<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
     callId: jni::sys::jlong,
 ) -> jni::sys::jbyteArray {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_NetworkNative_rpcReceiveResponse", crate::jni::helpers::null_byte_array(), |env| -> crate::jni::helpers::JniCallResult<jni::sys::jbyteArray> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let mut caps: crate::core::providers::network_types::NetworkCapabilities = unsafe { // SAFETY: zeroed provider capability storage is immediately filled by the FFI call.
-        std::mem::zeroed()
-    };
-            unsafe { // SAFETY: the provider capability out-parameter points to local stack storage for the duration of the FFI call.
-        crate::ffi::providers::goud_provider_network_capabilities(goud_context_id_from_jlong(contextId), &mut caps as _);
-    }
-            let buffer_size = if caps.max_message_size == 0 { 65536usize } else { caps.max_message_size as usize };
+            let buffer_size = 65536usize;
             let mut buffer = vec![0u8; buffer_size];
             let mut peer_id: u64 = 0;
             let written = unsafe { // SAFETY: the receive buffer and peer id out-parameter remain valid for the duration of the FFI call.
@@ -12105,19 +12054,12 @@ pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rpcReceiveResp
 pub extern "system" fn Java_com_goudengine_internal_NetworkNative_rpcDrainOne<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
     handle: jni::sys::jlong,
 ) -> jni::sys::jbyteArray {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_NetworkNative_rpcDrainOne", crate::jni::helpers::null_byte_array(), |env| -> crate::jni::helpers::JniCallResult<jni::sys::jbyteArray> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let mut caps: crate::core::providers::network_types::NetworkCapabilities = unsafe { // SAFETY: zeroed provider capability storage is immediately filled by the FFI call.
-        std::mem::zeroed()
-    };
-            unsafe { // SAFETY: the provider capability out-parameter points to local stack storage for the duration of the FFI call.
-        crate::ffi::providers::goud_provider_network_capabilities(goud_context_id_from_jlong(contextId), &mut caps as _);
-    }
-            let buffer_size = if caps.max_message_size == 0 { 65536usize } else { caps.max_message_size as usize };
+            let buffer_size = 65536usize;
             let mut buffer = vec![0u8; buffer_size];
             let mut peer_id: u64 = 0;
             let written = unsafe { // SAFETY: the receive buffer and peer id out-parameter remain valid for the duration of the FFI call.

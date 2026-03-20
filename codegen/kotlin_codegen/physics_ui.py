@@ -104,8 +104,10 @@ def _gen_sub_tool(tool_name: str):
         if java_methods and java_mn not in java_methods:
             continue
 
+        is_no_context = ffi_entry.get("no_context", False)
+
         kt_params_list = []
-        call_args_list = ["contextId"]
+        call_args_list = [] if is_no_context else ["contextId"]
         for p in params:
             pname = p["name"]
             ptype = p["type"]

@@ -51,7 +51,7 @@ def gen_value_types():
         simple_types = {"f32","f64","u8","u16","u32","u64","i8","i16","i32","i64","bool","string","usize","ptr"}
         if any(f["type"] not in simple_types for f in fields):
             continue
-        is_carrier = type_name in ("Color", "Vec2", "Vec3", "Rect")
+        is_carrier = type_name in ("Color", "Vec2", "Vec3", "Rect", "P2pMeshConfig", "RollbackConfig")
         lines = [f"// {HEADER_COMMENT}", "package com.goudengine.types", ""]
         if is_carrier:
             lines += [f"import com.goudengine.internal.{type_name} as Java{type_name}", ""]

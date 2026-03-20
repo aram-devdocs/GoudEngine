@@ -8,6 +8,17 @@ from .method_body import _gen_method_body
 from .param_strings import _safe_param_strs
 from .helpers import cs_type, _to_cs_field, _cs_default_value
 
+# Methods whose FFI signatures use patterns the C# wrapper codegen
+# doesn't handle yet (e.g. mixed buffer+out params, ptr↔ulong casts).
+# Skipped from wrapper generation; expose via a higher-level API later.
+_CSHARP_SKIP_METHODS = {
+    "rollbackCreate",    # statePtr is *mut u8 (IntPtr) but schema says u64
+    "rpcCall",           # has call_id_out (*mut u64) out param not in schema
+    "rpcReceiveResponse",  # out_buffer template doesn't match FFI signature
+    "rpcDrainOne",       # same out_buffer pattern issue as rpcReceiveResponse
+}
+
+
 def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = False):
     tool = schema["tools"][tool_name]
     class_name = tool_name
@@ -162,6 +173,8 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
 
     # Methods
     for method in tool.get("methods", []):
+        if method["name"] in _CSHARP_SKIP_METHODS:
+            continue
         mn = to_pascal(method["name"])
         mm = tm.get("methods", {}).get(method["name"], {})
         params = method.get("params", [])

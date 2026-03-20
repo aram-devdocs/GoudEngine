@@ -79,7 +79,7 @@ def _param_convert(pname: str, ptype: str) -> str:
         return f"{pname}.value"
     if base in ("Transform2D", "Sprite", "Text", "SpriteAnimator"):
         return f"{pname}.native"
-    if base in ("Color", "Vec2", "Vec3", "Rect"):
+    if base in ("Color", "Vec2", "Vec3", "Rect", "P2pMeshConfig", "RollbackConfig"):
         return f"{pname}.toNative()"
     return pname
 
