@@ -1,0 +1,76 @@
+{
+  "generated_at": "unix:1774041631",
+  "commit": "3801800c",
+  "scenarios": [
+    {
+      "entity_count": 0,
+      "sprite_count": 0,
+      "draw_calls": 0,
+      "batch_count": 0,
+      "batch_ratio": 0.0,
+      "culled_count": 0,
+      "vertex_count": 0,
+      "vertex_buffer_bytes": 0
+    },
+    {
+      "entity_count": 100,
+      "sprite_count": 81,
+      "draw_calls": 8,
+      "batch_count": 8,
+      "batch_ratio": 10.125,
+      "culled_count": 19,
+      "vertex_count": 324,
+      "vertex_buffer_bytes": 10368
+    },
+    {
+      "entity_count": 1000,
+      "sprite_count": 81,
+      "draw_calls": 8,
+      "batch_count": 8,
+      "batch_ratio": 10.125,
+      "culled_count": 919,
+      "vertex_count": 324,
+      "vertex_buffer_bytes": 10368
+    },
+    {
+      "entity_count": 10000,
+      "sprite_count": 81,
+      "draw_calls": 8,
+      "batch_count": 8,
+      "batch_ratio": 10.125,
+      "culled_count": 9919,
+      "vertex_count": 324,
+      "vertex_buffer_bytes": 10368
+    },
+    {
+      "entity_count": 500,
+      "sprite_count": 81,
+      "draw_calls": 8,
+      "batch_count": 8,
+      "batch_ratio": 10.125,
+      "culled_count": 419,
+      "vertex_count": 324,
+      "vertex_buffer_bytes": 10368
+    },
+    {
+      "entity_count": 2000,
+      "sprite_count": 81,
+      "draw_calls": 8,
+      "batch_count": 8,
+      "batch_ratio": 10.125,
+      "culled_count": 1919,
+      "vertex_count": 324,
+      "vertex_buffer_bytes": 10368
+    },
+    {
+      "entity_count": 5000,
+      "sprite_count": 81,
+      "draw_calls": 8,
+      "batch_count": 8,
+      "batch_ratio": 10.125,
+      "culled_count": 4919,
+      "vertex_count": 324,
+      "vertex_buffer_bytes": 10368
+    }
+  ]
+}

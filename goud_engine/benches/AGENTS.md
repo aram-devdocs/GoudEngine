@@ -9,6 +9,7 @@ Performance benchmarks using the `criterion` crate. Focus on hot paths.
 - `ecs_benchmarks.rs` — Entity creation, component iteration, system execution
 - `asset_benchmarks.rs` — Asset loading, caching, handle resolution
 - `sprite_batch_benchmarks.rs` — Sprite batch gather, sort, vertex generation, full CPU pipeline
+- `render_benchmarks.rs` — Render pipeline CPU benchmarks (full frame, metrics, percentiles, scaling)
 - `physics_benchmarks.rs.disabled` — Physics benchmarks (currently disabled)
 
 ## Running
