@@ -40,6 +40,12 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
     fun drawText(fontHandle: Long, text: String, x: Float, y: Float, fontSize: Float, alignment: com.goudengine.core.TextAlignment, maxWidth: Float, lineSpacing: Float, direction: com.goudengine.core.TextDirection, color: com.goudengine.types.Color): Boolean =
         GoudGameNative.drawText(contextId, fontHandle, text, x, y, fontSize, alignment.value, maxWidth, lineSpacing, direction.value, color.toNative())
 
+    fun setCoordinateOrigin(origin: Int): Boolean =
+        GoudGameNative.setCoordinateOrigin(contextId, origin)
+
+    fun getCoordinateOrigin(): Int =
+        GoudGameNative.getCoordinateOrigin(contextId)
+
     fun drawSprite(texture: Long, x: Float, y: Float, width: Float, height: Float, rotation: Float, color: com.goudengine.types.Color) {
         GoudGameNative.drawSprite(contextId, texture, x, y, width, height, rotation, color.toNative())
     }

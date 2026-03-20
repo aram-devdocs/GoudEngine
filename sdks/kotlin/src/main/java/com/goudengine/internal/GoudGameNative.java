@@ -14,6 +14,8 @@ public final class GoudGameNative {
     public static native long loadFont(long contextId, String path);
     public static native boolean destroyFont(long contextId, long handle);
     public static native boolean drawText(long contextId, long fontHandle, String text, float x, float y, float fontSize, int alignment, float maxWidth, float lineSpacing, int direction, Color color);
+    public static native boolean setCoordinateOrigin(long contextId, int origin);
+    public static native int getCoordinateOrigin(long contextId);
     public static native void drawSprite(long contextId, long texture, float x, float y, float width, float height, float rotation, Color color);
     public static native void drawQuad(long contextId, float x, float y, float width, float height, Color color);
     public static native boolean isKeyPressed(long contextId, int key);

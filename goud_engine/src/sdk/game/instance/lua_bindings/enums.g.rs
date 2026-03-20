@@ -4,6 +4,11 @@ use mlua::prelude::*;
 
 pub(crate) fn register_enum_constants(lua: &Lua) -> LuaResult<()> {
     let globals = lua.globals();
+    // CoordinateOrigin
+    let tbl = lua.create_table()?;
+    tbl.set("center", 0_i64)?;
+    tbl.set("top_left", 1_i64)?;
+    globals.set("coordinate_origin", tbl)?;
     // Key
     let tbl = lua.create_table()?;
     tbl.set("unknown", -1_i64)?;

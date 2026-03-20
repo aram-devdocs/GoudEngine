@@ -428,6 +428,10 @@ def _setup():
     _lib.goud_renderer_end.restype = ctypes.c_bool
     _lib.goud_renderer_enable_blending.argtypes = [GoudContextId]
     _lib.goud_renderer_enable_blending.restype = None
+    _lib.goud_renderer_set_coordinate_origin.argtypes = [GoudContextId, ctypes.c_uint32]
+    _lib.goud_renderer_set_coordinate_origin.restype = ctypes.c_bool
+    _lib.goud_renderer_get_coordinate_origin.argtypes = [GoudContextId]
+    _lib.goud_renderer_get_coordinate_origin.restype = ctypes.c_uint32
     _lib.goud_renderer_draw_sprite.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
     _lib.goud_renderer_draw_sprite.restype = ctypes.c_bool
     _lib.goud_renderer_draw_quad.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
@@ -458,10 +462,6 @@ def _setup():
     _lib.goud_renderer_disable_blending.restype = None
     _lib.goud_renderer_get_stats.argtypes = [GoudContextId, ctypes.POINTER(GoudRenderStats)]
     _lib.goud_renderer_get_stats.restype = ctypes.c_bool
-    _lib.goud_renderer_set_coordinate_origin.argtypes = [GoudContextId, ctypes.c_uint32]
-    _lib.goud_renderer_set_coordinate_origin.restype = ctypes.c_bool
-    _lib.goud_renderer_get_coordinate_origin.argtypes = [GoudContextId]
-    _lib.goud_renderer_get_coordinate_origin.restype = ctypes.c_uint32
 
     # debug
     _lib.goud_debug_get_fps_stats.argtypes = [GoudContextId, ctypes.POINTER(FpsStats)]
@@ -1379,6 +1379,10 @@ def _setup():
     _lib.goud_ui_set_image_texture_path.restype = ctypes.c_int32
     _lib.goud_ui_set_slider.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_bool]
     _lib.goud_ui_set_slider.restype = ctypes.c_int32
+    _lib.goud_ui_set_node_position.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.c_float, ctypes.c_float]
+    _lib.goud_ui_set_node_position.restype = ctypes.c_int32
+    _lib.goud_ui_set_node_visible.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.c_bool]
+    _lib.goud_ui_set_node_visible.restype = ctypes.c_int32
     _lib.goud_ui_set_event_callback.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
     _lib.goud_ui_set_event_callback.restype = ctypes.c_int32
     _lib.goud_ui_event_count.argtypes = [ctypes.c_void_p]
@@ -1389,10 +1393,6 @@ def _setup():
     _lib.goud_ui_events_count.restype = ctypes.c_uint32
     _lib.goud_ui_events_read.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.POINTER(FfiUiEvent)]
     _lib.goud_ui_events_read.restype = ctypes.c_int32
-    _lib.goud_ui_set_node_position.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.c_float, ctypes.c_float]
-    _lib.goud_ui_set_node_position.restype = ctypes.c_int32
-    _lib.goud_ui_set_node_visible.argtypes = [ctypes.c_void_p, ctypes.c_uint64, ctypes.c_bool]
-    _lib.goud_ui_set_node_visible.restype = ctypes.c_int32
 
 _setup()
 

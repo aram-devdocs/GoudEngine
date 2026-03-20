@@ -20,6 +20,8 @@ public final class UiManagerNative {
     public static native int setButtonEnabled(long managerHandle, long nodeId, boolean enabled);
     public static native int setImageTexturePath(long managerHandle, long nodeId, String path);
     public static native int setSlider(long managerHandle, long nodeId, float min, float max, float value, boolean enabled);
+    public static native int setNodePosition(long managerHandle, long nodeId, float x, float y);
+    public static native int setNodeVisible(long managerHandle, long nodeId, boolean visible);
     public static native int eventCount(long managerHandle);
     public static native UiEvent eventRead(long managerHandle, int index);
 }

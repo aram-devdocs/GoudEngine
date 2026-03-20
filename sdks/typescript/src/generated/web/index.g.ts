@@ -524,7 +524,7 @@ export class GoudGame implements IGoudGame {
     const c = color ?? Color.white();
     return this.handle.draw_text(fontHandle, text, x, y, fontSize, alignment, maxWidth, lineSpacing, direction, c.r, c.g, c.b, c.a);
   }
-  /** Draws a textured sprite */
+  /** Draws a textured sprite. Position (x,y) interpretation depends on the coordinate origin setting (center by default). */
   drawSprite(texture: number, x: number, y: number, width: number, height: number, rotation = 0, color?: IColor): void {
     const c = color ?? Color.white();
     this.handle.draw_sprite(texture, x, y, width, height, rotation, c.r, c.g, c.b, c.a);

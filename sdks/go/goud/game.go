@@ -113,6 +113,16 @@ func (g *Game) DrawText(fontHandle uint64, text string, x, y, fontSize float32, 
 	return ffi.RendererDrawText(g.ctx, fontHandle, text, x, y, fontSize, uint8(alignment), maxWidth, lineSpacing, uint8(direction), color.R, color.G, color.B, color.A)
 }
 
+// SetCoordinateOrigin Set the coordinate origin for subsequent DrawQuad and DrawSprite calls. Center (0) means (x,y) is the center of the shape (default). TopLeft (1) means (x,y) is the top-left corner.
+func (g *Game) SetCoordinateOrigin(origin uint32) bool {
+	return false
+}
+
+// GetCoordinateOrigin Get the current coordinate origin setting. Returns 0 for Center, 1 for TopLeft.
+func (g *Game) GetCoordinateOrigin() uint32 {
+	return 0
+}
+
 // DrawSprite draws a textured sprite.
 func (g *Game) DrawSprite(texture uint64, x, y, width, height, rotation float32, color Color) {
 	ffi.RendererDrawSprite(g.ctx, texture, x, y, width, height, rotation, color.R, color.G, color.B, color.A)

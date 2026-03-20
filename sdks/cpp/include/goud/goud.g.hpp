@@ -22,6 +22,12 @@
 
 namespace goud {
 
+/** @brief Coordinate origin for draw calls. Controls how (x, y) position is interpreted in DrawQuad and DrawSprite. */
+enum class CoordinateOrigin : std::uint32_t {
+    Center = 0,
+    TopLeft = 1,
+};
+
 /** @brief Keyboard key codes matching GLFW values */
 enum class Key : std::int32_t {
     Unknown = -1,
@@ -601,7 +607,7 @@ public:
         return ::goud_font_dispose(handle_, font);
     }
 
-    /** @brief Draws a textured sprite */
+    /** @brief Draws a textured sprite. Position (x,y) interpretation depends on the coordinate origin setting (center by default). */
     int drawSprite(::goud_texture texture, float x, float y, float width, float height, float rotation, ::goud_color color) const noexcept {
         return ::goud_renderer_draw_sprite_color(handle_, texture, x, y, width, height, rotation, color);
     }
