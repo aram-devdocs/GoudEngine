@@ -8,7 +8,7 @@ use crate::core::error::{
 };
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::window::with_window_state;
-use crate::sdk::debug_overlay::{FpsStats, OverlayCorner};
+use crate::sdk::debug_overlay::{FpsStats, OverlayCorner, RenderMetrics};
 
 mod debugger_control;
 pub(crate) mod debugger_runtime;
@@ -82,6 +82,66 @@ pub unsafe extern "C" fn goud_debug_get_fps_stats(
         set_last_error(GoudError::InvalidContext);
         -1
     })
+}
+
+/// Retrieves per-frame render metrics (draw calls, culling, timing).
+///
+/// # Arguments
+///
+/// * `context_id` - The windowed context
+/// * `out_metrics` - Pointer to write the render metrics into
+///
+/// # Returns
+///
+/// 0 on success, negative on error.
+///
+/// # Safety
+///
+/// `out_metrics` must be a valid, non-null pointer to a `RenderMetrics` struct.
+/// Caller owns the memory; this function only writes into it.
+#[no_mangle]
+pub unsafe extern "C" fn goud_render_get_metrics(
+    context_id: GoudContextId,
+    out_metrics: *mut RenderMetrics,
+) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    if out_metrics.is_null() {
+        set_last_error(GoudError::InternalError(
+            "out_metrics pointer is null".to_string(),
+        ));
+        return -2;
+    }
+
+    // Read render metrics from the debugger snapshot if available.
+    let metrics = debugger::snapshot_for_context(context_id)
+        .map(|snapshot| {
+            let rm = snapshot.stats.render_metrics;
+            RenderMetrics {
+                draw_call_count: rm.draw_call_count,
+                sprites_submitted: rm.sprites_submitted,
+                sprites_drawn: rm.sprites_drawn,
+                sprites_culled: rm.sprites_culled,
+                batches_submitted: rm.batches_submitted,
+                avg_sprites_per_batch: rm.avg_sprites_per_batch,
+                sprite_render_ms: rm.sprite_render_ms,
+                text_render_ms: rm.text_render_ms,
+                ui_render_ms: rm.ui_render_ms,
+                total_render_ms: rm.total_render_ms,
+                text_draw_calls: rm.text_draw_calls,
+                text_glyph_count: rm.text_glyph_count,
+                ui_draw_calls: rm.ui_draw_calls,
+            }
+        })
+        .unwrap_or_default();
+
+    // SAFETY: Caller guarantees out_metrics is a valid, aligned pointer.
+    // We write a Copy type so no drop concerns.
+    *out_metrics = metrics;
+    0
 }
 
 /// Enables or disables the FPS overlay.

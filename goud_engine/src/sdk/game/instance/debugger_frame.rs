@@ -6,6 +6,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use crate::context_registry::scene;
 use crate::core::context_id::GoudContextId;
 use crate::core::debugger::{self, RuntimeRouteId, RuntimeSurfaceKind, SyntheticInputEventV1};
+use crate::sdk::debug_overlay::RenderMetrics;
 use crate::sdk::game_config::GameConfig;
 
 use super::GoudGame;
@@ -128,6 +129,60 @@ impl GoudGame {
             }
         }
 
+        // 2b. Populate RenderMetrics from subsystem stats.
+        #[cfg(feature = "native")]
+        {
+            let mut metrics = RenderMetrics::default();
+
+            if let Some(ref batch) = self.sprite_batch {
+                let (sprite_count, batch_count, batch_ratio) = batch.stats();
+                metrics.sprites_drawn = sprite_count as u32;
+                metrics.sprites_culled = batch.culled_count() as u32;
+                metrics.sprites_submitted = metrics.sprites_drawn + metrics.sprites_culled;
+                metrics.batches_submitted = batch_count as u32;
+                metrics.avg_sprites_per_batch = batch_ratio;
+                metrics.draw_call_count += batch_count as u32;
+            }
+
+            if let Some(ref text_batch) = self.text_batch {
+                let ts = text_batch.stats();
+                metrics.text_draw_calls = ts.draw_calls as u32;
+                metrics.text_glyph_count = ts.glyph_count as u32;
+                metrics.draw_call_count += ts.draw_calls as u32;
+            }
+
+            if let Some(ref ui_render) = self.ui_render_system {
+                let us = ui_render.stats();
+                metrics.ui_draw_calls = (us.quad_draw_calls + us.text_draw_calls) as u32;
+                metrics.draw_call_count += metrics.ui_draw_calls;
+            }
+
+            // Copy timing from transient fields (populated by render phase timing).
+            metrics.sprite_render_ms = self.render_metrics.sprite_render_ms;
+            metrics.text_render_ms = self.render_metrics.text_render_ms;
+            metrics.ui_render_ms = self.render_metrics.ui_render_ms;
+            metrics.total_render_ms = self.render_metrics.total_render_ms;
+
+            self.render_metrics = metrics;
+        }
+
+        // 2c. Capture render metrics for snapshot (before closure captures).
+        let render_metrics_for_snapshot = crate::core::debugger::RenderMetricsV1 {
+            draw_call_count: self.render_metrics.draw_call_count,
+            sprites_submitted: self.render_metrics.sprites_submitted,
+            sprites_drawn: self.render_metrics.sprites_drawn,
+            sprites_culled: self.render_metrics.sprites_culled,
+            batches_submitted: self.render_metrics.batches_submitted,
+            avg_sprites_per_batch: self.render_metrics.avg_sprites_per_batch,
+            sprite_render_ms: self.render_metrics.sprite_render_ms,
+            text_render_ms: self.render_metrics.text_render_ms,
+            ui_render_ms: self.render_metrics.ui_render_ms,
+            total_render_ms: self.render_metrics.total_render_ms,
+            text_draw_calls: self.render_metrics.text_draw_calls,
+            text_glyph_count: self.render_metrics.text_glyph_count,
+            ui_draw_calls: self.render_metrics.ui_draw_calls,
+        };
+
         // 3. Push to snapshot.
         debugger::with_snapshot_mut(&route_id, |snapshot| {
             // Backward compat: populate legacy stats.render from provider diagnostics.
@@ -156,6 +211,8 @@ impl GoudGame {
                     snapshot.stats.render.shader_binds = 1;
                 }
             }
+            // Populate RenderMetricsV1 from the live render_metrics.
+            snapshot.stats.render_metrics = render_metrics_for_snapshot;
             snapshot.provider_diagnostics = all_diag;
         });
 

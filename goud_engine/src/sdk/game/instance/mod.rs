@@ -34,7 +34,7 @@ use crate::rendering::{
     compute_render_viewport, compute_render_viewport_with_aspect_lock, RenderViewport,
     ViewportScaleMode,
 };
-use crate::sdk::debug_overlay::DebugOverlay;
+use crate::sdk::debug_overlay::{DebugOverlay, RenderMetrics};
 use crate::sdk::game_config::{GameConfig, GameContext};
 use crate::ui::UiManager;
 #[cfg(feature = "lua")]
@@ -89,6 +89,9 @@ pub struct GoudGame {
 
     /// Debug overlay for FPS stats tracking.
     pub(crate) debug_overlay: DebugOverlay,
+
+    /// Per-frame render metrics (draw calls, culling, timing).
+    pub(crate) render_metrics: RenderMetrics,
 
     /// Provider registry for subsystem backends (render, physics, audio, input).
     pub(crate) providers: ProviderRegistry,
@@ -227,6 +230,7 @@ impl GoudGame {
             context: GameContext::new(window_size),
             initialized: false,
             debug_overlay,
+            render_metrics: RenderMetrics::default(),
             providers: ProviderRegistry::default(),
             debugger_route,
             physics_debug_shapes: Vec::new(),
@@ -368,6 +372,7 @@ impl GoudGame {
             context: GameContext::new(window_size),
             initialized: false,
             debug_overlay,
+            render_metrics: RenderMetrics::default(),
             providers: ProviderRegistry::default(),
             debugger_route,
             physics_debug_shapes: Vec::new(),

@@ -33,6 +33,7 @@ IFACE_TYPES = {
     "Rect": "IRect",
     "RenderStats": "IRenderStats",
     "FpsStats": "IFpsStats",
+    "RenderMetrics": "IRenderMetrics",
     "DebuggerConfig": "IDebuggerConfig",
     "ContextConfig": "IContextConfig",
     "MemoryCategoryStats": "IMemoryCategoryStats",

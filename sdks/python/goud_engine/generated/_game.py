@@ -537,6 +537,12 @@ class GoudGame:
         self._lib.goud_debug_get_fps_stats(self._ctx, ctypes.byref(_stats))
         return FpsStats(_stats.current_fps, _stats.min_fps, _stats.max_fps, _stats.avg_fps, _stats.frame_time_ms)
 
+    def get_render_metrics(self):
+        """Returns per-frame render metrics including draw calls, culling stats, batch efficiency, and timing"""
+        _metrics = _ffi_module.RenderMetrics()
+        self._lib.goud_render_get_metrics(self._ctx, ctypes.byref(_metrics))
+        return RenderMetrics(_metrics.draw_call_count, _metrics.sprites_submitted, _metrics.sprites_drawn, _metrics.sprites_culled, _metrics.batches_submitted, _metrics.avg_sprites_per_batch, _metrics.sprite_render_ms, _metrics.text_render_ms, _metrics.ui_render_ms, _metrics.total_render_ms, _metrics.text_draw_calls, _metrics.text_glyph_count, _metrics.ui_draw_calls)
+
     def set_fps_overlay_enabled(self, enabled):
         """Enables or disables the FPS debug overlay"""
         self._lib.goud_debug_set_fps_overlay_enabled(self._ctx, enabled)

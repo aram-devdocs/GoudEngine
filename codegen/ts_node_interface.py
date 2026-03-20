@@ -55,6 +55,11 @@ def gen_interface():
     if schema["types"]["FpsStats"].get("doc"):
         lines.append(f"/** {schema['types']['FpsStats']['doc']} */")
     lines.append(f"export interface IFpsStats {{ {fps_str}; }}")
+    rm_fields = schema["types"]["RenderMetrics"]["fields"]
+    rm_str = "; ".join(f"{to_camel(f['name'])}: number" for f in rm_fields)
+    if schema["types"]["RenderMetrics"].get("doc"):
+        lines.append(f"/** {schema['types']['RenderMetrics']['doc']} */")
+    lines.append(f"export interface IRenderMetrics {{ {rm_str}; }}")
     dbg_cfg_fields = []
     for f in schema["types"]["DebuggerConfig"]["fields"]:
         ts_ft = "boolean" if f["type"] == "bool" else "string"

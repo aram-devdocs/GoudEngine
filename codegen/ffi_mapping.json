@@ -82,6 +82,24 @@
         "frame_time_ms"
       ]
     },
+    "RenderMetrics": {
+      "ffi_name": "RenderMetrics",
+      "fields": [
+        "draw_call_count",
+        "sprites_submitted",
+        "sprites_drawn",
+        "sprites_culled",
+        "batches_submitted",
+        "avg_sprites_per_batch",
+        "sprite_render_ms",
+        "text_render_ms",
+        "ui_render_ms",
+        "total_render_ms",
+        "text_draw_calls",
+        "text_glyph_count",
+        "ui_draw_calls"
+      ]
+    },
     "DebuggerConfig": {
       "ffi_name": "GoudDebuggerConfig",
       "fields": [
@@ -375,6 +393,7 @@
     "*mut GoudContact": "ctypes.POINTER(GoudContact)",
     "*mut GoudRenderStats": "ctypes.POINTER(GoudRenderStats)",
     "*mut FpsStats": "ctypes.POINTER(FpsStats)",
+    "*mut RenderMetrics": "ctypes.POINTER(RenderMetrics)",
     "*const u64": "ctypes.POINTER(ctypes.c_uint64)",
     "*mut u64": "ctypes.POINTER(ctypes.c_uint64)",
     "*mut u8": "ctypes.POINTER(ctypes.c_uint8)",

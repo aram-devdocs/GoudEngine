@@ -71,7 +71,16 @@ impl GoudGame {
             }
 
             self.update_physics_debug_shapes();
+            // Timing for render metrics
+            #[cfg(feature = "native")]
+            let render_start = std::time::Instant::now();
             self.render_ui_frame();
+            #[cfg(feature = "native")]
+            {
+                let ui_ms = render_start.elapsed().as_secs_f32() * 1000.0;
+                self.render_metrics.ui_render_ms = ui_ms;
+                self.render_metrics.total_render_ms = ui_ms;
+            }
             self.finish_runtime_frame();
 
             // Safety: Limit iterations in tests/examples without actual window
@@ -110,7 +119,16 @@ impl GoudGame {
         }
 
         self.update_physics_debug_shapes();
+        // Timing for render metrics
+        #[cfg(feature = "native")]
+        let render_start = std::time::Instant::now();
         self.render_ui_frame();
+        #[cfg(feature = "native")]
+        {
+            let ui_ms = render_start.elapsed().as_secs_f32() * 1000.0;
+            self.render_metrics.ui_render_ms = ui_ms;
+            self.render_metrics.total_render_ms = ui_ms;
+        }
         self.finish_runtime_frame();
     }
 
