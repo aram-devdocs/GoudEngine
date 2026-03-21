@@ -331,7 +331,7 @@ export interface IGoudGame {
   /** Returns the number of post-processing passes */
   postprocessPassCount(): number;
   /** Draws a sprite with source rectangle for sprite sheets */
-  drawSpriteRect(texture: number, x: number, y: number, width: number, height: number, rotation: number, srcX: number, srcY: number, srcW: number, srcH: number, color?: IColor): boolean;
+  drawSpriteRect(texture: number, x: number, y: number, width: number, height: number, rotation: number, srcX: number, srcY: number, srcW: number, srcH: number, color?: IColor, srcMode?: number): boolean;
   /** Sets the rendering viewport */
   setViewport(x: number, y: number, width: number, height: number): void;
   /** Enables depth testing */

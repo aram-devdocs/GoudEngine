@@ -940,6 +940,76 @@ typedef struct NetworkCapabilities {
 typedef uint64_t GoudTextureHandle;
 
 /**
+ * A single sprite command for batch rendering.
+ */
+typedef struct FfiSpriteCmd {
+    /**
+     * Texture handle from `goud_texture_load`.
+     */
+    GoudTextureHandle texture;
+    /**
+     * X position in screen-space pixels.
+     */
+    float x;
+    /**
+     * Y position in screen-space pixels.
+     */
+    float y;
+    /**
+     * Width of the sprite on screen.
+     */
+    float width;
+    /**
+     * Height of the sprite on screen.
+     */
+    float height;
+    /**
+     * Rotation in radians.
+     */
+    float rotation;
+    /**
+     * Source rectangle X offset in pixel coordinates.
+     */
+    float src_x;
+    /**
+     * Source rectangle Y offset in pixel coordinates.
+     */
+    float src_y;
+    /**
+     * Source rectangle width in pixel coordinates (0 = full texture width).
+     */
+    float src_w;
+    /**
+     * Source rectangle height in pixel coordinates (0 = full texture height).
+     */
+    float src_h;
+    /**
+     * Red color tint (1.0 = no tint).
+     */
+    float r;
+    /**
+     * Green color tint (1.0 = no tint).
+     */
+    float g;
+    /**
+     * Blue color tint (1.0 = no tint).
+     */
+    float b;
+    /**
+     * Alpha (opacity, 1.0 = fully opaque).
+     */
+    float a;
+    /**
+     * Z-layer for depth sorting (lower values drawn first).
+     */
+    int32_t z_layer;
+    /**
+     * Padding for alignment (set to 0).
+     */
+    int32_t _padding;
+} FfiSpriteCmd;
+
+/**
  * FFI-safe rendering statistics.
  */
 typedef struct GoudRenderStats {
@@ -1579,6 +1649,11 @@ GoudResult goud_scene_unload(struct GoudContextId context_id, const uint8_t *nam
 /* === Renderer === */
 
 /**
+ * Draws a batch of sprites in a single GPU pass.
+ */
+uint32_t goud_renderer_draw_sprite_batch(struct GoudContextId context_id, const struct FfiSpriteCmd *cmds, uint32_t count);
+
+/**
  * Draws a textured sprite at the given position.
  */
 bool goud_renderer_draw_sprite(struct GoudContextId context_id, GoudTextureHandle texture, float x, float y, float width, float height, float rotation, float r, float g, float b, float a);
@@ -1586,7 +1661,7 @@ bool goud_renderer_draw_sprite(struct GoudContextId context_id, GoudTextureHandl
 /**
  * Draws a textured sprite with a source rectangle for sprite sheet animation.
  */
-bool goud_renderer_draw_sprite_rect(struct GoudContextId context_id, GoudTextureHandle texture, float x, float y, float width, float height, float rotation, float src_x, float src_y, float src_w, float src_h, float r, float g, float b, float a);
+bool goud_renderer_draw_sprite_rect(struct GoudContextId context_id, GoudTextureHandle texture, float x, float y, float width, float height, float rotation, float src_x, float src_y, float src_w, float src_h, uint32_t src_mode, float r, float g, float b, float a);
 
 /**
  * Draws a colored quad (no texture) at the given position.

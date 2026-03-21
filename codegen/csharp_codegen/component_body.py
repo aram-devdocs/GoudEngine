@@ -104,7 +104,7 @@ _WINDOWED_BODIES: dict = {
     "DrawSprite":     [f"{_I}var c = color ?? Color.White();",
                        f"{_I}NativeMethods.goud_renderer_draw_sprite(_ctx, texture, x, y, width, height, rotation, c.R, c.G, c.B, c.A);"],
     "DrawSpriteRect": [f"{_I}var c = color ?? Color.White();",
-                       f"{_I}return NativeMethods.goud_renderer_draw_sprite_rect(_ctx, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, c.R, c.G, c.B, c.A);"],
+                       f"{_I}return NativeMethods.goud_renderer_draw_sprite_rect(_ctx, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, srcMode, c.R, c.G, c.B, c.A);"],
     "DrawQuad":       [f"{_I}var c = color ?? Color.White();",
                        f"{_I}NativeMethods.goud_renderer_draw_quad(_ctx, x, y, width, height, c.R, c.G, c.B, c.A);"],
     "LoadTexture":    [f"{_I}return NativeMethods.goud_texture_load(_ctx, path);"],

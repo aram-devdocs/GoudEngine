@@ -548,8 +548,13 @@ func (g *Game) PostprocessPassCount() uint32 {
 }
 
 // DrawSpriteRect draws a sprite with a source rectangle.
-func (g *Game) DrawSpriteRect(texture uint64, x, y, width, height, rotation, srcX, srcY, srcW, srcH float32, color Color) bool {
-	return ffi.RendererDrawSpriteRect(g.ctx, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, color.R, color.G, color.B, color.A)
+// srcMode: 0 = normalized UVs (0.0-1.0), 1 = pixel coordinates (default).
+func (g *Game) DrawSpriteRect(texture uint64, x, y, width, height, rotation, srcX, srcY, srcW, srcH float32, color Color, srcMode ...uint32) bool {
+	mode := uint32(1)
+	if len(srcMode) > 0 {
+		mode = srcMode[0]
+	}
+	return ffi.RendererDrawSpriteRect(g.ctx, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, mode, color.R, color.G, color.B, color.A)
 }
 
 // SetViewport Sets the rendering viewport

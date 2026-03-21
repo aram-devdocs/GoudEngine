@@ -54,7 +54,8 @@ mod texture;
 // Re-export all public items to preserve the original flat public API.
 
 pub use draw::{
-    goud_renderer_draw_quad, goud_renderer_draw_sprite, goud_renderer_draw_sprite_rect,
+    goud_renderer_draw_quad, goud_renderer_draw_sprite, goud_renderer_draw_sprite_batch,
+    goud_renderer_draw_sprite_rect, FfiSpriteCmd,
 };
 
 #[allow(deprecated)]

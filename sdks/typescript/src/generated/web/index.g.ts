@@ -534,9 +534,9 @@ export class GoudGame implements IGoudGame {
     this.handle.draw_sprite(texture, x, y, width, height, rotation, c.r, c.g, c.b, c.a);
   }
   /** Draws a sprite with source rectangle for sprite sheets */
-  drawSpriteRect(texture: number, x: number, y: number, width: number, height: number, rotation = 0, srcX = 0, srcY = 0, srcW = 1, srcH = 1, color?: IColor): boolean {
+  drawSpriteRect(texture: number, x: number, y: number, width: number, height: number, rotation = 0, srcX = 0, srcY = 0, srcW = 1, srcH = 1, color?: IColor, srcMode = 1): boolean {
     const c = color ?? Color.white();
-    return this.handle.draw_sprite_rect(texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, c.r, c.g, c.b, c.a);
+    return this.handle.draw_sprite_rect(texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, srcMode, c.r, c.g, c.b, c.a);
   }
   /** Draws a colored rectangle */
   drawQuad(x: number, y: number, width: number, height: number, color?: IColor): void {

@@ -100,10 +100,11 @@ pub extern "C" fn goud_renderer_draw_sprite(
 /// * `width` - Width of the sprite on screen
 /// * `height` - Height of the sprite on screen
 /// * `rotation` - Rotation in radians
-/// * `src_x` - Source rectangle X offset in normalized UV coordinates (0.0-1.0)
-/// * `src_y` - Source rectangle Y offset in normalized UV coordinates (0.0-1.0)
-/// * `src_w` - Source rectangle width in normalized UV coordinates (0.0-1.0)
-/// * `src_h` - Source rectangle height in normalized UV coordinates (0.0-1.0)
+/// * `src_x` - Source rectangle X offset
+/// * `src_y` - Source rectangle Y offset
+/// * `src_w` - Source rectangle width
+/// * `src_h` - Source rectangle height
+/// * `src_mode` - 0 for normalized UV coordinates (0.0-1.0), 1 for pixel coordinates
 /// * `r`, `g`, `b`, `a` - Color tint (1.0 for no tint)
 ///
 /// # Returns
@@ -112,10 +113,14 @@ pub extern "C" fn goud_renderer_draw_sprite(
 ///
 /// # Example
 ///
-/// For a 128x128 sprite sheet with 32x32 frames (4x4 grid):
+/// For a 128x128 sprite sheet with 32x32 frames (4x4 grid) using normalized mode (0):
 /// - Frame at row 0, col 0: src_x=0.0, src_y=0.0, src_w=0.25, src_h=0.25
 /// - Frame at row 0, col 1: src_x=0.25, src_y=0.0, src_w=0.25, src_h=0.25
 /// - Frame at row 1, col 0: src_x=0.0, src_y=0.25, src_w=0.25, src_h=0.25
+///
+/// Using pixel mode (1):
+/// - Frame at row 0, col 0: src_x=0.0, src_y=0.0, src_w=32.0, src_h=32.0
+/// - Frame at row 0, col 1: src_x=32.0, src_y=0.0, src_w=32.0, src_h=32.0
 #[no_mangle]
 pub extern "C" fn goud_renderer_draw_sprite_rect(
     context_id: GoudContextId,
@@ -129,6 +134,7 @@ pub extern "C" fn goud_renderer_draw_sprite_rect(
     src_y: f32,
     src_w: f32,
     src_h: f32,
+    src_mode: u32,
     r: f32,
     g: f32,
     b: f32,
@@ -144,6 +150,31 @@ pub extern "C" fn goud_renderer_draw_sprite_rect(
 
     let origin = get_coordinate_origin(context_id);
     let (x, y) = origin.adjust(x, y, width, height);
+
+    // Convert pixel coordinates to normalized UVs when src_mode == 1 (Pixels)
+    let (src_x, src_y, src_w, src_h) = if src_mode == 1 {
+        // Query texture dimensions for pixel->UV conversion
+        let tex_size = with_window_state(context_id, |window_state| {
+            use crate::libs::graphics::backend::types::TextureHandle;
+            use crate::libs::graphics::backend::TextureOps;
+            let tex_index = (texture & 0xFFFFFFFF) as u32;
+            let tex_generation = ((texture >> 32) & 0xFFFFFFFF) as u32;
+            let tex_handle = TextureHandle::new(tex_index, tex_generation);
+            window_state.backend_mut().texture_size(tex_handle)
+        });
+        match tex_size {
+            Some(Some((tw, th))) => {
+                super::internal::pixel_to_uv(src_x, src_y, src_w, src_h, tw, th)
+            }
+            _ => {
+                set_last_error(crate::core::error::GoudError::InvalidHandle);
+                return false;
+            }
+        }
+    } else {
+        // Normalized mode (0) - pass through unchanged
+        (src_x, src_y, src_w, src_h)
+    };
 
     let result = with_window_state(context_id, |window_state| {
         draw_sprite_rect_internal(

@@ -3076,6 +3076,7 @@
         "src_y: f32",
         "src_w: f32",
         "src_h: f32",
+        "src_mode: u32",
         "r: f32",
         "g: f32",
         "b: f32",

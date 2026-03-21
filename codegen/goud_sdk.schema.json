@@ -5169,11 +5169,17 @@
               "name": "color",
               "type": "Color",
               "default": "Color.white()"
+            },
+            {
+              "name": "srcMode",
+              "type": "u32",
+              "default": 1,
+              "doc": "0 = normalized UVs (0.0-1.0), 1 = pixel coordinates (default)"
             }
           ],
           "returns": "bool",
           "wasm_name": "draw_sprite_rect",
-          "wasm_signature": "draw_sprite_rect(t: number, x: number, y: number, w: number, h: number, rot: number, src_x: number, src_y: number, src_w: number, src_h: number, r: number, g: number, b: number, a: number): boolean"
+          "wasm_signature": "draw_sprite_rect(t: number, x: number, y: number, w: number, h: number, rot: number, src_x: number, src_y: number, src_w: number, src_h: number, src_mode: number, r: number, g: number, b: number, a: number): boolean"
         },
         {
           "name": "setViewport",
@@ -11171,7 +11177,8 @@
             "srcX",
             "srcY",
             "srcW",
-            "srcH"
+            "srcH",
+            "srcMode"
           ],
           "expand_params": {
             "color": {

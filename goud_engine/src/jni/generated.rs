@@ -3552,13 +3552,14 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_drawSpriteRec
     srcY: jni::sys::jfloat,
     srcW: jni::sys::jfloat,
     srcH: jni::sys::jfloat,
+    srcMode: jni::sys::jint,
     color: jni::objects::JObject<'local>,
 ) -> jni::sys::jboolean {
     crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_drawSpriteRect", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
             let color_raw = read_Color(env, &color, "color")?;
-            let result = crate::ffi::renderer::goud_renderer_draw_sprite_rect(goud_context_id_from_jlong(contextId), texture as _, x as _, y as _, width as _, height as _, rotation as _, srcX as _, srcY as _, srcW as _, srcH as _, color_raw.r as _, color_raw.g as _, color_raw.b as _, color_raw.a as _);
+            let result = crate::ffi::renderer::goud_renderer_draw_sprite_rect(goud_context_id_from_jlong(contextId), texture as _, x as _, y as _, width as _, height as _, rotation as _, srcX as _, srcY as _, srcW as _, srcH as _, srcMode as _, color_raw.r as _, color_raw.g as _, color_raw.b as _, color_raw.a as _);
             if !result && crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer_draw_sprite_rect", None);
                 return Err(());

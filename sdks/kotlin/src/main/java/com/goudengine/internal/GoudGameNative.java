@@ -88,7 +88,7 @@ public final class GoudGameNative {
     public static native int addColorGradePass(long contextId, float exposure, float contrast, float saturation);
     public static native boolean removePostprocessPass(long contextId, int index);
     public static native int postprocessPassCount(long contextId);
-    public static native boolean drawSpriteRect(long contextId, long texture, float x, float y, float width, float height, float rotation, float srcX, float srcY, float srcW, float srcH, Color color);
+    public static native boolean drawSpriteRect(long contextId, long texture, float x, float y, float width, float height, float rotation, float srcX, float srcY, float srcW, float srcH, int srcMode, Color color);
     public static native void setViewport(long contextId, int x, int y, int width, int height);
     public static native void enableDepthTest(long contextId);
     public static native void disableDepthTest(long contextId);
