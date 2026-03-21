@@ -1287,6 +1287,15 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern uint goud_component_has_batch(GoudContextId context_id, IntPtr entity_ids, uint count, ulong type_id_hash, IntPtr out_results);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_component_count(GoudContextId context_id, ulong type_id_hash);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_component_get_entities(GoudContextId context_id, ulong type_id_hash, ref ulong out_entities, uint max_count);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_component_get_all(GoudContextId context_id, ulong type_id_hash, ref ulong out_entities, ref IntPtr out_data_ptrs, uint max_count);
+
         // error
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_last_error_code();

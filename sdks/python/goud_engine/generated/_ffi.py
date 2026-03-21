@@ -999,6 +999,12 @@ def _setup():
     _lib.goud_component_remove_batch.restype = ctypes.c_uint32
     _lib.goud_component_has_batch.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint64), ctypes.c_uint32, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint8)]
     _lib.goud_component_has_batch.restype = ctypes.c_uint32
+    _lib.goud_component_count.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_component_count.restype = ctypes.c_uint32
+    _lib.goud_component_get_entities.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.c_uint32]
+    _lib.goud_component_get_entities.restype = ctypes.c_uint32
+    _lib.goud_component_get_all.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.POINTER(ctypes.c_uint8)), ctypes.c_uint32]
+    _lib.goud_component_get_all.restype = ctypes.c_uint32
 
     # error
     _lib.goud_last_error_code.argtypes = []

@@ -1459,6 +1459,33 @@ namespace GoudEngine
             }
         }
 
+        /// <summary>Returns the number of entities with a specific component type</summary>
+        public uint ComponentCount(ulong typeIdHash)
+        {
+            return NativeMethods.goud_component_count(_ctx, typeIdHash);
+        }
+
+        /// <summary>Gets entity IDs for all entities with a specific component type</summary>
+        public uint ComponentGetEntities(ulong typeIdHash, IntPtr outEntities, uint maxCount)
+        {
+            unsafe
+            {
+                return NativeMethods.goud_component_get_entities(
+                    _ctx, typeIdHash, ref *(ulong*)outEntities, maxCount);
+            }
+        }
+
+        /// <summary>Gets entity IDs and data pointers for all entities with a specific component type</summary>
+        public uint ComponentGetAll(ulong typeIdHash, IntPtr outEntities, IntPtr outDataPtrs, uint maxCount)
+        {
+            unsafe
+            {
+                return NativeMethods.goud_component_get_all(
+                    _ctx, typeIdHash, ref *(ulong*)outEntities,
+                    ref *(IntPtr*)outDataPtrs, maxCount);
+            }
+        }
+
         /// <summary>Queries the render provider's capabilities</summary>
         public RenderCapabilities GetRenderCapabilities()
         {

@@ -100,12 +100,20 @@ impl RawComponentStorage {
             // Entity already has a component - replace it
             let existing_ptr = self.data[dense_index];
             if self.component_size > 0 {
+                // SAFETY: The caller guarantees `data_ptr` points to at least
+                // `component_size` valid bytes.  `existing_ptr` was allocated with
+                // the same layout in a previous `insert` call, so it has room for
+                // `component_size` bytes.  The two regions do not overlap because
+                // `data_ptr` is caller-owned stack/heap memory and `existing_ptr`
+                // is engine-owned heap memory.
                 std::ptr::copy_nonoverlapping(data_ptr, existing_ptr, self.component_size);
             }
             true
         } else {
             // New entity - allocate and copy data
             let layout = self.layout();
+            // SAFETY: `layout` has non-zero size (ZSTs use size=1) and a valid
+            // power-of-two alignment, guaranteed by `self.layout()`.
             let new_ptr = alloc(layout);
             if new_ptr.is_null() {
                 set_last_error(GoudError::InternalError(
@@ -115,6 +123,9 @@ impl RawComponentStorage {
             }
 
             if self.component_size > 0 {
+                // SAFETY: `data_ptr` points to at least `component_size` valid
+                // bytes (caller precondition).  `new_ptr` was just allocated with
+                // `component_size` capacity.  The regions do not overlap.
                 std::ptr::copy_nonoverlapping(data_ptr, new_ptr, self.component_size);
             }
 
@@ -134,7 +145,6 @@ impl RawComponentStorage {
         let index = entity.index() as usize;
 
         if index >= self.sparse.len() {
-            set_last_error(GoudError::EntityNotFound);
             return false;
         }
 
@@ -205,13 +215,27 @@ impl RawComponentStorage {
         }
     }
 
+    /// Returns the number of entities with this component.
+    pub(super) fn count(&self) -> usize {
+        self.dense.len()
+    }
+
+    /// Returns a reference to the dense entity ID array.
+    pub(super) fn dense_entities(&self) -> &[u64] {
+        &self.dense
+    }
+
+    /// Returns a reference to the dense data pointer array.
+    pub(super) fn dense_data(&self) -> &[*mut u8] {
+        &self.data
+    }
+
     /// Checks if the entity has this component.
     pub(super) fn contains(&self, entity_bits: u64) -> bool {
         let entity = Entity::from_bits(entity_bits);
         let index = entity.index() as usize;
 
         if index >= self.sparse.len() {
-            set_last_error(GoudError::EntityNotFound);
             return false;
         }
 

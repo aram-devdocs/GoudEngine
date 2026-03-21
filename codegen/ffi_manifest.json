@@ -852,6 +852,15 @@
       "return_type": "u32",
       "is_unsafe": true
     },
+    "goud_component_count": {
+      "source_file": "ffi/component/query.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "type_id_hash: u64"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
     "goud_component_get": {
       "source_file": "ffi/component/access.rs",
       "params": [
@@ -861,6 +870,29 @@
       ],
       "return_type": "*const u8",
       "is_unsafe": false
+    },
+    "goud_component_get_all": {
+      "source_file": "ffi/component/query.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "type_id_hash: u64",
+        "out_entities: *mut u64",
+        "out_data_ptrs: *mut *const u8",
+        "max_count: u32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
+    "goud_component_get_entities": {
+      "source_file": "ffi/component/query.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "type_id_hash: u64",
+        "out_entities: *mut u64",
+        "max_count: u32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
     },
     "goud_component_get_mut": {
       "source_file": "ffi/component/access.rs",
@@ -5031,5 +5063,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 504
+  "total_count": 507
 }

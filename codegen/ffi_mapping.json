@@ -756,7 +756,10 @@
       "goud_component_get_mut": {},
       "goud_component_add_batch": {},
       "goud_component_remove_batch": {},
-      "goud_component_has_batch": {}
+      "goud_component_has_batch": {},
+      "goud_component_count": {},
+      "goud_component_get_entities": {},
+      "goud_component_get_all": {}
     },
     "error": {
       "goud_last_error_code": {},

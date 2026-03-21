@@ -14,6 +14,7 @@ use super::batch::{
     goud_component_add_batch, goud_component_has_batch, goud_component_remove_batch,
 };
 use super::ops::{goud_component_add, goud_component_register_type, goud_component_remove};
+use super::query::{goud_component_count, goud_component_get_all, goud_component_get_entities};
 
 // ---------------------------------------------------------------------------
 // Shared test helpers
@@ -56,5 +57,6 @@ pub(super) fn register_test_type(type_id: u64) {
 // ---------------------------------------------------------------------------
 
 mod tests_batch;
+mod tests_query;
 mod tests_registration;
 mod tests_single;

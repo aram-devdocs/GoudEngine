@@ -554,6 +554,24 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
             else:
                 L.append(f"            return NativeMethods.{ffi_fn}(_ctx, handle, config);")
             return
+        # componentGetEntities: the NativeMethods signature uses ref ulong
+        # for the out_entities array, so we dereference the IntPtr.
+        if ffi_fn == "goud_component_get_entities":
+            L += ["            unsafe",
+                  "            {",
+                  "                return NativeMethods.goud_component_get_entities(",
+                  "                    _ctx, typeIdHash, ref *(ulong*)outEntities, maxCount);",
+                  "            }"]
+            return
+        # componentGetAll: ref ulong for out_entities, ref IntPtr for out_data_ptrs.
+        if ffi_fn == "goud_component_get_all":
+            L += ["            unsafe",
+                  "            {",
+                  "                return NativeMethods.goud_component_get_all(",
+                  "                    _ctx, typeIdHash, ref *(ulong*)outEntities,",
+                  "                    ref *(IntPtr*)outDataPtrs, maxCount);",
+                  "            }"]
+            return
         # Generic ptr+len marshalling for UTF-8 strings and raw bytes.
         # Applies when the FFI function uses *const u8 (ptr+len), not *const c_char.
         buffer_params = [p for p in params if p["type"] in ("string", "bytes", "u8[]")]

@@ -1490,6 +1490,21 @@ GoudResult goud_component_add(struct GoudContextId context_id, GoudEntityId enti
 GoudResult goud_component_remove(struct GoudContextId context_id, GoudEntityId entity_id, uint64_t type_id_hash);
 
 /**
+ * Returns the number of entities that currently have the given component type.
+ */
+uint32_t goud_component_count(struct GoudContextId context_id, uint64_t type_id_hash);
+
+/**
+ * Copies entity IDs (as raw `u64` bits) for all entities that have the given
+ */
+uint32_t goud_component_get_entities(struct GoudContextId context_id, uint64_t type_id_hash, uint64_t *out_entities, uint32_t max_count);
+
+/**
+ * Copies entity IDs and data pointers for all entities that have the given
+ */
+uint32_t goud_component_get_all(struct GoudContextId context_id, uint64_t type_id_hash, uint64_t *out_entities, const uint8_t **out_data_ptrs, uint32_t max_count);
+
+/**
  * Creates a new engine context.
  */
 struct GoudContextId goud_context_create(void);
