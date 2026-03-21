@@ -18,9 +18,7 @@ use super::GOUD_INVALID_POOL_HANDLE;
 #[no_mangle]
 pub extern "C" fn goud_entity_pool_acquire(handle: u32) -> u64 {
     if handle == GOUD_INVALID_POOL_HANDLE {
-        set_last_error(GoudError::InvalidState(
-            "invalid pool handle".to_string(),
-        ));
+        set_last_error(GoudError::InvalidState("invalid pool handle".to_string()));
         return u64::MAX;
     }
 
@@ -45,9 +43,7 @@ pub extern "C" fn goud_entity_pool_acquire(handle: u32) -> u64 {
             }
         },
         None => {
-            set_last_error(GoudError::InvalidState(
-                "pool handle not found".to_string(),
-            ));
+            set_last_error(GoudError::InvalidState("pool handle not found".to_string()));
             u64::MAX
         }
     }
@@ -79,9 +75,7 @@ pub unsafe extern "C" fn goud_entity_pool_acquire_batch(
     out_entities: *mut u64,
 ) -> u32 {
     if handle == GOUD_INVALID_POOL_HANDLE {
-        set_last_error(GoudError::InvalidState(
-            "invalid pool handle".to_string(),
-        ));
+        set_last_error(GoudError::InvalidState("invalid pool handle".to_string()));
         return 0;
     }
 
@@ -105,9 +99,7 @@ pub unsafe extern "C" fn goud_entity_pool_acquire_batch(
     let pool = match reg.pools.get_mut(&handle) {
         Some(p) => p,
         None => {
-            set_last_error(GoudError::InvalidState(
-                "pool handle not found".to_string(),
-            ));
+            set_last_error(GoudError::InvalidState("pool handle not found".to_string()));
             return 0;
         }
     };
@@ -141,9 +133,7 @@ pub unsafe extern "C" fn goud_entity_pool_acquire_batch(
 #[no_mangle]
 pub extern "C" fn goud_entity_pool_release(handle: u32, slot_index: u32) -> i32 {
     if handle == GOUD_INVALID_POOL_HANDLE {
-        set_last_error(GoudError::InvalidState(
-            "invalid pool handle".to_string(),
-        ));
+        set_last_error(GoudError::InvalidState("invalid pool handle".to_string()));
         return GoudError::InvalidState(String::new()).error_code();
     }
 
@@ -169,9 +159,7 @@ pub extern "C" fn goud_entity_pool_release(handle: u32, slot_index: u32) -> i32 
             }
         }
         None => {
-            set_last_error(GoudError::InvalidState(
-                "pool handle not found".to_string(),
-            ));
+            set_last_error(GoudError::InvalidState("pool handle not found".to_string()));
             GoudError::InvalidState(String::new()).error_code()
         }
     }
@@ -201,9 +189,7 @@ pub unsafe extern "C" fn goud_entity_pool_release_batch(
     count: u32,
 ) -> u32 {
     if handle == GOUD_INVALID_POOL_HANDLE {
-        set_last_error(GoudError::InvalidState(
-            "invalid pool handle".to_string(),
-        ));
+        set_last_error(GoudError::InvalidState("invalid pool handle".to_string()));
         return 0;
     }
 
@@ -227,9 +213,7 @@ pub unsafe extern "C" fn goud_entity_pool_release_batch(
     let pool = match reg.pools.get_mut(&handle) {
         Some(p) => p,
         None => {
-            set_last_error(GoudError::InvalidState(
-                "pool handle not found".to_string(),
-            ));
+            set_last_error(GoudError::InvalidState("pool handle not found".to_string()));
             return 0;
         }
     };

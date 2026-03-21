@@ -52,9 +52,12 @@ mod component_mutation;
 mod entity_ops;
 mod entity_world_mut;
 mod non_send_resources;
+mod pool_ops;
 mod resources;
 mod serialize_entity;
 mod storage_entry;
+
+pub use pool_ops::EntityPoolRegistry;
 
 #[cfg(test)]
 mod tests;

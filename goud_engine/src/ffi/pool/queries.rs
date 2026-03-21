@@ -38,14 +38,9 @@ pub struct FfiPoolStats {
 ///
 /// `out_stats` must point to writable storage for one [`FfiPoolStats`].
 #[no_mangle]
-pub unsafe extern "C" fn goud_entity_pool_stats(
-    handle: u32,
-    out_stats: *mut FfiPoolStats,
-) -> i32 {
+pub unsafe extern "C" fn goud_entity_pool_stats(handle: u32, out_stats: *mut FfiPoolStats) -> i32 {
     if handle == GOUD_INVALID_POOL_HANDLE {
-        set_last_error(GoudError::InvalidState(
-            "invalid pool handle".to_string(),
-        ));
+        set_last_error(GoudError::InvalidState("invalid pool handle".to_string()));
         return GoudError::InvalidState(String::new()).error_code();
     }
 
@@ -81,9 +76,7 @@ pub unsafe extern "C" fn goud_entity_pool_stats(
             0
         }
         None => {
-            set_last_error(GoudError::InvalidState(
-                "pool handle not found".to_string(),
-            ));
+            set_last_error(GoudError::InvalidState("pool handle not found".to_string()));
             GoudError::InvalidState(String::new()).error_code()
         }
     }

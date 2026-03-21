@@ -60,9 +60,7 @@ pub extern "C" fn goud_entity_pool_create(capacity: u32) -> u32 {
 #[no_mangle]
 pub extern "C" fn goud_entity_pool_destroy(handle: u32) -> i32 {
     if handle == GOUD_INVALID_POOL_HANDLE {
-        set_last_error(GoudError::InvalidState(
-            "invalid pool handle".to_string(),
-        ));
+        set_last_error(GoudError::InvalidState("invalid pool handle".to_string()));
         return GoudError::InvalidState(String::new()).error_code();
     }
 
@@ -77,9 +75,7 @@ pub extern "C" fn goud_entity_pool_destroy(handle: u32) -> i32 {
     };
 
     if reg.pools.remove(&handle).is_none() {
-        set_last_error(GoudError::InvalidState(
-            "pool handle not found".to_string(),
-        ));
+        set_last_error(GoudError::InvalidState("pool handle not found".to_string()));
         return GoudError::InvalidState(String::new()).error_code();
     }
 

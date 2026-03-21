@@ -147,7 +147,13 @@ fn bench_box_box_collision(c: &mut Criterion) {
                     .map(|i| (Vec2::new(i as f32 * 2.0, 0.0), Vec2::new(0.5, 0.5), 0.0))
                     .collect();
                 let boxes_b: Vec<_> = (0..count)
-                    .map(|i| (Vec2::new(i as f32 * 2.0 + 0.5, 0.0), Vec2::new(0.5, 0.5), 0.0))
+                    .map(|i| {
+                        (
+                            Vec2::new(i as f32 * 2.0 + 0.5, 0.0),
+                            Vec2::new(0.5, 0.5),
+                            0.0,
+                        )
+                    })
                     .collect();
 
                 b.iter(|| {
@@ -155,8 +161,7 @@ fn bench_box_box_collision(c: &mut Criterion) {
                     for ((pos_a, he_a, rot_a), (pos_b, he_b, rot_b)) in
                         boxes_a.iter().zip(boxes_b.iter())
                     {
-                        if box_box_collision(*pos_a, *he_a, *rot_a, *pos_b, *he_b, *rot_b)
-                            .is_some()
+                        if box_box_collision(*pos_a, *he_a, *rot_a, *pos_b, *he_b, *rot_b).is_some()
                         {
                             collision_count += 1;
                         }
@@ -181,7 +186,8 @@ fn bench_circle_box_collision(c: &mut Criterion) {
         let box_half_extents = Vec2::new(1.0, 1.0);
 
         b.iter(|| {
-            let contact = circle_aabb_collision(circle_pos, circle_radius, box_center, box_half_extents);
+            let contact =
+                circle_aabb_collision(circle_pos, circle_radius, box_center, box_half_extents);
             black_box(contact);
         });
     });
@@ -343,9 +349,7 @@ fn bench_spatial_hash(c: &mut Criterion) {
                 b.iter_batched(
                     || {
                         let mut world = World::new();
-                        let entities: Vec<_> = (0..count)
-                            .map(|_| world.spawn_empty())
-                            .collect();
+                        let entities: Vec<_> = (0..count).map(|_| world.spawn_empty()).collect();
                         (entities, SpatialHash::new(10.0))
                     },
                     |(entities, mut spatial_hash)| {
@@ -473,21 +477,11 @@ criterion_group!(
     bench_circle_box_collision,
 );
 
-criterion_group!(
-    aabb_benches,
-    bench_aabb_computation,
-    bench_aabb_operations,
-);
+criterion_group!(aabb_benches, bench_aabb_computation, bench_aabb_operations,);
 
-criterion_group!(
-    broad_phase_benches,
-    bench_spatial_hash,
-);
+criterion_group!(broad_phase_benches, bench_spatial_hash,);
 
-criterion_group!(
-    response_benches,
-    bench_collision_response,
-);
+criterion_group!(response_benches, bench_collision_response,);
 
 criterion_main!(
     collision_benches,

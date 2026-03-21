@@ -96,6 +96,7 @@
 //! - No data races (contexts are Send+Sync, errors are thread-local)
 
 pub mod animation;
+pub mod arena;
 #[cfg(feature = "native")]
 pub mod audio;
 pub mod collision;
@@ -115,6 +116,7 @@ pub mod input;
 pub mod network;
 pub mod physics;
 pub mod plugin;
+pub mod pool;
 pub mod providers;
 #[cfg(feature = "native")]
 pub mod renderer;
@@ -123,8 +125,6 @@ pub mod renderer3d;
 pub mod scene;
 pub mod scene_loading;
 pub mod scene_transition;
-pub mod pool;
-pub mod arena;
 pub mod spatial_grid;
 pub mod types;
 pub mod ui;

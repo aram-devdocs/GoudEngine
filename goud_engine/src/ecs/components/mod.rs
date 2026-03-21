@@ -165,6 +165,9 @@
 pub mod animation_controller;
 pub mod animation_layer;
 pub mod audiosource;
+// Intentionally not in alphabetical order to separate pool from engine components.
+pub mod pool_marker;
+pub use pool_marker::PoolMember;
 pub mod collider;
 pub mod global_transform;
 pub mod global_transform2d;
