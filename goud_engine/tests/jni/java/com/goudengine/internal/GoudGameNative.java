@@ -35,7 +35,6 @@ public final class GoudGameNative {
     public static native long cloneEntityRecursive(long contextId, long entity);
     public static native int entityCount(long contextId);
     public static native boolean isAlive(long contextId, long entity);
-    public static native int isAliveBatch(long contextId, long[] entities, byte[] outResults);
     public static native void addTransform2d(long contextId, long entity, Transform2D transform);
     public static native Transform2D getTransform2d(long contextId, long entity);
     public static native void setTransform2d(long contextId, long entity, Transform2D transform);
@@ -51,7 +50,6 @@ public final class GoudGameNative {
     public static native boolean hasSprite(long contextId, long entity);
     public static native boolean removeSprite(long contextId, long entity);
     public static native long[] spawnBatch(long contextId, int count);
-    public static native int despawnBatch(long contextId, long[] entities);
     public static native int play(long contextId, long entity);
     public static native int stop(long contextId, long entity);
     public static native int setState(long contextId, long entity, String stateName);
@@ -91,8 +89,6 @@ public final class GoudGameNative {
     public static native boolean removePostprocessPass(long contextId, int index);
     public static native int postprocessPassCount(long contextId);
     public static native boolean drawSpriteRect(long contextId, long texture, float x, float y, float width, float height, float rotation, float srcX, float srcY, float srcW, float srcH, int srcMode, Color color);
-    public static native int drawSpriteBatch(long contextId, SpriteCmd[] cmds);
-    public static native int drawTextBatch(long contextId, TextCmd[] cmds);
     public static native void setViewport(long contextId, int x, int y, int width, int height);
     public static native void enableDepthTest(long contextId);
     public static native void disableDepthTest(long contextId);
@@ -144,8 +140,7 @@ public final class GoudGameNative {
     public static native boolean componentRegisterType(long typeIdHash, String name, long size, long align);
     public static native boolean componentRemove(long contextId, long entity, long typeIdHash);
     public static native boolean componentHas(long contextId, long entity, long typeIdHash);
-    public static native int componentRemoveBatch(long contextId, long[] entities, long typeIdHash);
-    public static native int componentHasBatch(long contextId, long[] entities, long typeIdHash, byte[] outResults);
+    public static native int componentCount(long contextId, long typeIdHash);
     public static native RenderCapabilities getRenderCapabilities(long contextId);
     public static native PhysicsCapabilities getPhysicsCapabilities(long contextId);
     public static native AudioCapabilities getAudioCapabilities(long contextId);

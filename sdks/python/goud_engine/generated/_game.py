@@ -1704,6 +1704,12 @@ class GoudContext:
         """Advances the active transition by delta time"""
         return self._lib.goud_scene_transition_tick(self._ctx, delta_time)
 
+    def get_frame_metrics(self):
+        """Returns per-frame render metrics from the debugger snapshot for this context"""
+        _out_metrics = _ffi_module.RenderMetrics()
+        self._lib.goud_renderer_get_frame_metrics(self._ctx, ctypes.byref(_out_metrics))
+        return RenderMetrics(_out_metrics.draw_call_count, _out_metrics.sprites_submitted, _out_metrics.sprites_drawn, _out_metrics.sprites_culled, _out_metrics.batches_submitted, _out_metrics.avg_sprites_per_batch, _out_metrics.sprite_render_ms, _out_metrics.text_render_ms, _out_metrics.ui_render_ms, _out_metrics.total_render_ms, _out_metrics.text_draw_calls, _out_metrics.text_glyph_count, _out_metrics.ui_draw_calls)
+
 
 class PhysicsWorld2D:
     """2D physics simulation powered by Rapier2D"""

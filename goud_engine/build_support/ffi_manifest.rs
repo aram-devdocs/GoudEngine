@@ -145,6 +145,14 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/ui/node.rs",
     "src/ffi/ui/events.rs",
     "src/ffi/ui/widget.rs",
+    // entity pool module
+    "src/ffi/pool/lifecycle.rs",
+    "src/ffi/pool/operations.rs",
+    "src/ffi/pool/queries.rs",
+    // frame arena module
+    "src/ffi/arena/mod.rs",
+    // renderer metrics
+    "src/ffi/renderer/metrics.rs",
 ];
 
 /// A single extracted FFI function signature.

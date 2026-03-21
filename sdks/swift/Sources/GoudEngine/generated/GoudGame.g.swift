@@ -351,6 +351,14 @@ public final class GoudGame {
         }
     }
 
+    /// Draws a batch of text labels in a single pass for high performance
+    public func drawTextBatch(cmds: [TextCmd]) -> UInt32 {
+        cmds.withUnsafeBufferPointer { cmdsBuf in
+            let cmdsBasePtr = cmdsBuf.baseAddress!
+            return goud_renderer_draw_text_batch(_ctx, cmdsBasePtr, UInt32(cmds.count))
+        }
+    }
+
     /// Sets the rendering viewport
     public func setViewport(x: Int32, y: Int32, width: UInt32, height: UInt32) {
         let _ = goud_renderer_set_viewport(_ctx, x, y, width, height)
@@ -515,6 +523,21 @@ public final class GoudGame {
     /// Squared distance between two points
     public func distanceSquared(x1: Float, y1: Float, x2: Float, y2: Float) -> Float {
         return goud_collision_distance_squared(x1, y1, x2, y2)
+    }
+
+    /// Returns the number of entities with a specific component type
+    public func componentCount(typeIdHash: UInt64) -> UInt32 {
+        return goud_component_count(_ctx, typeIdHash)
+    }
+
+    /// Gets entity IDs for all entities with a specific component type
+    public func componentGetEntities(typeIdHash: UInt64, outEntities: UnsafeMutableRawPointer, maxCount: UInt32) -> UInt32 {
+        return goud_component_get_entities(_ctx, typeIdHash, outEntities, maxCount)
+    }
+
+    /// Gets entity IDs and data pointers for all entities with a specific component type
+    public func componentGetAll(typeIdHash: UInt64, outEntities: UnsafeMutableRawPointer, outDataPtrs: UnsafeMutableRawPointer, maxCount: UInt32) -> UInt32 {
+        return goud_component_get_all(_ctx, typeIdHash, outEntities, outDataPtrs, maxCount)
     }
 
     /// Starts hosting on the given port with the selected transport protocol.

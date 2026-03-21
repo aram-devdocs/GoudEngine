@@ -46,11 +46,9 @@ public final class GoudContextNative {
     public static native long spawnEmpty(long contextId);
     public static native long[] spawnBatch(long contextId, int count);
     public static native boolean despawn(long contextId, long entity);
-    public static native int despawnBatch(long contextId, long[] entities);
     public static native long cloneEntity(long contextId, long entity);
     public static native long cloneEntityRecursive(long contextId, long entity);
     public static native boolean isAlive(long contextId, long entity);
-    public static native int isAliveBatch(long contextId, long[] entities, byte[] outResults);
     public static native int entityCount(long contextId);
     public static native void addTransform2d(long contextId, long entity, Transform2D transform);
     public static native Transform2D getTransform2d(long contextId, long entity);
@@ -69,8 +67,7 @@ public final class GoudContextNative {
     public static native boolean componentRegisterType(long typeIdHash, String name, long size, long align);
     public static native boolean componentRemove(long contextId, long entity, long typeIdHash);
     public static native boolean componentHas(long contextId, long entity, long typeIdHash);
-    public static native int componentRemoveBatch(long contextId, long[] entities, long typeIdHash);
-    public static native int componentHasBatch(long contextId, long[] entities, long typeIdHash, byte[] outResults);
+    public static native int componentCount(long contextId, long typeIdHash);
     public static native int sceneCreate(long contextId, String name);
     public static native long sceneDestroy(long contextId, int sceneId);
     public static native int sceneGetByName(long contextId, String name);
@@ -86,4 +83,5 @@ public final class GoudContextNative {
     public static native float sceneTransitionProgress(long contextId);
     public static native boolean sceneTransitionIsActive(long contextId);
     public static native long sceneTransitionTick(long contextId, float deltaTime);
+    public static native RenderMetrics getFrameMetrics(long contextId);
 }

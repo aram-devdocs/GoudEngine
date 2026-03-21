@@ -38,6 +38,7 @@
 - [UI System](features/ui.md)
 - [Networking](features/networking.md)
 - [Error Handling](features/error-handling.md)
+- [Pooling and Arenas](features/pooling.md)
 
 # Guides
 

@@ -42,6 +42,7 @@ use crate::ffi::collision::goud_collision_distance;
 use crate::ffi::collision::goud_collision_distance_squared;
 use crate::ffi::collision::goud_collision_point_in_circle;
 use crate::ffi::collision::goud_collision_point_in_rect;
+use crate::ffi::component::goud_component_count;
 use crate::ffi::context::goud_context_destroy;
 use crate::ffi::context::goud_context_is_valid;
 use crate::ffi::debug::goud_debug_set_fps_overlay_corner;
@@ -60,10 +61,14 @@ use crate::ffi::entity::goud_entity_clone_recursive;
 use crate::ffi::entity::goud_entity_count;
 use crate::ffi::entity::goud_entity_despawn;
 use crate::ffi::entity::goud_entity_is_alive;
+use crate::ffi::pool::goud_entity_pool_acquire;
+use crate::ffi::pool::goud_entity_pool_destroy;
+use crate::ffi::pool::goud_entity_pool_release;
 use crate::ffi::entity::goud_entity_spawn_empty;
 use crate::ffi::window::goud_fixed_timestep_begin;
 use crate::ffi::window::goud_fixed_timestep_set;
 use crate::ffi::window::goud_fixed_timestep_set_max_steps;
+use crate::ffi::arena::goud_frame_arena_reset;
 use crate::ffi::network::goud_network_clear_overlay_handle;
 use crate::ffi::network::goud_network_clear_simulation;
 use crate::ffi::network::goud_network_disconnect;
@@ -563,6 +568,11 @@ pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> 
         Ok(goud_collision_distance_squared(arg0 as f32, arg1 as f32, arg2 as f32, arg3 as f32) as f64)
     })?;
     tbl.set("distance_squared", f_distance_squared)?;
+    // GoudGame.componentCount
+    let f_component_count = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_component_count(ctx, arg0 as u64) as i64)
+    })?;
+    tbl.set("component_count", f_component_count)?;
     // GoudGame.networkHost
     let f_network_host = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
         Ok(goud_network_host(ctx, arg0 as i32, arg1 as u16) as i64)
@@ -902,6 +912,11 @@ pub(crate) fn register_goud_context_tools(lua: &Lua, ctx_id: u64) -> LuaResult<(
         Ok(goud_entity_count(ctx) as i64)
     })?;
     tbl.set("entity_count", f_entity_count)?;
+    // GoudContext.componentCount
+    let f_component_count = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_component_count(ctx, arg0 as u64) as i64)
+    })?;
+    tbl.set("component_count", f_component_count)?;
     // GoudContext.sceneDestroy
     let f_scene_destroy = lua.create_function(move |_, arg0: i64| {
         let r = goud_scene_destroy(ctx, arg0 as u32);
@@ -1433,5 +1448,41 @@ pub(crate) fn register_audio_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> {
     })?;
     tbl.set("cleanup_finished", f_cleanup_finished)?;
     globals.set("audio", tbl)?;
+    Ok(())
+}
+
+pub(crate) fn register_entity_pool_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> {
+    let ctx = GoudContextId::from_raw(ctx_id);
+    let globals = lua.globals();
+    let tbl = globals.get::<LuaTable>("entity_pool").or_else(|_| lua.create_table())?;
+    // EntityPool.destroy
+    let f_destroy = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_entity_pool_destroy(arg0 as u32) as i64)
+    })?;
+    tbl.set("destroy", f_destroy)?;
+    // EntityPool.acquire
+    let f_acquire = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_entity_pool_acquire(arg0 as u32) as i64)
+    })?;
+    tbl.set("acquire", f_acquire)?;
+    // EntityPool.release
+    let f_release = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
+        Ok(goud_entity_pool_release(arg0 as u32, arg1 as u32) as i64)
+    })?;
+    tbl.set("release", f_release)?;
+    globals.set("entity_pool", tbl)?;
+    Ok(())
+}
+
+pub(crate) fn register_frame_arena_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> {
+    let ctx = GoudContextId::from_raw(ctx_id);
+    let globals = lua.globals();
+    let tbl = globals.get::<LuaTable>("frame_arena").or_else(|_| lua.create_table())?;
+    // FrameArena.reset
+    let f_reset = lua.create_function(move |_, _: ()| {
+        Ok(goud_frame_arena_reset() as i64)
+    })?;
+    tbl.set("reset", f_reset)?;
+    globals.set("frame_arena", tbl)?;
     Ok(())
 }

@@ -190,6 +190,9 @@ class GoudContext internal constructor(internal val contextId: Long) : AutoClose
     fun componentHas(entity: com.goudengine.core.EntityHandle, typeIdHash: Long): Boolean =
         GoudContextNative.componentHas(contextId, entity.id, typeIdHash)
 
+    fun componentCount(typeIdHash: Long): Int =
+        GoudContextNative.componentCount(contextId, typeIdHash)
+
     fun sceneCreate(name: String): Int =
         GoudContextNative.sceneCreate(contextId, name)
 
@@ -213,6 +216,11 @@ class GoudContext internal constructor(internal val contextId: Long) : AutoClose
 
     fun sceneTransitionIsActive(): Boolean =
         GoudContextNative.sceneTransitionIsActive(contextId)
+
+    fun getFrameMetrics(): RenderMetrics {
+        val r = GoudContextNative.getFrameMetrics(contextId)
+        return com.goudengine.types.RenderMetrics(r.drawCallCount, r.spritesSubmitted, r.spritesDrawn, r.spritesCulled, r.batchesSubmitted, r.avgSpritesPerBatch, r.spriteRenderMs, r.textRenderMs, r.uiRenderMs, r.totalRenderMs, r.textDrawCalls, r.textGlyphCount, r.uiDrawCalls)
+    }
 
     fun destroy() {
         GoudContextNative.destroy(contextId)

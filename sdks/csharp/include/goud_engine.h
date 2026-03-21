@@ -116,6 +116,16 @@ extern "C" {
 #define GOUD_INVALID_SKINNED_MESH UINT32_MAX
 
 /**
+ * Sentinel value indicating an invalid or failed pool handle.
+ */
+#define GOUD_INVALID_POOL_HANDLE UINT32_MAX
+
+/**
+ * Sentinel value indicating an invalid or failed spatial grid handle.
+ */
+#define GOUD_INVALID_SPATIAL_GRID_HANDLE UINT32_MAX
+
+/**
  * Sentinel `u64` returned when a node operation fails or no node exists.
  */
 #define INVALID_NODE_U64 UINT64_MAX
@@ -1114,9 +1124,177 @@ typedef struct GoudRenderStats {
 } GoudRenderStats;
 
 /**
+ * FFI-safe per-frame render metrics.
+ */
+typedef struct FfiRenderMetrics {
+    /**
+     * Total draw calls across all render subsystems.
+     */
+    uint32_t draw_call_count;
+    /**
+     * Total sprites submitted before culling.
+     */
+    uint32_t sprites_submitted;
+    /**
+     * Sprites that passed culling and were drawn.
+     */
+    uint32_t sprites_drawn;
+    /**
+     * Sprites rejected by frustum culling.
+     */
+    uint32_t sprites_culled;
+    /**
+     * Number of sprite batches submitted.
+     */
+    uint32_t batches_submitted;
+    /**
+     * Average sprites per batch (batch efficiency).
+     */
+    float avg_sprites_per_batch;
+    /**
+     * Time spent rendering sprites (ms).
+     */
+    float sprite_render_ms;
+    /**
+     * Time spent rendering text (ms).
+     */
+    float text_render_ms;
+    /**
+     * Time spent rendering UI (ms).
+     */
+    float ui_render_ms;
+    /**
+     * Total render phase time (ms).
+     */
+    float total_render_ms;
+    /**
+     * Draw calls from text rendering.
+     */
+    uint32_t text_draw_calls;
+    /**
+     * Glyphs rendered this frame.
+     */
+    uint32_t text_glyph_count;
+    /**
+     * Draw calls from UI rendering.
+     */
+    uint32_t ui_draw_calls;
+} FfiRenderMetrics;
+
+/**
  * Opaque font handle for native FFI text rendering.
  */
 typedef uint64_t GoudFontHandle;
+
+/**
+ * A single text command for batch rendering.
+ */
+typedef struct FfiTextCmd {
+    /**
+     * Font handle from `goud_font_load`.
+     */
+    uint64_t font_handle;
+    /**
+     * Null-terminated UTF-8 text string.
+     */
+    const char *text;
+    /**
+     * X position in screen-space pixels.
+     */
+    float x;
+    /**
+     * Y position in screen-space pixels.
+     */
+    float y;
+    /**
+     * Font size in pixels.
+     */
+    float font_size;
+    /**
+     * Text alignment: 0=Left, 1=Center, 2=Right.
+     */
+    uint8_t alignment;
+    /**
+     * Text direction: 0=Auto, 1=LTR, 2=RTL.
+     */
+    uint8_t direction;
+    /**
+     * Alignment padding.
+     */
+    uint16_t _pad0;
+    /**
+     * Maximum line width (0 = no wrap).
+     */
+    float max_width;
+    /**
+     * Line spacing multiplier (default 1.0).
+     */
+    float line_spacing;
+    /**
+     * Red color component.
+     */
+    float r;
+    /**
+     * Green color component.
+     */
+    float g;
+    /**
+     * Blue color component.
+     */
+    float b;
+    /**
+     * Alpha (opacity, 1.0 = fully opaque).
+     */
+    float a;
+} FfiTextCmd;
+
+/**
+ * FFI-safe pool statistics snapshot.
+ */
+typedef struct FfiPoolStats {
+    /**
+     * Total number of slots in the pool.
+     */
+    uint32_t capacity;
+    /**
+     * Number of slots currently acquired (in use).
+     */
+    uint32_t active;
+    /**
+     * Number of slots currently available for acquisition.
+     */
+    uint32_t available;
+    /**
+     * Peak number of simultaneously active slots since pool creation.
+     */
+    uint32_t high_water_mark;
+    /**
+     * Cumulative number of successful acquire operations.
+     */
+    uint64_t total_acquires;
+    /**
+     * Cumulative number of successful release operations.
+     */
+    uint64_t total_releases;
+} FfiPoolStats;
+
+/**
+ * FFI-safe arena statistics snapshot.
+ */
+typedef struct FfiArenaStats {
+    /**
+     * Number of bytes currently allocated within the arena.
+     */
+    uint64_t bytes_allocated;
+    /**
+     * Total byte capacity of the arena's backing storage.
+     */
+    uint64_t bytes_capacity;
+    /**
+     * Number of times the arena has been reset since creation.
+     */
+    uint64_t reset_count;
+} FfiArenaStats;
 
 /**
  * FFI-safe event payload used by deterministic event polling/read APIs.
@@ -1577,6 +1755,21 @@ GoudResult goud_component_add(struct GoudContextId context_id, GoudEntityId enti
 GoudResult goud_component_remove(struct GoudContextId context_id, GoudEntityId entity_id, uint64_t type_id_hash);
 
 /**
+ * Returns the number of entities that currently have the given component type.
+ */
+uint32_t goud_component_count(struct GoudContextId context_id, uint64_t type_id_hash);
+
+/**
+ * Copies entity IDs (as raw `u64` bits) for all entities that have the given
+ */
+uint32_t goud_component_get_entities(struct GoudContextId context_id, uint64_t type_id_hash, uint64_t *out_entities, uint32_t max_count);
+
+/**
+ * Copies entity IDs and data pointers for all entities that have the given
+ */
+uint32_t goud_component_get_all(struct GoudContextId context_id, uint64_t type_id_hash, uint64_t *out_entities, const uint8_t **out_data_ptrs, uint32_t max_count);
+
+/**
  * Creates a new engine context.
  */
 struct GoudContextId goud_context_create(void);
@@ -1701,6 +1894,41 @@ bool goud_scene_transition_is_active(struct GoudContextId context_id);
  */
 GoudResult goud_scene_transition_tick(struct GoudContextId context_id, float delta_time);
 
+/**
+ * Creates a new entity pool with the specified capacity.
+ */
+uint32_t goud_entity_pool_create(uint32_t capacity);
+
+/**
+ * Destroys an entity pool and frees its resources.
+ */
+int32_t goud_entity_pool_destroy(uint32_t handle);
+
+/**
+ * Acquires a single entity from the pool.
+ */
+uint64_t goud_entity_pool_acquire(uint32_t handle);
+
+/**
+ * Acquires multiple entities from the pool in a single call.
+ */
+uint32_t goud_entity_pool_acquire_batch(uint32_t handle, uint32_t count, uint64_t *out_entities);
+
+/**
+ * Releases an entity back to the pool by slot index.
+ */
+int32_t goud_entity_pool_release(uint32_t handle, uint32_t slot_index);
+
+/**
+ * Releases multiple slots back to the pool in a single call.
+ */
+uint32_t goud_entity_pool_release_batch(uint32_t handle, const uint32_t *slot_indices, uint32_t count);
+
+/**
+ * Retrieves diagnostic statistics for an entity pool.
+ */
+int32_t goud_entity_pool_stats(uint32_t handle, struct FfiPoolStats *out_stats);
+
 /* === Assets === */
 
 /**
@@ -1811,6 +2039,11 @@ bool goud_renderer_set_coordinate_origin(struct GoudContextId context_id, uint32
 uint32_t goud_renderer_get_coordinate_origin(struct GoudContextId context_id);
 
 /**
+ * Retrieves per-frame render metrics for a context.
+ */
+int32_t goud_renderer_get_frame_metrics(struct GoudContextId context_id, struct FfiRenderMetrics *out_metrics);
+
+/**
  * Draws UTF-8 text in immediate mode.
  */
 bool goud_renderer_draw_text(struct GoudContextId context_id, GoudFontHandle font_handle, const char *text, float x, float y, float font_size, uint8_t alignment, float max_width, float line_spacing, uint8_t direction, float r, float g, float b, float a);
@@ -1819,6 +2052,11 @@ bool goud_renderer_draw_text(struct GoudContextId context_id, GoudFontHandle fon
  * Alias export for SDK compatibility.
  */
 GOUD_DEPRECATED_MSG("Use goud_renderer_draw_text instead.") bool goud_draw_text(struct GoudContextId context_id, GoudFontHandle font_handle, const char *text, float x, float y, float font_size, uint8_t alignment, float max_width, float line_spacing, uint8_t direction, float r, float g, float b, float a);
+
+/**
+ * Draws a batch of text labels. Each command specifies font, position, color,
+ */
+uint32_t goud_renderer_draw_text_batch(struct GoudContextId context_id, const struct FfiTextCmd *cmds, uint32_t count);
 
 /**
  * Sets the 3D camera position.
@@ -3962,6 +4200,16 @@ bool goud_engine_config_set_window_backend(EngineConfigHandle handle, uint32_t b
  */
 bool goud_engine_config_set_debugger(EngineConfigHandle handle, const struct GoudDebuggerConfig *debugger);
 
+/**
+ * Sets the fixed timestep step size in seconds on an `EngineConfig`.
+ */
+bool goud_engine_config_set_fixed_timestep(EngineConfigHandle handle, float step);
+
+/**
+ * Sets the maximum fixed steps per frame on an `EngineConfig`.
+ */
+bool goud_engine_config_set_max_fixed_steps(EngineConfigHandle handle, uint32_t max);
+
 /* === Error === */
 
 /**
@@ -4315,6 +4563,91 @@ GoudTextureHandle goud_atlas_get_texture(struct GoudContextId context_id, GoudAt
  * Destroys an atlas and frees its GPU + CPU resources.
  */
 bool goud_atlas_destroy(struct GoudContextId context_id, GoudAtlasHandle atlas);
+
+/**
+ * Resets the global frame arena, freeing all allocations at once.
+ */
+int32_t goud_frame_arena_reset(void);
+
+/**
+ * Retrieves diagnostic statistics for the global frame arena.
+ */
+int32_t goud_frame_arena_stats(struct FfiArenaStats *out_stats);
+
+/**
+ * Creates a new spatial grid with the specified cell size.
+ */
+uint32_t goud_spatial_grid_create(float cell_size);
+
+/**
+ * Creates a new spatial grid with pre-allocated capacity.
+ */
+uint32_t goud_spatial_grid_create_with_capacity(float cell_size, uint32_t capacity);
+
+/**
+ * Destroys a spatial grid and frees its resources.
+ */
+int32_t goud_spatial_grid_destroy(uint32_t handle);
+
+/**
+ * Clears all entities from a spatial grid without destroying it.
+ */
+int32_t goud_spatial_grid_clear(uint32_t handle);
+
+/**
+ * Inserts an entity at a position into the spatial grid.
+ */
+int32_t goud_spatial_grid_insert(uint32_t handle, uint64_t entity_id, float x, float y);
+
+/**
+ * Removes an entity from the spatial grid.
+ */
+int32_t goud_spatial_grid_remove(uint32_t handle, uint64_t entity_id);
+
+/**
+ * Updates an entity's position in the spatial grid.
+ */
+int32_t goud_spatial_grid_update(uint32_t handle, uint64_t entity_id, float x, float y);
+
+/**
+ * Queries for entities within a radius of a center point.
+ */
+int32_t goud_spatial_grid_query_radius(uint32_t handle, float center_x, float center_y, float radius, uint64_t *out_entities, uint32_t capacity);
+
+/**
+ * Returns the number of entities in the spatial grid.
+ */
+int32_t goud_spatial_grid_entity_count(uint32_t handle);
+
+/**
+ * Begins the fixed timestep accumulator for this frame.
+ */
+bool goud_fixed_timestep_begin(struct GoudContextId context_id);
+
+/**
+ * Consumes one fixed step from the accumulator.
+ */
+bool goud_fixed_timestep_step(struct GoudContextId context_id);
+
+/**
+ * Returns the interpolation alpha for render smoothing.
+ */
+float goud_fixed_timestep_alpha(struct GoudContextId context_id);
+
+/**
+ * Returns the configured fixed timestep step size in seconds.
+ */
+float goud_fixed_timestep_dt(struct GoudContextId context_id);
+
+/**
+ * Sets the fixed timestep step size at runtime for an existing context.
+ */
+bool goud_fixed_timestep_set(struct GoudContextId context_id, float step);
+
+/**
+ * Sets the maximum fixed steps per frame at runtime for an existing context.
+ */
+bool goud_fixed_timestep_set_max_steps(struct GoudContextId context_id, uint32_t max);
 
 #ifdef __cplusplus
 } /* extern "C" */

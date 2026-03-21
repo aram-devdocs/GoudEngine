@@ -43,6 +43,9 @@ use goud_engine::ffi::debug::{
     goud_debugger_stop_replay, GoudDebuggerStepKind, GoudMemoryCategoryStats,
     GoudMemorySummary,
 };
+use goud_engine::ffi::component::{
+    goud_component_count, goud_component_get_entities, goud_component_get_all,
+};
 use goud_engine::ffi::entity::{
     goud_entity_count, goud_entity_despawn, goud_entity_is_alive, goud_entity_spawn_batch,
     goud_entity_spawn_empty,
@@ -1454,6 +1457,53 @@ impl GoudGame {
     #[napi]
     pub fn is_alive(&self, entity: &Entity) -> bool {
         goud_entity_is_alive(self.context_id, entity.bits)
+    }
+
+    // =========================================================================
+    // Component Query Wrappers
+    // =========================================================================
+
+    #[napi]
+    /// Returns the number of entities that have a component with the given type hash.
+    pub fn component_count(&self, type_id_hash: f64) -> u32 {
+        goud_component_count(self.context_id, type_id_hash as u64)
+    }
+
+    #[napi]
+    /// Returns entity handles for all entities that have a component with the given type hash.
+    pub fn component_get_entities(&self, type_id_hash: f64, max_count: u32) -> Vec<Entity> {
+        let mut out = vec![0u64; max_count as usize];
+        // SAFETY: out buffer is valid for max_count u64 values.
+        let n = unsafe {
+            goud_component_get_entities(
+                self.context_id,
+                type_id_hash as u64,
+                out.as_mut_ptr(),
+                max_count,
+            )
+        };
+        out.truncate(n as usize);
+        out.into_iter().map(|bits| Entity { bits }).collect()
+    }
+
+    #[napi]
+    /// Returns entity handles and raw component data pointers for all entities
+    /// with the given component type hash.
+    pub fn component_get_all(&self, type_id_hash: f64, max_count: u32) -> Vec<Entity> {
+        let mut out_entities = vec![0u64; max_count as usize];
+        let mut out_ptrs = vec![std::ptr::null::<u8>(); max_count as usize];
+        // SAFETY: out_entities and out_ptrs are valid for max_count entries.
+        let n = unsafe {
+            goud_component_get_all(
+                self.context_id,
+                type_id_hash as u64,
+                out_entities.as_mut_ptr(),
+                out_ptrs.as_mut_ptr(),
+                max_count,
+            )
+        };
+        out_entities.truncate(n as usize);
+        out_entities.into_iter().map(|bits| Entity { bits }).collect()
     }
 
     // =========================================================================

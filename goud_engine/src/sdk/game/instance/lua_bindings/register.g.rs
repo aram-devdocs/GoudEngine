@@ -21,6 +21,8 @@ pub(crate) fn register_lua_bindings(lua: &Lua, ctx_id: u64) -> LuaResult<()> {
         super::tools::register_animation_layer_stack_tools(lua, ctx_id)?;
         super::tools::register_network_tools(lua, ctx_id)?;
         super::tools::register_audio_tools(lua, ctx_id)?;
+        super::tools::register_entity_pool_tools(lua, ctx_id)?;
+        super::tools::register_frame_arena_tools(lua, ctx_id)?;
     }
     #[cfg(not(feature = "native"))]
     let _ = ctx_id;

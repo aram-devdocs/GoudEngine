@@ -1,47 +1,29 @@
 # GoudEngine LuaRocks Package
 
-LuaRocks distribution package for GoudEngine's Lua SDK. The Lua bindings use mlua to embed Lua 5.4 inside the Rust engine, giving scripts direct access to the ECS, rendering, physics, audio, and input systems.
+LuaRocks distribution for GoudEngine's Lua SDK. See the [Lua SDK README](../sdks/lua/README.md) and [Getting Started guide](../docs/src/getting-started/lua.md) for full documentation.
 
-## Prerequisites
-
-- Rust toolchain (stable, via rustup)
-- Lua 5.4+
-- LuaRocks 3.x
-
-## Build from source
+## Installation
 
 ```bash
-cd luarocks
 luarocks make goudengine-scm-1.rockspec
 ```
 
-Or build manually:
-
-```bash
-cd luarocks
-make          # builds the native library via cargo
-make install  # installs Lua modules and the native library
-```
-
-## Platform support
-
-| Platform | Library          | Status |
-|----------|------------------|--------|
-| macOS    | libgoud_engine.dylib | Supported |
-| Linux    | libgoud_engine.so    | Supported |
-| Windows  | goud_engine.dll      | Experimental |
-
 ## Usage
-
-When running scripts through the embedded `lua-runner`, all engine bindings are registered automatically as globals. The LuaRocks package provides a `require`-able module for standalone Lua interpreters:
 
 ```lua
 local goud = require("goudengine")
-print(goud.VERSION)  -- "0.0.832"
+print(goud.VERSION)
 
--- Access key constants
 local Key = goud.constants.key
 print(Key.space)  -- 32
 ```
 
-For game development, use the embedded runtime which exposes the full engine API (entity creation, rendering, input polling, etc.) directly into the Lua global scope.
+For game development, use the embedded runner which exposes the full engine API. See the [Lua SDK](../sdks/lua/README.md).
+
+## Platform Support
+
+| OS | Library | Status |
+|----|---------|--------|
+| macOS | libgoud_engine.dylib | Supported |
+| Linux | libgoud_engine.so | Supported |
+| Windows | goud_engine.dll | Experimental |

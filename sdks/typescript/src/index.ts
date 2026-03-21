@@ -4,3 +4,4 @@ export { parseDebuggerManifest, parseDebuggerSnapshot } from './shared/debugger.
 export { NetworkManager, NetworkEndpoint } from './shared/network.js';
 export type { NetworkContextLike } from './shared/network.js';
 export { NetworkProtocol } from './generated/types/input.g.js';
+export { componentTypeHash } from './shared/ecs.js';

@@ -644,6 +644,7 @@ def gen_public_entrypoints():
             "export { NetworkManager, NetworkEndpoint } from './shared/network.js';",
             "export type { NetworkContextLike } from './shared/network.js';",
             "export { NetworkProtocol } from './generated/types/input.g.js';",
+            "export { componentTypeHash } from './shared/ecs.js';",
             "",
         ],
         TS / "src" / "node" / "index.ts": [
@@ -653,6 +654,7 @@ def gen_public_entrypoints():
             "export { NetworkManager, NetworkEndpoint } from '../shared/network.js';",
             "export type { NetworkContextLike } from '../shared/network.js';",
             "export { NetworkProtocol } from '../generated/types/input.g.js';",
+            "export { componentTypeHash } from '../shared/ecs.js';",
             "",
         ],
         TS / "src" / "web" / "index.ts": [
@@ -662,6 +664,7 @@ def gen_public_entrypoints():
             "export { NetworkManager, NetworkEndpoint } from '../shared/network.js';",
             "export type { NetworkContextLike } from '../shared/network.js';",
             "export { NetworkProtocol } from '../generated/types/input.g.js';",
+            "export { componentTypeHash } from '../shared/ecs.js';",
             "",
         ],
     }

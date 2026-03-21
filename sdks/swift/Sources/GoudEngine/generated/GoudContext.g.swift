@@ -142,6 +142,21 @@ public final class GoudContext {
         return goud_entity_count(_ctx)
     }
 
+    /// Returns the number of entities with a specific component type
+    public func componentCount(typeIdHash: UInt64) -> UInt32 {
+        return goud_component_count(_ctx, typeIdHash)
+    }
+
+    /// Gets entity IDs for all entities with a specific component type
+    public func componentGetEntities(typeIdHash: UInt64, outEntities: UnsafeMutableRawPointer, maxCount: UInt32) -> UInt32 {
+        return goud_component_get_entities(_ctx, typeIdHash, outEntities, maxCount)
+    }
+
+    /// Gets entity IDs and data pointers for all entities with a specific component type
+    public func componentGetAll(typeIdHash: UInt64, outEntities: UnsafeMutableRawPointer, outDataPtrs: UnsafeMutableRawPointer, maxCount: UInt32) -> UInt32 {
+        return goud_component_get_all(_ctx, typeIdHash, outEntities, outDataPtrs, maxCount)
+    }
+
     /// Destroys a scene by ID
     public func sceneDestroy(sceneId: UInt32) -> GoudResult {
         return goud_scene_destroy(_ctx, sceneId)

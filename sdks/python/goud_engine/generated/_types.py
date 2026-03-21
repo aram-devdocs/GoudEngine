@@ -1708,3 +1708,26 @@ class AtlasStats:
 
     def __repr__(self):
         return f"AtlasStats(texture_count={self.texture_count}, width={self.width}, height={self.height}, used_pixels={self.used_pixels}, total_pixels={self.total_pixels}, efficiency={self.efficiency}, wasted_pixels={self.wasted_pixels})"
+
+class PoolStats:
+    """Diagnostic statistics snapshot for an entity pool"""
+    def __init__(self, capacity: int = 0, active: int = 0, available: int = 0, high_water_mark: int = 0, total_acquires: int = 0, total_releases: int = 0):
+        self.capacity = capacity
+        self.active = active
+        self.available = available
+        self.high_water_mark = high_water_mark
+        self.total_acquires = total_acquires
+        self.total_releases = total_releases
+
+    def __repr__(self):
+        return f"PoolStats(capacity={self.capacity}, active={self.active}, available={self.available}, high_water_mark={self.high_water_mark}, total_acquires={self.total_acquires}, total_releases={self.total_releases})"
+
+class ArenaStats:
+    """Diagnostic statistics snapshot for the frame arena allocator"""
+    def __init__(self, bytes_allocated: int = 0, bytes_capacity: int = 0, reset_count: int = 0):
+        self.bytes_allocated = bytes_allocated
+        self.bytes_capacity = bytes_capacity
+        self.reset_count = reset_count
+
+    def __repr__(self):
+        return f"ArenaStats(bytes_allocated={self.bytes_allocated}, bytes_capacity={self.bytes_capacity}, reset_count={self.reset_count})"

@@ -2980,6 +2980,63 @@
           "doc": "Wasted pixel area"
         }
       ]
+    },
+    "PoolStats": {
+      "kind": "value",
+      "doc": "Diagnostic statistics snapshot for an entity pool",
+      "fields": [
+        {
+          "name": "capacity",
+          "type": "u32",
+          "doc": "Total number of slots in the pool"
+        },
+        {
+          "name": "active",
+          "type": "u32",
+          "doc": "Number of slots currently acquired (in use)"
+        },
+        {
+          "name": "available",
+          "type": "u32",
+          "doc": "Number of slots currently available for acquisition"
+        },
+        {
+          "name": "highWaterMark",
+          "type": "u32",
+          "doc": "Peak number of simultaneously active slots since pool creation"
+        },
+        {
+          "name": "totalAcquires",
+          "type": "u64",
+          "doc": "Cumulative number of successful acquire operations"
+        },
+        {
+          "name": "totalReleases",
+          "type": "u64",
+          "doc": "Cumulative number of successful release operations"
+        }
+      ]
+    },
+    "ArenaStats": {
+      "kind": "value",
+      "doc": "Diagnostic statistics snapshot for the frame arena allocator",
+      "fields": [
+        {
+          "name": "bytesAllocated",
+          "type": "u64",
+          "doc": "Number of bytes currently allocated within the arena"
+        },
+        {
+          "name": "bytesCapacity",
+          "type": "u64",
+          "doc": "Total byte capacity of the arena backing storage"
+        },
+        {
+          "name": "resetCount",
+          "type": "u64",
+          "doc": "Number of times the arena has been reset since creation"
+        }
+      ]
     }
   },
   "enums": {
@@ -8361,6 +8418,12 @@
             }
           ],
           "returns": "GoudResult"
+        },
+        {
+          "name": "getFrameMetrics",
+          "doc": "Returns per-frame render metrics from the debugger snapshot for this context",
+          "params": [],
+          "returns": "RenderMetrics"
         }
       ]
     },
@@ -10842,6 +10905,101 @@
           "returns": "i32"
         }
       ]
+    },
+    "EntityPool": {
+      "doc": "Pre-allocated entity pool for efficient entity recycling without per-entity heap allocation",
+      "constructor": {
+        "params": [
+          {
+            "name": "capacity",
+            "type": "u32",
+            "doc": "Number of entity slots to pre-allocate"
+          }
+        ]
+      },
+      "methods": [
+        {
+          "name": "destroy",
+          "doc": "Destroys the entity pool and releases all resources",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "acquire",
+          "doc": "Acquires a single entity from the pool. Returns the entity handle or sentinel on failure",
+          "params": [],
+          "returns": "u64"
+        },
+        {
+          "name": "acquireBatch",
+          "doc": "Acquires multiple entities from the pool in a single call. Returns the number actually acquired",
+          "params": [
+            {
+              "name": "count",
+              "type": "u32",
+              "doc": "Number of entities to acquire"
+            },
+            {
+              "name": "outEntities",
+              "type": "u64[]",
+              "doc": "Output buffer for acquired entity handles"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "release",
+          "doc": "Releases a single entity back to the pool by slot index",
+          "params": [
+            {
+              "name": "slotIndex",
+              "type": "u32",
+              "doc": "Slot index of the entity to release"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "releaseBatch",
+          "doc": "Releases multiple entities back to the pool in a single call. Returns the number actually released",
+          "params": [
+            {
+              "name": "slotIndices",
+              "type": "u32[]",
+              "doc": "Array of slot indices to release"
+            },
+            {
+              "name": "count",
+              "type": "u32",
+              "doc": "Number of slot indices in the array"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "stats",
+          "doc": "Retrieves diagnostic statistics for the entity pool",
+          "params": [],
+          "returns": "PoolStats"
+        }
+      ]
+    },
+    "FrameArena": {
+      "doc": "Global per-frame bump allocator for temporary allocations freed in bulk each frame",
+      "methods": [
+        {
+          "name": "reset",
+          "doc": "Resets the frame arena, freeing all allocations at once. Call once per frame",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "stats",
+          "doc": "Retrieves diagnostic statistics for the global frame arena",
+          "params": [],
+          "returns": "ArenaStats"
+        }
+      ]
     }
   },
   "ffi_tools": {
@@ -12086,7 +12244,7 @@
         },
         "runWithFixedUpdate": {
           "ffi": "goud_fixed_timestep_begin",
-          "doc": "SDK-side game loop with fixed timestep — bodies are hardcoded in codegen"
+          "doc": "SDK-side game loop with fixed timestep \u2014 bodies are hardcoded in codegen"
         },
         "setFixedTimestep": {
           "ffi": "goud_fixed_timestep_set"
@@ -12646,6 +12804,16 @@
         },
         "sceneTransitionTick": {
           "ffi": "goud_scene_transition_tick"
+        },
+        "getFrameMetrics": {
+          "ffi": "goud_renderer_get_frame_metrics",
+          "out_params": [
+            {
+              "name": "out_metrics",
+              "type": "RenderMetrics"
+            }
+          ],
+          "returns_struct": "RenderMetrics"
         }
       }
     },
@@ -13535,6 +13703,70 @@
           ],
           "returns_struct": "UiEvent",
           "status_nullable_struct": true
+        }
+      }
+    },
+    "EntityPool": {
+      "handle": "GoudPoolHandle",
+      "constructor": {
+        "ffi": "goud_entity_pool_create",
+        "params": [
+          {
+            "sdk": "capacity",
+            "ffi_name": "capacity",
+            "ffi_type": "u32"
+          }
+        ]
+      },
+      "destructor": "goud_entity_pool_destroy",
+      "methods": {
+        "destroy": {
+          "ffi": "goud_entity_pool_destroy"
+        },
+        "acquire": {
+          "ffi": "goud_entity_pool_acquire"
+        },
+        "acquireBatch": {
+          "ffi": "goud_entity_pool_acquire_batch",
+          "out_params": [
+            {
+              "name": "out_entities",
+              "type": "u64[]"
+            }
+          ]
+        },
+        "release": {
+          "ffi": "goud_entity_pool_release"
+        },
+        "releaseBatch": {
+          "ffi": "goud_entity_pool_release_batch"
+        },
+        "stats": {
+          "ffi": "goud_entity_pool_stats",
+          "out_params": [
+            {
+              "name": "out_stats",
+              "type": "PoolStats"
+            }
+          ],
+          "returns_struct": "PoolStats"
+        }
+      }
+    },
+    "FrameArena": {
+      "methods": {
+        "reset": {
+          "ffi": "goud_frame_arena_reset"
+        },
+        "stats": {
+          "ffi": "goud_frame_arena_stats",
+          "out_params": [
+            {
+              "name": "out_stats",
+              "type": "ArenaStats"
+            }
+          ],
+          "returns_struct": "ArenaStats"
         }
       }
     }

@@ -831,3 +831,77 @@ func NewAtlasStats(textureCount uint32, width uint32, height uint32, usedPixels 
 		WastedPixels: wastedPixels,
 	}
 }
+
+// PoolStats Diagnostic statistics snapshot for an entity pool
+type PoolStats struct {
+	Capacity uint32
+	Active uint32
+	Available uint32
+	HighWaterMark uint32
+	TotalAcquires uint64
+	TotalReleases uint64
+}
+
+// NewPoolStats creates a new PoolStats.
+func NewPoolStats(capacity uint32, active uint32, available uint32, highWaterMark uint32, totalAcquires uint64, totalReleases uint64) PoolStats {
+	return PoolStats{
+		Capacity: capacity,
+		Active: active,
+		Available: available,
+		HighWaterMark: highWaterMark,
+		TotalAcquires: totalAcquires,
+		TotalReleases: totalReleases,
+	}
+}
+
+// ArenaStats Diagnostic statistics snapshot for the frame arena allocator
+type ArenaStats struct {
+	BytesAllocated uint64
+	BytesCapacity uint64
+	ResetCount uint64
+}
+
+// NewArenaStats creates a new ArenaStats.
+func NewArenaStats(bytesAllocated uint64, bytesCapacity uint64, resetCount uint64) ArenaStats {
+	return ArenaStats{
+		BytesAllocated: bytesAllocated,
+		BytesCapacity: bytesCapacity,
+		ResetCount: resetCount,
+	}
+}
+
+// SpriteCmd describes a single sprite for batched rendering.
+type SpriteCmd struct {
+	Texture  uint64
+	X        float32
+	Y        float32
+	Width    float32
+	Height   float32
+	Rotation float32
+	SrcX     float32
+	SrcY     float32
+	SrcW     float32
+	SrcH     float32
+	R        float32
+	G        float32
+	B        float32
+	A        float32
+	ZLayer   int32
+}
+
+// TextCmd describes a single text label for batched rendering.
+type TextCmd struct {
+	FontHandle  uint64
+	Text        string
+	X           float32
+	Y           float32
+	FontSize    float32
+	Alignment   int32
+	Direction   int32
+	MaxWidth    float32
+	LineSpacing float32
+	R           float32
+	G           float32
+	B           float32
+	A           float32
+}

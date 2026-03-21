@@ -48,6 +48,8 @@ JAVA_TOOL_NATIVE_NAMES = {
     "Plugin": "PluginNative",
     "Audio": "AudioNative",
     "UiManager": "UiManagerNative",
+    "EntityPool": "EntityPoolNative",
+    "FrameArena": "FrameArenaNative",
 }
 TYPE_NATIVE_NAMES = {
     "Color": "ColorNative",
@@ -423,7 +425,11 @@ def supports_jni_bridge(method_def: dict[str, object]) -> bool:
     if base_type(method_def.get("returns", "void")) == "ptr":
         return False
     for param in method_def.get("params", []):
-        if base_type(param["type"]) == "ptr":
+        ptype = param["type"]
+        if base_type(ptype) == "ptr":
+            return False
+        # Skip array parameters (e.g. "u64[]", "u32[]") — no JNI array marshaling yet
+        if ptype.endswith("[]"):
             return False
     return True
 

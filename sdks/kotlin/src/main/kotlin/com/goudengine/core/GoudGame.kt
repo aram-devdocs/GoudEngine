@@ -425,6 +425,9 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
     fun componentHas(entity: com.goudengine.core.EntityHandle, typeIdHash: Long): Boolean =
         GoudGameNative.componentHas(contextId, entity.id, typeIdHash)
 
+    fun componentCount(typeIdHash: Long): Int =
+        GoudGameNative.componentCount(contextId, typeIdHash)
+
     fun networkHost(protocol: Int, port: Int): Long =
         GoudGameNative.networkHost(contextId, protocol, port)
 

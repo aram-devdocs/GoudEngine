@@ -268,6 +268,25 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct FfiPoolStats
+    {
+        public uint Capacity;
+        public uint Active;
+        public uint Available;
+        public uint HighWaterMark;
+        public ulong TotalAcquires;
+        public ulong TotalReleases;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiArenaStats
+    {
+        public ulong BytesAllocated;
+        public ulong BytesCapacity;
+        public ulong ResetCount;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct FfiMat3x3
     {
         public fixed float M[9];
@@ -2036,6 +2055,39 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_spatial_grid_entity_count(uint handle);
+
+        // entity_pool
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_entity_pool_create(uint capacity);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_entity_pool_destroy(uint handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ulong goud_entity_pool_acquire(uint handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_entity_pool_acquire_batch(uint handle, uint count, ref ulong out_entities);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_entity_pool_release(uint handle, uint slot_index);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_entity_pool_release_batch(uint handle, IntPtr slot_indices, uint count);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_entity_pool_stats(uint handle, ref FfiPoolStats out_stats);
+
+        // frame_arena
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_frame_arena_reset();
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_frame_arena_stats(ref FfiArenaStats out_stats);
+
+        // render_metrics
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer_get_frame_metrics(GoudContextId context_id, ref FfiRenderMetrics out_metrics);
 
         // batch rendering
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

@@ -1014,6 +1014,103 @@ jobs:
         npm run smoke:web
         node -e "import('./dist/sandbox.js').then(()=>console.log('sandbox dist import ok'))"
 
+  # Go SDK tests (pure-Go value type and enum tests, no CGO/native library needed)
+  go-sdk-check:
+    name: Go SDK Tests
+    runs-on: ubuntu-latest
+    needs: [preflight]
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+
+    - name: Run Go tests
+      working-directory: sdks/go
+      run: go test ./...
+
+  # Swift SDK tests (macOS only, pure-Swift value type tests)
+  swift-sdk-check:
+    name: Swift SDK Tests
+    runs-on: macos-latest
+    needs: [preflight, native-release]
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Download native release artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: native-release-macos-latest
+        path: native-release
+
+    - name: Stage native library
+      run: |
+        mkdir -p target/release
+        cp native-release/* target/release/
+
+    - name: Run Swift tests
+      working-directory: sdks/swift
+      run: swift test
+
+  # C SDK tests (CMake-based, needs native library)
+  c-sdk-check:
+    name: C SDK Tests on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    needs: [preflight, native-release]
+    strategy:
+      fail-fast: ${{ github.event_name == 'pull_request' }}
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Download native release artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: native-release-${{ matrix.os }}
+        path: native-release
+
+    - name: Stage native library
+      run: |
+        mkdir -p target/release
+        cp native-release/* target/release/
+      shell: bash
+
+    - name: Install system dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake
+
+    - name: Configure C tests
+      run: cmake -B sdks/c/tests/build -S sdks/c/tests -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build C tests
+      run: cmake --build sdks/c/tests/build --config Release
+
+    - name: Run C tests
+      run: ctest --test-dir sdks/c/tests/build --output-on-failure
+
+  # Lua SDK tests (pure-Lua constant validation, no native library needed)
+  lua-sdk-check:
+    name: Lua SDK Tests
+    runs-on: ubuntu-latest
+    needs: [preflight]
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Install Lua
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y lua5.4
+
+    - name: Run Lua tests
+      working-directory: luarocks
+      run: lua5.4 test_constants.lua
+
   clean-room-regeneration:
     name: Clean Room Regeneration
     runs-on: ubuntu-latest
@@ -1071,7 +1168,7 @@ jobs:
   ci-success:
     name: CI Success
     if: always()
-    needs: [preflight, rust-check, cargo-deny, codegen-drift-check, native-release, dotnet-check, python-sdk-check, integration-build, typescript-sdk-native, typescript-sdk-wasm, cpp-tests, kotlin-sdk-test, sandbox-parity, clean-room-regeneration]
+    needs: [preflight, rust-check, cargo-deny, codegen-drift-check, native-release, dotnet-check, python-sdk-check, integration-build, typescript-sdk-native, typescript-sdk-wasm, cpp-tests, kotlin-sdk-test, go-sdk-check, swift-sdk-check, c-sdk-check, lua-sdk-check, sandbox-parity, clean-room-regeneration]
     runs-on: ubuntu-latest
     steps:
     - name: Check all jobs
@@ -1119,6 +1216,10 @@ jobs:
         check_job "typescript-sdk-wasm" "${{ needs.typescript-sdk-wasm.result }}" "$ALLOW_PUSH_SKIPPED" || FAIL=1
         check_job "cpp-tests" "${{ needs.cpp-tests.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
         check_job "kotlin-sdk-test" "${{ needs.kotlin-sdk-test.result }}" "false" || FAIL=1
+        check_job "go-sdk-check" "${{ needs.go-sdk-check.result }}" "false" || FAIL=1
+        check_job "swift-sdk-check" "${{ needs.swift-sdk-check.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
+        check_job "c-sdk-check" "${{ needs.c-sdk-check.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
+        check_job "lua-sdk-check" "${{ needs.lua-sdk-check.result }}" "false" || FAIL=1
         check_job "sandbox-parity" "${{ needs.sandbox-parity.result }}" "false" || FAIL=1
         check_job "clean-room-regeneration" "${{ needs.clean-room-regeneration.result }}" "false" || FAIL=1
 

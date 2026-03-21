@@ -79,6 +79,7 @@ web-sys = { version = "0.3", optional = true, features = [
     "AudioDestinationNode", "BaseAudioContext",
     "Blob", "Url",
 ] }
+bumpalo = "3.20.2"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 interprocess = { git = "https://github.com/kotauskas/interprocess", rev = "41facdd4e7517cae4b99a44b24671603bc65041e" }

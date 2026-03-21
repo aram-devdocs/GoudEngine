@@ -1141,3 +1141,80 @@ public struct AtlasStats: Equatable {
     }
 
 }
+
+/// Diagnostic statistics snapshot for an entity pool
+public struct PoolStats: Equatable {
+    /// Total number of slots in the pool
+    public var capacity: UInt32
+    /// Number of slots currently acquired (in use)
+    public var active: UInt32
+    /// Number of slots currently available for acquisition
+    public var available: UInt32
+    /// Peak number of simultaneously active slots since pool creation
+    public var highWaterMark: UInt32
+    /// Cumulative number of successful acquire operations
+    public var totalAcquires: UInt64
+    /// Cumulative number of successful release operations
+    public var totalReleases: UInt64
+
+    public init(capacity: UInt32 = 0, active: UInt32 = 0, available: UInt32 = 0, highWaterMark: UInt32 = 0, totalAcquires: UInt64 = 0, totalReleases: UInt64 = 0) {
+        self.capacity = capacity
+        self.active = active
+        self.available = available
+        self.highWaterMark = highWaterMark
+        self.totalAcquires = totalAcquires
+        self.totalReleases = totalReleases
+    }
+
+    internal init(ffi: FfiPoolStats) {
+        self.capacity = ffi.capacity
+        self.active = ffi.active
+        self.available = ffi.available
+        self.highWaterMark = ffi.high_water_mark
+        self.totalAcquires = ffi.total_acquires
+        self.totalReleases = ffi.total_releases
+    }
+
+    internal func toFFI() -> FfiPoolStats {
+        var ffi = FfiPoolStats()
+        ffi.capacity = capacity
+        ffi.active = active
+        ffi.available = available
+        ffi.high_water_mark = highWaterMark
+        ffi.total_acquires = totalAcquires
+        ffi.total_releases = totalReleases
+        return ffi
+    }
+
+}
+
+/// Diagnostic statistics snapshot for the frame arena allocator
+public struct ArenaStats: Equatable {
+    /// Number of bytes currently allocated within the arena
+    public var bytesAllocated: UInt64
+    /// Total byte capacity of the arena backing storage
+    public var bytesCapacity: UInt64
+    /// Number of times the arena has been reset since creation
+    public var resetCount: UInt64
+
+    public init(bytesAllocated: UInt64 = 0, bytesCapacity: UInt64 = 0, resetCount: UInt64 = 0) {
+        self.bytesAllocated = bytesAllocated
+        self.bytesCapacity = bytesCapacity
+        self.resetCount = resetCount
+    }
+
+    internal init(ffi: FfiArenaStats) {
+        self.bytesAllocated = ffi.bytes_allocated
+        self.bytesCapacity = ffi.bytes_capacity
+        self.resetCount = ffi.reset_count
+    }
+
+    internal func toFFI() -> FfiArenaStats {
+        var ffi = FfiArenaStats()
+        ffi.bytes_allocated = bytesAllocated
+        ffi.bytes_capacity = bytesCapacity
+        ffi.reset_count = resetCount
+        return ffi
+    }
+
+}

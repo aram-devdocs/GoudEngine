@@ -1753,6 +1753,7 @@ version = "0.0.832"
 dependencies = [
  "bincode",
  "bindgen",
+ "bumpalo",
  "bytemuck",
  "cbindgen",
  "cc",
