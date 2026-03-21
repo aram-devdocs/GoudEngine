@@ -3037,6 +3037,143 @@
           "doc": "Number of times the arena has been reset since creation"
         }
       ]
+    },
+    "SpriteCmd": {
+      "kind": "value",
+      "doc": "Describes a single sprite for batched rendering via DrawSpriteBatch",
+      "fields": [
+        {
+          "name": "texture",
+          "type": "u64",
+          "doc": "Texture handle from goud_texture_load"
+        },
+        {
+          "name": "x",
+          "type": "f32",
+          "doc": "X position in screen-space pixels"
+        },
+        {
+          "name": "y",
+          "type": "f32",
+          "doc": "Y position in screen-space pixels"
+        },
+        {
+          "name": "width",
+          "type": "f32",
+          "doc": "Width of the sprite on screen"
+        },
+        {
+          "name": "height",
+          "type": "f32",
+          "doc": "Height of the sprite on screen"
+        },
+        {
+          "name": "rotation",
+          "type": "f32",
+          "doc": "Rotation in radians"
+        },
+        {
+          "name": "srcX",
+          "type": "f32",
+          "doc": "Source rectangle X offset in pixel coordinates"
+        },
+        {
+          "name": "srcY",
+          "type": "f32",
+          "doc": "Source rectangle Y offset in pixel coordinates"
+        },
+        {
+          "name": "srcW",
+          "type": "f32",
+          "doc": "Source rectangle width in pixel coordinates (0 = full texture width)"
+        },
+        {
+          "name": "srcH",
+          "type": "f32",
+          "doc": "Source rectangle height in pixel coordinates (0 = full texture height)"
+        },
+        {
+          "name": "r",
+          "type": "f32",
+          "doc": "Red color tint (1.0 = no tint)"
+        },
+        {
+          "name": "g",
+          "type": "f32",
+          "doc": "Green color tint (1.0 = no tint)"
+        },
+        {
+          "name": "b",
+          "type": "f32",
+          "doc": "Blue color tint (1.0 = no tint)"
+        },
+        {
+          "name": "a",
+          "type": "f32",
+          "doc": "Alpha (1.0 = fully opaque)"
+        },
+        {
+          "name": "zLayer",
+          "type": "i32",
+          "doc": "Z-layer for draw ordering"
+        }
+      ]
+    },
+    "TextCmd": {
+      "kind": "value",
+      "doc": "Describes a single text draw command for batched rendering via DrawTextBatch",
+      "fields": [
+        {
+          "name": "fontHandle",
+          "type": "u64",
+          "doc": "Font handle from goud_font_load"
+        },
+        {
+          "name": "x",
+          "type": "f32",
+          "doc": "X position in screen-space pixels"
+        },
+        {
+          "name": "y",
+          "type": "f32",
+          "doc": "Y position in screen-space pixels"
+        },
+        {
+          "name": "fontSize",
+          "type": "f32",
+          "doc": "Font size in pixels"
+        },
+        {
+          "name": "maxWidth",
+          "type": "f32",
+          "doc": "Maximum line width (0 = no wrap)"
+        },
+        {
+          "name": "lineSpacing",
+          "type": "f32",
+          "doc": "Line spacing multiplier (default 1.0)"
+        },
+        {
+          "name": "r",
+          "type": "f32",
+          "doc": "Red color component"
+        },
+        {
+          "name": "g",
+          "type": "f32",
+          "doc": "Green color component"
+        },
+        {
+          "name": "b",
+          "type": "f32",
+          "doc": "Blue color component"
+        },
+        {
+          "name": "a",
+          "type": "f32",
+          "doc": "Alpha (1.0 = fully opaque)"
+        }
+      ]
     }
   },
   "enums": {
@@ -12244,7 +12381,7 @@
         },
         "runWithFixedUpdate": {
           "ffi": "goud_fixed_timestep_begin",
-          "doc": "SDK-side game loop with fixed timestep \u2014 bodies are hardcoded in codegen"
+          "doc": "SDK-side game loop with fixed timestep — bodies are hardcoded in codegen"
         },
         "setFixedTimestep": {
           "ffi": "goud_fixed_timestep_set"

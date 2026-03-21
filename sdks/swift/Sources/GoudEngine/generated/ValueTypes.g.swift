@@ -1218,3 +1218,94 @@ public struct ArenaStats: Equatable {
     }
 
 }
+
+/// Describes a single sprite for batched rendering via DrawSpriteBatch
+public struct SpriteCmd: Equatable {
+    /// Texture handle from goud_texture_load
+    public var texture: UInt64
+    /// X position in screen-space pixels
+    public var x: Float
+    /// Y position in screen-space pixels
+    public var y: Float
+    /// Width of the sprite on screen
+    public var width: Float
+    /// Height of the sprite on screen
+    public var height: Float
+    /// Rotation in radians
+    public var rotation: Float
+    /// Source rectangle X offset in pixel coordinates
+    public var srcX: Float
+    /// Source rectangle Y offset in pixel coordinates
+    public var srcY: Float
+    /// Source rectangle width in pixel coordinates (0 = full texture width)
+    public var srcW: Float
+    /// Source rectangle height in pixel coordinates (0 = full texture height)
+    public var srcH: Float
+    /// Red color tint (1.0 = no tint)
+    public var r: Float
+    /// Green color tint (1.0 = no tint)
+    public var g: Float
+    /// Blue color tint (1.0 = no tint)
+    public var b: Float
+    /// Alpha (1.0 = fully opaque)
+    public var a: Float
+    /// Z-layer for draw ordering
+    public var zLayer: Int32
+
+    public init(texture: UInt64 = 0, x: Float = 0, y: Float = 0, width: Float = 0, height: Float = 0, rotation: Float = 0, srcX: Float = 0, srcY: Float = 0, srcW: Float = 0, srcH: Float = 0, r: Float = 0, g: Float = 0, b: Float = 0, a: Float = 0, zLayer: Int32 = 0) {
+        self.texture = texture
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.rotation = rotation
+        self.srcX = srcX
+        self.srcY = srcY
+        self.srcW = srcW
+        self.srcH = srcH
+        self.r = r
+        self.g = g
+        self.b = b
+        self.a = a
+        self.zLayer = zLayer
+    }
+
+}
+
+/// Describes a single text draw command for batched rendering via DrawTextBatch
+public struct TextCmd: Equatable {
+    /// Font handle from goud_font_load
+    public var fontHandle: UInt64
+    /// X position in screen-space pixels
+    public var x: Float
+    /// Y position in screen-space pixels
+    public var y: Float
+    /// Font size in pixels
+    public var fontSize: Float
+    /// Maximum line width (0 = no wrap)
+    public var maxWidth: Float
+    /// Line spacing multiplier (default 1.0)
+    public var lineSpacing: Float
+    /// Red color component
+    public var r: Float
+    /// Green color component
+    public var g: Float
+    /// Blue color component
+    public var b: Float
+    /// Alpha (1.0 = fully opaque)
+    public var a: Float
+
+    public init(fontHandle: UInt64 = 0, x: Float = 0, y: Float = 0, fontSize: Float = 0, maxWidth: Float = 0, lineSpacing: Float = 0, r: Float = 0, g: Float = 0, b: Float = 0, a: Float = 0) {
+        self.fontHandle = fontHandle
+        self.x = x
+        self.y = y
+        self.fontSize = fontSize
+        self.maxWidth = maxWidth
+        self.lineSpacing = lineSpacing
+        self.r = r
+        self.g = g
+        self.b = b
+        self.a = a
+    }
+
+}

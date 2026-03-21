@@ -870,38 +870,72 @@ func NewArenaStats(bytesAllocated uint64, bytesCapacity uint64, resetCount uint6
 	}
 }
 
-// SpriteCmd describes a single sprite for batched rendering.
+// SpriteCmd Describes a single sprite for batched rendering via DrawSpriteBatch
 type SpriteCmd struct {
-	Texture  uint64
-	X        float32
-	Y        float32
-	Width    float32
-	Height   float32
+	Texture uint64
+	X float32
+	Y float32
+	Width float32
+	Height float32
 	Rotation float32
-	SrcX     float32
-	SrcY     float32
-	SrcW     float32
-	SrcH     float32
-	R        float32
-	G        float32
-	B        float32
-	A        float32
-	ZLayer   int32
+	SrcX float32
+	SrcY float32
+	SrcW float32
+	SrcH float32
+	R float32
+	G float32
+	B float32
+	A float32
+	ZLayer int32
 }
 
-// TextCmd describes a single text label for batched rendering.
+// NewSpriteCmd creates a new SpriteCmd.
+func NewSpriteCmd(texture uint64, x float32, y float32, width float32, height float32, rotation float32, srcX float32, srcY float32, srcW float32, srcH float32, r float32, g float32, b float32, a float32, zLayer int32) SpriteCmd {
+	return SpriteCmd{
+		Texture: texture,
+		X: x,
+		Y: y,
+		Width: width,
+		Height: height,
+		Rotation: rotation,
+		SrcX: srcX,
+		SrcY: srcY,
+		SrcW: srcW,
+		SrcH: srcH,
+		R: r,
+		G: g,
+		B: b,
+		A: a,
+		ZLayer: zLayer,
+	}
+}
+
+// TextCmd Describes a single text draw command for batched rendering via DrawTextBatch
 type TextCmd struct {
-	FontHandle  uint64
-	Text        string
-	X           float32
-	Y           float32
-	FontSize    float32
-	Alignment   int32
-	Direction   int32
-	MaxWidth    float32
+	FontHandle uint64
+	X float32
+	Y float32
+	FontSize float32
+	MaxWidth float32
 	LineSpacing float32
-	R           float32
-	G           float32
-	B           float32
-	A           float32
+	R float32
+	G float32
+	B float32
+	A float32
+}
+
+// NewTextCmd creates a new TextCmd.
+func NewTextCmd(fontHandle uint64, x float32, y float32, fontSize float32, maxWidth float32, lineSpacing float32, r float32, g float32, b float32, a float32) TextCmd {
+	return TextCmd{
+		FontHandle: fontHandle,
+		X: x,
+		Y: y,
+		FontSize: fontSize,
+		MaxWidth: maxWidth,
+		LineSpacing: lineSpacing,
+		R: r,
+		G: g,
+		B: b,
+		A: a,
+	}
 }
