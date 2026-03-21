@@ -1014,11 +1014,11 @@ jobs:
         npm run smoke:web
         node -e "import('./dist/sandbox.js').then(()=>console.log('sandbox dist import ok'))"
 
-  # Go SDK tests (pure-Go value type and enum tests, no CGO/native library needed)
+  # Go SDK tests (needs native library for CGO linking)
   go-sdk-check:
     name: Go SDK Tests
     runs-on: ubuntu-latest
-    needs: [preflight]
+    needs: [preflight, native-release]
     steps:
     - uses: actions/checkout@v6
 
@@ -1027,9 +1027,23 @@ jobs:
       with:
         go-version: '1.22'
 
-    - name: Run Go tests (pure-Go packages only, CGO tests need native lib)
+    - name: Download native release artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: native-release-ubuntu-latest
+        path: native-release
+
+    - name: Stage native library
+      run: |
+        mkdir -p target/release
+        cp native-release/* target/release/
+
+    - name: Run Go tests
       working-directory: sdks/go
-      run: CGO_ENABLED=0 go test ./goud/...
+      env:
+        CGO_LDFLAGS: "-L${{ github.workspace }}/target/release"
+        LD_LIBRARY_PATH: "${{ github.workspace }}/target/release"
+      run: go test ./goud/...
 
   # Swift SDK tests (macOS only, pure-Swift value type tests)
   swift-sdk-check:
@@ -1221,7 +1235,7 @@ jobs:
         check_job "typescript-sdk-wasm" "${{ needs.typescript-sdk-wasm.result }}" "$ALLOW_PUSH_SKIPPED" || FAIL=1
         check_job "cpp-tests" "${{ needs.cpp-tests.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
         check_job "kotlin-sdk-test" "${{ needs.kotlin-sdk-test.result }}" "false" || FAIL=1
-        check_job "go-sdk-check" "${{ needs.go-sdk-check.result }}" "false" || FAIL=1
+        check_job "go-sdk-check" "${{ needs.go-sdk-check.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
         check_job "swift-sdk-check" "${{ needs.swift-sdk-check.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
         check_job "c-sdk-check" "${{ needs.c-sdk-check.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
         check_job "lua-sdk-check" "${{ needs.lua-sdk-check.result }}" "false" || FAIL=1
