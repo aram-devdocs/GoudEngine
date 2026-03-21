@@ -12,6 +12,7 @@ on:
       - '**/*.csproj'
       - 'sdks/typescript/package-lock.json'
       - 'sdks/python/pyproject.toml'
+      - '.cargo/audit.toml'
       - '.github/workflows/security.yml'
 
 permissions:
