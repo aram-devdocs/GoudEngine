@@ -541,7 +541,7 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
-        public static extern bool goud_atlas_add_texture(GoudContextId context_id, ulong atlas, string key, ulong texture);
+        public static extern bool goud_atlas_add_texture(GoudContextId _context_id, ulong _atlas, string _key, ulong _texture);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
