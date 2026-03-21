@@ -406,6 +406,10 @@ def _setup():
     _lib.goud_engine_config_set_debugger.restype = ctypes.c_bool
     _lib.goud_engine_config_set_aspect_ratio_lock.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
     _lib.goud_engine_config_set_aspect_ratio_lock.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_fixed_timestep.argtypes = [ctypes.c_void_p, ctypes.c_float]
+    _lib.goud_engine_config_set_fixed_timestep.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_max_fixed_steps.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    _lib.goud_engine_config_set_max_fixed_steps.restype = ctypes.c_bool
     _lib.goud_engine_create.argtypes = [ctypes.c_void_p]
     _lib.goud_engine_create.restype = GoudContextId
 
@@ -480,6 +484,18 @@ def _setup():
     _lib.goud_window_toggle_fullscreen.restype = ctypes.c_int32
     _lib.goud_window_set_aspect_ratio_lock.argtypes = [GoudContextId, ctypes.c_uint32]
     _lib.goud_window_set_aspect_ratio_lock.restype = ctypes.c_int32
+    _lib.goud_fixed_timestep_begin.argtypes = [GoudContextId]
+    _lib.goud_fixed_timestep_begin.restype = ctypes.c_bool
+    _lib.goud_fixed_timestep_step.argtypes = [GoudContextId]
+    _lib.goud_fixed_timestep_step.restype = ctypes.c_bool
+    _lib.goud_fixed_timestep_alpha.argtypes = [GoudContextId]
+    _lib.goud_fixed_timestep_alpha.restype = ctypes.c_float
+    _lib.goud_fixed_timestep_dt.argtypes = [GoudContextId]
+    _lib.goud_fixed_timestep_dt.restype = ctypes.c_float
+    _lib.goud_fixed_timestep_set.argtypes = [GoudContextId, ctypes.c_float]
+    _lib.goud_fixed_timestep_set.restype = ctypes.c_bool
+    _lib.goud_fixed_timestep_set_max_steps.argtypes = [GoudContextId, ctypes.c_uint32]
+    _lib.goud_fixed_timestep_set_max_steps.restype = ctypes.c_bool
 
     # renderer
     _lib.goud_renderer_begin.argtypes = [GoudContextId]

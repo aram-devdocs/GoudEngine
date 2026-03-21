@@ -458,6 +458,8 @@
       "goud_engine_config_set_window_backend": {},
       "goud_engine_config_set_debugger": {},
       "goud_engine_config_set_aspect_ratio_lock": {},
+      "goud_engine_config_set_fixed_timestep": {},
+      "goud_engine_config_set_max_fixed_steps": {},
       "goud_engine_create": {}
     },
     "context": {
@@ -497,7 +499,13 @@
       "goud_window_set_fullscreen": {},
       "goud_window_get_fullscreen": {},
       "goud_window_toggle_fullscreen": {},
-      "goud_window_set_aspect_ratio_lock": {}
+      "goud_window_set_aspect_ratio_lock": {},
+      "goud_fixed_timestep_begin": {},
+      "goud_fixed_timestep_step": {},
+      "goud_fixed_timestep_alpha": {},
+      "goud_fixed_timestep_dt": {},
+      "goud_fixed_timestep_set": {},
+      "goud_fixed_timestep_set_max_steps": {}
     },
     "renderer": {
       "goud_renderer_begin": {},

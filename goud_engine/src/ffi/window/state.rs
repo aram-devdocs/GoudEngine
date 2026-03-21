@@ -53,6 +53,21 @@ pub struct WindowState {
 
     /// Deferred capture coordination between the IPC thread and the main thread.
     pub(crate) deferred_capture: Option<DeferredCapture>,
+
+    /// Fixed timestep step size in seconds (0.0 = disabled).
+    pub(crate) fixed_timestep: f32,
+
+    /// Accumulated time waiting to be consumed by fixed steps.
+    pub(crate) accumulator: f32,
+
+    /// Maximum fixed steps allowed per frame.
+    pub(crate) max_fixed_steps: u32,
+
+    /// Number of fixed steps consumed this frame.
+    pub(crate) fixed_steps_this_frame: u32,
+
+    /// Interpolation alpha for render smoothing (0.0 to 1.0).
+    pub(crate) interpolation_alpha: f32,
 }
 
 impl WindowState {
@@ -74,6 +89,11 @@ impl WindowState {
             network_overlay: NetworkOverlayState::default(),
             debugger_route,
             deferred_capture,
+            fixed_timestep: 0.0,
+            accumulator: 0.0,
+            max_fixed_steps: 8,
+            fixed_steps_this_frame: 0,
+            interpolation_alpha: 0.0,
         }
     }
 

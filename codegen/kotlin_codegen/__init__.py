@@ -38,8 +38,21 @@ def _copy_java_carriers():
         # Skip test harness
         if java_file.name == "JniSmokeMain.java":
             continue
+        # Skip SpriteCmd.java — the Kotlin SDK has a Kotlin version in types/
+        if java_file.name == "SpriteCmd.java":
+            continue
         dst = JAVA_DST / java_file.name
-        shutil.copy2(java_file, dst)
+        content = java_file.read_text()
+        # In the SDK tree, SpriteCmd lives in com.goudengine.types (Kotlin).
+        # The JNI fixtures put it in com.goudengine.internal, so the test
+        # fixtures compile without an import. Add the cross-package import
+        # for the SDK copy.
+        if "SpriteCmd" in content and "import com.goudengine.types.SpriteCmd" not in content:
+            content = content.replace(
+                "package com.goudengine.internal;\n",
+                "package com.goudengine.internal;\n\nimport com.goudengine.types.SpriteCmd;\n",
+            )
+        dst.write_text(content)
         count += 1
 
     print(f"  Copied {count} Java carrier classes to {JAVA_DST.relative_to(ROOT_DIR)}")

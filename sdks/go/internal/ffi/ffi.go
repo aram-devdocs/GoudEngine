@@ -851,6 +851,11 @@ func GoudEngineConfigSetDebugger(handle C.EngineConfigHandle, debugger *C.GoudDe
 	return bool(C.goud_engine_config_set_debugger(handle, debugger))
 }
 
+// GoudEngineConfigSetFixedTimestep wraps goud_engine_config_set_fixed_timestep.
+func GoudEngineConfigSetFixedTimestep(handle C.EngineConfigHandle, step float32) bool {
+	return bool(C.goud_engine_config_set_fixed_timestep(handle, C.float(step)))
+}
+
 // GoudEngineConfigSetFpsOverlay wraps goud_engine_config_set_fps_overlay.
 func GoudEngineConfigSetFpsOverlay(handle C.EngineConfigHandle, enabled bool) bool {
 	return bool(C.goud_engine_config_set_fps_overlay(handle, C._Bool(enabled)))
@@ -859,6 +864,11 @@ func GoudEngineConfigSetFpsOverlay(handle C.EngineConfigHandle, enabled bool) bo
 // GoudEngineConfigSetFullscreen wraps goud_engine_config_set_fullscreen.
 func GoudEngineConfigSetFullscreen(handle C.EngineConfigHandle, mode uint32) bool {
 	return bool(C.goud_engine_config_set_fullscreen(handle, C.uint32_t(mode)))
+}
+
+// GoudEngineConfigSetMaxFixedSteps wraps goud_engine_config_set_max_fixed_steps.
+func GoudEngineConfigSetMaxFixedSteps(handle C.EngineConfigHandle, max uint32) bool {
+	return bool(C.goud_engine_config_set_max_fixed_steps(handle, C.uint32_t(max)))
 }
 
 // GoudEngineConfigSetPhysicsBackend2d wraps goud_engine_config_set_physics_backend_2d.
@@ -977,6 +987,36 @@ func GoudErrorRecoveryHint(code C.GoudErrorCode, buf *C.uint8_t, buf_len uint) i
 		return -1
 	}
 	return int32(C.goud_error_recovery_hint(code, buf, C.size_t(buf_len)))
+}
+
+// GoudFixedTimestepAlpha wraps goud_fixed_timestep_alpha.
+func GoudFixedTimestepAlpha(context_id C.GoudContextId) float32 {
+	return float32(C.goud_fixed_timestep_alpha(context_id))
+}
+
+// GoudFixedTimestepBegin wraps goud_fixed_timestep_begin.
+func GoudFixedTimestepBegin(context_id C.GoudContextId) bool {
+	return bool(C.goud_fixed_timestep_begin(context_id))
+}
+
+// GoudFixedTimestepDt wraps goud_fixed_timestep_dt.
+func GoudFixedTimestepDt(context_id C.GoudContextId) float32 {
+	return float32(C.goud_fixed_timestep_dt(context_id))
+}
+
+// GoudFixedTimestepSet wraps goud_fixed_timestep_set.
+func GoudFixedTimestepSet(context_id C.GoudContextId, step float32) bool {
+	return bool(C.goud_fixed_timestep_set(context_id, C.float(step)))
+}
+
+// GoudFixedTimestepSetMaxSteps wraps goud_fixed_timestep_set_max_steps.
+func GoudFixedTimestepSetMaxSteps(context_id C.GoudContextId, max uint32) bool {
+	return bool(C.goud_fixed_timestep_set_max_steps(context_id, C.uint32_t(max)))
+}
+
+// GoudFixedTimestepStep wraps goud_fixed_timestep_step.
+func GoudFixedTimestepStep(context_id C.GoudContextId) bool {
+	return bool(C.goud_fixed_timestep_step(context_id))
 }
 
 // GoudFontDestroy wraps goud_font_destroy.

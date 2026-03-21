@@ -88,6 +88,18 @@ func (g *Game) Run(update func(float32)) {
 	}
 }
 
+// RunWithFixedUpdate Runs the game loop with a fixed timestep. fixedUpdate runs at the configured fixed rate, update runs once per visual frame.
+func (g *Game) RunWithFixedUpdate() {
+}
+
+// SetFixedTimestep Sets the fixed timestep step size in seconds. Pass 0 to disable.
+func (g *Game) SetFixedTimestep(stepSize float32) {
+}
+
+// SetMaxFixedSteps Sets the maximum fixed steps per frame to prevent spiral of death.
+func (g *Game) SetMaxFixedSteps(maxSteps uint32) {
+}
+
 // LoadTexture loads a texture from a file path and returns its handle.
 func (g *Game) LoadTexture(path string) uint64 {
 	return ffi.TextureLoad(g.ctx, path)

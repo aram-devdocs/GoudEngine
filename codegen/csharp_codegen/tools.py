@@ -194,6 +194,8 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
                       f"                NativeMethods.{pm['ffi']}(_ctx, ref w, ref h);",
                       f"                return {'w' if idx == 0 else 'h'};",
                       "            }", "        }"]
+        elif "ffi" in pm:
+            lines.append(f"        public {pt} {pn} => NativeMethods.{pm['ffi']}(_ctx);")
         lines.append("")
 
     # Methods
