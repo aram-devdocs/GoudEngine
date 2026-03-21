@@ -5187,7 +5187,7 @@
           "params": [
             {
               "name": "cmds",
-              "type": "ISpriteCmd[]"
+              "type": "SpriteCmd[]"
             }
           ],
           "returns": "u32"

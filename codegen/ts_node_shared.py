@@ -44,6 +44,7 @@ IFACE_TYPES = {
     "PhysicsRaycastHit2D": "IPhysicsRaycastHit2D",
     "PhysicsCollisionEvent2D": "IPhysicsCollisionEvent2D",
     "Entity[]": "IEntity[]",
+    "SpriteCmd[]": "ISpriteCmd[]",
     "RenderCapabilities": "IRenderCapabilities",
     "PhysicsCapabilities": "IPhysicsCapabilities",
     "AudioCapabilities": "IAudioCapabilities",
