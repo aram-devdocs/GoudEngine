@@ -4,6 +4,7 @@
 //! game loop, and convenient methods for entity and component operations.
 
 pub(crate) mod instance;
+mod instance_fixed_timestep;
 mod instance_runtime;
 mod instance_transitions;
 mod providers;
