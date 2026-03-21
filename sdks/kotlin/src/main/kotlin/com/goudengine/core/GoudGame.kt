@@ -279,41 +279,30 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
     fun postprocessPassCount(): Int =
         GoudGameNative.postprocessPassCount(contextId)
 
-    /**
-     * Draws a batch of sprites in a single GPU pass.
-     * Returns the number of sprites actually drawn.
-     */
+    fun drawSpriteRect(texture: Long, x: Float, y: Float, width: Float, height: Float, rotation: Float, srcX: Float, srcY: Float, srcW: Float, srcH: Float, color: com.goudengine.types.Color, srcMode: Int = 1): Boolean =
+        GoudGameNative.drawSpriteRect(contextId, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, srcMode, color.toNative())
+
     fun drawSpriteBatch(cmds: List<com.goudengine.types.SpriteCmd>): Int {
         if (cmds.isEmpty()) return 0
         val count = cmds.size
         val textures = LongArray(count)
-        // 13 floats per sprite: x, y, width, height, rotation, srcX, srcY, srcW, srcH, r, g, b, a
         val floats = FloatArray(count * 13)
         val zLayers = IntArray(count)
         for (i in cmds.indices) {
-            val cmd = cmds[i]
-            textures[i] = cmd.texture
+            val c = cmds[i]
+            textures[i] = c.texture
             val off = i * 13
-            floats[off + 0] = cmd.x
-            floats[off + 1] = cmd.y
-            floats[off + 2] = cmd.width
-            floats[off + 3] = cmd.height
-            floats[off + 4] = cmd.rotation
-            floats[off + 5] = cmd.srcX
-            floats[off + 6] = cmd.srcY
-            floats[off + 7] = cmd.srcW
-            floats[off + 8] = cmd.srcH
-            floats[off + 9] = cmd.r
-            floats[off + 10] = cmd.g
-            floats[off + 11] = cmd.b
-            floats[off + 12] = cmd.a
-            zLayers[i] = cmd.zLayer
+            floats[off] = c.x; floats[off+1] = c.y
+            floats[off+2] = c.width; floats[off+3] = c.height
+            floats[off+4] = c.rotation
+            floats[off+5] = c.srcX; floats[off+6] = c.srcY
+            floats[off+7] = c.srcW; floats[off+8] = c.srcH
+            floats[off+9] = c.r; floats[off+10] = c.g
+            floats[off+11] = c.b; floats[off+12] = c.a
+            zLayers[i] = c.zLayer
         }
         return GoudGameNative.drawSpriteBatch(contextId, textures, floats, zLayers, count)
     }
-
-    fun drawSpriteRect(texture: Long, x: Float, y: Float, width: Float, height: Float, rotation: Float, srcX: Float, srcY: Float, srcW: Float, srcH: Float, color: com.goudengine.types.Color, srcMode: Int = 1): Boolean =
-        GoudGameNative.drawSpriteRect(contextId, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, srcMode, color.toNative())
 
     fun setViewport(x: Int, y: Int, width: Int, height: Int) {
         GoudGameNative.setViewport(contextId, x, y, width, height)

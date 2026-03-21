@@ -689,6 +689,46 @@ def java_carrier_source(type_name: str) -> str:
     return "\n".join(lines)
 
 
+def reorder_jni_params(params: list[dict], mapping: dict) -> list[dict]:
+    """Reorder method params so param_order items come first, expand_params last.
+
+    When a mapping specifies both ``param_order`` and ``expand_params``, the
+    JNI/Java signature must list the primitive params (from ``param_order``) before
+    the carrier-object params (from ``expand_params``) so that the positional
+    arguments match the FFI function signature where the expanded fields follow
+    the ordered primitives.
+    """
+    param_order = mapping.get("param_order")
+    expand_params = mapping.get("expand_params")
+    if not param_order or not expand_params:
+        return params
+
+    expand_names = set(expand_params.keys())
+    param_by_name = {p["name"]: p for p in params}
+
+    ordered: list[dict] = []
+    used: set[str] = set()
+
+    # First: params listed in param_order, in that order
+    for name in param_order:
+        if name in param_by_name:
+            ordered.append(param_by_name[name])
+            used.add(name)
+
+    # Second: expand_params (carrier objects like Color)
+    for p in params:
+        if p["name"] in expand_names and p["name"] not in used:
+            ordered.append(p)
+            used.add(p["name"])
+
+    # Third: any remaining params not in either category (preserve schema order)
+    for p in params:
+        if p["name"] not in used:
+            ordered.append(p)
+
+    return ordered
+
+
 def java_native_source(class_name: str, methods: list[GeneratedMethod]) -> str:
     lines = [
         JAVA_HEADER,
@@ -707,7 +747,7 @@ def java_native_source(class_name: str, methods: list[GeneratedMethod]) -> str:
                 java_params.append("long selfHandle")
             else:
                 java_params.append(f"{base_type(method.self_param)} self")
-        for param in method.params:
+        for param in reorder_jni_params(method.params, method.mapping):
             java_params.append(f"{java_type(param['type'])} {to_camel(param['name'])}")
         lines.append(
             f"    public static native {java_type(method.returns, object_fallback=True)} {method.java_method_name}({', '.join(java_params)});"
@@ -1283,7 +1323,7 @@ def rust_method_signature(method: GeneratedMethod) -> list[str]:
             args.append("selfHandle: jni::sys::jlong")
         else:
             args.append(f"selfObj: {rust_arg_type(method.self_param)}")
-    for param in method.params:
+    for param in reorder_jni_params(method.params, method.mapping):
         args.append(f"{to_camel(param['name'])}: {rust_arg_type(param['type'])}")
     return args
 
@@ -1334,7 +1374,7 @@ def build_ffi_args(method: GeneratedMethod, *, with_out_params: bool = False, sk
     struct_params = set(method.mapping.get("struct_params", []))
     expand_params = method.mapping.get("expand_params", {})
     enum_params = set((method.mapping.get("enum_params") or {}).keys())
-    for param in method.params:
+    for param in reorder_jni_params(method.params, method.mapping):
         name = to_camel(param["name"])
         schema_ty = base_type(param["type"])
         expected = param_defs[consumed_index]["type"] if consumed_index < len(param_defs) else ""

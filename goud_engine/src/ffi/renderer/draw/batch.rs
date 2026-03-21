@@ -176,26 +176,14 @@ thread_local! {
 // Public FFI entry point
 // ============================================================================
 
-/// Draws a batch of sprites in a single GPU pass.
-///
-/// Sprites are sorted by `z_layer` (ascending) then grouped by texture to
-/// minimise state changes.  Source-rect fields are in **pixel** coordinates
-/// (set `src_w = 0` and `src_h = 0` to use the full texture).
-///
-/// # Arguments
-///
-/// * `context_id` - windowed context obtained from `goud_window_create`
-/// * `cmds` - pointer to a contiguous array of `FfiSpriteCmd`
-/// * `count` - number of elements in the array
-///
-/// # Returns
-///
-/// The number of sprites actually drawn (0 on error).
+/// Draws a batch of sprites in a single GPU pass. Sprites are sorted by
+/// `z_layer` then grouped by texture. Source-rect fields are in **pixel**
+/// coordinates (`src_w = 0`, `src_h = 0` → full texture). Returns number
+/// of sprites drawn (0 on error).
 ///
 /// # Safety
 ///
-/// * `cmds` must point to at least `count` valid `FfiSpriteCmd` values.
-/// * The pointer must remain valid for the duration of this call.
+/// `cmds` must point to `count` valid `FfiSpriteCmd` values for the call duration.
 #[no_mangle]
 pub unsafe extern "C" fn goud_renderer_draw_sprite_batch(
     context_id: GoudContextId,
