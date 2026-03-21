@@ -38,7 +38,7 @@ NATIVE_KNOWN_METHODS = {
     "addTransform2D", "getTransform2D", "setTransform2D", "hasTransform2D", "removeTransform2D",
     "addSprite", "getSprite", "setSprite", "hasSprite", "removeSprite",
     "addName", "getName", "hasName", "removeName",
-    "drawSpriteRect", "setViewport", "enableDepthTest", "disableDepthTest",
+    "drawSpriteRect", "drawSpriteBatch", "setViewport", "enableDepthTest", "disableDepthTest",
     "clearDepth", "disableBlending", "getRenderStats",
     "getFpsStats", "getRenderMetrics", "setFpsOverlayEnabled", "setFpsUpdateInterval", "setFpsOverlayCorner",
     "getDebuggerSnapshotJson", "getDebuggerManifestJson",
@@ -274,7 +274,9 @@ def gen_node_wrapper():
             lines.append("    this.native.drawSprite(texture, x, y, width, height, rotation, c.r, c.g, c.b, c.a);")
         elif mn == "drawSpriteRect":
             lines.append("    const c = color ?? Color.white();")
-            lines.append("    return this.native.drawSpriteRect(texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, c.r, c.g, c.b, c.a);")
+            lines.append("    return this.native.drawSpriteRect(texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, srcMode, c.r, c.g, c.b, c.a);")
+        elif mn == "drawSpriteBatch":
+            lines.append("    return this.native.drawSpriteBatch(cmds);")
         elif mn == "drawQuad":
             lines.append("    const c = color ?? Color.white();")
             lines.append("    this.native.drawQuad(x, y, width, height, c.r, c.g, c.b, c.a);")

@@ -629,7 +629,12 @@ export class GoudGame implements IGoudGame {
   /** Draws a sprite with source rectangle for sprite sheets */
   drawSpriteRect(texture: number, x: number, y: number, width: number, height: number, rotation: number, srcX: number, srcY: number, srcW: number, srcH: number, color?: IColor, srcMode?: number): boolean {
     const c = color ?? Color.white();
-    return this.native.drawSpriteRect(texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, c.r, c.g, c.b, c.a);
+    return this.native.drawSpriteRect(texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, srcMode, c.r, c.g, c.b, c.a);
+  }
+
+  /** Draws a batch of sprites in a single GPU pass for high performance */
+  drawSpriteBatch(cmds: SpriteCmd[]): number {
+    return this.native.drawSpriteBatch(cmds);
   }
 
   /** Sets the rendering viewport */
