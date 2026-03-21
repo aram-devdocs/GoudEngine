@@ -214,8 +214,8 @@ fn test_get_all_basic() {
         unsafe { goud_component_get_all(ctx, QID + 7, ents.as_mut_ptr(), ptrs.as_mut_ptr(), 16) };
     assert_eq!(n, 3);
 
-    for i in 0..n as usize {
-        assert!(!ptrs[i].is_null(), "data ptr {} should be non-null", i);
+    for (i, &ptr) in ptrs[..n as usize].iter().enumerate() {
+        assert!(!ptr.is_null(), "data ptr {} should be non-null", i);
     }
 }
 
