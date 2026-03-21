@@ -30,6 +30,9 @@ use super::stats::ArenaStats;
 pub struct FrameArena {
     /// Underlying bump allocator.
     bump: Bump,
+    /// Reserved capacity in bytes (tracked separately since bumpalo
+    /// does not expose total chunk capacity).
+    capacity_bytes: usize,
     /// Number of resets performed since creation.
     reset_count: u64,
 }
@@ -39,6 +42,7 @@ impl FrameArena {
     pub fn new() -> Self {
         Self {
             bump: Bump::new(),
+            capacity_bytes: 0,
             reset_count: 0,
         }
     }
@@ -47,6 +51,7 @@ impl FrameArena {
     pub fn with_capacity(bytes: usize) -> Self {
         Self {
             bump: Bump::with_capacity(bytes),
+            capacity_bytes: bytes,
             reset_count: 0,
         }
     }
@@ -77,10 +82,15 @@ impl FrameArena {
     }
 
     /// Get a snapshot of arena statistics.
+    ///
+    /// `bytes_capacity` reflects the initial reservation from
+    /// [`with_capacity`](Self::with_capacity) or the high-water mark of
+    /// `bytes_allocated`, whichever is larger.
     pub fn stats(&self) -> ArenaStats {
+        let allocated = self.bump.allocated_bytes();
         ArenaStats {
-            bytes_allocated: self.bump.allocated_bytes(),
-            bytes_capacity: self.bump.allocated_bytes(), // Bump exposes allocated_bytes
+            bytes_allocated: allocated,
+            bytes_capacity: self.capacity_bytes.max(allocated),
             reset_count: self.reset_count,
         }
     }

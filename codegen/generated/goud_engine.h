@@ -46,6 +46,11 @@ extern "C" {
 #define GOUD_INVALID_ENTITY_ID UINT64_MAX
 
 /**
+ * Sentinel value indicating an invalid or failed pool handle.
+ */
+#define GOUD_INVALID_POOL_HANDLE UINT32_MAX
+
+/**
  * Invalid material handle constant.
  */
 #define GOUD_INVALID_MATERIAL UINT32_MAX
@@ -114,11 +119,6 @@ extern "C" {
  * Invalid skinned mesh handle constant.
  */
 #define GOUD_INVALID_SKINNED_MESH UINT32_MAX
-
-/**
- * Sentinel value indicating an invalid or failed pool handle.
- */
-#define GOUD_INVALID_POOL_HANDLE UINT32_MAX
 
 /**
  * Sentinel value indicating an invalid or failed spatial grid handle.
@@ -253,6 +253,24 @@ typedef struct UiManager UiManager;
 typedef struct GoudContextId {
     uint64_t _0;
 } GoudContextId;
+
+/**
+ * FFI-safe arena statistics snapshot.
+ */
+typedef struct FfiArenaStats {
+    /**
+     * Number of bytes currently allocated within the arena.
+     */
+    uint64_t bytes_allocated;
+    /**
+     * Total byte capacity of the arena's backing storage.
+     */
+    uint64_t bytes_capacity;
+    /**
+     * Number of times the arena has been reset since creation.
+     */
+    uint64_t reset_count;
+} FfiArenaStats;
 
 /**
  * FFI-compatible contact information from a collision.
@@ -852,6 +870,36 @@ typedef struct FfiNetworkStats {
 } FfiNetworkStats;
 
 /**
+ * FFI-safe pool statistics snapshot.
+ */
+typedef struct FfiPoolStats {
+    /**
+     * Total number of slots in the pool.
+     */
+    uint32_t capacity;
+    /**
+     * Number of slots currently acquired (in use).
+     */
+    uint32_t active;
+    /**
+     * Number of slots currently available for acquisition.
+     */
+    uint32_t available;
+    /**
+     * Peak number of simultaneously active slots since pool creation.
+     */
+    uint32_t high_water_mark;
+    /**
+     * Cumulative number of successful acquire operations.
+     */
+    uint64_t total_acquires;
+    /**
+     * Cumulative number of successful release operations.
+     */
+    uint64_t total_releases;
+} FfiPoolStats;
+
+/**
  * Capabilities reported by a render provider.
  */
 typedef struct RenderCapabilities {
@@ -1247,54 +1295,6 @@ typedef struct FfiTextCmd {
      */
     float a;
 } FfiTextCmd;
-
-/**
- * FFI-safe pool statistics snapshot.
- */
-typedef struct FfiPoolStats {
-    /**
-     * Total number of slots in the pool.
-     */
-    uint32_t capacity;
-    /**
-     * Number of slots currently acquired (in use).
-     */
-    uint32_t active;
-    /**
-     * Number of slots currently available for acquisition.
-     */
-    uint32_t available;
-    /**
-     * Peak number of simultaneously active slots since pool creation.
-     */
-    uint32_t high_water_mark;
-    /**
-     * Cumulative number of successful acquire operations.
-     */
-    uint64_t total_acquires;
-    /**
-     * Cumulative number of successful release operations.
-     */
-    uint64_t total_releases;
-} FfiPoolStats;
-
-/**
- * FFI-safe arena statistics snapshot.
- */
-typedef struct FfiArenaStats {
-    /**
-     * Number of bytes currently allocated within the arena.
-     */
-    uint64_t bytes_allocated;
-    /**
-     * Total byte capacity of the arena's backing storage.
-     */
-    uint64_t bytes_capacity;
-    /**
-     * Number of times the arena has been reset since creation.
-     */
-    uint64_t reset_count;
-} FfiArenaStats;
 
 /**
  * FFI-safe event payload used by deterministic event polling/read APIs.
@@ -1835,6 +1835,41 @@ uint32_t goud_entity_count(struct GoudContextId context_id);
 uint32_t goud_entity_is_alive_batch(struct GoudContextId context_id, const uint64_t *entity_ids, uint32_t count, uint8_t *out_results);
 
 /**
+ * Creates a new entity pool with the specified capacity.
+ */
+uint32_t goud_entity_pool_create(uint32_t capacity);
+
+/**
+ * Destroys an entity pool and frees its resources.
+ */
+int32_t goud_entity_pool_destroy(uint32_t handle);
+
+/**
+ * Acquires a single entity from the pool.
+ */
+uint64_t goud_entity_pool_acquire(uint32_t handle);
+
+/**
+ * Acquires multiple entities from the pool in a single call.
+ */
+uint32_t goud_entity_pool_acquire_batch(uint32_t handle, uint32_t count, uint64_t *out_entities);
+
+/**
+ * Releases an entity back to the pool by slot index.
+ */
+int32_t goud_entity_pool_release(uint32_t handle, uint32_t slot_index);
+
+/**
+ * Releases multiple slots back to the pool in a single call.
+ */
+uint32_t goud_entity_pool_release_batch(uint32_t handle, const uint32_t *slot_indices, uint32_t count);
+
+/**
+ * Retrieves diagnostic statistics for an entity pool.
+ */
+int32_t goud_entity_pool_stats(uint32_t handle, struct FfiPoolStats *out_stats);
+
+/**
  * Creates a new scene with the given name.
  */
 uint32_t goud_scene_create(struct GoudContextId context_id, const uint8_t *name_ptr, uint32_t name_len);
@@ -1893,41 +1928,6 @@ bool goud_scene_transition_is_active(struct GoudContextId context_id);
  * Advances the active transition by `delta_time` seconds.
  */
 GoudResult goud_scene_transition_tick(struct GoudContextId context_id, float delta_time);
-
-/**
- * Creates a new entity pool with the specified capacity.
- */
-uint32_t goud_entity_pool_create(uint32_t capacity);
-
-/**
- * Destroys an entity pool and frees its resources.
- */
-int32_t goud_entity_pool_destroy(uint32_t handle);
-
-/**
- * Acquires a single entity from the pool.
- */
-uint64_t goud_entity_pool_acquire(uint32_t handle);
-
-/**
- * Acquires multiple entities from the pool in a single call.
- */
-uint32_t goud_entity_pool_acquire_batch(uint32_t handle, uint32_t count, uint64_t *out_entities);
-
-/**
- * Releases an entity back to the pool by slot index.
- */
-int32_t goud_entity_pool_release(uint32_t handle, uint32_t slot_index);
-
-/**
- * Releases multiple slots back to the pool in a single call.
- */
-uint32_t goud_entity_pool_release_batch(uint32_t handle, const uint32_t *slot_indices, uint32_t count);
-
-/**
- * Retrieves diagnostic statistics for an entity pool.
- */
-int32_t goud_entity_pool_stats(uint32_t handle, struct FfiPoolStats *out_stats);
 
 /* === Assets === */
 
@@ -4280,6 +4280,16 @@ int32_t goud_tween_reset(struct GoudContextId _context_id, int64_t handle);
 int32_t goud_tween_destroy(struct GoudContextId _context_id, int64_t handle);
 
 /**
+ * Resets the global frame arena, freeing all allocations at once.
+ */
+int32_t goud_frame_arena_reset(void);
+
+/**
+ * Retrieves diagnostic statistics for the global frame arena.
+ */
+int32_t goud_frame_arena_stats(struct FfiArenaStats *out_stats);
+
+/**
  * Returns the white color constant.
  */
 struct FfiColor goud_color_white(void);
@@ -4563,16 +4573,6 @@ GoudTextureHandle goud_atlas_get_texture(struct GoudContextId context_id, GoudAt
  * Destroys an atlas and frees its GPU + CPU resources.
  */
 bool goud_atlas_destroy(struct GoudContextId context_id, GoudAtlasHandle atlas);
-
-/**
- * Resets the global frame arena, freeing all allocations at once.
- */
-int32_t goud_frame_arena_reset(void);
-
-/**
- * Retrieves diagnostic statistics for the global frame arena.
- */
-int32_t goud_frame_arena_stats(struct FfiArenaStats *out_stats);
 
 /**
  * Creates a new spatial grid with the specified cell size.

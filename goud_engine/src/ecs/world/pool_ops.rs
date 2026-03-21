@@ -59,13 +59,13 @@ impl World {
         }
 
         // Allocate a handle
-        let handle = {
-            let registry = self
-                .get_resource_mut::<EntityPoolRegistry>()
-                .expect("Registry just inserted");
-            let h = registry.next_handle;
-            registry.next_handle = h + 1;
-            h
+        let handle = match self.get_resource_mut::<EntityPoolRegistry>() {
+            Some(registry) => {
+                let h = registry.next_handle;
+                registry.next_handle = h + 1;
+                h
+            }
+            None => return u32::MAX,
         };
 
         // Pre-spawn entities
@@ -81,9 +81,10 @@ impl World {
         let pool = EntityPool::from_entity_ids(entity_ids);
 
         // Build entity-to-slot reverse lookup
-        let registry = self
-            .get_resource_mut::<EntityPoolRegistry>()
-            .expect("Registry exists");
+        let registry = match self.get_resource_mut::<EntityPoolRegistry>() {
+            Some(r) => r,
+            None => return u32::MAX,
+        };
         for (slot_idx, &entity) in entities.iter().enumerate() {
             registry
                 .entity_to_slot
