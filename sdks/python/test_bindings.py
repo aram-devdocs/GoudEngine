@@ -27,6 +27,7 @@ from test_bindings_generated import (
     test_generated_ui_style_color_contract,
     test_generated_ui_style_string_contract,
     test_imports,
+    test_phase0_ffi_surface,
 )
 from test_bindings_networking import (
     test_generated_context_entity_component_runtime_safe,
@@ -235,6 +236,7 @@ def main():
         test_generated_types_ffi_runtime_with_fake_lib,
         test_enums,
         test_errors,
+        test_phase0_ffi_surface,
     ]
 
     passed = 0

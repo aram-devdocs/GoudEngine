@@ -1,5 +1,13 @@
 # GoudEngine Alpha Roadmap
 
+## Completion Status
+- [x] Phase 0 (v1): Foundation -- COMPLETE
+- [x] Phase 1 (v1): Core Stabilization -- COMPLETE
+- [x] Phase 2 (v1): Core Systems -- COMPLETE
+- [x] Phase 2.5 (v1): AI Debugger & Runtime Observability -- COMPLETE
+- [x] Phase 3 (v1): Rendering Pipeline + SDK Expansion -- COMPLETE
+- [x] Phase 0 (v2): Core Performance (GoudEngine side) -- COMPLETE
+
 ## Vision
 
 GoudEngine is a Rust-first game engine library that replaces Unity, Unreal, Godot, MonoGame, and Pygame. Build games in any language, deploy everywhere, with Rust performance. AI-native, unopinionated, code-first.

@@ -355,6 +355,10 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
     assert.equal(game.componentGetEntities(1, 0, 10), 0);
     assert.equal(game.componentGetAll(1, 0, 0, 10), 0);
 
+    // Phase 0: SpriteBatch, RenderMetrics (TextBatch, FixedTimestep, GenericComponent already covered above)
+    assert.equal(game.drawSpriteBatch([{ texture: 1, x: 0, y: 0, width: 32, height: 32, rotation: 0, srcX: 0, srcY: 0, srcW: 0, srcH: 0, r: 1, g: 1, b: 1, a: 1, zLayer: 0 }]), 0);
+    assert.equal(game.getRenderMetrics(), 0);
+
     assert.equal(game.checkHotSwapShortcut(), 0);
     assert.equal(game.loadScene('s', '{}'), 0);
     assert.equal(game.unloadScene('s'), 0);
@@ -868,5 +872,89 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
 
     assert.equal(typeof world2d.destroy(), 'number');
     assert.equal(typeof world3d.destroy(), 'number');
+  });
+
+  it('validates Phase 0 feature methods exist on GoudGame prototype', () => {
+    // FixedTimestep
+    assert.equal(typeof GoudGame.prototype.setFixedTimestep, 'function', 'Missing setFixedTimestep');
+    assert.equal(typeof GoudGame.prototype.setMaxFixedSteps, 'function', 'Missing setMaxFixedSteps');
+    assert.equal(typeof GoudGame.prototype.runWithFixedUpdate, 'function', 'Missing runWithFixedUpdate');
+
+    // SpriteBatch / TextBatch
+    assert.equal(typeof GoudGame.prototype.drawSpriteBatch, 'function', 'Missing drawSpriteBatch');
+    assert.equal(typeof GoudGame.prototype.drawTextBatch, 'function', 'Missing drawTextBatch');
+
+    // RenderMetrics
+    assert.equal(typeof GoudGame.prototype.getRenderMetrics, 'function', 'Missing getRenderMetrics');
+
+    // GenericComponent
+    assert.equal(typeof GoudGame.prototype.componentCount, 'function', 'Missing componentCount');
+    assert.equal(typeof GoudGame.prototype.componentGetEntities, 'function', 'Missing componentGetEntities');
+    assert.equal(typeof GoudGame.prototype.componentGetAll, 'function', 'Missing componentGetAll');
+  });
+
+  it('validates Phase 0 type interfaces in generated engine types', () => {
+    const { readFileSync } = require('node:fs');
+    const typesSrc = readFileSync(
+      path.join(repoRoot, 'src', 'generated', 'types', 'engine.g.ts'),
+      'utf8',
+    );
+
+    // IRenderMetrics interface with all 13 fields
+    assert.ok(typesSrc.includes('export interface IRenderMetrics {'), 'Missing IRenderMetrics interface');
+    for (const field of [
+      'drawCallCount', 'spritesSubmitted', 'spritesDrawn', 'spritesCulled',
+      'batchesSubmitted', 'avgSpritesPerBatch', 'spriteRenderMs', 'textRenderMs',
+      'uiRenderMs', 'totalRenderMs', 'textDrawCalls', 'textGlyphCount', 'uiDrawCalls',
+    ]) {
+      assert.ok(typesSrc.includes(field), `IRenderMetrics missing field: ${field}`);
+    }
+
+    // ISpriteCmd and ITextCmd interfaces
+    assert.ok(typesSrc.includes('export interface ISpriteCmd {'), 'Missing ISpriteCmd interface');
+    assert.ok(typesSrc.includes('export interface ITextCmd {'), 'Missing ITextCmd interface');
+
+    // drawSpriteBatch / drawTextBatch in game interface
+    assert.ok(typesSrc.includes('drawSpriteBatch(cmds: ISpriteCmd[]): number;'), 'Missing drawSpriteBatch in IGame');
+    assert.ok(typesSrc.includes('drawTextBatch(cmds: ITextCmd[]): number;'), 'Missing drawTextBatch in IGame');
+
+    // getRenderMetrics in game interface
+    assert.ok(typesSrc.includes('getRenderMetrics(): IRenderMetrics;'), 'Missing getRenderMetrics in IGame');
+
+    // interpolationAlpha property
+    assert.ok(typesSrc.includes('interpolationAlpha'), 'Missing interpolationAlpha in IGame');
+
+    // setFixedTimestep method
+    assert.ok(typesSrc.includes('setFixedTimestep(stepSize: number): void;'), 'Missing setFixedTimestep in IGame');
+  });
+
+  it('validates Phase 0 getRenderMetrics returns structured data with fake native', () => {
+    const native = makeProxyNative({
+      getRenderMetrics: () => ({
+        drawCallCount: 5,
+        spritesSubmitted: 100,
+        spritesDrawn: 90,
+        spritesCulled: 10,
+        batchesSubmitted: 3,
+        avgSpritesPerBatch: 30,
+        spriteRenderMs: 1.5,
+        textRenderMs: 0.5,
+        uiRenderMs: 0.3,
+        totalRenderMs: 2.3,
+        textDrawCalls: 2,
+        textGlyphCount: 42,
+        uiDrawCalls: 1,
+      }),
+    });
+    const game = makeGameForTests(native);
+    const metrics = game.getRenderMetrics();
+    assert.equal(metrics.drawCallCount, 5);
+    assert.equal(metrics.spritesSubmitted, 100);
+    assert.equal(metrics.spritesDrawn, 90);
+    assert.equal(metrics.spritesCulled, 10);
+    assert.equal(metrics.batchesSubmitted, 3);
+    assert.equal(metrics.textDrawCalls, 2);
+    assert.equal(metrics.textGlyphCount, 42);
+    assert.equal(metrics.uiDrawCalls, 1);
   });
 });

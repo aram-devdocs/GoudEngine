@@ -39,6 +39,9 @@
 - [Networking](features/networking.md)
 - [Error Handling](features/error-handling.md)
 - [Pooling and Arenas](features/pooling.md)
+- [Spatial Grid](features/spatial-grid.md)
+- [Texture Atlas](features/texture-atlas.md)
+- [Batching](features/batching.md)
 
 # Guides
 
