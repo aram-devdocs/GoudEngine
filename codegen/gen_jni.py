@@ -730,17 +730,28 @@ def reorder_jni_params(params: list[dict], mapping: dict) -> list[dict]:
 
 
 def java_native_source(class_name: str, methods: list[GeneratedMethod]) -> str:
+    # Collect imports needed by method parameter types.
+    imports: set[str] = set()
+    for method in methods:
+        for param in method.params:
+            if param["type"] == "SpriteCmd[]":
+                imports.add("import com.goudengine.types.SpriteCmd;")
     lines = [
         JAVA_HEADER,
         "package com.goudengine.internal;",
         "",
     ]
+    if imports:
+        lines += sorted(imports) + [""]
     lines += [
         f"public final class {class_name} {{",
         f"    private {class_name}() {{}}",
         "",
     ]
     for method in methods:
+        # Skip methods with callback parameters — JNI cannot express them.
+        if any(p["type"].startswith("callback") for p in method.params):
+            continue
         java_params = []
         if method.handle_type is not None and not method.mapping.get("no_context"):
             java_params.append(f"long {handle_arg_name(method.handle_type)}")

@@ -25,6 +25,14 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
     fun setWindowSize(width: Int, height: Int): Boolean =
         GoudGameNative.setWindowSize(contextId, width, height)
 
+    fun setFixedTimestep(stepSize: Float) {
+        GoudGameNative.setFixedTimestep(contextId, stepSize)
+    }
+
+    fun setMaxFixedSteps(maxSteps: Int) {
+        GoudGameNative.setMaxFixedSteps(contextId, maxSteps)
+    }
+
     fun loadTexture(path: String): Long =
         GoudGameNative.loadTexture(contextId, path)
 
