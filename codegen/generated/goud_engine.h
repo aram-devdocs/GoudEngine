@@ -1037,6 +1037,68 @@ typedef struct GoudRenderStats {
 typedef uint64_t GoudFontHandle;
 
 /**
+ * A single text command for batch rendering.
+ */
+typedef struct FfiTextCmd {
+    /**
+     * Font handle from `goud_font_load`.
+     */
+    uint64_t font_handle;
+    /**
+     * Null-terminated UTF-8 text string.
+     */
+    const char *text;
+    /**
+     * X position in screen-space pixels.
+     */
+    float x;
+    /**
+     * Y position in screen-space pixels.
+     */
+    float y;
+    /**
+     * Font size in pixels.
+     */
+    float font_size;
+    /**
+     * Text alignment: 0=Left, 1=Center, 2=Right.
+     */
+    uint8_t alignment;
+    /**
+     * Text direction: 0=Auto, 1=LTR, 2=RTL.
+     */
+    uint8_t direction;
+    /**
+     * Alignment padding.
+     */
+    uint16_t _pad0;
+    /**
+     * Maximum line width (0 = no wrap).
+     */
+    float max_width;
+    /**
+     * Line spacing multiplier (default 1.0).
+     */
+    float line_spacing;
+    /**
+     * Red color component.
+     */
+    float r;
+    /**
+     * Green color component.
+     */
+    float g;
+    /**
+     * Blue color component.
+     */
+    float b;
+    /**
+     * Alpha (opacity, 1.0 = fully opaque).
+     */
+    float a;
+} FfiTextCmd;
+
+/**
  * FFI-safe event payload used by deterministic event polling/read APIs.
  */
 typedef struct FfiUiEvent {
@@ -1732,6 +1794,11 @@ bool goud_renderer_draw_text(struct GoudContextId context_id, GoudFontHandle fon
  * Alias export for SDK compatibility.
  */
 GOUD_DEPRECATED_MSG("Use goud_renderer_draw_text instead.") bool goud_draw_text(struct GoudContextId context_id, GoudFontHandle font_handle, const char *text, float x, float y, float font_size, uint8_t alignment, float max_width, float line_spacing, uint8_t direction, float r, float g, float b, float a);
+
+/**
+ * Draws a batch of text labels. Each command specifies font, position, color,
+ */
+uint32_t goud_renderer_draw_text_batch(struct GoudContextId context_id, const struct FfiTextCmd *cmds, uint32_t count);
 
 /**
  * Sets the 3D camera position.

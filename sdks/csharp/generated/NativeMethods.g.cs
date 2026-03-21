@@ -259,6 +259,18 @@ namespace GoudEngine
         public int _Padding;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiTextCmd
+    {
+        public ulong FontHandle;
+        public IntPtr Text;
+        public float X, Y, FontSize;
+        public byte Alignment, Direction;
+        public ushort _Pad0;
+        public float MaxWidth, LineSpacing;
+        public float R, G, B, A;
+    }
+
     public static unsafe class NativeMethods
     {
         private const string DllName = "libgoud_engine";
@@ -487,6 +499,9 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern uint goud_renderer_draw_sprite_batch(GoudContextId context_id, ref FfiSpriteCmd cmds, uint count);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_renderer_draw_text_batch(GoudContextId context_id, ref FfiTextCmd cmds, uint count);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void goud_renderer_set_viewport(GoudContextId context_id, int x, int y, uint width, uint height);
@@ -1900,6 +1915,9 @@ namespace GoudEngine
         // batch rendering
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern uint goud_renderer_draw_sprite_batch(GoudContextId context_id, FfiSpriteCmd* cmds, uint count);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_renderer_draw_text_batch(GoudContextId context_id, FfiTextCmd* cmds, uint count);
 
     }
 }

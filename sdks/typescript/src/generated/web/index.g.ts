@@ -543,6 +543,10 @@ export class GoudGame implements IGoudGame {
   drawSpriteBatch(_cmds: ISpriteCmd[]): number {
     return 0;
   }
+  /** Draws a batch of text labels (not yet supported on WASM target, returns 0). */
+  drawTextBatch(_cmds: ITextCmd[]): number {
+    return 0;
+  }
   /** Draws a colored rectangle */
   drawQuad(x: number, y: number, width: number, height: number, color?: IColor): void {
     const c = color ?? Color.white();

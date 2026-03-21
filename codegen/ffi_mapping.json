@@ -488,6 +488,7 @@
       },
       "goud_renderer_draw_sprite_rect": {},
       "goud_renderer_draw_sprite_batch": {},
+      "goud_renderer_draw_text_batch": {},
       "goud_renderer_set_viewport": {},
       "goud_renderer_enable_depth_test": {},
       "goud_renderer_disable_depth_test": {},

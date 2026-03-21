@@ -3592,6 +3592,28 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_drawSpriteBat
 
 #[allow(non_snake_case)]
 #[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_drawTextBatch<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    cmds: jni::objects::JObject<'local>,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_drawTextBatch", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
+        crate::ffi::renderer::goud_renderer_draw_text_batch(goud_context_id_from_jlong(contextId), cmds as _)
+    };
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer_draw_text_batch", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setViewport<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,

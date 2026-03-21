@@ -637,6 +637,11 @@ export class GoudGame implements IGoudGame {
     return this.native.drawSpriteBatch(cmds);
   }
 
+  /** Draws a batch of text labels in a single pass for high performance */
+  drawTextBatch(cmds: TextCmd[]): number {
+    return (this.native as any).drawTextBatch(cmds);
+  }
+
   /** Sets the rendering viewport */
   setViewport(x: number, y: number, width: number, height: number): void {
     this.native.setViewport(x, y, width, height);

@@ -173,3 +173,21 @@ pub struct NapiSpriteCmd {
     pub a: Option<f64>,
     pub z_layer: Option<i32>,
 }
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiTextCmd {
+    pub font_handle: Option<f64>,
+    pub text: Option<String>,
+    pub x: Option<f64>,
+    pub y: Option<f64>,
+    pub font_size: Option<f64>,
+    pub alignment: Option<u32>,
+    pub direction: Option<u32>,
+    pub max_width: Option<f64>,
+    pub line_spacing: Option<f64>,
+    pub r: Option<f64>,
+    pub g: Option<f64>,
+    pub b: Option<f64>,
+    pub a: Option<f64>,
+}

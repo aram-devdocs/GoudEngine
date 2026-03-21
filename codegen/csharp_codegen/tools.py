@@ -102,6 +102,18 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
             "        public int ZLayer;",
             "    }",
             "",
+            "    /// <summary>A text command for batch rendering via DrawTextBatch.</summary>",
+            "    public struct TextCmd",
+            "    {",
+            "        public ulong FontHandle;",
+            "        public string Text;",
+            "        public float X, Y, FontSize;",
+            "        public TextAlignment Alignment;",
+            "        public TextDirection Direction;",
+            "        public float MaxWidth, LineSpacing;",
+            "        public Color? Color;",
+            "    }",
+            "",
         ]
     lines += [
         f"    /// <summary>{tool.get('doc', class_name)}</summary>",
@@ -217,7 +229,7 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
         sig = ", ".join(_safe_param_strs(params))
         if method.get("doc"):
             lines.append(f"        /// <summary>{method['doc']}</summary>")
-        unsafe_kw = "unsafe " if mn == "DrawSpriteBatch" else ""
+        unsafe_kw = "unsafe " if mn in ("DrawSpriteBatch", "DrawTextBatch") else ""
         lines += [f"        public {unsafe_kw}{actual_ret} {mn}({sig})", "        {"]
         _gen_method_body(mn, mm, params, ret, lines, is_windowed)
         lines += ["        }", ""]

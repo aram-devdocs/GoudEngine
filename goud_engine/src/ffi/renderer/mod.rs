@@ -60,8 +60,8 @@ pub use draw::{
 
 #[allow(deprecated)]
 pub use text::{
-    goud_draw_text, goud_font_destroy, goud_font_load, goud_renderer_draw_text, GoudFontHandle,
-    GOUD_INVALID_FONT,
+    goud_draw_text, goud_font_destroy, goud_font_load, goud_renderer_draw_text,
+    goud_renderer_draw_text_batch, FfiTextCmd, GoudFontHandle, GOUD_INVALID_FONT,
 };
 
 pub use handles::{
