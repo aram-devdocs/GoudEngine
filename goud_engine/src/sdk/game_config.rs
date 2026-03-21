@@ -467,7 +467,7 @@ impl GameContext {
     /// Finalizes the accumulator and computes interpolation alpha.
     pub(crate) fn finish_accumulator(&mut self) {
         if self.fixed_timestep > 0.0 {
-            self.interpolation_alpha = self.accumulator / self.fixed_timestep;
+            self.interpolation_alpha = (self.accumulator / self.fixed_timestep).min(1.0);
         } else {
             self.interpolation_alpha = 0.0;
         }

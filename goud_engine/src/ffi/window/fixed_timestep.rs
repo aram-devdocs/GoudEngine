@@ -70,7 +70,7 @@ pub extern "C" fn goud_fixed_timestep_step(context_id: GoudContextId) -> bool {
                 return true;
             }
             // All steps consumed — compute interpolation alpha
-            state.interpolation_alpha = state.accumulator / state.fixed_timestep;
+            state.interpolation_alpha = (state.accumulator / state.fixed_timestep).min(1.0);
             false
         } else {
             false

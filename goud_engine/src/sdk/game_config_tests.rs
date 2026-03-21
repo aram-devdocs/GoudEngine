@@ -202,6 +202,10 @@ fn test_accumulator_max_steps_cap() {
         count += 1;
     }
     assert_eq!(count, 8);
+
+    // Alpha must be clamped to 1.0 even though accumulator >> step
+    ctx.finish_accumulator();
+    assert!(ctx.interpolation_alpha() <= 1.0);
 }
 
 #[test]
