@@ -970,19 +970,19 @@ typedef struct FfiAtlasEntry {
      */
     float v_max;
     /**
-     * Pixel X offset of the packed texture within the atlas.
+     * Pixel X offset within the atlas.
      */
     uint32_t pixel_x;
     /**
-     * Pixel Y offset of the packed texture within the atlas.
+     * Pixel Y offset within the atlas.
      */
     uint32_t pixel_y;
     /**
-     * Width of the packed texture in pixels.
+     * Width in pixels.
      */
     uint32_t pixel_w;
     /**
-     * Height of the packed texture in pixels.
+     * Height in pixels.
      */
     uint32_t pixel_h;
 } FfiAtlasEntry;
@@ -992,7 +992,7 @@ typedef struct FfiAtlasEntry {
  */
 typedef struct FfiAtlasStats {
     /**
-     * Number of textures packed into the atlas.
+     * Number of textures packed.
      */
     uint32_t texture_count;
     /**
@@ -1004,19 +1004,19 @@ typedef struct FfiAtlasStats {
      */
     uint32_t height;
     /**
-     * Total pixel area consumed by packed textures.
+     * Pixel area consumed by packed textures.
      */
     uint64_t used_pixels;
     /**
-     * Total pixel area of the atlas (width * height).
+     * Total pixel area of the atlas.
      */
     uint64_t total_pixels;
     /**
-     * Pack efficiency as a percentage (0.0 - 100.0).
+     * Pack efficiency percentage (0.0-100.0).
      */
     float efficiency;
     /**
-     * Wasted pixel area (total - used).
+     * Wasted pixel area.
      */
     uint64_t wasted_pixels;
 } FfiAtlasStats;
@@ -4272,7 +4272,7 @@ int32_t goud_rpc_process_incoming(int64_t handle, uint64_t peer_id, const uint8_
 int32_t goud_rpc_drain_one(int64_t handle, uint8_t *out_buf, int32_t buf_len, uint64_t *out_peer_id);
 
 /**
- * Creates a new empty texture atlas with the given category and max size.
+ * Creates a new empty texture atlas.
  */
 GoudAtlasHandle goud_atlas_create(struct GoudContextId context_id, const char *category, uint32_t max_width, uint32_t max_height);
 
@@ -4282,7 +4282,7 @@ GoudAtlasHandle goud_atlas_create(struct GoudContextId context_id, const char *c
 bool goud_atlas_add_from_file(struct GoudContextId context_id, GoudAtlasHandle atlas, const char *key, const char *path);
 
 /**
- * Reserved for future GPU pixel readback support.
+ * Reserved — GPU pixel readback is not supported.
  */
 bool goud_atlas_add_texture(struct GoudContextId _context_id, GoudAtlasHandle _atlas, const char *_key, GoudTextureHandle _texture);
 

@@ -274,7 +274,7 @@
       "is_unsafe": false
     },
     "goud_atlas_add_from_file": {
-      "source_file": "ffi/renderer/atlas.rs",
+      "source_file": "ffi/renderer/atlas/ffi.rs",
       "params": [
         "context_id: GoudContextId",
         "atlas: GoudAtlasHandle",
@@ -285,7 +285,7 @@
       "is_unsafe": true
     },
     "goud_atlas_add_pixels": {
-      "source_file": "ffi/renderer/atlas.rs",
+      "source_file": "ffi/renderer/atlas/ffi.rs",
       "params": [
         "context_id: GoudContextId",
         "atlas: GoudAtlasHandle",
@@ -298,7 +298,7 @@
       "is_unsafe": true
     },
     "goud_atlas_add_texture": {
-      "source_file": "ffi/renderer/atlas.rs",
+      "source_file": "ffi/renderer/atlas/ffi.rs",
       "params": [
         "_context_id: GoudContextId",
         "_atlas: GoudAtlasHandle",
@@ -309,7 +309,7 @@
       "is_unsafe": true
     },
     "goud_atlas_create": {
-      "source_file": "ffi/renderer/atlas.rs",
+      "source_file": "ffi/renderer/atlas/ffi.rs",
       "params": [
         "context_id: GoudContextId",
         "category: *const c_char",
@@ -320,7 +320,7 @@
       "is_unsafe": true
     },
     "goud_atlas_destroy": {
-      "source_file": "ffi/renderer/atlas.rs",
+      "source_file": "ffi/renderer/atlas/ffi.rs",
       "params": [
         "context_id: GoudContextId",
         "atlas: GoudAtlasHandle"
@@ -329,7 +329,7 @@
       "is_unsafe": false
     },
     "goud_atlas_finalize": {
-      "source_file": "ffi/renderer/atlas.rs",
+      "source_file": "ffi/renderer/atlas/ffi.rs",
       "params": [
         "context_id: GoudContextId",
         "atlas: GoudAtlasHandle"
@@ -338,7 +338,7 @@
       "is_unsafe": false
     },
     "goud_atlas_get_entry": {
-      "source_file": "ffi/renderer/atlas.rs",
+      "source_file": "ffi/renderer/atlas/ffi.rs",
       "params": [
         "context_id: GoudContextId",
         "atlas: GoudAtlasHandle",
@@ -349,7 +349,7 @@
       "is_unsafe": true
     },
     "goud_atlas_get_stats": {
-      "source_file": "ffi/renderer/atlas.rs",
+      "source_file": "ffi/renderer/atlas/ffi.rs",
       "params": [
         "context_id: GoudContextId",
         "atlas: GoudAtlasHandle",
@@ -359,7 +359,7 @@
       "is_unsafe": true
     },
     "goud_atlas_get_texture": {
-      "source_file": "ffi/renderer/atlas.rs",
+      "source_file": "ffi/renderer/atlas/ffi.rs",
       "params": [
         "context_id: GoudContextId",
         "atlas: GoudAtlasHandle"
