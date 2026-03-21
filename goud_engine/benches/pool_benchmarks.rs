@@ -190,11 +190,12 @@ fn bench_pool_10k_iteration(c: &mut Criterion) {
 // ================================================================================================
 
 #[derive(Clone, Copy)]
+#[repr(C)]
 struct BenchData {
-    x: f32,
-    y: f32,
-    z: f32,
-    w: f32,
+    _x: f32,
+    _y: f32,
+    _z: f32,
+    _w: f32,
 }
 
 fn bench_arena_alloc_reset(c: &mut Criterion) {
@@ -207,10 +208,10 @@ fn bench_arena_alloc_reset(c: &mut Criterion) {
         b.iter(|| {
             for i in 0..1_000 {
                 let val = arena.alloc(BenchData {
-                    x: i as f32,
-                    y: i as f32 * 2.0,
-                    z: i as f32 * 3.0,
-                    w: i as f32 * 4.0,
+                    _x: i as f32,
+                    _y: i as f32 * 2.0,
+                    _z: i as f32 * 3.0,
+                    _w: i as f32 * 4.0,
                 });
                 black_box(val);
             }
