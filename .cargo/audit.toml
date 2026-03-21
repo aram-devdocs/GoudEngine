@@ -1,0 +1,5 @@
+[advisories]
+ignore = [
+    # rustls-webpki CRL matching issue; limited impact, requires compromised CA; transitive dep via tungstenite
+    "RUSTSEC-2026-0049",
+]
