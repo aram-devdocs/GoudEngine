@@ -79,6 +79,31 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
         f"// {HEADER_COMMENT}",
         "using System;", "using System.Linq;", "using System.Runtime.InteropServices;", "using System.Text.Json;", "",
         f"namespace {NS}", "{",
+    ]
+    # Emit SrcRectMode, SpriteCmd, and batch-related types before the GoudGame class
+    if class_name == "GoudGame":
+        lines += [
+            "    /// <summary>Source rectangle coordinate mode for DrawSpriteRect.</summary>",
+            "    public enum SrcRectMode : uint",
+            "    {",
+            "        /// <summary>Source rectangle values are normalized UV coordinates (0.0-1.0).</summary>",
+            "        Normalized = 0,",
+            "        /// <summary>Source rectangle values are in pixel coordinates.</summary>",
+            "        Pixels = 1,",
+            "    }",
+            "",
+            "    /// <summary>A sprite command for batch rendering via DrawSpriteBatch.</summary>",
+            "    public struct SpriteCmd",
+            "    {",
+            "        public ulong Texture;",
+            "        public float X, Y, Width, Height, Rotation;",
+            "        public float SrcX, SrcY, SrcW, SrcH;",
+            "        public Color? Color;",
+            "        public int ZLayer;",
+            "    }",
+            "",
+        ]
+    lines += [
         f"    /// <summary>{tool.get('doc', class_name)}</summary>",
         f"    public class {class_name} : IDisposable", "    {",
         "        private GoudContextId _ctx;",

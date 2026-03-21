@@ -20,15 +20,8 @@ namespace GoudEngine
     public struct SpriteCmd
     {
         public ulong Texture;
-        public float X;
-        public float Y;
-        public float Width;
-        public float Height;
-        public float Rotation;
-        public float SrcX;
-        public float SrcY;
-        public float SrcW;
-        public float SrcH;
+        public float X, Y, Width, Height, Rotation;
+        public float SrcX, SrcY, SrcW, SrcH;
         public Color? Color;
         public int ZLayer;
     }
@@ -781,20 +774,17 @@ namespace GoudEngine
             return NativeMethods.goud_renderer3d_postprocess_pass_count(_ctx);
         }
 
-        /// <summary>Draws a sprite with source rectangle for sprite sheets.</summary>
-        /// <param name="srcMode">0 = Normalized UVs (0.0-1.0), 1 = Pixel coordinates (default)</param>
-        public bool DrawSpriteRect(ulong texture, float x, float y, float width, float height, float rotation, float srcX, float srcY, float srcW, float srcH, Color? color = null, SrcRectMode srcMode = SrcRectMode.Pixels)
+        /// <summary>Draws a sprite with source rectangle for sprite sheets</summary>
+        public bool DrawSpriteRect(ulong texture, float x, float y, float width, float height, float rotation, float srcX, float srcY, float srcW, float srcH, Color? color = null, uint srcMode = 1)
         {
             var c = color ?? Color.White();
             return NativeMethods.goud_renderer_draw_sprite_rect(_ctx, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, (uint)srcMode, c.R, c.G, c.B, c.A);
         }
 
-        /// <summary>Draws a batch of sprites in a single GPU pass for high performance.</summary>
-        public unsafe uint DrawSpriteBatch(ReadOnlySpan<SpriteCmd> cmds)
+        /// <summary>Draws a batch of sprites in a single GPU pass for high performance</summary>
+        public uint DrawSpriteBatch(SpriteCmd[] cmds)
         {
-            if (cmds.IsEmpty) return 0;
-            // Marshal SpriteCmd[] to FfiSpriteCmd[]
-            // Use stackalloc for small batches, heap for large ones to avoid stack overflow
+            if (cmds == null || cmds.Length == 0) return 0;
             const int StackAllocThreshold = 512;
             FfiSpriteCmd[] heapBuf = cmds.Length > StackAllocThreshold ? new FfiSpriteCmd[cmds.Length] : null;
             Span<FfiSpriteCmd> ffi = heapBuf != null ? heapBuf.AsSpan() : stackalloc FfiSpriteCmd[cmds.Length];
@@ -802,25 +792,7 @@ namespace GoudEngine
             {
                 ref readonly var s = ref cmds[i];
                 var c = s.Color ?? Color.White();
-                ffi[i] = new FfiSpriteCmd
-                {
-                    Texture = s.Texture,
-                    X = s.X,
-                    Y = s.Y,
-                    Width = s.Width,
-                    Height = s.Height,
-                    Rotation = s.Rotation,
-                    SrcX = s.SrcX,
-                    SrcY = s.SrcY,
-                    SrcW = s.SrcW,
-                    SrcH = s.SrcH,
-                    R = c.R,
-                    G = c.G,
-                    B = c.B,
-                    A = c.A,
-                    ZLayer = s.ZLayer,
-                    _Padding = 0,
-                };
+                ffi[i] = new FfiSpriteCmd { Texture = s.Texture, X = s.X, Y = s.Y, Width = s.Width, Height = s.Height, Rotation = s.Rotation, SrcX = s.SrcX, SrcY = s.SrcY, SrcW = s.SrcW, SrcH = s.SrcH, R = c.R, G = c.G, B = c.B, A = c.A, ZLayer = s.ZLayer, _Padding = 0 };
             }
             fixed (FfiSpriteCmd* ptr = ffi)
             {

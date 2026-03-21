@@ -497,45 +497,16 @@ class GoudGame:
         return self._lib.goud_renderer3d_postprocess_pass_count(self._ctx)
 
     def draw_sprite_rect(self, texture, x, y, width, height, rotation, src_x, src_y, src_w, src_h, color = None, src_mode = 1):
-        """Draws a sprite with source rectangle for sprite sheets.
-
-        src_mode: 0 = normalized UVs (0.0-1.0), 1 = pixel coordinates (default)
-        """
-        if color is None:
-            r, g, b, a = 1.0, 1.0, 1.0, 1.0
-        else:
-            r, g, b, a = color.r, color.g, color.b, color.a
-        return self._lib.goud_renderer_draw_sprite_rect(self._ctx, texture, x, y, width, height, rotation, src_x, src_y, src_w, src_h, src_mode, r, g, b, a)
+        """Draws a sprite with source rectangle for sprite sheets"""
+        _color_ffi = _ffi_module.FfiColor()
+        _color_ffi.r = color.r
+        _color_ffi.g = color.g
+        _color_ffi.b = color.b
+        _color_ffi.a = color.a
+        return self._lib.goud_renderer_draw_sprite_rect(self._ctx, texture, x, y, width, height, rotation, src_x, src_y, src_w, src_h, _color_ffi, src_mode)
 
     def draw_sprite_batch(self, cmds):
-        """Draws a batch of sprites in a single GPU pass.
-
-        cmds: list of dicts with keys: texture, x, y, width, height, rotation,
-              src_x, src_y, src_w, src_h, r, g, b, a, z_layer
-        Returns the number of sprites drawn.
-        """
-        if not cmds:
-            return 0
-        arr_type = _ffi_module.FfiSpriteCmd * len(cmds)
-        arr = arr_type()
-        for i, c in enumerate(cmds):
-            arr[i].texture = c.get("texture", 0)
-            arr[i].x = c.get("x", 0.0)
-            arr[i].y = c.get("y", 0.0)
-            arr[i].width = c.get("width", 0.0)
-            arr[i].height = c.get("height", 0.0)
-            arr[i].rotation = c.get("rotation", 0.0)
-            arr[i].src_x = c.get("src_x", 0.0)
-            arr[i].src_y = c.get("src_y", 0.0)
-            arr[i].src_w = c.get("src_w", 0.0)
-            arr[i].src_h = c.get("src_h", 0.0)
-            arr[i].r = c.get("r", 1.0)
-            arr[i].g = c.get("g", 1.0)
-            arr[i].b = c.get("b", 1.0)
-            arr[i].a = c.get("a", 1.0)
-            arr[i].z_layer = c.get("z_layer", 0)
-            arr[i]._padding = 0
-        return self._lib.goud_renderer_draw_sprite_batch(self._ctx, arr, len(cmds))
+        """Draws a batch of sprites in a single GPU pass for high performance"""
 
     def set_viewport(self, x, y, width, height):
         """Sets the rendering viewport"""

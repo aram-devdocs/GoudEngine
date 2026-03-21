@@ -331,26 +331,6 @@ class FfiUiEvent(ctypes.Structure):
         ("current_node_id", ctypes.c_uint64)
     ]
 
-class FfiSpriteCmd(ctypes.Structure):
-    _fields_ = [
-        ("texture", ctypes.c_uint64),
-        ("x", ctypes.c_float),
-        ("y", ctypes.c_float),
-        ("width", ctypes.c_float),
-        ("height", ctypes.c_float),
-        ("rotation", ctypes.c_float),
-        ("src_x", ctypes.c_float),
-        ("src_y", ctypes.c_float),
-        ("src_w", ctypes.c_float),
-        ("src_h", ctypes.c_float),
-        ("r", ctypes.c_float),
-        ("g", ctypes.c_float),
-        ("b", ctypes.c_float),
-        ("a", ctypes.c_float),
-        ("z_layer", ctypes.c_int32),
-        ("_padding", ctypes.c_int32),
-    ]
-
 # ── Function signatures ──
 
 def _setup():
@@ -487,8 +467,6 @@ def _setup():
     _lib.goud_draw_text.restype = ctypes.c_bool
     _lib.goud_renderer_draw_sprite_rect.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
     _lib.goud_renderer_draw_sprite_rect.restype = ctypes.c_bool
-    _lib.goud_renderer_draw_sprite_batch.argtypes = [GoudContextId, ctypes.POINTER(FfiSpriteCmd), ctypes.c_uint32]
-    _lib.goud_renderer_draw_sprite_batch.restype = ctypes.c_uint32
     _lib.goud_renderer_set_viewport.argtypes = [GoudContextId, ctypes.c_int32, ctypes.c_int32, ctypes.c_uint32, ctypes.c_uint32]
     _lib.goud_renderer_set_viewport.restype = None
     _lib.goud_renderer_enable_depth_test.argtypes = [GoudContextId]
