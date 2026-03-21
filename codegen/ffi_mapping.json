@@ -83,7 +83,7 @@
       ]
     },
     "RenderMetrics": {
-      "ffi_name": "RenderMetrics",
+      "ffi_name": "FfiRenderMetrics",
       "fields": [
         "draw_call_count",
         "sprites_submitted",

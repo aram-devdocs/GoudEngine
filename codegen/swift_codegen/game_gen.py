@@ -347,7 +347,7 @@ def _gen_method(tool_name: str, m: dict, ffi_name: str, handle_var: str) -> list
         # bytes/array params
         if ptype in ("bytes", "u8[]", "Data"):
             call_args.append(f"{pname}BasePtr")
-            call_args.append(f"{pname}.count")
+            call_args.append(f"Int32({pname}.count)")
             continue
         if ptype.endswith("[]"):
             call_args.append(f"{pname}BasePtr")
@@ -578,7 +578,7 @@ def _gen_method_simple(
         elif ptype in ("bytes", "u8[]", "Data"):
             data_params.append(p)
             call_args.append(f"{pname}BasePtr")
-            call_args.append(f"{pname}.count")
+            call_args.append(f"Int32({pname}.count)")
         elif ptype.endswith("[]"):
             array_params.append(p)
             call_args.append(f"{pname}BasePtr")

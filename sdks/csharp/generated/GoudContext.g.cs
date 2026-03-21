@@ -1079,7 +1079,7 @@ namespace GoudEngine
         /// <summary>Returns per-frame render metrics from the debugger snapshot for this context</summary>
         public RenderMetrics GetFrameMetrics()
         {
-            RenderMetrics _out_metrics = default;
+            FfiRenderMetrics _out_metrics = default;
             NativeMethods.goud_renderer_get_frame_metrics(_ctx, ref _out_metrics);
             return new RenderMetrics(_out_metrics.DrawCallCount, _out_metrics.SpritesSubmitted, _out_metrics.SpritesDrawn, _out_metrics.SpritesCulled, _out_metrics.BatchesSubmitted, _out_metrics.AvgSpritesPerBatch, _out_metrics.SpriteRenderMs, _out_metrics.TextRenderMs, _out_metrics.UiRenderMs, _out_metrics.TotalRenderMs, _out_metrics.TextDrawCalls, _out_metrics.TextGlyphCount, _out_metrics.UiDrawCalls);
         }

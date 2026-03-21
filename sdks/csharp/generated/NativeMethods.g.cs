@@ -92,6 +92,24 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct FfiRenderMetrics
+    {
+        public uint DrawCallCount;
+        public uint SpritesSubmitted;
+        public uint SpritesDrawn;
+        public uint SpritesCulled;
+        public uint BatchesSubmitted;
+        public float AvgSpritesPerBatch;
+        public float SpriteRenderMs;
+        public float TextRenderMs;
+        public float UiRenderMs;
+        public float TotalRenderMs;
+        public uint TextDrawCalls;
+        public uint TextGlyphCount;
+        public uint UiDrawCalls;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct GoudDebuggerConfig
     {
         [MarshalAs(UnmanagedType.U1)]
@@ -634,7 +652,7 @@ namespace GoudEngine
         public static extern int goud_debug_get_fps_stats(GoudContextId context_id, ref FpsStats out_stats);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int goud_render_get_metrics(GoudContextId context_id, ref RenderMetrics out_metrics);
+        public static extern int goud_render_get_metrics(GoudContextId context_id, ref FfiRenderMetrics out_metrics);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_debug_set_fps_overlay_enabled(GoudContextId context_id, [MarshalAs(UnmanagedType.U1)] bool enabled);

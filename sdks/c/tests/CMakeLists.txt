@@ -6,7 +6,6 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 get_filename_component(GOUD_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../.." ABSOLUTE)
 
-set(GOUD_INCLUDE_DIR "${GOUD_REPO_ROOT}/codegen/generated")
 set(GOUD_C_SDK_DIR "${GOUD_REPO_ROOT}/sdks/c/include")
 
 find_library(GOUD_ENGINE_LIB goud_engine
@@ -19,7 +18,6 @@ enable_testing()
 function(add_goud_test test_name)
     add_executable(${test_name} ${test_name}.c)
     target_include_directories(${test_name} PRIVATE
-        "${GOUD_INCLUDE_DIR}"
         "${GOUD_C_SDK_DIR}"
     )
     target_link_libraries(${test_name} PRIVATE "${GOUD_ENGINE_LIB}")

@@ -458,7 +458,7 @@ public final class GoudGame {
     public func startDebuggerReplay(recording: Data) {
         recording.withUnsafeBytes { recordingRawBuf in
             let recordingBasePtr = recordingRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            let _ = goud_debugger_start_replay(_ctx, recordingBasePtr, recording.count)
+            let _ = goud_debugger_start_replay(_ctx, recordingBasePtr, Int32(recording.count))
         }
     }
 
@@ -584,7 +584,7 @@ public final class GoudGame {
     public func audioPlay(data: Data) -> Int64 {
         data.withUnsafeBytes { dataRawBuf in
             let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            return goud_audio_play(_ctx, dataBasePtr, data.count)
+            return goud_audio_play(_ctx, dataBasePtr, Int32(data.count))
         }
     }
 
@@ -592,7 +592,7 @@ public final class GoudGame {
     public func audioPlayOnChannel(data: Data, channel: UInt8) -> Int64 {
         data.withUnsafeBytes { dataRawBuf in
             let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            return goud_audio_play_on_channel(_ctx, dataBasePtr, data.count, channel)
+            return goud_audio_play_on_channel(_ctx, dataBasePtr, Int32(data.count), channel)
         }
     }
 
@@ -600,7 +600,7 @@ public final class GoudGame {
     public func audioPlayWithSettings(data: Data, volume: Float, speed: Float, looping: Bool, channel: UInt8) -> Int64 {
         data.withUnsafeBytes { dataRawBuf in
             let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            return goud_audio_play_with_settings(_ctx, dataBasePtr, data.count, volume, speed, looping, channel)
+            return goud_audio_play_with_settings(_ctx, dataBasePtr, Int32(data.count), volume, speed, looping, channel)
         }
     }
 
@@ -663,7 +663,7 @@ public final class GoudGame {
     public func audioPlaySpatial3d(data: Data, sourceX: Float, sourceY: Float, sourceZ: Float, listenerX: Float, listenerY: Float, listenerZ: Float, maxDistance: Float, rolloff: Float) -> Int64 {
         data.withUnsafeBytes { dataRawBuf in
             let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            return goud_audio_play_spatial_3d(_ctx, dataBasePtr, data.count, sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff)
+            return goud_audio_play_spatial_3d(_ctx, dataBasePtr, Int32(data.count), sourceX, sourceY, sourceZ, listenerX, listenerY, listenerZ, maxDistance, rolloff)
         }
     }
 
@@ -701,7 +701,7 @@ public final class GoudGame {
     public func audioCrossfadeTo(fromPlayerId: UInt64, data: Data, durationSec: Float, channel: UInt8) -> Int64 {
         data.withUnsafeBytes { dataRawBuf in
             let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            return goud_audio_crossfade_to(_ctx, fromPlayerId, dataBasePtr, data.count, durationSec, channel)
+            return goud_audio_crossfade_to(_ctx, fromPlayerId, dataBasePtr, Int32(data.count), durationSec, channel)
         }
     }
 
@@ -709,7 +709,7 @@ public final class GoudGame {
     public func audioMixWith(primaryPlayerId: UInt64, data: Data, secondaryVolume: Float, secondaryChannel: UInt8) -> Int64 {
         data.withUnsafeBytes { dataRawBuf in
             let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            return goud_audio_mix_with(_ctx, primaryPlayerId, dataBasePtr, data.count, secondaryVolume, secondaryChannel)
+            return goud_audio_mix_with(_ctx, primaryPlayerId, dataBasePtr, Int32(data.count), secondaryVolume, secondaryChannel)
         }
     }
 
@@ -764,7 +764,7 @@ public final class GoudGame {
     public func rollbackCreate(config: RollbackConfig, localPlayer: UInt8, playerIds: Data, statePtr: UInt64, advanceFn: UInt64, hashFn: UInt64, cloneFn: UInt64, freeFn: UInt64) -> Int64 {
         playerIds.withUnsafeBytes { playerIdsRawBuf in
             let playerIdsBasePtr = playerIdsRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            return goud_rollback_create(config.toFFI(), localPlayer, playerIdsBasePtr, playerIds.count, statePtr, advanceFn, hashFn, cloneFn, freeFn)
+            return goud_rollback_create(config.toFFI(), localPlayer, playerIdsBasePtr, Int32(playerIds.count), statePtr, advanceFn, hashFn, cloneFn, freeFn)
         }
     }
 
@@ -777,7 +777,7 @@ public final class GoudGame {
     public func rollbackAdvanceFrame(handle: Int64, input: Data) -> Int32 {
         input.withUnsafeBytes { inputRawBuf in
             let inputBasePtr = inputRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            return goud_rollback_advance_frame(handle, inputBasePtr, input.count)
+            return goud_rollback_advance_frame(handle, inputBasePtr, Int32(input.count))
         }
     }
 
@@ -785,7 +785,7 @@ public final class GoudGame {
     public func rollbackReceiveRemoteInput(handle: Int64, playerId: UInt8, frame: UInt64, input: Data) -> Int32 {
         input.withUnsafeBytes { inputRawBuf in
             let inputBasePtr = inputRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            return goud_rollback_receive_remote_input(handle, playerId, frame, inputBasePtr, input.count)
+            return goud_rollback_receive_remote_input(handle, playerId, frame, inputBasePtr, Int32(input.count))
         }
     }
 
@@ -835,7 +835,7 @@ public final class GoudGame {
     public func rpcCall(handle: Int64, peerId: UInt64, rpcId: UInt16, payload: Data) -> UInt64 {
         payload.withUnsafeBytes { payloadRawBuf in
             let payloadBasePtr = payloadRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            return goud_rpc_call(handle, peerId, rpcId, payloadBasePtr, payload.count)
+            return goud_rpc_call(handle, peerId, rpcId, payloadBasePtr, Int32(payload.count))
         }
     }
 
@@ -848,7 +848,7 @@ public final class GoudGame {
     public func rpcProcessIncoming(handle: Int64, peerId: UInt64, data: Data) -> Int32 {
         data.withUnsafeBytes { dataRawBuf in
             let dataBasePtr = dataRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            return goud_rpc_process_incoming(handle, peerId, dataBasePtr, data.count)
+            return goud_rpc_process_incoming(handle, peerId, dataBasePtr, Int32(data.count))
         }
     }
 

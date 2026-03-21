@@ -1027,9 +1027,9 @@ jobs:
       with:
         go-version: '1.22'
 
-    - name: Run Go tests
+    - name: Run Go tests (pure-Go packages only, CGO tests need native lib)
       working-directory: sdks/go
-      run: go test ./...
+      run: CGO_ENABLED=0 go test ./goud/...
 
   # Swift SDK tests (macOS only, pure-Swift value type tests)
   swift-sdk-check:
@@ -1077,6 +1077,11 @@ jobs:
       run: |
         mkdir -p target/release
         cp native-release/* target/release/
+      shell: bash
+
+    - name: Stage generated C header
+      run: |
+        cp codegen/generated/goud_engine.h sdks/c/include/goud_engine.h
       shell: bash
 
     - name: Install system dependencies (Ubuntu)

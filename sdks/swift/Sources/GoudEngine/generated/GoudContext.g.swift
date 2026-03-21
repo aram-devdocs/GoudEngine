@@ -118,7 +118,7 @@ public final class GoudContext {
     public func startDebuggerReplay(recording: Data) {
         recording.withUnsafeBytes { recordingRawBuf in
             let recordingBasePtr = recordingRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            let _ = goud_debugger_start_replay(_ctx, recordingBasePtr, recording.count)
+            let _ = goud_debugger_start_replay(_ctx, recordingBasePtr, Int32(recording.count))
         }
     }
 
