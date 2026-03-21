@@ -141,6 +141,18 @@ impl EngineConfig {
         self
     }
 
+    /// Sets the fixed timestep size in seconds (e.g. `1.0 / 60.0` for 60 Hz).
+    pub fn with_fixed_timestep(mut self, step: f32) -> Self {
+        self.game_config = self.game_config.with_fixed_timestep(step);
+        self
+    }
+
+    /// Sets the maximum number of fixed steps per frame.
+    pub fn with_max_fixed_steps_per_frame(mut self, max: u32) -> Self {
+        self.game_config = self.game_config.with_max_fixed_steps_per_frame(max);
+        self
+    }
+
     // Provider Selection (delegated to ProviderRegistryBuilder)
 
     /// Sets the render provider.

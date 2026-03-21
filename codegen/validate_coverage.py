@@ -97,6 +97,7 @@ _TYPE_ALIASES: dict[str, str] = {
     "crate::ffi::context::GoudContextId": "u64",
     "EngineConfigHandle": "*mut c_void",
     "GoudFontHandle": "u64",
+    "GoudAtlasHandle": "u64",
     "FfiTransitionType": "u8",
     "FfiNetworkSimulationConfig": "NetworkSimulationConfig",
     "ref FfiNetworkStats": "*mut FfiNetworkStats",

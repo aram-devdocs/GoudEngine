@@ -224,10 +224,12 @@ impl GoudGame {
             Self::register_debugger_route(&config, RuntimeSurfaceKind::HeadlessContext);
         #[cfg(feature = "lua")]
         let lua_runtime = LuaRuntime::new(0)?;
+        let mut context = GameContext::new(window_size);
+        context.configure_fixed_timestep(config.fixed_timestep, config.max_fixed_steps_per_frame);
         Ok(Self {
             scene_manager: SceneManager::new(),
             config,
-            context: GameContext::new(window_size),
+            context,
             initialized: false,
             debug_overlay,
             render_metrics: RenderMetrics::default(),
@@ -366,10 +368,13 @@ impl GoudGame {
             (None, None)
         };
 
+        let mut context = GameContext::new(window_size);
+        context.configure_fixed_timestep(config.fixed_timestep, config.max_fixed_steps_per_frame);
+
         Ok(Self {
             scene_manager: SceneManager::new(),
             config,
-            context: GameContext::new(window_size),
+            context,
             initialized: false,
             debug_overlay,
             render_metrics: RenderMetrics::default(),

@@ -364,6 +364,8 @@ export class GoudGame implements IGoudGame {
   get totalTime(): number { return this.handle.total_time; }
   /** Number of frames processed */
   get frameCount(): number { return Number(this.handle.frame_count); }
+  /** Interpolation alpha for render smoothing between fixed timesteps (0.0 to 1.0) */
+  get interpolationAlpha(): number { return 0; }
 
   setClearColor(r: number, g: number, b: number, a: number): void { this.handle.set_clear_color(r, g, b, a); }
 
@@ -411,6 +413,23 @@ export class GoudGame implements IGoudGame {
     this.detachInput = attachInputHandlers(this.canvas, this.handle);
     this._startLoop(update);
   }
+
+  runWithFixedUpdate(fixedUpdate: (dt: number) => void, update: (dt: number) => void): void {
+    if (this.running) return;
+    if (this.preloadInFlight) {
+      throw new Error('game.preload(...) must finish before game.runWithFixedUpdate() starts.');
+    }
+    this._updateFn = (dt: number) => {
+      // Fixed timestep not directly available in WASM yet — fall through to update
+      update(dt);
+    };
+    this.running = true; this.lastTs = performance.now();
+    this.detachInput = attachInputHandlers(this.canvas, this.handle);
+    this._startLoop(this._updateFn);
+  }
+
+  setFixedTimestep(_stepSize: number): void { /* WASM stub */ }
+  setMaxFixedSteps(_maxSteps: number): void { /* WASM stub */ }
 
   stop(): void;
   stop(_entity: IEntity): number;

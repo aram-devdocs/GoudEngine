@@ -2893,6 +2893,93 @@
           "doc": "Whether desync detection is enabled (0 = false, nonzero = true)"
         }
       ]
+    },
+    "AtlasEntry": {
+      "kind": "value",
+      "doc": "Describes a packed texture's position within a texture atlas",
+      "fields": [
+        {
+          "name": "uMin",
+          "type": "f32",
+          "doc": "Left edge in UV space (0.0..1.0)"
+        },
+        {
+          "name": "vMin",
+          "type": "f32",
+          "doc": "Top edge in UV space (0.0..1.0)"
+        },
+        {
+          "name": "uMax",
+          "type": "f32",
+          "doc": "Right edge in UV space (0.0..1.0)"
+        },
+        {
+          "name": "vMax",
+          "type": "f32",
+          "doc": "Bottom edge in UV space (0.0..1.0)"
+        },
+        {
+          "name": "pixelX",
+          "type": "u32",
+          "doc": "Pixel X offset within the atlas"
+        },
+        {
+          "name": "pixelY",
+          "type": "u32",
+          "doc": "Pixel Y offset within the atlas"
+        },
+        {
+          "name": "pixelW",
+          "type": "u32",
+          "doc": "Width in pixels"
+        },
+        {
+          "name": "pixelH",
+          "type": "u32",
+          "doc": "Height in pixels"
+        }
+      ]
+    },
+    "AtlasStats": {
+      "kind": "value",
+      "doc": "Statistics about a packed texture atlas",
+      "fields": [
+        {
+          "name": "textureCount",
+          "type": "u32",
+          "doc": "Number of textures packed"
+        },
+        {
+          "name": "width",
+          "type": "u32",
+          "doc": "Atlas width in pixels"
+        },
+        {
+          "name": "height",
+          "type": "u32",
+          "doc": "Atlas height in pixels"
+        },
+        {
+          "name": "usedPixels",
+          "type": "u64",
+          "doc": "Total pixel area consumed by packed textures"
+        },
+        {
+          "name": "totalPixels",
+          "type": "u64",
+          "doc": "Total pixel area of the atlas"
+        },
+        {
+          "name": "efficiency",
+          "type": "f32",
+          "doc": "Pack efficiency percentage (0.0-100.0)"
+        },
+        {
+          "name": "wastedPixels",
+          "type": "u64",
+          "doc": "Wasted pixel area"
+        }
+      ]
     }
   },
   "enums": {
@@ -3880,6 +3967,12 @@
           "type": "u32",
           "readonly": true,
           "doc": "Number of frames processed"
+        },
+        {
+          "name": "interpolationAlpha",
+          "type": "f32",
+          "readonly": true,
+          "doc": "Interpolation alpha for render smoothing between fixed timesteps (0.0 to 1.0)"
         }
       ],
       "methods": [
@@ -3961,6 +4054,47 @@
               "name": "update",
               "type": "callback(f32)",
               "doc": "Per-frame update function receiving delta time in seconds"
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "runWithFixedUpdate",
+          "doc": "Runs the game loop with a fixed timestep. fixedUpdate runs at the configured fixed rate, update runs once per visual frame.",
+          "params": [
+            {
+              "name": "fixedUpdate",
+              "type": "callback(f32)",
+              "doc": "Fixed-rate simulation update receiving fixed delta time in seconds"
+            },
+            {
+              "name": "update",
+              "type": "callback(f32)",
+              "doc": "Per-frame render update receiving delta time in seconds"
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "setFixedTimestep",
+          "doc": "Sets the fixed timestep step size in seconds. Pass 0 to disable.",
+          "params": [
+            {
+              "name": "stepSize",
+              "type": "f32",
+              "doc": "Fixed step size in seconds (e.g. 1/60 for 60Hz simulation)"
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "setMaxFixedSteps",
+          "doc": "Sets the maximum fixed steps per frame to prevent spiral of death.",
+          "params": [
+            {
+              "name": "maxSteps",
+              "type": "u32",
+              "doc": "Maximum steps per frame (default 8)"
             }
           ],
           "returns": "void"
@@ -11935,6 +12069,16 @@
           "ffi": "goud_rpc_drain_one",
           "no_context": true,
           "out_buffer": true
+        },
+        "runWithFixedUpdate": {
+          "ffi": "goud_fixed_timestep_begin",
+          "doc": "SDK-side game loop with fixed timestep — bodies are hardcoded in codegen"
+        },
+        "setFixedTimestep": {
+          "ffi": "goud_fixed_timestep_set"
+        },
+        "setMaxFixedSteps": {
+          "ffi": "goud_fixed_timestep_set_max_steps"
         }
       },
       "properties": {
@@ -11970,6 +12114,10 @@
           "source": "cached",
           "field": "_frame_count",
           "doc": "Incremented in update_frame"
+        },
+        "interpolationAlpha": {
+          "ffi": "goud_fixed_timestep_alpha",
+          "doc": "Queried from FFI after fixed timestep steps complete"
         }
       }
     },

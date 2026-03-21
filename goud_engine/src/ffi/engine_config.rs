@@ -434,3 +434,49 @@ pub unsafe extern "C" fn goud_engine_config_set_debugger(
     config.game_config_mut().debugger = debugger;
     true
 }
+
+/// Sets the fixed timestep step size in seconds on an `EngineConfig`.
+///
+/// Pass `0.0` to disable fixed timestep mode.
+///
+/// # Safety
+/// `handle` must be a valid `EngineConfig` handle.
+#[no_mangle]
+pub unsafe extern "C" fn goud_engine_config_set_fixed_timestep(
+    handle: EngineConfigHandle,
+    step: f32,
+) -> bool {
+    if handle.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
+        return false;
+    }
+    // SAFETY: Caller guarantees handle points to a valid EngineConfig.
+    let config = &mut *(handle as *mut EngineConfig);
+    config.game_config_mut().fixed_timestep = step.max(0.0);
+    true
+}
+
+/// Sets the maximum fixed steps per frame on an `EngineConfig`.
+///
+/// Caps the accumulator to prevent a spiral of death.
+///
+/// # Safety
+/// `handle` must be a valid `EngineConfig` handle.
+#[no_mangle]
+pub unsafe extern "C" fn goud_engine_config_set_max_fixed_steps(
+    handle: EngineConfigHandle,
+    max: u32,
+) -> bool {
+    if handle.is_null() {
+        set_last_error(GoudError::InvalidState(
+            "output pointer is null".to_string(),
+        ));
+        return false;
+    }
+    // SAFETY: Caller guarantees handle points to a valid EngineConfig.
+    let config = &mut *(handle as *mut EngineConfig);
+    config.game_config_mut().max_fixed_steps_per_frame = max.max(1);
+    true
+}

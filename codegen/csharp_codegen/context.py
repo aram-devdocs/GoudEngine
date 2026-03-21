@@ -52,6 +52,7 @@ _CSHARP_FFI_ALIASES = {
     "UiManagerHandle": "*mut c_void",
     "GoudTextureHandle": "u64",
     "GoudFontHandle": "u64",
+    "GoudAtlasHandle": "u64",
     "GoudEntityId": "u64",
     "GoudKeyCode": "i32",
     "GoudMouseButton": "i32",

@@ -1034,3 +1034,110 @@ public struct RollbackConfig: Equatable {
     }
 
 }
+
+/// Describes a packed texture's position within a texture atlas
+public struct AtlasEntry: Equatable {
+    /// Left edge in UV space (0.0..1.0)
+    public var uMin: Float
+    /// Top edge in UV space (0.0..1.0)
+    public var vMin: Float
+    /// Right edge in UV space (0.0..1.0)
+    public var uMax: Float
+    /// Bottom edge in UV space (0.0..1.0)
+    public var vMax: Float
+    /// Pixel X offset within the atlas
+    public var pixelX: UInt32
+    /// Pixel Y offset within the atlas
+    public var pixelY: UInt32
+    /// Width in pixels
+    public var pixelW: UInt32
+    /// Height in pixels
+    public var pixelH: UInt32
+
+    public init(uMin: Float = 0, vMin: Float = 0, uMax: Float = 0, vMax: Float = 0, pixelX: UInt32 = 0, pixelY: UInt32 = 0, pixelW: UInt32 = 0, pixelH: UInt32 = 0) {
+        self.uMin = uMin
+        self.vMin = vMin
+        self.uMax = uMax
+        self.vMax = vMax
+        self.pixelX = pixelX
+        self.pixelY = pixelY
+        self.pixelW = pixelW
+        self.pixelH = pixelH
+    }
+
+    internal init(ffi: FfiAtlasEntry) {
+        self.uMin = ffi.u_min
+        self.vMin = ffi.v_min
+        self.uMax = ffi.u_max
+        self.vMax = ffi.v_max
+        self.pixelX = ffi.pixel_x
+        self.pixelY = ffi.pixel_y
+        self.pixelW = ffi.pixel_w
+        self.pixelH = ffi.pixel_h
+    }
+
+    internal func toFFI() -> FfiAtlasEntry {
+        var ffi = FfiAtlasEntry()
+        ffi.u_min = uMin
+        ffi.v_min = vMin
+        ffi.u_max = uMax
+        ffi.v_max = vMax
+        ffi.pixel_x = pixelX
+        ffi.pixel_y = pixelY
+        ffi.pixel_w = pixelW
+        ffi.pixel_h = pixelH
+        return ffi
+    }
+
+}
+
+/// Statistics about a packed texture atlas
+public struct AtlasStats: Equatable {
+    /// Number of textures packed
+    public var textureCount: UInt32
+    /// Atlas width in pixels
+    public var width: UInt32
+    /// Atlas height in pixels
+    public var height: UInt32
+    /// Total pixel area consumed by packed textures
+    public var usedPixels: UInt64
+    /// Total pixel area of the atlas
+    public var totalPixels: UInt64
+    /// Pack efficiency percentage (0.0-100.0)
+    public var efficiency: Float
+    /// Wasted pixel area
+    public var wastedPixels: UInt64
+
+    public init(textureCount: UInt32 = 0, width: UInt32 = 0, height: UInt32 = 0, usedPixels: UInt64 = 0, totalPixels: UInt64 = 0, efficiency: Float = 0, wastedPixels: UInt64 = 0) {
+        self.textureCount = textureCount
+        self.width = width
+        self.height = height
+        self.usedPixels = usedPixels
+        self.totalPixels = totalPixels
+        self.efficiency = efficiency
+        self.wastedPixels = wastedPixels
+    }
+
+    internal init(ffi: FfiAtlasStats) {
+        self.textureCount = ffi.texture_count
+        self.width = ffi.width
+        self.height = ffi.height
+        self.usedPixels = ffi.used_pixels
+        self.totalPixels = ffi.total_pixels
+        self.efficiency = ffi.efficiency
+        self.wastedPixels = ffi.wasted_pixels
+    }
+
+    internal func toFFI() -> FfiAtlasStats {
+        var ffi = FfiAtlasStats()
+        ffi.texture_count = textureCount
+        ffi.width = width
+        ffi.height = height
+        ffi.used_pixels = usedPixels
+        ffi.total_pixels = totalPixels
+        ffi.efficiency = efficiency
+        ffi.wasted_pixels = wastedPixels
+        return ffi
+    }
+
+}

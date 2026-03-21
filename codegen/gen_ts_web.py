@@ -425,15 +425,21 @@ def gen_web_wrapper():
         "totalTime": "total_time",
         "frameCount": "frame_count",
     }
+    # Properties not available in WASM — return a sensible default.
+    _WASM_STUB_PROPS = {
+        "interpolationAlpha": "0",
+    }
     for prop in tool["properties"]:
         pn = to_camel(prop["name"])
         pt = ts_type(prop["type"])
-        wasm_name = _WASM_PROP.get(pn, pn)
         emit_jsdoc(lines, prop.get("doc"))
-        # frame_count comes back as bigint from wasm, coerce to number
-        if pn == "frameCount":
+        if pn in _WASM_STUB_PROPS:
+            lines.append(f"  get {pn}(): {pt} {{ return {_WASM_STUB_PROPS[pn]}; }}")
+        elif pn == "frameCount":
+            wasm_name = _WASM_PROP.get(pn, pn)
             lines.append(f"  get {pn}(): {pt} {{ return Number(this.handle.{wasm_name}); }}")
         else:
+            wasm_name = _WASM_PROP.get(pn, pn)
             lines.append(f"  get {pn}(): {pt} {{ return this.handle.{wasm_name}; }}")
     lines.append("")
 
@@ -493,6 +499,24 @@ def gen_web_wrapper():
     lines.append("    this._startLoop(update);")
     lines.append("  }")
     lines.append("")
+    lines.append("  runWithFixedUpdate(fixedUpdate: (dt: number) => void, update: (dt: number) => void): void {")
+    lines.append("    if (this.running) return;")
+    lines.append("    if (this.preloadInFlight) {")
+    lines.append("      throw new Error('game.preload(...) must finish before game.runWithFixedUpdate() starts.');")
+    lines.append("    }")
+    lines.append("    this._updateFn = (dt: number) => {")
+    lines.append("      // Fixed timestep not directly available in WASM yet — fall through to update")
+    lines.append("      update(dt);")
+    lines.append("    };")
+    lines.append("    this.running = true; this.lastTs = performance.now();")
+    lines.append("    this.detachInput = attachInputHandlers(this.canvas, this.handle);")
+    lines.append("    this._startLoop(this._updateFn);")
+    lines.append("  }")
+    lines.append("")
+    lines.append("  setFixedTimestep(_stepSize: number): void { /* WASM stub */ }")
+    lines.append("  setMaxFixedSteps(_maxSteps: number): void { /* WASM stub */ }")
+    lines.append("")
+
     lines.append("  stop(): void;")
     lines.append("  stop(_entity: IEntity): number;")
     lines.append("  stop(entity?: IEntity): void | number {")

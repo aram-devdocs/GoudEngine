@@ -194,6 +194,78 @@ func GoudAnimationStop(context_id C.GoudContextId, entity_id uint64) int32 {
 	return int32(C.goud_animation_stop(context_id, C.uint64_t(entity_id)))
 }
 
+// GoudAtlasAddFromFile wraps goud_atlas_add_from_file.
+func GoudAtlasAddFromFile(context_id C.GoudContextId, atlas C.GoudAtlasHandle, key *C.char, path *C.char) bool {
+	if key == nil {
+		return false
+	}
+	if path == nil {
+		return false
+	}
+	return bool(C.goud_atlas_add_from_file(context_id, atlas, key, path))
+}
+
+// GoudAtlasAddPixels wraps goud_atlas_add_pixels.
+func GoudAtlasAddPixels(context_id C.GoudContextId, atlas C.GoudAtlasHandle, key *C.char, pixels *C.uint8_t, width uint32, height uint32) bool {
+	if key == nil {
+		return false
+	}
+	if pixels == nil {
+		return false
+	}
+	return bool(C.goud_atlas_add_pixels(context_id, atlas, key, pixels, C.uint32_t(width), C.uint32_t(height)))
+}
+
+// GoudAtlasAddTexture wraps goud_atlas_add_texture.
+func GoudAtlasAddTexture(_context_id C.GoudContextId, _atlas C.GoudAtlasHandle, _key *C.char, _texture C.GoudTextureHandle) bool {
+	if _key == nil {
+		return false
+	}
+	return bool(C.goud_atlas_add_texture(_context_id, _atlas, _key, _texture))
+}
+
+// GoudAtlasCreate wraps goud_atlas_create.
+func GoudAtlasCreate(context_id C.GoudContextId, category *C.char, max_width uint32, max_height uint32) C.GoudAtlasHandle {
+	if category == nil {
+		return 0
+	}
+	return C.goud_atlas_create(context_id, category, C.uint32_t(max_width), C.uint32_t(max_height))
+}
+
+// GoudAtlasDestroy wraps goud_atlas_destroy.
+func GoudAtlasDestroy(context_id C.GoudContextId, atlas C.GoudAtlasHandle) bool {
+	return bool(C.goud_atlas_destroy(context_id, atlas))
+}
+
+// GoudAtlasFinalize wraps goud_atlas_finalize.
+func GoudAtlasFinalize(context_id C.GoudContextId, atlas C.GoudAtlasHandle) C.GoudTextureHandle {
+	return C.goud_atlas_finalize(context_id, atlas)
+}
+
+// GoudAtlasGetEntry wraps goud_atlas_get_entry.
+func GoudAtlasGetEntry(context_id C.GoudContextId, atlas C.GoudAtlasHandle, key *C.char, out_entry *C.FfiAtlasEntry) bool {
+	if key == nil {
+		return false
+	}
+	if out_entry == nil {
+		return false
+	}
+	return bool(C.goud_atlas_get_entry(context_id, atlas, key, out_entry))
+}
+
+// GoudAtlasGetStats wraps goud_atlas_get_stats.
+func GoudAtlasGetStats(context_id C.GoudContextId, atlas C.GoudAtlasHandle, out_stats *C.FfiAtlasStats) bool {
+	if out_stats == nil {
+		return false
+	}
+	return bool(C.goud_atlas_get_stats(context_id, atlas, out_stats))
+}
+
+// GoudAtlasGetTexture wraps goud_atlas_get_texture.
+func GoudAtlasGetTexture(context_id C.GoudContextId, atlas C.GoudAtlasHandle) C.GoudTextureHandle {
+	return C.goud_atlas_get_texture(context_id, atlas)
+}
+
 // GoudAudioActivate wraps goud_audio_activate.
 func GoudAudioActivate(context_id C.GoudContextId) int32 {
 	return int32(C.goud_audio_activate(context_id))
@@ -779,6 +851,11 @@ func GoudEngineConfigSetDebugger(handle C.EngineConfigHandle, debugger *C.GoudDe
 	return bool(C.goud_engine_config_set_debugger(handle, debugger))
 }
 
+// GoudEngineConfigSetFixedTimestep wraps goud_engine_config_set_fixed_timestep.
+func GoudEngineConfigSetFixedTimestep(handle C.EngineConfigHandle, step float32) bool {
+	return bool(C.goud_engine_config_set_fixed_timestep(handle, C.float(step)))
+}
+
 // GoudEngineConfigSetFpsOverlay wraps goud_engine_config_set_fps_overlay.
 func GoudEngineConfigSetFpsOverlay(handle C.EngineConfigHandle, enabled bool) bool {
 	return bool(C.goud_engine_config_set_fps_overlay(handle, C._Bool(enabled)))
@@ -787,6 +864,11 @@ func GoudEngineConfigSetFpsOverlay(handle C.EngineConfigHandle, enabled bool) bo
 // GoudEngineConfigSetFullscreen wraps goud_engine_config_set_fullscreen.
 func GoudEngineConfigSetFullscreen(handle C.EngineConfigHandle, mode uint32) bool {
 	return bool(C.goud_engine_config_set_fullscreen(handle, C.uint32_t(mode)))
+}
+
+// GoudEngineConfigSetMaxFixedSteps wraps goud_engine_config_set_max_fixed_steps.
+func GoudEngineConfigSetMaxFixedSteps(handle C.EngineConfigHandle, max uint32) bool {
+	return bool(C.goud_engine_config_set_max_fixed_steps(handle, C.uint32_t(max)))
 }
 
 // GoudEngineConfigSetPhysicsBackend2d wraps goud_engine_config_set_physics_backend_2d.
@@ -905,6 +987,36 @@ func GoudErrorRecoveryHint(code C.GoudErrorCode, buf *C.uint8_t, buf_len uint) i
 		return -1
 	}
 	return int32(C.goud_error_recovery_hint(code, buf, C.size_t(buf_len)))
+}
+
+// GoudFixedTimestepAlpha wraps goud_fixed_timestep_alpha.
+func GoudFixedTimestepAlpha(context_id C.GoudContextId) float32 {
+	return float32(C.goud_fixed_timestep_alpha(context_id))
+}
+
+// GoudFixedTimestepBegin wraps goud_fixed_timestep_begin.
+func GoudFixedTimestepBegin(context_id C.GoudContextId) bool {
+	return bool(C.goud_fixed_timestep_begin(context_id))
+}
+
+// GoudFixedTimestepDt wraps goud_fixed_timestep_dt.
+func GoudFixedTimestepDt(context_id C.GoudContextId) float32 {
+	return float32(C.goud_fixed_timestep_dt(context_id))
+}
+
+// GoudFixedTimestepSet wraps goud_fixed_timestep_set.
+func GoudFixedTimestepSet(context_id C.GoudContextId, step float32) bool {
+	return bool(C.goud_fixed_timestep_set(context_id, C.float(step)))
+}
+
+// GoudFixedTimestepSetMaxSteps wraps goud_fixed_timestep_set_max_steps.
+func GoudFixedTimestepSetMaxSteps(context_id C.GoudContextId, max uint32) bool {
+	return bool(C.goud_fixed_timestep_set_max_steps(context_id, C.uint32_t(max)))
+}
+
+// GoudFixedTimestepStep wraps goud_fixed_timestep_step.
+func GoudFixedTimestepStep(context_id C.GoudContextId) bool {
+	return bool(C.goud_fixed_timestep_step(context_id))
 }
 
 // GoudFontDestroy wraps goud_font_destroy.
@@ -1862,6 +1974,14 @@ func GoudRendererDrawQuad(context_id C.GoudContextId, x float32, y float32, widt
 // GoudRendererDrawSprite wraps goud_renderer_draw_sprite.
 func GoudRendererDrawSprite(context_id C.GoudContextId, texture C.GoudTextureHandle, x float32, y float32, width float32, height float32, rotation float32, r float32, g float32, b float32, a float32) bool {
 	return bool(C.goud_renderer_draw_sprite(context_id, texture, C.float(x), C.float(y), C.float(width), C.float(height), C.float(rotation), C.float(r), C.float(g), C.float(b), C.float(a)))
+}
+
+// GoudRendererDrawSpriteBatch wraps goud_renderer_draw_sprite_batch.
+func GoudRendererDrawSpriteBatch(context_id C.GoudContextId, cmds *C.FfiSpriteCmd, count uint32) uint32 {
+	if cmds == nil {
+		return 0
+	}
+	return uint32(C.goud_renderer_draw_sprite_batch(context_id, cmds, C.uint32_t(count)))
 }
 
 // GoudRendererDrawSpriteRect wraps goud_renderer_draw_sprite_rect.
