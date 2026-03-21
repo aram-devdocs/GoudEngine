@@ -700,7 +700,12 @@ impl GoudGame {
         }
         let cstrings: Vec<std::ffi::CString> = cmds
             .iter()
-            .map(|c| std::ffi::CString::new(c.text.as_deref().unwrap_or("")).unwrap_or_default())
+            .map(|c| {
+                let text = c.text.as_deref().unwrap_or("");
+                // Replace embedded null bytes to avoid CString panics
+                let sanitized = text.replace('\0', "");
+                std::ffi::CString::new(sanitized).unwrap_or_default()
+            })
             .collect();
         let ffi_cmds: Vec<FfiTextCmd> = cmds
             .iter()

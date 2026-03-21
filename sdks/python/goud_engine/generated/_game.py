@@ -513,7 +513,6 @@ class GoudGame:
         """Draws a batch of text labels in a single pass for high performance"""
         if not cmds:
             return 0
-        import ctypes as _ct
         from .._ffi import FfiTextCmd
         n = len(cmds)
         ffi_arr = (FfiTextCmd * n)()

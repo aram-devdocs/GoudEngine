@@ -131,7 +131,6 @@ def emit_tool_method_body(
     elif mname == "draw_text_batch":
         lines.append("        if not cmds:")
         lines.append("            return 0")
-        lines.append("        import ctypes as _ct")
         lines.append("        from .._ffi import FfiTextCmd")
         lines.append("        n = len(cmds)")
         lines.append("        ffi_arr = (FfiTextCmd * n)()")

@@ -339,7 +339,7 @@ export interface IGoudGame {
   /** Draws a batch of sprites in a single GPU pass for high performance */
   drawSpriteBatch(cmds: ISpriteCmd[]): number;
   /** Draws a batch of text labels in a single pass for high performance */
-  drawTextBatch(cmds: TextCmd[]): number;
+  drawTextBatch(cmds: ITextCmd[]): number;
   /** Sets the rendering viewport */
   setViewport(x: number, y: number, width: number, height: number): void;
   /** Enables depth testing */

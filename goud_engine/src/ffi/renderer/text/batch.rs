@@ -9,7 +9,7 @@ use std::os::raw::c_char;
 
 use crate::core::debugger;
 use crate::core::error::{set_last_error, GoudError};
-use crate::ffi::context::GoudContextId;
+use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::window::with_window_state;
 use crate::rendering::text::TextLayoutConfig;
 
@@ -74,7 +74,11 @@ pub unsafe extern "C" fn goud_renderer_draw_text_batch(
     cmds: *const FfiTextCmd,
     count: u32,
 ) -> u32 {
-    // --- null / zero guards ---------------------------------------------------
+    // --- null / zero / context guards ------------------------------------------
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return 0;
+    }
     if cmds.is_null() {
         set_last_error(GoudError::InvalidState("cmds pointer is null".into()));
         return 0;
@@ -101,7 +105,6 @@ pub unsafe extern "C" fn goud_renderer_draw_text_batch(
         };
 
         if text_str.is_empty() {
-            drawn += 1;
             continue;
         }
 
@@ -170,10 +173,9 @@ mod tests {
 
     #[test]
     fn test_ffi_text_cmd_size_and_alignment() {
-        // u64 (8) + ptr (8) + 5×f32 (20) + u8+u8+u16 (4) + 6×f32 (24) = 64
-        // On 64-bit: pointer is 8 bytes, so layout is:
-        // font_handle: 8, text: 8, x/y/font_size: 12, alignment+direction+pad: 4,
-        // max_width+line_spacing: 8, r/g/b/a: 16 = 56
+        // Layout on 64-bit: font_handle(u64): 8, text(ptr): 8,
+        // x+y+font_size(3×f32): 12, alignment+direction+_pad0(u8+u8+u16): 4,
+        // max_width+line_spacing(2×f32): 8, r+g+b+a(4×f32): 16 = 56
         assert_eq!(
             std::mem::size_of::<FfiTextCmd>(),
             56,

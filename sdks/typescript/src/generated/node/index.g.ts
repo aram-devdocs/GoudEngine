@@ -638,8 +638,8 @@ export class GoudGame implements IGoudGame {
   }
 
   /** Draws a batch of text labels in a single pass for high performance */
-  drawTextBatch(cmds: TextCmd[]): number {
-    return (this.native as any).drawTextBatch(cmds);
+  drawTextBatch(cmds: ITextCmd[]): number {
+    return this.native.drawTextBatch(cmds);
   }
 
   /** Sets the rendering viewport */
