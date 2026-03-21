@@ -38,6 +38,9 @@ def _copy_java_carriers():
         # Skip test harness
         if java_file.name == "JniSmokeMain.java":
             continue
+        # Skip SpriteCmd.java — the Kotlin SDK has a Kotlin version in types/
+        if java_file.name == "SpriteCmd.java":
+            continue
         dst = JAVA_DST / java_file.name
         content = java_file.read_text()
         # In the SDK tree, SpriteCmd lives in com.goudengine.types (Kotlin).
