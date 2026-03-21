@@ -6,6 +6,8 @@ import math
 
 from test_bindings_common import (
     AnimationEventData,
+    AtlasEntry,
+    AtlasStats,
     AudioCapabilities,
     ColliderHandle,
     Color,
@@ -504,6 +506,18 @@ def test_generated_value_types_runtime_safe():
     assert event.node_id == 12 and event.event_kind == 3
     assert "UiStyle(" in repr(style)
     assert "UiEvent(" in repr(event)
+
+    atlas_entry = AtlasEntry(u_min=0.0, v_min=0.0, u_max=0.5, v_max=0.5, pixel_x=0, pixel_y=0, pixel_w=128, pixel_h=128)
+    assert atlas_entry.u_max == 0.5 and atlas_entry.pixel_w == 128
+    assert "AtlasEntry(" in repr(atlas_entry)
+    atlas_entry_default = AtlasEntry()
+    assert atlas_entry_default.u_min == 0.0 and atlas_entry_default.pixel_x == 0
+
+    atlas_stats = AtlasStats(texture_count=4, width=512, height=512, used_pixels=200000, total_pixels=262144, efficiency=0.76, wasted_pixels=62144)
+    assert atlas_stats.texture_count == 4 and atlas_stats.width == 512 and atlas_stats.efficiency == 0.76
+    assert "AtlasStats(" in repr(atlas_stats)
+    atlas_stats_default = AtlasStats()
+    assert atlas_stats_default.texture_count == 0 and atlas_stats_default.efficiency == 0.0
 
     print("  Generated value-type runtime-safe surface passed")
     return True

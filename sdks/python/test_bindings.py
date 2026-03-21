@@ -14,11 +14,13 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from test_bindings_common import _ERRORS_PATH, _PACKAGE_DIR, _load_module
 from test_bindings_generated import (
+    test_debugger_helpers,
     test_generated_audio_activate_maps_to_activate_ffi,
     test_generated_audio_wrapper_api_names,
     test_generated_debugger_wrapper_api_names,
     test_generated_game_runtime_with_fake_lib,
     test_generated_network_wrapper_api_names,
+    test_generated_new_api_names,
     test_generated_provider_capability_imports,
     test_generated_scene_wrapper_api_names,
     test_generated_ui_manager_wrapper_api_names,
@@ -217,6 +219,8 @@ def main():
         test_generated_context_entity_component_runtime_safe,
         test_generated_ui_manager_wrapper_api_names,
         test_generated_debugger_wrapper_api_names,
+        test_generated_new_api_names,
+        test_debugger_helpers,
         test_generated_ui_style_color_contract,
         test_generated_ui_style_string_contract,
         test_generated_game_runtime_with_fake_lib,

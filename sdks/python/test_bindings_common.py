@@ -343,5 +343,7 @@ NetworkPacket = _types_mod.NetworkPacket
 NetworkSimulationConfig = _types_mod.NetworkSimulationConfig
 UiStyle = _types_mod.UiStyle
 UiEvent = _types_mod.UiEvent
+AtlasEntry = _types_mod.AtlasEntry
+AtlasStats = _types_mod.AtlasStats
 Key = _keys_mod.Key
 MouseButton = _keys_mod.MouseButton

@@ -14,6 +14,8 @@ from test_bindings_common import (
     UiStyle,
     Vec2,
     _GENERATED_DIR,
+    _PACKAGE_DIR,
+    _load_module,
     _new_fake_generated_package,
 )
 
@@ -411,6 +413,80 @@ def test_generated_ui_style_string_contract():
     return True
 
 
+def test_generated_new_api_names():
+    """Validate API names for fixed timestep, text batch, atlas, spatial grid, and generic ECS query."""
+    print("Testing generated new API names (PRs #601-605)...")
+
+    game_src = (_GENERATED_DIR / "_game.py").read_text()
+    ffi_src = (_GENERATED_DIR / "_ffi.py").read_text()
+    types_src = (_GENERATED_DIR / "_types.py").read_text()
+
+    # Fixed timestep (PR #601)
+    assert "def interpolation_alpha(self) -> float:" in game_src, "missing interpolation_alpha property"
+    assert "def run_with_fixed_update(self, fixed_update, update):" in game_src, "missing run_with_fixed_update wrapper"
+    assert "goud_fixed_timestep_begin" in game_src, "run_with_fixed_update should call goud_fixed_timestep_begin"
+    assert "goud_fixed_timestep_step" in game_src, "run_with_fixed_update should call goud_fixed_timestep_step"
+    assert "goud_fixed_timestep_dt" in game_src, "run_with_fixed_update should call goud_fixed_timestep_dt"
+    assert "_lib.goud_fixed_timestep_begin.argtypes" in ffi_src, "missing goud_fixed_timestep_begin argtypes"
+    assert "_lib.goud_fixed_timestep_step.argtypes" in ffi_src, "missing goud_fixed_timestep_step argtypes"
+    assert "_lib.goud_fixed_timestep_alpha.argtypes" in ffi_src, "missing goud_fixed_timestep_alpha argtypes"
+    assert "_lib.goud_fixed_timestep_dt.argtypes" in ffi_src, "missing goud_fixed_timestep_dt argtypes"
+    assert "_lib.goud_fixed_timestep_set.argtypes" in ffi_src, "missing goud_fixed_timestep_set argtypes"
+
+    # Text batch (PR #604)
+    assert "def draw_text_batch(self, cmds):" in game_src, "missing draw_text_batch wrapper"
+    assert "goud_renderer_draw_text_batch" in game_src, "draw_text_batch should call goud_renderer_draw_text_batch"
+    assert "_lib.goud_renderer_draw_text_batch.argtypes" in ffi_src, "missing goud_renderer_draw_text_batch argtypes"
+    assert "class FfiTextCmd(ctypes.Structure):" in ffi_src, "missing FfiTextCmd struct in _ffi.py"
+
+    # Texture atlas (PR #602)
+    assert "_lib.goud_atlas_create.argtypes" in ffi_src, "missing goud_atlas_create argtypes"
+    assert "_lib.goud_atlas_add_from_file.argtypes" in ffi_src, "missing goud_atlas_add_from_file argtypes"
+    assert "_lib.goud_atlas_finalize.argtypes" in ffi_src, "missing goud_atlas_finalize argtypes"
+    assert "class FfiAtlasEntry(ctypes.Structure):" in ffi_src, "missing FfiAtlasEntry struct in _ffi.py"
+    assert "class AtlasEntry:" in types_src, "missing AtlasEntry in _types.py"
+    assert "class AtlasStats:" in types_src, "missing AtlasStats in _types.py"
+
+    # Spatial grid (PR #603)
+    assert "_lib.goud_spatial_grid_create.argtypes" in ffi_src, "missing goud_spatial_grid_create argtypes"
+    assert "_lib.goud_spatial_grid_destroy.argtypes" in ffi_src, "missing goud_spatial_grid_destroy argtypes"
+    assert "_lib.goud_spatial_grid_insert.argtypes" in ffi_src, "missing goud_spatial_grid_insert argtypes"
+
+    # Generic ECS query (PR #605)
+    assert "def component_count(self, type_id_hash):" in game_src, "missing component_count wrapper"
+    assert "def component_get_entities(self, type_id_hash, out_entities, max_count):" in game_src, "missing component_get_entities wrapper"
+    assert "def component_get_all(self, type_id_hash, out_entities, out_data_ptrs, max_count):" in game_src, "missing component_get_all wrapper"
+    assert "_lib.goud_component_count.argtypes" in ffi_src, "missing goud_component_count argtypes"
+    assert "_lib.goud_component_get_entities.argtypes" in ffi_src, "missing goud_component_get_entities argtypes"
+    assert "_lib.goud_component_get_all.argtypes" in ffi_src, "missing goud_component_get_all argtypes"
+
+    print("  New API name tests passed")
+    return True
+
+
+def test_debugger_helpers():
+    """Test the debugger JSON helper functions without requiring the native library."""
+    print("Testing debugger helpers...")
+
+    debugger_mod = _load_module("debugger", _PACKAGE_DIR / "debugger.py")
+
+    class _FakeSource:
+        def get_debugger_snapshot_json(self):
+            return '{"entities": 42}'
+
+        def get_debugger_manifest_json(self):
+            return '{"routes": ["a", "b"]}'
+
+    source = _FakeSource()
+    snapshot = debugger_mod.parse_debugger_snapshot(source)
+    assert snapshot == {"entities": 42}, f"Expected parsed snapshot, got {snapshot}"
+    manifest = debugger_mod.parse_debugger_manifest(source)
+    assert manifest == {"routes": ["a", "b"]}, f"Expected parsed manifest, got {manifest}"
+
+    print("  Debugger helper tests passed")
+    return True
+
+
 def test_generated_game_runtime_with_fake_lib():
     """Execute generated _game.py wrappers with an isolated fake FFI backend."""
     print("Testing generated _game.py runtime wrappers with fake lib...")
@@ -693,6 +769,10 @@ def test_generated_game_runtime_with_fake_lib():
     _ = game.component_add_batch((ctypes.c_uint64 * 1)(ent.to_bits()), 1, ctypes.POINTER(ctypes.c_uint8)(), 0)
     _ = game.component_remove_batch((ctypes.c_uint64 * 1)(ent.to_bits()), 1)
     _ = game.component_has_batch((ctypes.c_uint64 * 1)(ent.to_bits()), 1, (ctypes.c_uint8 * 1)())
+    _ = game.component_count(1)
+    _ = game.component_get_entities(1, (ctypes.c_uint64 * 4)(), 4)
+    _ = game.component_get_all(1, (ctypes.c_uint64 * 4)(), (ctypes.POINTER(ctypes.c_uint8) * 4)(), 4)
+    assert game.interpolation_alpha == 0.0
     game.end_frame()
     game.close()
     game.destroy()
@@ -739,6 +819,9 @@ def test_generated_game_runtime_with_fake_lib():
     _ = ctx.component_add_batch((ctypes.c_uint64 * 1)(e2.to_bits()), 1, ctypes.POINTER(ctypes.c_uint8)(), 0)
     _ = ctx.component_remove_batch((ctypes.c_uint64 * 1)(e2.to_bits()), 1)
     _ = ctx.component_has_batch((ctypes.c_uint64 * 1)(e2.to_bits()), 1, (ctypes.c_uint8 * 1)())
+    _ = ctx.component_count(1)
+    _ = ctx.component_get_entities(1, (ctypes.c_uint64 * 4)(), 4)
+    _ = ctx.component_get_all(1, (ctypes.c_uint64 * 4)(), (ctypes.POINTER(ctypes.c_uint8) * 4)(), 4)
     sid2 = ctx.scene_create("ctx-scene")
     _ = ctx.scene_destroy(sid2)
     _ = ctx.scene_get_by_name("ctx-scene")
