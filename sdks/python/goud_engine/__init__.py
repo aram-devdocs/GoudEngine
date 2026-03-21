@@ -25,6 +25,19 @@ from .generated._errors import (  # noqa: F401
     RecoveryClass,
 )
 
+def component_type_hash(type_name: str) -> int:
+    """Compute an FNV-1a 64-bit hash for a component type name.
+
+    The result matches the Rust and C# codegen implementations, so it can
+    be passed directly to ``component_register_type`` and related FFI calls.
+    """
+    h = 0xCBF29CE484222325
+    for b in type_name.encode("utf-8"):
+        h ^= b
+        h = (h * 0x100000001B3) & 0xFFFFFFFFFFFFFFFF
+    return h
+
+
 __all__ = list(_generated_all) + [
     "NetworkManager",
     "NetworkEndpoint",
@@ -45,4 +58,5 @@ __all__ = list(_generated_all) + [
     "GoudProviderError",
     "GoudInternalError",
     "RecoveryClass",
+    "component_type_hash",
 ]

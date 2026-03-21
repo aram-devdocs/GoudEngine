@@ -23,7 +23,10 @@ use super::storage::{context_key, get_context_storage_map};
 ///
 /// # Returns
 ///
-/// The entity count, or 0 if the context/type is invalid or has no storage.
+/// The entity count, or 0 if the context/type is invalid, unregistered, or has
+/// no storage.  Callers that need to distinguish "empty" from "error" should
+/// check `goud_get_last_error()` — an error is set for invalid contexts and
+/// unregistered types, but not for legitimately empty queries.
 #[no_mangle]
 pub extern "C" fn goud_component_count(context_id: GoudContextId, type_id_hash: u64) -> u32 {
     // Validate context

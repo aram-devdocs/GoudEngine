@@ -182,22 +182,28 @@ namespace GoudEngine
 
             internal unsafe Enumerator(GoudGame game, ulong typeHash)
             {
-                uint count = game.ComponentCount(typeHash);
-                _count = (int)count;
                 _index = -1;
 
-                if (count == 0)
+                uint capacity = game.ComponentCount(typeHash);
+                if (capacity == 0)
                 {
+                    _count = 0;
                     _entityBuf = IntPtr.Zero;
                     _dataPtrBuf = IntPtr.Zero;
                     return;
                 }
 
                 // Allocate native buffers for entity IDs and data pointers.
-                _entityBuf = Marshal.AllocHGlobal((int)(count * sizeof(ulong)));
-                _dataPtrBuf = Marshal.AllocHGlobal((int)(count * sizeof(IntPtr)));
+                // Use checked arithmetic to avoid silent overflow on large counts.
+                checked
+                {
+                    _entityBuf = Marshal.AllocHGlobal((int)(capacity * (uint)sizeof(ulong)));
+                    _dataPtrBuf = Marshal.AllocHGlobal((int)(capacity * (uint)sizeof(IntPtr)));
+                }
 
-                game.ComponentGetAll(typeHash, _entityBuf, _dataPtrBuf, count);
+                // Use the actual count returned by GetAll (not the earlier capacity)
+                // to avoid TOCTOU issues if entities were added/removed between calls.
+                _count = (int)game.ComponentGetAll(typeHash, _entityBuf, _dataPtrBuf, capacity);
             }
 
             /// <summary>Advances to the next entity.</summary>
