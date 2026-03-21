@@ -45,6 +45,7 @@ IFACE_TYPES = {
     "PhysicsCollisionEvent2D": "IPhysicsCollisionEvent2D",
     "Entity[]": "IEntity[]",
     "SpriteCmd[]": "ISpriteCmd[]",
+    "TextCmd[]": "ITextCmd[]",
     "RenderCapabilities": "IRenderCapabilities",
     "PhysicsCapabilities": "IPhysicsCapabilities",
     "AudioCapabilities": "IAudioCapabilities",

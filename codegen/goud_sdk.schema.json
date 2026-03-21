@@ -5380,6 +5380,17 @@
           "returns": "u32"
         },
         {
+          "name": "drawTextBatch",
+          "doc": "Draws a batch of text labels in a single pass for high performance",
+          "params": [
+            {
+              "name": "cmds",
+              "type": "TextCmd[]"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
           "name": "setViewport",
           "doc": "Sets the rendering viewport",
           "params": [
@@ -11421,6 +11432,9 @@
         },
         "drawSpriteBatch": {
           "ffi": "goud_renderer_draw_sprite_batch"
+        },
+        "drawTextBatch": {
+          "ffi": "goud_renderer_draw_text_batch"
         },
         "setViewport": {
           "ffi": "goud_renderer_set_viewport"
