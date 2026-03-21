@@ -2179,6 +2179,9 @@ def rust_source(methods: list[GeneratedMethod]) -> str:
     lines.extend(build_local_ffi_structs())
     lines.extend(build_type_helpers())
     for method in methods:
+        # Skip methods with callback parameters — JNI cannot express them.
+        if any(p["type"].startswith("callback") for p in method.params):
+            continue
         lines.extend(rust_method_source(method))
     return "\n".join(lines)
 
