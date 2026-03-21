@@ -633,7 +633,7 @@ export class GoudGame implements IGoudGame {
   }
 
   /** Draws a batch of sprites in a single GPU pass for high performance */
-  drawSpriteBatch(cmds: SpriteCmd[]): number {
+  drawSpriteBatch(cmds: ISpriteCmd[]): number {
     return this.native.drawSpriteBatch(cmds);
   }
 

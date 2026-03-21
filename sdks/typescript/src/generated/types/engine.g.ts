@@ -335,7 +335,7 @@ export interface IGoudGame {
   /** Draws a sprite with source rectangle for sprite sheets */
   drawSpriteRect(texture: number, x: number, y: number, width: number, height: number, rotation: number, srcX: number, srcY: number, srcW: number, srcH: number, color?: IColor, srcMode?: number): boolean;
   /** Draws a batch of sprites in a single GPU pass for high performance */
-  drawSpriteBatch(cmds: SpriteCmd[]): number;
+  drawSpriteBatch(cmds: ISpriteCmd[]): number;
   /** Sets the rendering viewport */
   setViewport(x: number, y: number, width: number, height: number): void;
   /** Enables depth testing */
