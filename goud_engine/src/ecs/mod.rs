@@ -79,6 +79,7 @@ pub mod query;
 pub mod resource;
 pub mod schedule;
 pub mod sparse_set;
+pub mod spatial_grid;
 pub mod storage;
 pub mod system;
 pub mod systems;
@@ -105,6 +106,7 @@ pub use schedule::{
     StagePosition, SystemStage,
 };
 pub use sparse_set::{SparseSet, SparseSetIter, SparseSetIterMut};
+pub use spatial_grid::SpatialGrid;
 pub use storage::{AnyComponentStorage, ComponentStorage};
 pub use systems::TransformPropagationSystem;
 pub use world::{EntityWorldMut, World};

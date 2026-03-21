@@ -131,6 +131,10 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/audio/playback.rs",
     "src/ffi/audio/controls.rs",
     "src/ffi/audio/spatial.rs",
+    // spatial_grid module
+    "src/ffi/spatial_grid/lifecycle.rs",
+    "src/ffi/spatial_grid/operations.rs",
+    "src/ffi/spatial_grid/queries.rs",
     // ui module
     "src/ffi/ui/manager.rs",
     "src/ffi/ui/node.rs",

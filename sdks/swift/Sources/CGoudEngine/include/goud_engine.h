@@ -116,6 +116,11 @@ extern "C" {
 #define GOUD_INVALID_SKINNED_MESH UINT32_MAX
 
 /**
+ * Sentinel value indicating an invalid or failed spatial grid handle.
+ */
+#define GOUD_INVALID_SPATIAL_GRID_HANDLE UINT32_MAX
+
+/**
  * Sentinel `u64` returned when a node operation fails or no node exists.
  */
 #define INVALID_NODE_U64 UINT64_MAX
@@ -4183,6 +4188,51 @@ int32_t goud_rpc_process_incoming(int64_t handle, uint64_t peer_id, const uint8_
  * Drains outbound RPC messages and copies the next one into the caller's buffer.
  */
 int32_t goud_rpc_drain_one(int64_t handle, uint8_t *out_buf, int32_t buf_len, uint64_t *out_peer_id);
+
+/**
+ * Creates a new spatial grid with the specified cell size.
+ */
+uint32_t goud_spatial_grid_create(float cell_size);
+
+/**
+ * Creates a new spatial grid with pre-allocated capacity.
+ */
+uint32_t goud_spatial_grid_create_with_capacity(float cell_size, uint32_t capacity);
+
+/**
+ * Destroys a spatial grid and frees its resources.
+ */
+int32_t goud_spatial_grid_destroy(uint32_t handle);
+
+/**
+ * Clears all entities from a spatial grid without destroying it.
+ */
+int32_t goud_spatial_grid_clear(uint32_t handle);
+
+/**
+ * Inserts an entity at a position into the spatial grid.
+ */
+int32_t goud_spatial_grid_insert(uint32_t handle, uint64_t entity_id, float x, float y);
+
+/**
+ * Removes an entity from the spatial grid.
+ */
+int32_t goud_spatial_grid_remove(uint32_t handle, uint64_t entity_id);
+
+/**
+ * Updates an entity's position in the spatial grid.
+ */
+int32_t goud_spatial_grid_update(uint32_t handle, uint64_t entity_id, float x, float y);
+
+/**
+ * Queries for entities within a radius of a center point.
+ */
+int32_t goud_spatial_grid_query_radius(uint32_t handle, float center_x, float center_y, float radius, uint64_t *out_entities, uint32_t capacity);
+
+/**
+ * Returns the number of entities in the spatial grid.
+ */
+int32_t goud_spatial_grid_entity_count(uint32_t handle);
 
 #ifdef __cplusplus
 } /* extern "C" */

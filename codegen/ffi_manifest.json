@@ -3532,6 +3532,91 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_spatial_grid_clear": {
+      "source_file": "ffi/spatial_grid/lifecycle.rs",
+      "params": [
+        "handle: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_spatial_grid_create": {
+      "source_file": "ffi/spatial_grid/lifecycle.rs",
+      "params": [
+        "cell_size: f32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_spatial_grid_create_with_capacity": {
+      "source_file": "ffi/spatial_grid/lifecycle.rs",
+      "params": [
+        "cell_size: f32",
+        "capacity: u32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_spatial_grid_destroy": {
+      "source_file": "ffi/spatial_grid/lifecycle.rs",
+      "params": [
+        "handle: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_spatial_grid_entity_count": {
+      "source_file": "ffi/spatial_grid/queries.rs",
+      "params": [
+        "handle: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_spatial_grid_insert": {
+      "source_file": "ffi/spatial_grid/operations.rs",
+      "params": [
+        "handle: u32",
+        "entity_id: u64",
+        "x: f32",
+        "y: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_spatial_grid_query_radius": {
+      "source_file": "ffi/spatial_grid/queries.rs",
+      "params": [
+        "handle: u32",
+        "center_x: f32",
+        "center_y: f32",
+        "radius: f32",
+        "out_entities: *mut u64",
+        "capacity: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_spatial_grid_remove": {
+      "source_file": "ffi/spatial_grid/operations.rs",
+      "params": [
+        "handle: u32",
+        "entity_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_spatial_grid_update": {
+      "source_file": "ffi/spatial_grid/operations.rs",
+      "params": [
+        "handle: u32",
+        "entity_id: u64",
+        "x: f32",
+        "y: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_sprite_animator_from_clip": {
       "source_file": "ffi/component_sprite_animator/factory.rs",
       "params": [
@@ -5031,5 +5116,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 504
+  "total_count": 513
 }
