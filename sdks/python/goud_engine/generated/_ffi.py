@@ -599,7 +599,7 @@ def _setup():
     # debug
     _lib.goud_debug_get_fps_stats.argtypes = [GoudContextId, ctypes.POINTER(FpsStats)]
     _lib.goud_debug_get_fps_stats.restype = ctypes.c_int32
-    _lib.goud_render_get_metrics.argtypes = [GoudContextId, ctypes.POINTER(RenderMetrics)]
+    _lib.goud_render_get_metrics.argtypes = [GoudContextId, ctypes.POINTER(FfiRenderMetrics)]
     _lib.goud_render_get_metrics.restype = ctypes.c_int32
     _lib.goud_debug_set_fps_overlay_enabled.argtypes = [GoudContextId, ctypes.c_bool]
     _lib.goud_debug_set_fps_overlay_enabled.restype = ctypes.c_int32
@@ -1578,7 +1578,7 @@ def _setup():
     _lib.goud_frame_arena_stats.restype = ctypes.c_int32
 
     # render_metrics
-    _lib.goud_renderer_get_frame_metrics.argtypes = [GoudContextId, ctypes.POINTER(RenderMetrics)]
+    _lib.goud_renderer_get_frame_metrics.argtypes = [GoudContextId, ctypes.POINTER(FfiRenderMetrics)]
     _lib.goud_renderer_get_frame_metrics.restype = ctypes.c_int32
 
 _setup()

@@ -14,7 +14,7 @@ def gen_game() -> None:
         "from . import _ffi as _ffi_module",
         "from ._ffi import (get_lib, GoudContextId, FfiVec2, FfiTransform2D, FfiSprite, FfiColor, FfiUiStyle, FfiUiEvent,",
         "    FfiNetworkStats, GoudRenderStats, GoudContact,",
-        "    GoudMemoryCategoryStats, GoudMemorySummary)",
+        "    GoudMemoryCategoryStats, GoudMemorySummary, FfiRenderMetrics)",
         "from ._types import (Entity, Vec2, Color, Transform2D, Sprite, RenderStats, UiStyle, UiEvent,",
         "    RenderCapabilities, PhysicsCapabilities, AudioCapabilities, InputCapabilities, NetworkStats,",
         "    NetworkSimulationConfig, NetworkConnectResult, NetworkPacket, NetworkCapabilities,",

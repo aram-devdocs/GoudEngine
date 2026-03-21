@@ -176,6 +176,8 @@ def gen_game() -> None:
         "physicsCollisionEventsCount", "physicsCollisionEventsRead",
         # Callback types not supported in Swift codegen yet
         "run", "runWithFixedUpdate",
+        # Batch array types not supported in Swift codegen yet
+        "drawSpriteBatch", "drawTextBatch",
     }
 
     for m in methods:

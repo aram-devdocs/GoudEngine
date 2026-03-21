@@ -338,22 +338,6 @@ public final class GoudGame {
         return goud_renderer_draw_sprite_rect(_ctx, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, srcMode, color.r, color.g, color.b, color.a)
     }
 
-    /// Draws a batch of sprites in a single GPU pass for high performance
-    public func drawSpriteBatch(cmds: [SpriteCmd]) -> UInt32 {
-        cmds.withUnsafeBufferPointer { cmdsBuf in
-            let cmdsBasePtr = cmdsBuf.baseAddress!
-            return goud_renderer_draw_sprite_batch(_ctx, cmdsBasePtr, UInt32(cmds.count))
-        }
-    }
-
-    /// Draws a batch of text labels in a single pass for high performance
-    public func drawTextBatch(cmds: [TextCmd]) -> UInt32 {
-        cmds.withUnsafeBufferPointer { cmdsBuf in
-            let cmdsBasePtr = cmdsBuf.baseAddress!
-            return goud_renderer_draw_text_batch(_ctx, cmdsBasePtr, UInt32(cmds.count))
-        }
-    }
-
     /// Sets the rendering viewport
     public func setViewport(x: Int32, y: Int32, width: UInt32, height: UInt32) {
         let _ = goud_renderer_set_viewport(_ctx, x, y, width, height)
