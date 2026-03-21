@@ -243,6 +243,31 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct FfiAtlasEntry
+    {
+        public float UMin;
+        public float VMin;
+        public float UMax;
+        public float VMax;
+        public uint PixelX;
+        public uint PixelY;
+        public uint PixelW;
+        public uint PixelH;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiAtlasStats
+    {
+        public uint TextureCount;
+        public uint Width;
+        public uint Height;
+        public ulong UsedPixels;
+        public ulong TotalPixels;
+        public float Efficiency;
+        public ulong WastedPixels;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct FfiMat3x3
     {
         public fixed float M[9];
@@ -506,6 +531,39 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
         public static extern bool goud_renderer_get_stats(GoudContextId context_id, ref GoudRenderStats out_stats);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ulong goud_atlas_create(GoudContextId context_id, string category, uint max_width, uint max_height);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_atlas_add_from_file(GoudContextId context_id, ulong atlas, string key, string path);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_atlas_add_texture(GoudContextId context_id, ulong atlas, string key, ulong texture);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_atlas_add_pixels(GoudContextId context_id, ulong atlas, string key, IntPtr pixels, uint width, uint height);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ulong goud_atlas_finalize(GoudContextId context_id, ulong atlas);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_atlas_get_entry(GoudContextId context_id, ulong atlas, string key, ref FfiAtlasEntry out_entry);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_atlas_get_stats(GoudContextId context_id, ulong atlas, ref FfiAtlasStats out_stats);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ulong goud_atlas_get_texture(GoudContextId context_id, ulong atlas);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_atlas_destroy(GoudContextId context_id, ulong atlas);
 
         // debug
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
