@@ -111,13 +111,15 @@ pub unsafe extern "C" fn goud_engine_create(handle: EngineConfigHandle) -> GoudC
         return GOUD_INVALID_CONTEXT_ID;
     }
 
-    let window_state = WindowState::new(
+    let mut window_state = WindowState::new(
         native_runtime.platform,
         native_runtime.render_backend,
         game_config.physics_debug.enabled,
         debugger::route_for_context(context_id),
         None,
     );
+    window_state.fixed_timestep = game_config.fixed_timestep.max(0.0);
+    window_state.max_fixed_steps = game_config.max_fixed_steps_per_frame.max(1);
 
     if let Err(e) = set_window_state(context_id, window_state) {
         if let Ok(mut registry) = get_context_registry().lock() {

@@ -114,3 +114,124 @@ fn test_game_context_quit() {
     ctx.quit();
     assert!(!ctx.is_running());
 }
+
+// =========================================================================
+// Fixed Timestep Tests
+// =========================================================================
+
+#[test]
+fn test_fixed_timestep_disabled_by_default() {
+    let config = GameConfig::default();
+    assert_eq!(config.fixed_timestep, 0.0);
+    assert_eq!(config.max_fixed_steps_per_frame, 8);
+
+    let ctx = GameContext::new((800, 600));
+    assert!(!ctx.is_fixed_timestep_enabled());
+    assert_eq!(ctx.fixed_timestep(), 0.0);
+}
+
+#[test]
+fn test_fixed_timestep_config_builder() {
+    let config = GameConfig::default()
+        .with_fixed_timestep(1.0 / 60.0)
+        .with_max_fixed_steps_per_frame(4);
+
+    assert!((config.fixed_timestep - 1.0 / 60.0).abs() < f32::EPSILON);
+    assert_eq!(config.max_fixed_steps_per_frame, 4);
+}
+
+#[test]
+fn test_fixed_timestep_config_clamps_negative() {
+    let config = GameConfig::default().with_fixed_timestep(-1.0);
+    assert_eq!(config.fixed_timestep, 0.0);
+
+    let config = GameConfig::default().with_max_fixed_steps_per_frame(0);
+    assert_eq!(config.max_fixed_steps_per_frame, 1);
+}
+
+#[test]
+fn test_accumulator_single_step() {
+    let mut ctx = GameContext::new((800, 600));
+    ctx.configure_fixed_timestep(1.0 / 60.0, 8);
+
+    // Simulate a frame of ~33ms (30 FPS) — should allow 1 step at 1/60
+    ctx.begin_frame_accumulator(0.033);
+
+    assert!(ctx.consume_fixed_step());
+    // After one step (0.01667s consumed), remainder ~0.01633
+    assert!(!ctx.consume_fixed_step());
+
+    ctx.finish_accumulator();
+    // alpha = remainder / step ≈ 0.01633 / 0.01667 ≈ 0.98
+    assert!(ctx.interpolation_alpha() > 0.0);
+    assert!(ctx.interpolation_alpha() < 1.0);
+}
+
+#[test]
+fn test_accumulator_multiple_steps() {
+    let mut ctx = GameContext::new((800, 600));
+    let step = 1.0 / 60.0;
+    ctx.configure_fixed_timestep(step, 8);
+
+    // 50ms frame at 60Hz (step ≈ 16.67ms): floor(50/16.67) = 2 steps
+    // (floating point: 3*step > 0.05 due to rounding)
+    ctx.begin_frame_accumulator(0.05);
+
+    let mut count = 0;
+    while ctx.consume_fixed_step() {
+        count += 1;
+    }
+    assert_eq!(count, 2);
+
+    ctx.finish_accumulator();
+    assert!(ctx.interpolation_alpha() >= 0.0);
+    assert!(ctx.interpolation_alpha() < 1.0);
+}
+
+#[test]
+fn test_accumulator_max_steps_cap() {
+    let mut ctx = GameContext::new((800, 600));
+    let step = 1.0 / 60.0;
+    ctx.configure_fixed_timestep(step, 8);
+
+    // 1 second spike — would be 60 steps uncapped
+    ctx.begin_frame_accumulator(1.0);
+
+    let mut count = 0;
+    while ctx.consume_fixed_step() {
+        count += 1;
+    }
+    assert_eq!(count, 8);
+}
+
+#[test]
+fn test_accumulator_disabled_returns_false() {
+    let mut ctx = GameContext::new((800, 600));
+    // fixed_timestep stays 0.0 (disabled)
+    ctx.begin_frame_accumulator(0.016);
+    assert!(!ctx.consume_fixed_step());
+}
+
+#[test]
+fn test_accumulator_carries_remainder() {
+    let mut ctx = GameContext::new((800, 600));
+    let step = 1.0 / 60.0;
+    ctx.configure_fixed_timestep(step, 8);
+
+    // Frame 1: slightly less than one step
+    ctx.begin_frame_accumulator(0.015);
+    assert!(!ctx.consume_fixed_step());
+
+    // Frame 2: another partial — now total accumulated ~0.030 > 1/60
+    ctx.begin_frame_accumulator(0.015);
+    assert!(ctx.consume_fixed_step());
+    assert!(!ctx.consume_fixed_step());
+}
+
+#[test]
+fn test_interpolation_alpha_zero_when_disabled() {
+    let mut ctx = GameContext::new((800, 600));
+    ctx.begin_frame_accumulator(0.016);
+    ctx.finish_accumulator();
+    assert_eq!(ctx.interpolation_alpha(), 0.0);
+}

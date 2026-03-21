@@ -97,6 +97,15 @@ pub struct GameConfig {
 
     /// Viewport aspect ratio lock.
     pub aspect_ratio_lock: AspectRatioLock,
+
+    /// Fixed timestep size in seconds (0.0 = disabled).
+    ///
+    /// When enabled, the engine runs simulation updates at a fixed rate
+    /// independent of the rendering frame rate.
+    pub fixed_timestep: f32,
+
+    /// Maximum fixed steps per frame to prevent spiral of death.
+    pub max_fixed_steps_per_frame: u32,
 }
 
 impl Default for GameConfig {
@@ -121,6 +130,8 @@ impl Default for GameConfig {
             debugger: DebuggerConfig::default(),
             lua_hot_reload: cfg!(debug_assertions),
             aspect_ratio_lock: AspectRatioLock::Free,
+            fixed_timestep: 0.0,
+            max_fixed_steps_per_frame: 8,
         }
     }
 }
@@ -253,6 +264,23 @@ impl GameConfig {
         self.lua_hot_reload = enabled;
         self
     }
+
+    /// Sets the fixed timestep size in seconds (e.g. `1.0 / 60.0` for 60 Hz).
+    ///
+    /// Pass `0.0` to disable fixed timestep mode.
+    pub fn with_fixed_timestep(mut self, step: f32) -> Self {
+        self.fixed_timestep = step.max(0.0);
+        self
+    }
+
+    /// Sets the maximum number of fixed steps per frame.
+    ///
+    /// Caps the accumulator to prevent a spiral of death when the frame
+    /// rate drops significantly below the fixed update rate.
+    pub fn with_max_fixed_steps_per_frame(mut self, max: u32) -> Self {
+        self.max_fixed_steps_per_frame = max.max(1);
+        self
+    }
 }
 
 fn sanitize_msaa_samples(samples: u32) -> u32 {
@@ -301,6 +329,21 @@ pub struct GameContext {
 
     /// Whether the game should continue running.
     running: bool,
+
+    /// Fixed timestep size in seconds (0.0 = disabled).
+    fixed_timestep: f32,
+
+    /// Accumulated time waiting to be consumed by fixed steps.
+    accumulator: f32,
+
+    /// Maximum fixed steps allowed per frame.
+    max_fixed_steps: u32,
+
+    /// Number of fixed steps consumed this frame.
+    fixed_steps_this_frame: u32,
+
+    /// Interpolation alpha for render smoothing (0.0 to 1.0).
+    interpolation_alpha: f32,
 }
 
 impl GameContext {
@@ -313,6 +356,11 @@ impl GameContext {
             frame_count: 0,
             window_size,
             running: true,
+            fixed_timestep: 0.0,
+            accumulator: 0.0,
+            max_fixed_steps: 8,
+            fixed_steps_this_frame: 0,
+            interpolation_alpha: 0.0,
         }
     }
 
@@ -377,6 +425,70 @@ impl GameContext {
     #[inline]
     pub fn quit(&mut self) {
         self.running = false;
+    }
+
+    /// Returns the configured fixed timestep size in seconds.
+    #[inline]
+    pub fn fixed_timestep(&self) -> f32 {
+        self.fixed_timestep
+    }
+
+    /// Returns the interpolation alpha for render smoothing between fixed steps.
+    ///
+    /// After all fixed steps have been consumed for a frame, this value
+    /// represents how far between the last and next fixed step the current
+    /// frame sits. Use it to interpolate visual positions for smooth rendering.
+    #[inline]
+    pub fn interpolation_alpha(&self) -> f32 {
+        self.interpolation_alpha
+    }
+
+    /// Returns `true` if fixed timestep mode is enabled.
+    #[inline]
+    pub fn is_fixed_timestep_enabled(&self) -> bool {
+        self.fixed_timestep > 0.0
+    }
+
+    /// Configures the fixed timestep parameters. Called once at init.
+    pub(crate) fn configure_fixed_timestep(&mut self, step: f32, max_steps: u32) {
+        self.fixed_timestep = step.max(0.0);
+        self.max_fixed_steps = max_steps.max(1);
+    }
+
+    /// Begins the per-frame accumulator cycle. Call once per frame before
+    /// consuming fixed steps.
+    pub(crate) fn begin_frame_accumulator(&mut self, raw_delta: f32) {
+        self.accumulator += raw_delta;
+        self.fixed_steps_this_frame = 0;
+    }
+
+    /// Attempts to consume one fixed step from the accumulator.
+    ///
+    /// Returns `true` if a step was consumed (caller should run the fixed
+    /// update). Returns `false` when the accumulator is exhausted or the
+    /// per-frame cap has been reached.
+    pub(crate) fn consume_fixed_step(&mut self) -> bool {
+        if self.fixed_timestep <= 0.0 {
+            return false;
+        }
+        if self.accumulator >= self.fixed_timestep
+            && self.fixed_steps_this_frame < self.max_fixed_steps
+        {
+            self.accumulator -= self.fixed_timestep;
+            self.fixed_steps_this_frame += 1;
+            return true;
+        }
+        false
+    }
+
+    /// Finalizes the accumulator for this frame and computes the
+    /// interpolation alpha.
+    pub(crate) fn finish_accumulator(&mut self) {
+        if self.fixed_timestep > 0.0 {
+            self.interpolation_alpha = self.accumulator / self.fixed_timestep;
+        } else {
+            self.interpolation_alpha = 0.0;
+        }
     }
 
     /// Updates the context for a new frame.

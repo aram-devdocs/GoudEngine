@@ -319,6 +319,14 @@ namespace GoudEngine
         public static extern bool goud_engine_config_set_aspect_ratio_lock(IntPtr handle, uint @lock);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_fixed_timestep(IntPtr handle, float step);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_engine_config_set_max_fixed_steps(IntPtr handle, uint max);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern GoudContextId goud_engine_create(IntPtr handle);
 
         // context
@@ -431,6 +439,28 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_window_set_aspect_ratio_lock(GoudContextId context_id, uint @lock);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_fixed_timestep_begin(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_fixed_timestep_step(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_fixed_timestep_alpha(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_fixed_timestep_dt(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_fixed_timestep_set(GoudContextId context_id, float step);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_fixed_timestep_set_max_steps(GoudContextId context_id, uint max);
 
         // renderer
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

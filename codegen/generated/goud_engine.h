@@ -3875,6 +3875,16 @@ bool goud_engine_config_set_window_backend(EngineConfigHandle handle, uint32_t b
  */
 bool goud_engine_config_set_debugger(EngineConfigHandle handle, const struct GoudDebuggerConfig *debugger);
 
+/**
+ * Sets the fixed timestep step size in seconds on an `EngineConfig`.
+ */
+bool goud_engine_config_set_fixed_timestep(EngineConfigHandle handle, float step);
+
+/**
+ * Sets the maximum fixed steps per frame on an `EngineConfig`.
+ */
+bool goud_engine_config_set_max_fixed_steps(EngineConfigHandle handle, uint32_t max);
+
 /* === Error === */
 
 /**
@@ -4183,6 +4193,36 @@ int32_t goud_rpc_process_incoming(int64_t handle, uint64_t peer_id, const uint8_
  * Drains outbound RPC messages and copies the next one into the caller's buffer.
  */
 int32_t goud_rpc_drain_one(int64_t handle, uint8_t *out_buf, int32_t buf_len, uint64_t *out_peer_id);
+
+/**
+ * Begins the fixed timestep accumulator for this frame.
+ */
+bool goud_fixed_timestep_begin(struct GoudContextId context_id);
+
+/**
+ * Consumes one fixed step from the accumulator.
+ */
+bool goud_fixed_timestep_step(struct GoudContextId context_id);
+
+/**
+ * Returns the interpolation alpha for render smoothing.
+ */
+float goud_fixed_timestep_alpha(struct GoudContextId context_id);
+
+/**
+ * Returns the configured fixed timestep step size in seconds.
+ */
+float goud_fixed_timestep_dt(struct GoudContextId context_id);
+
+/**
+ * Sets the fixed timestep step size at runtime for an existing context.
+ */
+bool goud_fixed_timestep_set(struct GoudContextId context_id, float step);
+
+/**
+ * Sets the maximum fixed steps per frame at runtime for an existing context.
+ */
+bool goud_fixed_timestep_set_max_steps(struct GoudContextId context_id, uint32_t max);
 
 #ifdef __cplusplus
 } /* extern "C" */
