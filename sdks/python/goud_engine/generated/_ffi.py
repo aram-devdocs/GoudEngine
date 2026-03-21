@@ -141,7 +141,7 @@ class FpsStats(ctypes.Structure):
         ("frame_time_ms", ctypes.c_float)
     ]
 
-class RenderMetrics(ctypes.Structure):
+class FfiRenderMetrics(ctypes.Structure):
     _fields_ = [
         ("draw_call_count", ctypes.c_uint32),
         ("sprites_submitted", ctypes.c_uint32),

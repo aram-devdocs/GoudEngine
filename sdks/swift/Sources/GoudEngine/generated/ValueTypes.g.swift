@@ -434,7 +434,7 @@ public struct RenderMetrics: Equatable {
         self.uiDrawCalls = uiDrawCalls
     }
 
-    internal init(ffi: CGoudEngine.RenderMetrics) {
+    internal init(ffi: FfiRenderMetrics) {
         self.drawCallCount = ffi.draw_call_count
         self.spritesSubmitted = ffi.sprites_submitted
         self.spritesDrawn = ffi.sprites_drawn
@@ -450,8 +450,8 @@ public struct RenderMetrics: Equatable {
         self.uiDrawCalls = ffi.ui_draw_calls
     }
 
-    internal func toFFI() -> CGoudEngine.RenderMetrics {
-        var ffi = CGoudEngine.RenderMetrics()
+    internal func toFFI() -> FfiRenderMetrics {
+        var ffi = FfiRenderMetrics()
         ffi.draw_call_count = drawCallCount
         ffi.sprites_submitted = spritesSubmitted
         ffi.sprites_drawn = spritesDrawn

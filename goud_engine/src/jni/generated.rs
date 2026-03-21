@@ -735,7 +735,7 @@ pub(crate) fn write_back_RenderCapabilities<'local>(env: &mut jni::JNIEnv<'local
     set_RenderCapabilities_fields(env, obj, value)
 }
 
-pub(crate) fn set_RenderMetrics_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::sdk::debug_overlay::RenderMetrics) -> crate::jni::helpers::JniCallResult<()> {
+pub(crate) fn set_RenderMetrics_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::types::FfiRenderMetrics) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
     crate::jni::helpers::set_int_field(env, obj, "drawCallCount", value.draw_call_count as i32)?;
     crate::jni::helpers::set_int_field(env, obj, "spritesSubmitted", value.sprites_submitted as i32)?;
@@ -753,13 +753,13 @@ pub(crate) fn set_RenderMetrics_fields<'local>(env: &mut jni::JNIEnv<'local>, ob
     Ok(())
 }
 
-pub(crate) fn new_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, value: crate::sdk::debug_overlay::RenderMetrics) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
+pub(crate) fn new_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::types::FfiRenderMetrics) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
     let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/RenderMetrics")?;
     set_RenderMetrics_fields(env, &obj, value)?;
     Ok(obj)
 }
 
-pub(crate) fn read_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<crate::sdk::debug_overlay::RenderMetrics> {
+pub(crate) fn read_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<crate::ffi::types::FfiRenderMetrics> {
     if obj.is_null() {
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
@@ -777,7 +777,7 @@ pub(crate) fn read_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, obj: &jn
     let field_textDrawCalls = crate::jni::helpers::get_int_field(env, obj, "textDrawCalls")? as _;
     let field_textGlyphCount = crate::jni::helpers::get_int_field(env, obj, "textGlyphCount")? as _;
     let field_uiDrawCalls = crate::jni::helpers::get_int_field(env, obj, "uiDrawCalls")? as _;
-    Ok(crate::sdk::debug_overlay::RenderMetrics {
+    Ok(crate::ffi::types::FfiRenderMetrics {
         draw_call_count: field_drawCallCount,
         sprites_submitted: field_spritesSubmitted,
         sprites_drawn: field_spritesDrawn,
@@ -794,7 +794,7 @@ pub(crate) fn read_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, obj: &jn
     })
 }
 
-pub(crate) fn write_back_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::sdk::debug_overlay::RenderMetrics) -> crate::jni::helpers::JniCallResult<()> {
+pub(crate) fn write_back_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::types::FfiRenderMetrics) -> crate::jni::helpers::JniCallResult<()> {
     set_RenderMetrics_fields(env, obj, value)
 }
 
