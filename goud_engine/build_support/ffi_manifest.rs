@@ -32,6 +32,7 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/component/ops.rs",
     "src/ffi/component/access.rs",
     "src/ffi/component/batch.rs",
+    "src/ffi/component/query.rs",
     // component_transform2d module
     "src/ffi/component_transform2d/factory.rs",
     "src/ffi/component_transform2d/builder.rs",

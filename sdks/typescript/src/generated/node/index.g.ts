@@ -916,6 +916,21 @@ export class GoudGame implements IGoudGame {
     return this.native.physicsSetCollisionCallback(callbackPtr, userData);
   }
 
+  /** Returns the number of entities with a specific component type */
+  componentCount(typeIdHash: number): number {
+    return (this.native as any).componentCount(typeIdHash);
+  }
+
+  /** Gets entity IDs for all entities with a specific component type */
+  componentGetEntities(typeIdHash: number, outEntities: number, maxCount: number): number {
+    return (this.native as any).componentGetEntities(typeIdHash, outEntities, maxCount);
+  }
+
+  /** Gets entity IDs and data pointers for all entities with a specific component type */
+  componentGetAll(typeIdHash: number, outEntities: number, outDataPtrs: number, maxCount: number): number {
+    return (this.native as any).componentGetAll(typeIdHash, outEntities, outDataPtrs, maxCount);
+  }
+
   /** Queries the render provider's capabilities */
   getRenderCapabilities(): IRenderCapabilities {
     return this.native.getRenderCapabilities();

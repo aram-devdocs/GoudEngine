@@ -3529,6 +3529,59 @@
           "returns": "u32"
         },
         {
+          "name": "componentCount",
+          "doc": "Returns the number of entities with a specific component type",
+          "params": [
+            {
+              "name": "typeIdHash",
+              "type": "u64"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "componentGetEntities",
+          "doc": "Gets entity IDs for all entities with a specific component type",
+          "params": [
+            {
+              "name": "typeIdHash",
+              "type": "u64"
+            },
+            {
+              "name": "outEntities",
+              "type": "ptr"
+            },
+            {
+              "name": "maxCount",
+              "type": "u32"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "componentGetAll",
+          "doc": "Gets entity IDs and data pointers for all entities with a specific component type",
+          "params": [
+            {
+              "name": "typeIdHash",
+              "type": "u64"
+            },
+            {
+              "name": "outEntities",
+              "type": "ptr"
+            },
+            {
+              "name": "outDataPtrs",
+              "type": "ptr"
+            },
+            {
+              "name": "maxCount",
+              "type": "u32"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
           "name": "componentRegisterType",
           "doc": "Registers a component type for generic operations",
           "params": [
@@ -6095,6 +6148,18 @@
           "name": "componentHasBatch"
         },
         {
+          "$ref": "EcsMethods",
+          "name": "componentCount"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentGetEntities"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentGetAll"
+        },
+        {
           "name": "getRenderCapabilities",
           "doc": "Queries the render provider's capabilities",
           "params": [],
@@ -8115,6 +8180,18 @@
         {
           "$ref": "EcsMethods",
           "name": "componentHasBatch"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentCount"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentGetEntities"
+        },
+        {
+          "$ref": "EcsMethods",
+          "name": "componentGetAll"
         },
         {
           "name": "sceneCreate",
@@ -11703,6 +11780,15 @@
           "batch_in": true,
           "batch_out_results": true
         },
+        "componentCount": {
+          "ffi": "goud_component_count"
+        },
+        "componentGetEntities": {
+          "ffi": "goud_component_get_entities"
+        },
+        "componentGetAll": {
+          "ffi": "goud_component_get_all"
+        },
         "getRenderCapabilities": {
           "ffi": "goud_provider_render_capabilities",
           "out_params": [
@@ -12493,6 +12579,15 @@
           "ffi": "goud_component_has_batch",
           "batch_in": true,
           "batch_out_results": true
+        },
+        "componentCount": {
+          "ffi": "goud_component_count"
+        },
+        "componentGetEntities": {
+          "ffi": "goud_component_get_entities"
+        },
+        "componentGetAll": {
+          "ffi": "goud_component_get_all"
         },
         "sceneCreate": {
           "ffi": "goud_scene_create",

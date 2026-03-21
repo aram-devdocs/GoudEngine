@@ -56,5 +56,6 @@ pub(super) fn register_test_type(type_id: u64) {
 // ---------------------------------------------------------------------------
 
 mod tests_batch;
+mod tests_query;
 mod tests_registration;
 mod tests_single;

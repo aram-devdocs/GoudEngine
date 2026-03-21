@@ -89,6 +89,7 @@
 mod access;
 mod batch;
 mod ops;
+mod query;
 mod registry;
 mod storage;
 
@@ -97,6 +98,7 @@ mod storage;
 pub use access::{goud_component_get, goud_component_get_mut, goud_component_has};
 pub use batch::{goud_component_add_batch, goud_component_has_batch, goud_component_remove_batch};
 pub use ops::{goud_component_add, goud_component_register_type, goud_component_remove};
+pub use query::{goud_component_count, goud_component_get_all, goud_component_get_entities};
 
 #[cfg(test)]
 mod ffi_tests;
