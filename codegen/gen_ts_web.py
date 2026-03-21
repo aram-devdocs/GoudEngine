@@ -156,7 +156,7 @@ def gen_web_wrapper():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IRenderMetrics, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IDebuggerCapture, IDebuggerReplayArtifact, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, IP2pMeshConfig, IRollbackConfig, PreloadAssetInput, PreloadAssetKind, ISpriteCmd } from '../types/engine.g.js';",
+        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IRenderMetrics, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IDebuggerCapture, IDebuggerReplayArtifact, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, IP2pMeshConfig, IRollbackConfig, PreloadAssetInput, PreloadAssetKind, ISpriteCmd, ITextCmd } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "import { PhysicsBackend2D, RenderBackendKind, WindowBackendKind } from '../types/input.g.js';",
         "import { attachInputHandlers } from './input.g.js';",
@@ -647,6 +647,10 @@ def gen_web_wrapper():
     lines.append("  }")
     lines.append("  /** Draws a batch of sprites (not yet supported on WASM target, returns 0). */")
     lines.append("  drawSpriteBatch(_cmds: ISpriteCmd[]): number {")
+    lines.append("    return 0;")
+    lines.append("  }")
+    lines.append("  /** Draws a batch of text labels (not yet supported on WASM target, returns 0). */")
+    lines.append("  drawTextBatch(_cmds: ITextCmd[]): number {")
     lines.append("    return 0;")
     lines.append("  }")
     emit_jsdoc(lines, _method_docs.get("draw_quad"))

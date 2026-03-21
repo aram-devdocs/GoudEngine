@@ -531,6 +531,34 @@ class GoudGame:
         """Draws a batch of sprites in a single GPU pass for high performance"""
         return self._lib.goud_renderer_draw_sprite_batch(self._ctx, cmds)
 
+    def draw_text_batch(self, cmds):
+        """Draws a batch of text labels in a single pass for high performance"""
+        if not cmds:
+            return 0
+        from .._ffi import FfiTextCmd
+        n = len(cmds)
+        ffi_arr = (FfiTextCmd * n)()
+        _kept_refs = []
+        for i, cmd in enumerate(cmds):
+            c = cmd.get('color') or Color.white()
+            text_bytes = (cmd.get('text', '') or '').encode('utf-8')
+            _kept_refs.append(text_bytes)
+            ffi_arr[i].font_handle = cmd.get('font_handle', 0)
+            ffi_arr[i].text = text_bytes
+            ffi_arr[i].x = cmd.get('x', 0.0)
+            ffi_arr[i].y = cmd.get('y', 0.0)
+            ffi_arr[i].font_size = cmd.get('font_size', 16.0)
+            ffi_arr[i].alignment = int(cmd.get('alignment', 0))
+            ffi_arr[i].direction = int(cmd.get('direction', 0))
+            ffi_arr[i]._pad0 = 0
+            ffi_arr[i].max_width = cmd.get('max_width', 0.0)
+            ffi_arr[i].line_spacing = cmd.get('line_spacing', 1.0)
+            ffi_arr[i].r = c.r if hasattr(c, 'r') else 1.0
+            ffi_arr[i].g = c.g if hasattr(c, 'g') else 1.0
+            ffi_arr[i].b = c.b if hasattr(c, 'b') else 1.0
+            ffi_arr[i].a = c.a if hasattr(c, 'a') else 1.0
+        return self._lib.goud_renderer_draw_text_batch(self._ctx, ffi_arr, n)
+
     def set_viewport(self, x, y, width, height):
         """Sets the rendering viewport"""
         self._lib.goud_renderer_set_viewport(self._ctx, x, y, width, height)

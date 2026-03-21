@@ -3278,6 +3278,16 @@
       "return_type": "bool",
       "is_unsafe": true
     },
+    "goud_renderer_draw_text_batch": {
+      "source_file": "ffi/renderer/text/batch.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "cmds: *const FfiTextCmd",
+        "count: u32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
     "goud_renderer_enable_blending": {
       "source_file": "ffi/renderer/lifecycle.rs",
       "params": [
@@ -5193,5 +5203,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 521
+  "total_count": 522
 }
