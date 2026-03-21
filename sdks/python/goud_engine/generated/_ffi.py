@@ -1518,6 +1518,26 @@ def _setup():
     _lib.goud_ui_events_read.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.POINTER(FfiUiEvent)]
     _lib.goud_ui_events_read.restype = ctypes.c_int32
 
+    # spatial_grid
+    _lib.goud_spatial_grid_create.argtypes = [ctypes.c_float]
+    _lib.goud_spatial_grid_create.restype = ctypes.c_uint32
+    _lib.goud_spatial_grid_create_with_capacity.argtypes = [ctypes.c_float, ctypes.c_uint32]
+    _lib.goud_spatial_grid_create_with_capacity.restype = ctypes.c_uint32
+    _lib.goud_spatial_grid_destroy.argtypes = [ctypes.c_uint32]
+    _lib.goud_spatial_grid_destroy.restype = ctypes.c_int32
+    _lib.goud_spatial_grid_clear.argtypes = [ctypes.c_uint32]
+    _lib.goud_spatial_grid_clear.restype = ctypes.c_int32
+    _lib.goud_spatial_grid_insert.argtypes = [ctypes.c_uint32, ctypes.c_uint64, ctypes.c_float, ctypes.c_float]
+    _lib.goud_spatial_grid_insert.restype = ctypes.c_int32
+    _lib.goud_spatial_grid_remove.argtypes = [ctypes.c_uint32, ctypes.c_uint64]
+    _lib.goud_spatial_grid_remove.restype = ctypes.c_int32
+    _lib.goud_spatial_grid_update.argtypes = [ctypes.c_uint32, ctypes.c_uint64, ctypes.c_float, ctypes.c_float]
+    _lib.goud_spatial_grid_update.restype = ctypes.c_int32
+    _lib.goud_spatial_grid_query_radius.argtypes = [ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.POINTER(ctypes.c_uint64), ctypes.c_uint32]
+    _lib.goud_spatial_grid_query_radius.restype = ctypes.c_int32
+    _lib.goud_spatial_grid_entity_count.argtypes = [ctypes.c_uint32]
+    _lib.goud_spatial_grid_entity_count.restype = ctypes.c_int32
+
 _setup()
 
 def get_lib():

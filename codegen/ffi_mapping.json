@@ -1042,6 +1042,17 @@
       "goud_ui_events_read": {
         "alias_of": "goud_ui_event_read"
       }
+    },
+    "spatial_grid": {
+      "goud_spatial_grid_create": {},
+      "goud_spatial_grid_create_with_capacity": {},
+      "goud_spatial_grid_destroy": {},
+      "goud_spatial_grid_clear": {},
+      "goud_spatial_grid_insert": {},
+      "goud_spatial_grid_remove": {},
+      "goud_spatial_grid_update": {},
+      "goud_spatial_grid_query_radius": {},
+      "goud_spatial_grid_entity_count": {}
     }
   }
 }
