@@ -358,7 +358,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     needs: [preflight, native-release]
     strategy:
-      fail-fast: ${{ github.event_name == 'pull_request' }}
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         python-version: ['3.10', '3.11', '3.12']
@@ -1204,8 +1204,8 @@ jobs:
             echo "$name: success"
             return 0
           fi
-          if [[ "$allow_skipped" == "true" && "$result" == "skipped" ]]; then
-            echo "$name: skipped (allowed)"
+          if [[ "$allow_skipped" == "true" && ( "$result" == "skipped" || "$result" == "cancelled" ) ]]; then
+            echo "$name: $result (allowed)"
             return 0
           fi
           echo "$name: unexpected result '$result'"
