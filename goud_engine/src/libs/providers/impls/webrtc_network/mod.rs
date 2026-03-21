@@ -53,10 +53,10 @@ fn net_err(msg: impl Into<String>) -> GoudError {
 // =============================================================================
 
 enum InternalWebRtcEvent {
-    Connected(ConnectionId),
-    Disconnected(ConnectionId, DisconnectReason),
-    Received(ConnectionId, Channel, Vec<u8>),
-    Error(ConnectionId, String),
+    _Connected(ConnectionId),
+    _Disconnected(ConnectionId, DisconnectReason),
+    _Received(ConnectionId, Channel, Vec<u8>),
+    _Error(ConnectionId, String),
     StunResult(ConnectionId, Result<SocketAddr, String>),
 }
 
