@@ -226,9 +226,9 @@ pub unsafe extern "C" fn goud_renderer_draw_sprite_batch(
 
     // --- build vertices -------------------------------------------------------
     let result = with_window_state(context_id, |window_state| {
-        let (win_w, _win_h) = window_state.get_size();
+        let (win_w, win_h) = window_state.get_size();
         let (fb_w, fb_h) = window_state.get_framebuffer_size();
-        let viewport = [win_w as f32, _win_h as f32];
+        let viewport = [win_w as f32, win_h as f32];
 
         // Pre-allocate vertex + index buffers
         let sprite_count = sorted.len();
@@ -315,7 +315,7 @@ pub unsafe extern "C" fn goud_renderer_draw_sprite_batch(
         }
 
         if vertices.is_empty() {
-            return Ok(0u32);
+            return Ok((0u32, 0u32));
         }
 
         // --- ensure GPU state is initialized ----------------------------------
@@ -360,26 +360,29 @@ pub unsafe extern "C" fn goud_renderer_draw_sprite_batch(
             let mut map = cell.borrow_mut();
             let state = map.get_mut(&context_key).unwrap();
 
-            // Resize buffers if needed
+            // Resize buffers if needed (create new before destroying old to
+            // avoid leaving dangling handles on allocation failure).
             if vertices.len() > state.vertex_capacity {
-                let _ = backend.destroy_buffer(state.vertex_buffer);
-                state.vertex_buffer = backend.create_buffer(
+                let new_vb = backend.create_buffer(
                     BufferType::Vertex,
                     BufferUsage::Dynamic,
                     bytemuck::cast_slice(&vertices),
                 )?;
+                let _ = backend.destroy_buffer(state.vertex_buffer);
+                state.vertex_buffer = new_vb;
                 state.vertex_capacity = vertices.len();
             } else {
                 backend.update_buffer(state.vertex_buffer, 0, bytemuck::cast_slice(&vertices))?;
             }
 
             if indices.len() > state.index_capacity {
-                let _ = backend.destroy_buffer(state.index_buffer);
-                state.index_buffer = backend.create_buffer(
+                let new_ib = backend.create_buffer(
                     BufferType::Index,
                     BufferUsage::Dynamic,
                     bytemuck::cast_slice(&indices),
                 )?;
+                let _ = backend.destroy_buffer(state.index_buffer);
+                state.index_buffer = new_ib;
                 state.index_capacity = indices.len();
             } else {
                 backend.update_buffer(state.index_buffer, 0, bytemuck::cast_slice(&indices))?;
@@ -399,6 +402,7 @@ pub unsafe extern "C" fn goud_renderer_draw_sprite_batch(
 
             // Draw each batch
             let mut drawn = 0u32;
+            let batch_count = batches.len() as u32;
             for batch in &batches {
                 backend.bind_texture(batch.texture, 0)?;
                 // Offset is in bytes: index_start * sizeof(u32)
@@ -411,19 +415,19 @@ pub unsafe extern "C" fn goud_renderer_draw_sprite_batch(
                 drawn += (batch.index_count / 6) as u32;
             }
 
-            Ok(drawn)
+            Ok((drawn, batch_count))
         })
     });
 
     match result {
-        Some(Ok(drawn)) => {
+        Some(Ok((drawn, batch_count))) => {
             if drawn > 0 {
                 let _ = debugger::update_render_stats_for_context(
                     context_id,
                     drawn,
                     drawn * 2,
-                    1, // texture binds tracked per-batch inside the loop
-                    1, // single FFI draw call from caller perspective
+                    batch_count,
+                    batch_count,
                 );
             }
             drawn
