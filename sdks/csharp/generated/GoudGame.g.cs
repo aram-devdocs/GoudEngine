@@ -794,7 +794,10 @@ namespace GoudEngine
         {
             if (cmds.IsEmpty) return 0;
             // Marshal SpriteCmd[] to FfiSpriteCmd[]
-            Span<FfiSpriteCmd> ffi = stackalloc FfiSpriteCmd[cmds.Length];
+            // Use stackalloc for small batches, heap for large ones to avoid stack overflow
+            const int StackAllocThreshold = 512;
+            FfiSpriteCmd[] heapBuf = cmds.Length > StackAllocThreshold ? new FfiSpriteCmd[cmds.Length] : null;
+            Span<FfiSpriteCmd> ffi = heapBuf != null ? heapBuf.AsSpan() : stackalloc FfiSpriteCmd[cmds.Length];
             for (int i = 0; i < cmds.Length; i++)
             {
                 ref readonly var s = ref cmds[i];

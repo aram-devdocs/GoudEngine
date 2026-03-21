@@ -259,6 +259,29 @@ func NewAnimationEventData(entity uint64, name string, frameIndex uint32, payloa
 	}
 }
 
+// SpriteCmd describes a single sprite for batched rendering via DrawSpriteBatch.
+// Position, size, and source-rect values are in screen-space pixels.
+// When SrcW and SrcH are both 0 the full texture is used.
+type SpriteCmd struct {
+	Texture        uint64
+	X, Y           float32
+	Width, Height  float32
+	Rotation       float32
+	SrcX, SrcY     float32
+	SrcW, SrcH     float32
+	R, G, B, A     float32
+	ZLayer         int32
+}
+
+// NewSpriteCmd creates a new SpriteCmd.
+func NewSpriteCmd(texture uint64, x, y, width, height, rotation, srcX, srcY, srcW, srcH, r, g, b, a float32, zLayer int32) SpriteCmd {
+	return SpriteCmd{
+		Texture: texture, X: x, Y: y, Width: width, Height: height,
+		Rotation: rotation, SrcX: srcX, SrcY: srcY, SrcW: srcW, SrcH: srcH,
+		R: r, G: g, B: b, A: a, ZLayer: zLayer,
+	}
+}
+
 // RenderStats Per-frame rendering statistics
 type RenderStats struct {
 	DrawCalls uint32

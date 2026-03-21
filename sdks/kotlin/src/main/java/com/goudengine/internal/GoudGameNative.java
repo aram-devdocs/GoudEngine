@@ -210,4 +210,5 @@ public final class GoudGameNative {
     public static native int rpcProcessIncoming(long handle, long peerId, byte[] data);
     public static native byte[] rpcReceiveResponse(long handle, long callId);
     public static native byte[] rpcDrainOne(long handle);
+    public static native int drawSpriteBatch(long contextId, long[] textures, float[] floats, int[] zLayers, int count);
 }
