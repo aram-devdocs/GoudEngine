@@ -100,6 +100,15 @@ def test_errors():
     assert RecoveryClass.FATAL == 1, "FATAL should be 1"
     assert RecoveryClass.DEGRADED == 2, "DEGRADED should be 2"
 
+    assert RecoveryClass.name(0) == "recoverable"
+    assert RecoveryClass.name(1) == "fatal"
+    assert RecoveryClass.name(2) == "degraded"
+    assert RecoveryClass.name(99) == "unknown"
+
+    assert "GoudError(code=1" in repr(err)
+    assert "category='Context'" in repr(err)
+    assert "recovery=fatal" in repr(err)
+
     ctx_err = GoudContextError(
         error_code=1, message="ctx", category="Context",
         subsystem="", operation="", recovery=0, recovery_hint="",
@@ -180,6 +189,8 @@ def test_errors():
         f"_category_from_code(600) should return 'Provider', got {_category_from_code(600)!r}"
     assert _category_from_code(900) == "Internal", \
         f"_category_from_code(900) should return 'Internal', got {_category_from_code(900)!r}"
+    assert _category_from_code(0) == "Unknown", \
+        f"_category_from_code(0) should return 'Unknown', got {_category_from_code(0)!r}"
 
     assert _CATEGORY_CLASS_MAP["Context"] is GoudContextError, \
         f"_CATEGORY_CLASS_MAP['Context'] should map to GoudContextError"
