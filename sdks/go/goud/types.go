@@ -781,3 +781,53 @@ func NewRollbackConfig(maxRollbackFrames uint32, inputDelayFrames uint32, desync
 		DesyncDetection: desyncDetection,
 	}
 }
+
+// AtlasEntry Describes a packed texture's position within a texture atlas
+type AtlasEntry struct {
+	UMin float32
+	VMin float32
+	UMax float32
+	VMax float32
+	PixelX uint32
+	PixelY uint32
+	PixelW uint32
+	PixelH uint32
+}
+
+// NewAtlasEntry creates a new AtlasEntry.
+func NewAtlasEntry(uMin float32, vMin float32, uMax float32, vMax float32, pixelX uint32, pixelY uint32, pixelW uint32, pixelH uint32) AtlasEntry {
+	return AtlasEntry{
+		UMin: uMin,
+		VMin: vMin,
+		UMax: uMax,
+		VMax: vMax,
+		PixelX: pixelX,
+		PixelY: pixelY,
+		PixelW: pixelW,
+		PixelH: pixelH,
+	}
+}
+
+// AtlasStats Statistics about a packed texture atlas
+type AtlasStats struct {
+	TextureCount uint32
+	Width uint32
+	Height uint32
+	UsedPixels uint64
+	TotalPixels uint64
+	Efficiency float32
+	WastedPixels uint64
+}
+
+// NewAtlasStats creates a new AtlasStats.
+func NewAtlasStats(textureCount uint32, width uint32, height uint32, usedPixels uint64, totalPixels uint64, efficiency float32, wastedPixels uint64) AtlasStats {
+	return AtlasStats{
+		TextureCount: textureCount,
+		Width: width,
+		Height: height,
+		UsedPixels: usedPixels,
+		TotalPixels: totalPixels,
+		Efficiency: efficiency,
+		WastedPixels: wastedPixels,
+	}
+}

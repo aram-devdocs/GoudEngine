@@ -44,6 +44,7 @@
 //! - `immediate` — Immediate-mode rendering state and shader setup
 //! - `draw` — Draw call FFI functions (sprites, quads)
 
+mod atlas;
 mod draw;
 mod handles;
 mod immediate;
@@ -80,4 +81,11 @@ pub use texture::{
     goud_texture_destroy, goud_texture_load, GoudTextureHandle, GOUD_INVALID_TEXTURE,
 };
 
+pub use atlas::{
+    goud_atlas_add_from_file, goud_atlas_add_pixels, goud_atlas_add_texture, goud_atlas_create,
+    goud_atlas_destroy, goud_atlas_finalize, goud_atlas_get_entry, goud_atlas_get_stats,
+    goud_atlas_get_texture, FfiAtlasEntry, FfiAtlasStats, GoudAtlasHandle, GOUD_INVALID_ATLAS,
+};
+
+pub(crate) use atlas::cleanup_atlas_state;
 pub(crate) use text::cleanup_text_state;

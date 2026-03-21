@@ -194,6 +194,78 @@ func GoudAnimationStop(context_id C.GoudContextId, entity_id uint64) int32 {
 	return int32(C.goud_animation_stop(context_id, C.uint64_t(entity_id)))
 }
 
+// GoudAtlasAddFromFile wraps goud_atlas_add_from_file.
+func GoudAtlasAddFromFile(context_id C.GoudContextId, atlas C.GoudAtlasHandle, key *C.char, path *C.char) bool {
+	if key == nil {
+		return false
+	}
+	if path == nil {
+		return false
+	}
+	return bool(C.goud_atlas_add_from_file(context_id, atlas, key, path))
+}
+
+// GoudAtlasAddPixels wraps goud_atlas_add_pixels.
+func GoudAtlasAddPixels(context_id C.GoudContextId, atlas C.GoudAtlasHandle, key *C.char, pixels *C.uint8_t, width uint32, height uint32) bool {
+	if key == nil {
+		return false
+	}
+	if pixels == nil {
+		return false
+	}
+	return bool(C.goud_atlas_add_pixels(context_id, atlas, key, pixels, C.uint32_t(width), C.uint32_t(height)))
+}
+
+// GoudAtlasAddTexture wraps goud_atlas_add_texture.
+func GoudAtlasAddTexture(_context_id C.GoudContextId, _atlas C.GoudAtlasHandle, _key *C.char, _texture C.GoudTextureHandle) bool {
+	if _key == nil {
+		return false
+	}
+	return bool(C.goud_atlas_add_texture(_context_id, _atlas, _key, _texture))
+}
+
+// GoudAtlasCreate wraps goud_atlas_create.
+func GoudAtlasCreate(context_id C.GoudContextId, category *C.char, max_width uint32, max_height uint32) C.GoudAtlasHandle {
+	if category == nil {
+		return 0
+	}
+	return C.goud_atlas_create(context_id, category, C.uint32_t(max_width), C.uint32_t(max_height))
+}
+
+// GoudAtlasDestroy wraps goud_atlas_destroy.
+func GoudAtlasDestroy(context_id C.GoudContextId, atlas C.GoudAtlasHandle) bool {
+	return bool(C.goud_atlas_destroy(context_id, atlas))
+}
+
+// GoudAtlasFinalize wraps goud_atlas_finalize.
+func GoudAtlasFinalize(context_id C.GoudContextId, atlas C.GoudAtlasHandle) C.GoudTextureHandle {
+	return C.goud_atlas_finalize(context_id, atlas)
+}
+
+// GoudAtlasGetEntry wraps goud_atlas_get_entry.
+func GoudAtlasGetEntry(context_id C.GoudContextId, atlas C.GoudAtlasHandle, key *C.char, out_entry *C.FfiAtlasEntry) bool {
+	if key == nil {
+		return false
+	}
+	if out_entry == nil {
+		return false
+	}
+	return bool(C.goud_atlas_get_entry(context_id, atlas, key, out_entry))
+}
+
+// GoudAtlasGetStats wraps goud_atlas_get_stats.
+func GoudAtlasGetStats(context_id C.GoudContextId, atlas C.GoudAtlasHandle, out_stats *C.FfiAtlasStats) bool {
+	if out_stats == nil {
+		return false
+	}
+	return bool(C.goud_atlas_get_stats(context_id, atlas, out_stats))
+}
+
+// GoudAtlasGetTexture wraps goud_atlas_get_texture.
+func GoudAtlasGetTexture(context_id C.GoudContextId, atlas C.GoudAtlasHandle) C.GoudTextureHandle {
+	return C.goud_atlas_get_texture(context_id, atlas)
+}
+
 // GoudAudioActivate wraps goud_audio_activate.
 func GoudAudioActivate(context_id C.GoudContextId) int32 {
 	return int32(C.goud_audio_activate(context_id))

@@ -6,6 +6,7 @@
 mod render_system;
 pub mod sprite_batch;
 pub mod text;
+pub mod texture_atlas;
 mod ui_render_system;
 pub mod viewport;
 

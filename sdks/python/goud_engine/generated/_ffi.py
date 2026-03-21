@@ -331,6 +331,29 @@ class FfiUiEvent(ctypes.Structure):
         ("current_node_id", ctypes.c_uint64)
     ]
 
+class FfiAtlasEntry(ctypes.Structure):
+    _fields_ = [
+        ("u_min", ctypes.c_float),
+        ("v_min", ctypes.c_float),
+        ("u_max", ctypes.c_float),
+        ("v_max", ctypes.c_float),
+        ("pixel_x", ctypes.c_uint32),
+        ("pixel_y", ctypes.c_uint32),
+        ("pixel_w", ctypes.c_uint32),
+        ("pixel_h", ctypes.c_uint32)
+    ]
+
+class FfiAtlasStats(ctypes.Structure):
+    _fields_ = [
+        ("texture_count", ctypes.c_uint32),
+        ("width", ctypes.c_uint32),
+        ("height", ctypes.c_uint32),
+        ("used_pixels", ctypes.c_uint64),
+        ("total_pixels", ctypes.c_uint64),
+        ("efficiency", ctypes.c_float),
+        ("wasted_pixels", ctypes.c_uint64)
+    ]
+
 class FfiSpriteCmd(ctypes.Structure):
     _fields_ = [
         ("texture", ctypes.c_uint64),
@@ -517,6 +540,24 @@ def _setup():
     _lib.goud_renderer_disable_blending.restype = None
     _lib.goud_renderer_get_stats.argtypes = [GoudContextId, ctypes.POINTER(GoudRenderStats)]
     _lib.goud_renderer_get_stats.restype = ctypes.c_bool
+    _lib.goud_atlas_create.argtypes = [GoudContextId, ctypes.c_char_p, ctypes.c_uint32, ctypes.c_uint32]
+    _lib.goud_atlas_create.restype = ctypes.c_uint64
+    _lib.goud_atlas_add_from_file.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_char_p, ctypes.c_char_p]
+    _lib.goud_atlas_add_from_file.restype = ctypes.c_bool
+    _lib.goud_atlas_add_texture.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_char_p, ctypes.c_uint64]
+    _lib.goud_atlas_add_texture.restype = ctypes.c_bool
+    _lib.goud_atlas_add_pixels.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_char_p, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32, ctypes.c_uint32]
+    _lib.goud_atlas_add_pixels.restype = ctypes.c_bool
+    _lib.goud_atlas_finalize.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_atlas_finalize.restype = ctypes.c_uint64
+    _lib.goud_atlas_get_entry.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_char_p, ctypes.POINTER(FfiAtlasEntry)]
+    _lib.goud_atlas_get_entry.restype = ctypes.c_bool
+    _lib.goud_atlas_get_stats.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(FfiAtlasStats)]
+    _lib.goud_atlas_get_stats.restype = ctypes.c_bool
+    _lib.goud_atlas_get_texture.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_atlas_get_texture.restype = ctypes.c_uint64
+    _lib.goud_atlas_destroy.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_atlas_destroy.restype = ctypes.c_bool
 
     # debug
     _lib.goud_debug_get_fps_stats.argtypes = [GoudContextId, ctypes.POINTER(FpsStats)]

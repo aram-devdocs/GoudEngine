@@ -66,6 +66,8 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/renderer/draw/debug.rs",
     "src/ffi/renderer/draw/internal.rs",
     "src/ffi/renderer/texture.rs",
+    "src/ffi/renderer/atlas/mod.rs",
+    "src/ffi/renderer/atlas/ffi.rs",
     "src/ffi/renderer/handles.rs",
     "src/ffi/renderer/text.rs",
     // renderer3d module
