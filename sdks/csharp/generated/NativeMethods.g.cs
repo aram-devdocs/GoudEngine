@@ -1897,6 +1897,34 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_ui_events_read(IntPtr mgr, uint index, ref FfiUiEvent out_event);
 
+        // spatial_grid
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_spatial_grid_create(float cell_size);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_spatial_grid_create_with_capacity(float cell_size, uint capacity);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_spatial_grid_destroy(uint handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_spatial_grid_clear(uint handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_spatial_grid_insert(uint handle, ulong entity_id, float x, float y);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_spatial_grid_remove(uint handle, ulong entity_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_spatial_grid_update(uint handle, ulong entity_id, float x, float y);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_spatial_grid_query_radius(uint handle, float center_x, float center_y, float radius, ref ulong out_entities, uint capacity);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_spatial_grid_entity_count(uint handle);
+
         // batch rendering
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern uint goud_renderer_draw_sprite_batch(GoudContextId context_id, FfiSpriteCmd* cmds, uint count);
