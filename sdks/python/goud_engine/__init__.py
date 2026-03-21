@@ -25,6 +25,7 @@ from .generated._errors import (  # noqa: F401
     RecoveryClass,
 )
 
+
 def component_type_hash(type_name: str) -> int:
     """Compute an FNV-1a 64-bit hash for a component type name.
 
@@ -36,7 +37,6 @@ def component_type_hash(type_name: str) -> int:
         h ^= b
         h = (h * 0x100000001B3) & 0xFFFFFFFFFFFFFFFF
     return h
-
 
 __all__ = list(_generated_all) + [
     "NetworkManager",

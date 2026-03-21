@@ -62,17 +62,24 @@ public class GenericComponentRuntimeTests
         Assert.Equal(ComponentStore.TypeHash("Velocity"), ComponentStore<Velocity>.Hash);
     }
 
+    // Unique struct used only by the registration test to avoid shared state.
+    [StructLayout(LayoutKind.Sequential)]
+    private struct UniqueRegTest
+    {
+        public int Value;
+    }
+
     [Fact]
     public void RegisterComponent_Succeeds()
     {
         var (context, game) = RuntimeTestSupport.CreateHeadlessGame("GenericReg");
         try
         {
-            bool registered = game.RegisterComponent<Health>();
+            bool registered = game.RegisterComponent<UniqueRegTest>();
             Assert.True(registered);
 
             // Second registration returns false (already registered).
-            bool second = game.RegisterComponent<Health>();
+            bool second = game.RegisterComponent<UniqueRegTest>();
             Assert.False(second);
         }
         finally
