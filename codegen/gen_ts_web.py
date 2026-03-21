@@ -507,9 +507,6 @@ def gen_web_wrapper():
     lines.append("    this._startLoop(this._updateFn);")
     lines.append("  }")
     lines.append("")
-    lines.append("  setFixedTimestep(_stepSize: number): void { /* WASM stub */ }")
-    lines.append("  setMaxFixedSteps(_maxSteps: number): void { /* WASM stub */ }")
-    lines.append("  get interpolationAlpha(): number { return 0; }")
     lines.append("")
 
     lines.append("  stop(): void;")

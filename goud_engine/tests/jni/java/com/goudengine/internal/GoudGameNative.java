@@ -9,6 +9,9 @@ public final class GoudGameNative {
     public static native void close(long contextId);
     public static native boolean setWindowSize(long contextId, int width, int height);
     public static native void destroy(long contextId);
+    public static native void runWithFixedUpdate(long contextId, callback(f32) fixedUpdate, callback(f32) update);
+    public static native void setFixedTimestep(long contextId, float stepSize);
+    public static native void setMaxFixedSteps(long contextId, int maxSteps);
     public static native long loadTexture(long contextId, String path);
     public static native void destroyTexture(long contextId, long handle);
     public static native long loadFont(long contextId, String path);
