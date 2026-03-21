@@ -434,6 +434,12 @@ export interface IGoudGame {
   physicsCollisionEventsRead(index: number): IPhysicsCollisionEvent2D | null;
   /** Registers or clears a physics collision callback function pointer. C# callers must keep the callback delegate alive for the full registration lifetime. Python and TypeScript wrappers support clear-only (`callbackPtr = 0`, `userData = 0`) for safety. (FFI: goud_physics_set_collision_callback) */
   physicsSetCollisionCallback(callbackPtr: number, userData: number): number;
+  /** Returns the number of entities with a specific component type */
+  componentCount(typeIdHash: number): number;
+  /** Gets entity IDs for all entities with a specific component type */
+  componentGetEntities(typeIdHash: number, outEntities: number, maxCount: number): number;
+  /** Gets entity IDs and data pointers for all entities with a specific component type */
+  componentGetAll(typeIdHash: number, outEntities: number, outDataPtrs: number, maxCount: number): number;
   /** Queries the render provider's capabilities */
   getRenderCapabilities(): IRenderCapabilities;
   /** Queries the physics provider's capabilities */

@@ -1065,6 +1065,19 @@ export class GoudGame implements IGoudGame {
   physicsCollisionEventsRead(_index: number): IPhysicsCollisionEvent2D | null { return null; }
   /** Registers or clears a physics collision callback function pointer. C# callers must keep the callback delegate alive for the full registration lifetime. Python and TypeScript wrappers support clear-only (`callbackPtr = 0`, `userData = 0`) for safety. (FFI: goud_physics_set_collision_callback) */
   physicsSetCollisionCallback(_callbackPtr: number, _userData: number): number { throw new Error('Not supported in WASM mode'); }
+  // Generic component operations (stubs — full WASM support tracked in #606)
+  componentRegisterType(_typeIdHash: number, _name: string, _size: number, _align: number): boolean { throw new Error('Generic components not yet supported in WASM mode — see #606'); }
+  componentAdd(_entity: IEntity, _typeIdHash: number, _dataPtr: number, _dataSize: number): boolean { throw new Error('Generic components not yet supported in WASM mode — see #606'); }
+  componentRemove(_entity: IEntity, _typeIdHash: number): boolean { throw new Error('Generic components not yet supported in WASM mode — see #606'); }
+  componentHas(_entity: IEntity, _typeIdHash: number): boolean { throw new Error('Generic components not yet supported in WASM mode — see #606'); }
+  componentGet(_entity: IEntity, _typeIdHash: number): number { throw new Error('Generic components not yet supported in WASM mode — see #606'); }
+  componentGetMut(_entity: IEntity, _typeIdHash: number): number { throw new Error('Generic components not yet supported in WASM mode — see #606'); }
+  componentAddBatch(_entities: IEntity[], _typeIdHash: number, _dataPtr: number, _componentSize: number): number { throw new Error('Generic components not yet supported in WASM mode — see #606'); }
+  componentRemoveBatch(_entities: IEntity[], _typeIdHash: number): number { throw new Error('Generic components not yet supported in WASM mode — see #606'); }
+  componentHasBatch(_entities: IEntity[], _typeIdHash: number, _outResults: number[]): number { throw new Error('Generic components not yet supported in WASM mode — see #606'); }
+  componentCount(_typeIdHash: number): number { throw new Error('Generic components not yet supported in WASM mode — see #606'); }
+  componentGetEntities(_typeIdHash: number, _outEntities: number, _maxCount: number): number { throw new Error('Generic components not yet supported in WASM mode — see #606'); }
+  componentGetAll(_typeIdHash: number, _outEntities: number, _outDataPtrs: number, _maxCount: number): number { throw new Error('Generic components not yet supported in WASM mode — see #606'); }
   // Provider capability queries
   getRenderCapabilities(): IRenderCapabilities { return WEB_RENDER_CAPABILITIES; }
   getPhysicsCapabilities(): IPhysicsCapabilities { return WEB_PHYSICS_CAPABILITIES; }
