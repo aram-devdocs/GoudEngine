@@ -730,23 +730,11 @@ def reorder_jni_params(params: list[dict], mapping: dict) -> list[dict]:
 
 
 def java_native_source(class_name: str, methods: list[GeneratedMethod]) -> str:
-    # Collect imports for types from other packages
-    _TYPES_PKG_TYPES = {"SpriteCmd"}
-    imports = set()
-    for method in methods:
-        for param in method.params:
-            raw = base_type(param["type"]).rstrip("[]")
-            if raw in _TYPES_PKG_TYPES:
-                imports.add(f"import com.goudengine.types.{raw};")
     lines = [
         JAVA_HEADER,
         "package com.goudengine.internal;",
         "",
     ]
-    for imp in sorted(imports):
-        lines.append(imp)
-    if imports:
-        lines.append("")
     lines += [
         f"public final class {class_name} {{",
         f"    private {class_name}() {{}}",
@@ -2195,6 +2183,22 @@ def write_java_sources(methods: list[GeneratedMethod]) -> None:
         grouped.setdefault(method.class_name, []).append(method)
     for class_name, class_methods in grouped.items():
         write_generated(JAVA_DIR / f"{class_name}.java", java_native_source(class_name, class_methods))
+    # SpriteCmd is not in schema types but is used as an array parameter in drawSpriteBatch.
+    # Generate a minimal carrier so the test fixtures compile.
+    if "SpriteCmd" not in USED_TYPES:
+        _SPRITE_CMD_FIELDS = [
+            ("long", "texture"), ("float", "x"), ("float", "y"),
+            ("float", "width"), ("float", "height"), ("float", "rotation"),
+            ("float", "srcX"), ("float", "srcY"), ("float", "srcW"), ("float", "srcH"),
+            ("float", "r"), ("float", "g"), ("float", "b"), ("float", "a"),
+            ("int", "zLayer"),
+        ]
+        sc_lines = [JAVA_HEADER, "package com.goudengine.internal;", ""]
+        sc_lines.append("public final class SpriteCmd {")
+        for jtype, jname in _SPRITE_CMD_FIELDS:
+            sc_lines.append(f"    public {jtype} {jname};")
+        sc_lines += ["", "    public SpriteCmd() {}", "}", ""]
+        write_generated(JAVA_DIR / "SpriteCmd.java", "\n".join(sc_lines))
     write_generated(JAVA_DIR / "JniSmokeMain.java", smoke_java_source())
 
 
