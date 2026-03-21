@@ -217,7 +217,8 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
         sig = ", ".join(_safe_param_strs(params))
         if method.get("doc"):
             lines.append(f"        /// <summary>{method['doc']}</summary>")
-        lines += [f"        public {actual_ret} {mn}({sig})", "        {"]
+        unsafe_kw = "unsafe " if mn == "DrawSpriteBatch" else ""
+        lines += [f"        public {unsafe_kw}{actual_ret} {mn}({sig})", "        {"]
         _gen_method_body(mn, mm, params, ret, lines, is_windowed)
         lines += ["        }", ""]
 

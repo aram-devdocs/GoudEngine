@@ -782,7 +782,7 @@ namespace GoudEngine
         }
 
         /// <summary>Draws a batch of sprites in a single GPU pass for high performance</summary>
-        public uint DrawSpriteBatch(SpriteCmd[] cmds)
+        public unsafe uint DrawSpriteBatch(SpriteCmd[] cmds)
         {
             if (cmds == null || cmds.Length == 0) return 0;
             const int StackAllocThreshold = 512;
