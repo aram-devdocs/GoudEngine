@@ -174,6 +174,8 @@ def gen_game() -> None:
         "networkConnect", "networkConnectWithPeer", "networkSend",
         "networkReceive", "networkReceivePacket",
         "physicsCollisionEventsCount", "physicsCollisionEventsRead",
+        # Callback types not supported in Swift codegen yet
+        "run", "runWithFixedUpdate",
     }
 
     for m in methods:

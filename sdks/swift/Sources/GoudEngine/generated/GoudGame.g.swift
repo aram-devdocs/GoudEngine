@@ -52,11 +52,6 @@ public final class GoudGame {
         return goud_window_set_size(_ctx, width, height)
     }
 
-    /// Runs the game loop with a fixed timestep. fixedUpdate runs at the configured fixed rate, update runs once per visual frame.
-    public func runWithFixedUpdate(fixedUpdate: Callback(f32), update: Callback(f32)) {
-        let _ = goud_fixed_timestep_begin(_ctx, fixedUpdate, update)
-    }
-
     /// Sets the fixed timestep step size in seconds. Pass 0 to disable.
     public func setFixedTimestep(stepSize: Float) {
         let _ = goud_fixed_timestep_set(_ctx, stepSize)
