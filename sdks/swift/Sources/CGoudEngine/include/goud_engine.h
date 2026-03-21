@@ -181,6 +181,11 @@ extern "C" {
 #define HEADER_SIZE 8
 
 /**
+ * Default maximum atlas dimension.
+ */
+#define DEFAULT_MAX_ATLAS_SIZE 2048
+
+/**
  * FFI-safe playback mode enum.
  */
 typedef enum FfiPlaybackMode {
@@ -935,9 +940,86 @@ typedef struct NetworkCapabilities {
 } NetworkCapabilities;
 
 /**
+ * Opaque atlas handle for FFI.
+ */
+typedef uint64_t GoudAtlasHandle;
+
+/**
  * Opaque texture handle for FFI.
  */
 typedef uint64_t GoudTextureHandle;
+
+/**
+ * FFI-safe entry describing a packed texture's position within the atlas.
+ */
+typedef struct FfiAtlasEntry {
+    /**
+     * Left edge in UV space (0.0..1.0).
+     */
+    float u_min;
+    /**
+     * Top edge in UV space (0.0..1.0).
+     */
+    float v_min;
+    /**
+     * Right edge in UV space (0.0..1.0).
+     */
+    float u_max;
+    /**
+     * Bottom edge in UV space (0.0..1.0).
+     */
+    float v_max;
+    /**
+     * Pixel X offset within the atlas.
+     */
+    uint32_t pixel_x;
+    /**
+     * Pixel Y offset within the atlas.
+     */
+    uint32_t pixel_y;
+    /**
+     * Width in pixels.
+     */
+    uint32_t pixel_w;
+    /**
+     * Height in pixels.
+     */
+    uint32_t pixel_h;
+} FfiAtlasEntry;
+
+/**
+ * FFI-safe atlas statistics.
+ */
+typedef struct FfiAtlasStats {
+    /**
+     * Number of textures packed.
+     */
+    uint32_t texture_count;
+    /**
+     * Atlas width in pixels.
+     */
+    uint32_t width;
+    /**
+     * Atlas height in pixels.
+     */
+    uint32_t height;
+    /**
+     * Pixel area consumed by packed textures.
+     */
+    uint64_t used_pixels;
+    /**
+     * Total pixel area of the atlas.
+     */
+    uint64_t total_pixels;
+    /**
+     * Pack efficiency percentage (0.0-100.0).
+     */
+    float efficiency;
+    /**
+     * Wasted pixel area.
+     */
+    uint64_t wasted_pixels;
+} FfiAtlasStats;
 
 /**
  * A single sprite command for batch rendering.
@@ -1483,6 +1565,11 @@ typedef struct GoudResult {
  * Invalid engine state.
  */
 #define ERR_INVALID_STATE 902
+
+/**
+ * Invalid atlas handle constant.
+ */
+#define GOUD_INVALID_ATLAS UINT64_MAX
 
 /**
  * Invalid shader handle constant.
@@ -3942,6 +4029,16 @@ bool goud_engine_config_set_window_backend(EngineConfigHandle handle, uint32_t b
  */
 bool goud_engine_config_set_debugger(EngineConfigHandle handle, const struct GoudDebuggerConfig *debugger);
 
+/**
+ * Sets the fixed timestep step size in seconds on an `EngineConfig`.
+ */
+bool goud_engine_config_set_fixed_timestep(EngineConfigHandle handle, float step);
+
+/**
+ * Sets the maximum fixed steps per frame on an `EngineConfig`.
+ */
+bool goud_engine_config_set_max_fixed_steps(EngineConfigHandle handle, uint32_t max);
+
 /* === Error === */
 
 /**
@@ -4250,6 +4347,80 @@ int32_t goud_rpc_process_incoming(int64_t handle, uint64_t peer_id, const uint8_
  * Drains outbound RPC messages and copies the next one into the caller's buffer.
  */
 int32_t goud_rpc_drain_one(int64_t handle, uint8_t *out_buf, int32_t buf_len, uint64_t *out_peer_id);
+
+/**
+ * Creates a new empty texture atlas.
+ */
+GoudAtlasHandle goud_atlas_create(struct GoudContextId context_id, const char *category, uint32_t max_width, uint32_t max_height);
+
+/**
+ * Loads an image from a file and packs it directly into the atlas.
+ */
+bool goud_atlas_add_from_file(struct GoudContextId context_id, GoudAtlasHandle atlas, const char *key, const char *path);
+
+/**
+ * Reserved — GPU pixel readback is not supported.
+ */
+bool goud_atlas_add_texture(struct GoudContextId _context_id, GoudAtlasHandle _atlas, const char *_key, GoudTextureHandle _texture);
+
+/**
+ * Packs raw RGBA8 pixel data into the atlas under the given key.
+ */
+bool goud_atlas_add_pixels(struct GoudContextId context_id, GoudAtlasHandle atlas, const char *key, const uint8_t *pixels, uint32_t width, uint32_t height);
+
+/**
+ * Finalizes the atlas by uploading it to the GPU.
+ */
+GoudTextureHandle goud_atlas_finalize(struct GoudContextId context_id, GoudAtlasHandle atlas);
+
+/**
+ * Queries the UV rect and pixel placement for a packed texture.
+ */
+bool goud_atlas_get_entry(struct GoudContextId context_id, GoudAtlasHandle atlas, const char *key, struct FfiAtlasEntry *out_entry);
+
+/**
+ * Queries atlas packing statistics.
+ */
+bool goud_atlas_get_stats(struct GoudContextId context_id, GoudAtlasHandle atlas, struct FfiAtlasStats *out_stats);
+
+/**
+ * Returns the GPU texture handle for the atlas.
+ */
+GoudTextureHandle goud_atlas_get_texture(struct GoudContextId context_id, GoudAtlasHandle atlas);
+
+/**
+ * Destroys an atlas and frees its GPU + CPU resources.
+ */
+bool goud_atlas_destroy(struct GoudContextId context_id, GoudAtlasHandle atlas);
+
+ * Begins the fixed timestep accumulator for this frame.
+ */
+bool goud_fixed_timestep_begin(struct GoudContextId context_id);
+
+/**
+ * Consumes one fixed step from the accumulator.
+ */
+bool goud_fixed_timestep_step(struct GoudContextId context_id);
+
+/**
+ * Returns the interpolation alpha for render smoothing.
+ */
+float goud_fixed_timestep_alpha(struct GoudContextId context_id);
+
+/**
+ * Returns the configured fixed timestep step size in seconds.
+ */
+float goud_fixed_timestep_dt(struct GoudContextId context_id);
+
+/**
+ * Sets the fixed timestep step size at runtime for an existing context.
+ */
+bool goud_fixed_timestep_set(struct GoudContextId context_id, float step);
+
+/**
+ * Sets the maximum fixed steps per frame at runtime for an existing context.
+ */
+bool goud_fixed_timestep_set_max_steps(struct GoudContextId context_id, uint32_t max);
 
 #ifdef __cplusplus
 } /* extern "C" */

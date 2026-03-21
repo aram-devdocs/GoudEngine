@@ -45,6 +45,7 @@
 //! - [`lifecycle`] — window creation and destruction FFI functions
 //! - [`properties`] — per-frame query and mutation FFI functions
 
+mod fixed_timestep;
 mod lifecycle;
 mod properties;
 mod state;
@@ -58,6 +59,10 @@ pub use state::{
 // FFI functions are `#[no_mangle]` and therefore globally visible, but we
 // also re-export them so that `pub mod window` keeps them reachable via the
 // module path for any internal callers.
+pub use fixed_timestep::{
+    goud_fixed_timestep_alpha, goud_fixed_timestep_begin, goud_fixed_timestep_dt,
+    goud_fixed_timestep_set, goud_fixed_timestep_set_max_steps, goud_fixed_timestep_step,
+};
 pub use lifecycle::{goud_window_create, goud_window_destroy};
 pub use properties::{
     goud_window_clear, goud_window_get_delta_time, goud_window_get_framebuffer_size,

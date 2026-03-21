@@ -153,6 +153,7 @@ pub extern "C" fn goud_window_destroy(context_id: GoudContextId) -> bool {
     }
 
     crate::ffi::renderer::cleanup_text_state(context_id);
+    crate::ffi::renderer::cleanup_atlas_state(context_id);
 
     remove_window_state(context_id);
 

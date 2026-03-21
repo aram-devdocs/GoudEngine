@@ -117,6 +117,8 @@ namespace GoudEngine
 
         public uint FrameCount => _frameCount;
 
+        public float InterpolationAlpha => NativeMethods.goud_fixed_timestep_alpha(_ctx);
+
         /// <summary>Returns true if the window close has been requested</summary>
         public bool ShouldClose()
         {
@@ -166,6 +168,34 @@ namespace GoudEngine
                 update(_deltaTime);
                 EndFrame();
             }
+        }
+
+        /// <summary>Runs the game loop with a fixed timestep. fixedUpdate runs at the configured fixed rate, update runs once per visual frame.</summary>
+        public void RunWithFixedUpdate(Action<float> fixedUpdate, Action<float> update)
+        {
+            while (!ShouldClose())
+            {
+                BeginFrame();
+                if (NativeMethods.goud_fixed_timestep_begin(_ctx))
+                {
+                    while (NativeMethods.goud_fixed_timestep_step(_ctx))
+                        fixedUpdate(NativeMethods.goud_fixed_timestep_dt(_ctx));
+                }
+                update(_deltaTime);
+                EndFrame();
+            }
+        }
+
+        /// <summary>Sets the fixed timestep step size in seconds. Pass 0 to disable.</summary>
+        public void SetFixedTimestep(float stepSize)
+        {
+            NativeMethods.goud_fixed_timestep_set(_ctx, stepSize);
+        }
+
+        /// <summary>Sets the maximum fixed steps per frame to prevent spiral of death.</summary>
+        public void SetMaxFixedSteps(uint maxSteps)
+        {
+            NativeMethods.goud_fixed_timestep_set_max_steps(_ctx, maxSteps);
         }
 
         /// <summary>Loads a texture from a file path and returns its handle</summary>

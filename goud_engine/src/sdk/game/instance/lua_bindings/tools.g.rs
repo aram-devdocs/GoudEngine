@@ -61,6 +61,9 @@ use crate::ffi::entity::goud_entity_count;
 use crate::ffi::entity::goud_entity_despawn;
 use crate::ffi::entity::goud_entity_is_alive;
 use crate::ffi::entity::goud_entity_spawn_empty;
+use crate::ffi::window::goud_fixed_timestep_begin;
+use crate::ffi::window::goud_fixed_timestep_set;
+use crate::ffi::window::goud_fixed_timestep_set_max_steps;
 use crate::ffi::network::goud_network_clear_overlay_handle;
 use crate::ffi::network::goud_network_clear_simulation;
 use crate::ffi::network::goud_network_disconnect;
@@ -760,6 +763,21 @@ pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> 
         Ok(goud_rpc_poll(arg0, arg1 as f32) as i64)
     })?;
     tbl.set("rpc_poll", f_rpc_poll)?;
+    // GoudGame.runWithFixedUpdate
+    let f_run_with_fixed_update = lua.create_function(move |_, _: ()| {
+        Ok(goud_fixed_timestep_begin(ctx))
+    })?;
+    tbl.set("run_with_fixed_update", f_run_with_fixed_update)?;
+    // GoudGame.setFixedTimestep
+    let f_set_fixed_timestep = lua.create_function(move |_, arg0: f64| {
+        Ok(goud_fixed_timestep_set(ctx, arg0 as f32))
+    })?;
+    tbl.set("set_fixed_timestep", f_set_fixed_timestep)?;
+    // GoudGame.setMaxFixedSteps
+    let f_set_max_fixed_steps = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_fixed_timestep_set_max_steps(ctx, arg0 as u32))
+    })?;
+    tbl.set("set_max_fixed_steps", f_set_max_fixed_steps)?;
     globals.set("goud_game", tbl)?;
     Ok(())
 }

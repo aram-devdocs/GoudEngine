@@ -111,6 +111,18 @@ def emit_tool_method_body(
         lines.append("            self.begin_frame()")
         lines.append("            update(self._delta_time)")
         lines.append("            self.end_frame()")
+    elif mname == "run_with_fixed_update":
+        lines.append("        while not self.should_close():")
+        lines.append("            self.begin_frame()")
+        lines.append("            if self._lib.goud_fixed_timestep_begin(self._ctx):")
+        lines.append("                while self._lib.goud_fixed_timestep_step(self._ctx):")
+        lines.append("                    fixed_update(self._lib.goud_fixed_timestep_dt(self._ctx))")
+        lines.append("            update(self._delta_time)")
+        lines.append("            self.end_frame()")
+    elif mname == "set_fixed_timestep":
+        lines.append("        self._lib.goud_fixed_timestep_set(self._ctx, step_size)")
+    elif mname == "set_max_fixed_steps":
+        lines.append("        self._lib.goud_fixed_timestep_set_max_steps(self._ctx, max_steps)")
     elif mname == "draw_sprite":
         lines.append("        if color is None: color = Color.white()")
         lines.append("        self._lib.goud_renderer_draw_sprite(self._ctx, texture, x, y, width, height, rotation, color.r, color.g, color.b, color.a)")

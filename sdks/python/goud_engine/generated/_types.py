@@ -1679,3 +1679,32 @@ class RollbackConfig:
 
     def __repr__(self):
         return f"RollbackConfig(max_rollback_frames={self.max_rollback_frames}, input_delay_frames={self.input_delay_frames}, desync_detection={self.desync_detection})"
+
+class AtlasEntry:
+    """Describes a packed texture's position within a texture atlas"""
+    def __init__(self, u_min: float = 0.0, v_min: float = 0.0, u_max: float = 0.0, v_max: float = 0.0, pixel_x: int = 0, pixel_y: int = 0, pixel_w: int = 0, pixel_h: int = 0):
+        self.u_min = u_min
+        self.v_min = v_min
+        self.u_max = u_max
+        self.v_max = v_max
+        self.pixel_x = pixel_x
+        self.pixel_y = pixel_y
+        self.pixel_w = pixel_w
+        self.pixel_h = pixel_h
+
+    def __repr__(self):
+        return f"AtlasEntry(u_min={self.u_min}, v_min={self.v_min}, u_max={self.u_max}, v_max={self.v_max}, pixel_x={self.pixel_x}, pixel_y={self.pixel_y}, pixel_w={self.pixel_w}, pixel_h={self.pixel_h})"
+
+class AtlasStats:
+    """Statistics about a packed texture atlas"""
+    def __init__(self, texture_count: int = 0, width: int = 0, height: int = 0, used_pixels: int = 0, total_pixels: int = 0, efficiency: float = 0.0, wasted_pixels: int = 0):
+        self.texture_count = texture_count
+        self.width = width
+        self.height = height
+        self.used_pixels = used_pixels
+        self.total_pixels = total_pixels
+        self.efficiency = efficiency
+        self.wasted_pixels = wasted_pixels
+
+    def __repr__(self):
+        return f"AtlasStats(texture_count={self.texture_count}, width={self.width}, height={self.height}, used_pixels={self.used_pixels}, total_pixels={self.total_pixels}, efficiency={self.efficiency}, wasted_pixels={self.wasted_pixels})"

@@ -121,6 +121,8 @@ use goud_engine::ffi::ui::widget::{
 };
 use goud_engine::ffi::ui::{FfiUiEvent, FfiUiStyle, INVALID_NODE_U64};
 use goud_engine::ffi::window::{
+    goud_fixed_timestep_alpha, goud_fixed_timestep_begin, goud_fixed_timestep_dt,
+    goud_fixed_timestep_set, goud_fixed_timestep_set_max_steps, goud_fixed_timestep_step,
     goud_window_clear, goud_window_create, goud_window_destroy, goud_window_get_delta_time,
     goud_window_get_size, goud_window_poll_events, goud_window_set_should_close,
     goud_window_should_close, goud_window_swap_buffers,
@@ -515,6 +517,40 @@ impl GoudGame {
     pub fn end_frame(&self) {
         goud_renderer_end(self.context_id);
         goud_window_swap_buffers(self.context_id);
+    }
+
+    // =========================================================================
+    // Fixed Timestep
+    // =========================================================================
+
+    #[napi]
+    pub fn fixed_timestep_begin(&self) -> bool {
+        goud_fixed_timestep_begin(self.context_id)
+    }
+
+    #[napi]
+    pub fn fixed_timestep_step(&self) -> bool {
+        goud_fixed_timestep_step(self.context_id)
+    }
+
+    #[napi]
+    pub fn fixed_timestep_alpha(&self) -> f64 {
+        goud_fixed_timestep_alpha(self.context_id) as f64
+    }
+
+    #[napi]
+    pub fn fixed_timestep_dt(&self) -> f64 {
+        goud_fixed_timestep_dt(self.context_id) as f64
+    }
+
+    #[napi]
+    pub fn fixed_timestep_set(&self, step: f64) -> bool {
+        goud_fixed_timestep_set(self.context_id, step as f32)
+    }
+
+    #[napi]
+    pub fn fixed_timestep_set_max_steps(&self, max: u32) -> bool {
+        goud_fixed_timestep_set_max_steps(self.context_id, max)
     }
 
     // =========================================================================

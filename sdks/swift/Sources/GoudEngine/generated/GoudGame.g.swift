@@ -52,6 +52,21 @@ public final class GoudGame {
         return goud_window_set_size(_ctx, width, height)
     }
 
+    /// Runs the game loop with a fixed timestep. fixedUpdate runs at the configured fixed rate, update runs once per visual frame.
+    public func runWithFixedUpdate(fixedUpdate: Callback(f32), update: Callback(f32)) {
+        let _ = goud_fixed_timestep_begin(_ctx, fixedUpdate, update)
+    }
+
+    /// Sets the fixed timestep step size in seconds. Pass 0 to disable.
+    public func setFixedTimestep(stepSize: Float) {
+        let _ = goud_fixed_timestep_set(_ctx, stepSize)
+    }
+
+    /// Sets the maximum fixed steps per frame to prevent spiral of death.
+    public func setMaxFixedSteps(maxSteps: UInt32) {
+        let _ = goud_fixed_timestep_set_max_steps(_ctx, maxSteps)
+    }
+
     /// Loads a texture from a file path and returns its handle
     public func loadTexture(path: String) -> UInt64 {
         path.withCString { pathPtr in
@@ -324,8 +339,16 @@ public final class GoudGame {
     }
 
     /// Draws a sprite with source rectangle for sprite sheets
-    public func drawSpriteRect(texture: UInt64, x: Float, y: Float, width: Float, height: Float, rotation: Float = 0, srcX: Float, srcY: Float, srcW: Float, srcH: Float, color: Color = Color.white()) -> Bool {
-        return goud_renderer_draw_sprite_rect(_ctx, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, color.r, color.g, color.b, color.a)
+    public func drawSpriteRect(texture: UInt64, x: Float, y: Float, width: Float, height: Float, rotation: Float = 0, srcX: Float, srcY: Float, srcW: Float, srcH: Float, color: Color = Color.white(), srcMode: UInt32 = 1) -> Bool {
+        return goud_renderer_draw_sprite_rect(_ctx, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, srcMode, color.r, color.g, color.b, color.a)
+    }
+
+    /// Draws a batch of sprites in a single GPU pass for high performance
+    public func drawSpriteBatch(cmds: [SpriteCmd]) -> UInt32 {
+        cmds.withUnsafeBufferPointer { cmdsBuf in
+            let cmdsBasePtr = cmdsBuf.baseAddress!
+            return goud_renderer_draw_sprite_batch(_ctx, cmdsBasePtr, UInt32(cmds.count))
+        }
     }
 
     /// Sets the rendering viewport

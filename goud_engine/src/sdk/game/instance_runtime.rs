@@ -217,7 +217,7 @@ impl GoudGame {
         &mut self.ui_manager
     }
 
-    fn render_ui_frame(&mut self) {
+    pub(super) fn render_ui_frame(&mut self) {
         #[cfg(feature = "native")]
         {
             if self.ui_render_system.is_none() {

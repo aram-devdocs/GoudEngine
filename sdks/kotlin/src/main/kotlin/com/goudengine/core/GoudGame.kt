@@ -25,6 +25,14 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
     fun setWindowSize(width: Int, height: Int): Boolean =
         GoudGameNative.setWindowSize(contextId, width, height)
 
+    fun setFixedTimestep(stepSize: Float) {
+        GoudGameNative.setFixedTimestep(contextId, stepSize)
+    }
+
+    fun setMaxFixedSteps(maxSteps: Int) {
+        GoudGameNative.setMaxFixedSteps(contextId, maxSteps)
+    }
+
     fun loadTexture(path: String): Long =
         GoudGameNative.loadTexture(contextId, path)
 
@@ -279,13 +287,8 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
     fun postprocessPassCount(): Int =
         GoudGameNative.postprocessPassCount(contextId)
 
-    fun drawSpriteRect(texture: Long, x: Float, y: Float, width: Float, height: Float, rotation: Float, srcX: Float, srcY: Float, srcW: Float, srcH: Float, color: com.goudengine.types.Color, srcMode: Int = 1): Boolean =
+    fun drawSpriteRect(texture: Long, x: Float, y: Float, width: Float, height: Float, rotation: Float, srcX: Float, srcY: Float, srcW: Float, srcH: Float, color: com.goudengine.types.Color, srcMode: Int): Boolean =
         GoudGameNative.drawSpriteRect(contextId, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, srcMode, color.toNative())
-
-    fun drawSpriteBatch(cmds: List<com.goudengine.types.SpriteCmd>): Int {
-        if (cmds.isEmpty()) return 0
-        return GoudGameNative.drawSpriteBatch(contextId, cmds.toTypedArray())
-    }
 
     fun setViewport(x: Int, y: Int, width: Int, height: Int) {
         GoudGameNative.setViewport(contextId, x, y, width, height)

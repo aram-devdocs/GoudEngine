@@ -56,6 +56,7 @@ const FFI_SOURCE_FILES: &[&str] = &[
     // window module
     "src/ffi/window/lifecycle.rs",
     "src/ffi/window/properties.rs",
+    "src/ffi/window/fixed_timestep.rs",
     // renderer module
     "src/ffi/renderer/lifecycle.rs",
     "src/ffi/renderer/draw/batch.rs",
@@ -65,6 +66,8 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/renderer/draw/debug.rs",
     "src/ffi/renderer/draw/internal.rs",
     "src/ffi/renderer/texture.rs",
+    "src/ffi/renderer/atlas/mod.rs",
+    "src/ffi/renderer/atlas/ffi.rs",
     "src/ffi/renderer/handles.rs",
     "src/ffi/renderer/text.rs",
     "src/ffi/renderer/text/batch.rs",

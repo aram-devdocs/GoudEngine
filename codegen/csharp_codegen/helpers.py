@@ -146,7 +146,7 @@ def _cs_ffi_param_type(raw: str) -> str:
         ffi_inner = _ffi_struct_name(inner)
         if ffi_inner.startswith("Ffi"):
             return f"ref {ffi_inner}"
-        if ffi_inner.startswith("Goud") and ffi_inner not in ("GoudTextureHandle", "GoudFontHandle"):
+        if ffi_inner.startswith("Goud") and ffi_inner not in ("GoudTextureHandle", "GoudFontHandle", "GoudAtlasHandle"):
             return f"ref {ffi_inner}"
         # Value types whose ffi_name matches the SDK type name are emitted
         # as standalone structs — use ref for pointer parameters.
