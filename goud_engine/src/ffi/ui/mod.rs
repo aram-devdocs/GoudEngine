@@ -34,6 +34,9 @@ pub const INVALID_NODE_U64: u64 = u64::MAX;
 /// Shared error code for FFI functions receiving a null [`UiManager`] pointer.
 pub(super) const ERR_NULL_MANAGER: i32 = -1;
 
+/// Shared error code for FFI functions receiving a null output or argument pointer.
+pub(super) const ERR_NULL_PTR: i32 = -2;
+
 /// Callback signature for UI events crossing the FFI boundary.
 pub type UiEventCallback = extern "C" fn(
     node_id: u64,

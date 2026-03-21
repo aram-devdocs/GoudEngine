@@ -3041,6 +3041,7 @@
     "SpriteCmd": {
       "kind": "value",
       "doc": "Describes a single sprite for batched rendering via DrawSpriteBatch",
+      "csharp_skip": true,
       "fields": [
         {
           "name": "texture",
@@ -3075,22 +3076,22 @@
         {
           "name": "srcX",
           "type": "f32",
-          "doc": "Source rectangle X offset in pixel coordinates"
+          "doc": "Source rectangle X in pixel coords"
         },
         {
           "name": "srcY",
           "type": "f32",
-          "doc": "Source rectangle Y offset in pixel coordinates"
+          "doc": "Source rectangle Y in pixel coords"
         },
         {
           "name": "srcW",
           "type": "f32",
-          "doc": "Source rectangle width in pixel coordinates (0 = full texture width)"
+          "doc": "Source rectangle width in pixel coords (0 = full)"
         },
         {
           "name": "srcH",
           "type": "f32",
-          "doc": "Source rectangle height in pixel coordinates (0 = full texture height)"
+          "doc": "Source rectangle height in pixel coords (0 = full)"
         },
         {
           "name": "r",
@@ -3100,12 +3101,12 @@
         {
           "name": "g",
           "type": "f32",
-          "doc": "Green color tint (1.0 = no tint)"
+          "doc": "Green color tint"
         },
         {
           "name": "b",
           "type": "f32",
-          "doc": "Blue color tint (1.0 = no tint)"
+          "doc": "Blue color tint"
         },
         {
           "name": "a",
@@ -3122,6 +3123,7 @@
     "TextCmd": {
       "kind": "value",
       "doc": "Describes a single text draw command for batched rendering via DrawTextBatch",
+      "csharp_skip": true,
       "fields": [
         {
           "name": "fontHandle",

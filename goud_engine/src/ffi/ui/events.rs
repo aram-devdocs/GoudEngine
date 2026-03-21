@@ -6,9 +6,7 @@ use std::sync::{Mutex, OnceLock};
 
 use crate::ui::UiManager;
 
-use super::{map_ui_event, FfiUiEvent, UiEventCallback, ERR_NULL_MANAGER};
-
-const ERR_NULL_OUT: i32 = -2;
+use super::{map_ui_event, FfiUiEvent, UiEventCallback, ERR_NULL_MANAGER, ERR_NULL_PTR};
 
 #[derive(Clone, Copy)]
 struct CallbackRegistration {
@@ -154,7 +152,7 @@ pub unsafe extern "C" fn goud_ui_event_read(
         return ERR_NULL_MANAGER;
     }
     if out_event.is_null() {
-        return ERR_NULL_OUT;
+        return ERR_NULL_PTR;
     }
 
     let key = mgr as usize;

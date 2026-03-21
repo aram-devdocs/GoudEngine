@@ -77,6 +77,8 @@ def gen_value_types():
             continue  # handled by gen_component_wrappers
         if kind != "value":
             continue
+        if type_def.get("csharp_skip"):
+            continue  # type already defined in GoudGame.g.cs via csbindgen
         if type_name == "Mat3x3":
             _gen_mat3x3()
             continue

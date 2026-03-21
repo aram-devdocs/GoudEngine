@@ -50,7 +50,6 @@ impl Default for Skeleton3D {
 
 /// A mesh with per-vertex bone weights for GPU skinning.
 #[derive(Debug)]
-#[allow(dead_code)]
 pub struct SkinnedMesh3D {
     /// Vertex data (position + normal + texcoord + bone indices + bone weights).
     pub vertices: Vec<f32>,

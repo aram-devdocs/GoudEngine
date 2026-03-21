@@ -43,16 +43,15 @@ impl GoudContextId {
 
     /// Reconstructs a context ID from a raw `u64` value.
     ///
-    /// This is the inverse of the implicit `#[repr(C)]` layout — used by
-    /// in-process bindings (Lua) that store the context ID as a plain integer.
-    #[allow(dead_code)]
-    pub(crate) fn from_raw(raw: u64) -> Self {
+    /// This is the inverse of the implicit `#[repr(C)]` layout -- used by
+    /// in-process bindings (Lua) and FFI tests that store the context ID as
+    /// a plain integer.
+    pub fn from_raw(raw: u64) -> Self {
         Self(raw)
     }
 
     /// Returns the raw `u64` representation of this context ID.
-    #[allow(dead_code)]
-    pub(crate) fn as_raw(self) -> u64 {
+    pub fn as_raw(self) -> u64 {
         self.0
     }
 

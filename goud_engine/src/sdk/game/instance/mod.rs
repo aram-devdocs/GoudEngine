@@ -170,7 +170,6 @@ pub struct GoudGame {
     /// Shared framebuffer dimensions for the debugger capture hook.
     /// Packed as `(width << 32) | height`. Read by the capture hook closure.
     #[cfg(feature = "native")]
-    #[allow(dead_code)]
     pub(crate) capture_dimensions: Option<Arc<AtomicU64>>,
 
     /// Deferred capture coordination between the IPC thread and the main thread.

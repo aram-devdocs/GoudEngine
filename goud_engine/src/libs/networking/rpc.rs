@@ -108,21 +108,16 @@ const MSG_TYPE_ERROR: u8 = 2;
 // ---------------------------------------------------------------------------
 
 struct RpcRegistration {
-    #[allow(dead_code)]
-    id: RpcId,
-    #[allow(dead_code)]
-    name: String,
+    _id: RpcId,
+    _name: String,
     handler: RpcHandler,
-    #[allow(dead_code)]
-    direction: RpcDirection,
+    _direction: RpcDirection,
 }
 
 /// A pending outbound call awaiting a response.
 struct PendingRpc {
-    #[allow(dead_code)]
-    call_id: u64,
-    #[allow(dead_code)]
-    rpc_id: RpcId,
+    _call_id: u64,
+    _rpc_id: RpcId,
     sent_at: Instant,
     result: Option<RpcResult>,
 }
@@ -186,10 +181,10 @@ impl RpcFramework {
         self.handlers.insert(
             id,
             RpcRegistration {
-                id,
-                name,
+                _id: id,
+                _name: name,
                 handler,
-                direction,
+                _direction: direction,
             },
         );
         Ok(())
@@ -228,8 +223,8 @@ impl RpcFramework {
         self.pending_calls.insert(
             call_id,
             PendingRpc {
-                call_id,
-                rpc_id,
+                _call_id: call_id,
+                _rpc_id: rpc_id,
                 sent_at: Instant::now(),
                 result: None,
             },

@@ -52,7 +52,6 @@ fn net_err(msg: impl Into<String>) -> GoudError {
 // Internal event type
 // =============================================================================
 
-#[allow(dead_code)]
 enum InternalWebRtcEvent {
     Connected(ConnectionId),
     Disconnected(ConnectionId, DisconnectReason),
