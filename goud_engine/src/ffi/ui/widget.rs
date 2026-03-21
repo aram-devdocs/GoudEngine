@@ -2,7 +2,9 @@
 
 use crate::ui::{UiButton, UiComponent, UiImage, UiLabel, UiManager, UiSlider, UiStyleOverrides};
 
-use super::{component_from_widget_kind, unpack_node_id, FfiUiStyle, ERR_NULL_MANAGER, ERR_NULL_PTR};
+use super::{
+    component_from_widget_kind, unpack_node_id, FfiUiStyle, ERR_NULL_MANAGER, ERR_NULL_PTR,
+};
 const ERR_NODE_NOT_FOUND: i32 = -3;
 const ERR_INVALID_UTF8: i32 = -4;
 const ERR_UNKNOWN_WIDGET: i32 = -5;

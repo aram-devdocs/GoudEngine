@@ -1233,19 +1233,19 @@ public struct SpriteCmd: Equatable {
     public var height: Float
     /// Rotation in radians
     public var rotation: Float
-    /// Source rectangle X offset in pixel coordinates
+    /// Source rectangle X in pixel coords
     public var srcX: Float
-    /// Source rectangle Y offset in pixel coordinates
+    /// Source rectangle Y in pixel coords
     public var srcY: Float
-    /// Source rectangle width in pixel coordinates (0 = full texture width)
+    /// Source rectangle width in pixel coords (0 = full)
     public var srcW: Float
-    /// Source rectangle height in pixel coordinates (0 = full texture height)
+    /// Source rectangle height in pixel coords (0 = full)
     public var srcH: Float
     /// Red color tint (1.0 = no tint)
     public var r: Float
-    /// Green color tint (1.0 = no tint)
+    /// Green color tint
     public var g: Float
-    /// Blue color tint (1.0 = no tint)
+    /// Blue color tint
     public var b: Float
     /// Alpha (1.0 = fully opaque)
     public var a: Float
