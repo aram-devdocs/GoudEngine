@@ -365,7 +365,7 @@ export class GoudGame implements IGoudGame {
   /** Number of frames processed */
   get frameCount(): number { return Number(this.handle.frame_count); }
   /** Interpolation alpha for render smoothing between fixed timesteps (0.0 to 1.0) */
-  get interpolationAlpha(): number { return this.handle.interpolationAlpha; }
+  get interpolationAlpha(): number { return 0; }
 
   setClearColor(r: number, g: number, b: number, a: number): void { this.handle.set_clear_color(r, g, b, a); }
 
@@ -428,6 +428,8 @@ export class GoudGame implements IGoudGame {
     this._startLoop(this._updateFn);
   }
 
+  setFixedTimestep(_stepSize: number): void { /* WASM stub */ }
+  setMaxFixedSteps(_maxSteps: number): void { /* WASM stub */ }
 
   stop(): void;
   stop(_entity: IEntity): number;

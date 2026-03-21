@@ -425,15 +425,21 @@ def gen_web_wrapper():
         "totalTime": "total_time",
         "frameCount": "frame_count",
     }
+    # Properties not available in WASM — return a sensible default.
+    _WASM_STUB_PROPS = {
+        "interpolationAlpha": "0",
+    }
     for prop in tool["properties"]:
         pn = to_camel(prop["name"])
         pt = ts_type(prop["type"])
-        wasm_name = _WASM_PROP.get(pn, pn)
         emit_jsdoc(lines, prop.get("doc"))
-        # frame_count comes back as bigint from wasm, coerce to number
-        if pn == "frameCount":
+        if pn in _WASM_STUB_PROPS:
+            lines.append(f"  get {pn}(): {pt} {{ return {_WASM_STUB_PROPS[pn]}; }}")
+        elif pn == "frameCount":
+            wasm_name = _WASM_PROP.get(pn, pn)
             lines.append(f"  get {pn}(): {pt} {{ return Number(this.handle.{wasm_name}); }}")
         else:
+            wasm_name = _WASM_PROP.get(pn, pn)
             lines.append(f"  get {pn}(): {pt} {{ return this.handle.{wasm_name}; }}")
     lines.append("")
 
@@ -507,6 +513,8 @@ def gen_web_wrapper():
     lines.append("    this._startLoop(this._updateFn);")
     lines.append("  }")
     lines.append("")
+    lines.append("  setFixedTimestep(_stepSize: number): void { /* WASM stub */ }")
+    lines.append("  setMaxFixedSteps(_maxSteps: number): void { /* WASM stub */ }")
     lines.append("")
 
     lines.append("  stop(): void;")
