@@ -93,6 +93,10 @@ class GoudGame:
     def frame_count(self) -> int:
         return self._frame_count
 
+    @property
+    def interpolation_alpha(self) -> float:
+        return self._lib.goud_fixed_timestep_alpha(self._ctx)
+
     def should_close(self):
         """Returns true if the window close has been requested"""
         return self._lib.goud_window_should_close(self._ctx)
@@ -129,6 +133,24 @@ class GoudGame:
             self.begin_frame()
             update(self._delta_time)
             self.end_frame()
+
+    def run_with_fixed_update(self, fixed_update, update):
+        """Runs the game loop with a fixed timestep. fixedUpdate runs at the configured fixed rate, update runs once per visual frame."""
+        while not self.should_close():
+            self.begin_frame()
+            if self._lib.goud_fixed_timestep_begin(self._ctx):
+                while self._lib.goud_fixed_timestep_step(self._ctx):
+                    fixed_update(self._lib.goud_fixed_timestep_dt(self._ctx))
+            update(self._delta_time)
+            self.end_frame()
+
+    def set_fixed_timestep(self, step_size):
+        """Sets the fixed timestep step size in seconds. Pass 0 to disable."""
+        self._lib.goud_fixed_timestep_set(self._ctx, step_size)
+
+    def set_max_fixed_steps(self, max_steps):
+        """Sets the maximum fixed steps per frame to prevent spiral of death."""
+        self._lib.goud_fixed_timestep_set_max_steps(self._ctx, max_steps)
 
     def load_texture(self, path):
         """Loads a texture from a file path and returns its handle"""

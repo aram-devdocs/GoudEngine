@@ -1264,6 +1264,15 @@
       "return_type": "bool",
       "is_unsafe": true
     },
+    "goud_engine_config_set_fixed_timestep": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle",
+        "step: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
     "goud_engine_config_set_fps_overlay": {
       "source_file": "ffi/engine_config.rs",
       "params": [
@@ -1278,6 +1287,15 @@
       "params": [
         "handle: EngineConfigHandle",
         "mode: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_engine_config_set_max_fixed_steps": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle",
+        "max: u32"
       ],
       "return_type": "bool",
       "is_unsafe": true
@@ -1463,6 +1481,56 @@
       ],
       "return_type": "i32",
       "is_unsafe": true
+    },
+    "goud_fixed_timestep_alpha": {
+      "source_file": "ffi/window/fixed_timestep.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_fixed_timestep_begin": {
+      "source_file": "ffi/window/fixed_timestep.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_fixed_timestep_dt": {
+      "source_file": "ffi/window/fixed_timestep.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_fixed_timestep_set": {
+      "source_file": "ffi/window/fixed_timestep.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "step: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_fixed_timestep_set_max_steps": {
+      "source_file": "ffi/window/fixed_timestep.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "max: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_fixed_timestep_step": {
+      "source_file": "ffi/window/fixed_timestep.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
     },
     "goud_font_destroy": {
       "source_file": "ffi/renderer/text.rs",
@@ -5031,5 +5099,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 504
+  "total_count": 512
 }

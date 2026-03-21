@@ -158,6 +158,8 @@ export interface IGoudGame {
   readonly totalTime: number;
   /** Number of frames processed */
   readonly frameCount: number;
+  /** Interpolation alpha for render smoothing between fixed timesteps (0.0 to 1.0) */
+  readonly interpolationAlpha: number;
   /** Returns true if the window close has been requested */
   shouldClose(): boolean;
   /** Signals the window to close */
@@ -172,6 +174,12 @@ export interface IGoudGame {
   endFrame(): void;
   /** Runs the game loop. Calls the update callback each frame with delta time. Blocks until the window is closed. */
   run(update: (dt: number) => void): void;
+  /** Runs the game loop with a fixed timestep. fixedUpdate runs at the configured fixed rate, update runs once per visual frame. */
+  runWithFixedUpdate(fixedUpdate: (dt: number) => void, update: (dt: number) => void): void;
+  /** Sets the fixed timestep step size in seconds. Pass 0 to disable. */
+  setFixedTimestep(stepSize: number): void;
+  /** Sets the maximum fixed steps per frame to prevent spiral of death. */
+  setMaxFixedSteps(maxSteps: number): void;
   /** Loads a texture from a file path and returns its handle */
   loadTexture(path: string): Promise<number>;
   /** Destroys a previously loaded texture */

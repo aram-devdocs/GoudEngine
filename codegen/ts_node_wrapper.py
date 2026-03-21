@@ -269,6 +269,24 @@ def gen_node_wrapper():
             lines.append("      update(this.native.deltaTime);")
             lines.append("      this.native.endFrame();")
             lines.append("    }")
+        elif mn == "runWithFixedUpdate":
+            lines.append("    if (this.preloadInFlight) {")
+            lines.append("      throw new Error('game.preload(...) must finish before game.runWithFixedUpdate() starts.');")
+            lines.append("    }")
+            lines.append("    while (!this.native.shouldClose()) {")
+            lines.append("      this.native.beginFrame();")
+            lines.append("      if (this.native.fixedTimestepBegin()) {")
+            lines.append("        while (this.native.fixedTimestepStep()) {")
+            lines.append("          fixedUpdate(this.native.fixedTimestepDt());")
+            lines.append("        }")
+            lines.append("      }")
+            lines.append("      update(this.native.deltaTime);")
+            lines.append("      this.native.endFrame();")
+            lines.append("    }")
+        elif mn == "setFixedTimestep":
+            lines.append("    this.native.fixedTimestepSet(stepSize);")
+        elif mn == "setMaxFixedSteps":
+            lines.append("    this.native.fixedTimestepSetMaxSteps(maxSteps);")
         elif mn == "drawSprite":
             lines.append("    const c = color ?? Color.white();")
             lines.append("    this.native.drawSprite(texture, x, y, width, height, rotation, c.r, c.g, c.b, c.a);")
