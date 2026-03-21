@@ -12,6 +12,9 @@ use crate::rendering::texture_atlas::TextureAtlas;
 use super::{context_key, GOUD_INVALID_ATLAS};
 use super::{with_store, FfiAtlasEntry, FfiAtlasStats, GoudAtlasHandle, ATLAS_STORES};
 
+/// Maximum allowed atlas dimension to prevent OOM from absurd values.
+const MAX_ATLAS_DIMENSION: u32 = 8192;
+
 /// # Safety
 /// `ptr` must be a valid null-terminated C string.
 unsafe fn cstr_to_str<'a>(ptr: *const c_char) -> Result<&'a str, ()> {
@@ -47,7 +50,16 @@ pub unsafe extern "C" fn goud_atlas_create(
             return GOUD_INVALID_ATLAS;
         }
     };
-    let atlas = TextureAtlas::new(cat, max_width, max_height);
+    // Cap dimensions to prevent OOM from absurd values. 0 = default (2048).
+    let w = if max_width == 0 { 0 } else { max_width };
+    let h = if max_height == 0 { 0 } else { max_height };
+    if w > MAX_ATLAS_DIMENSION || h > MAX_ATLAS_DIMENSION {
+        set_last_error(GoudError::InternalError(format!(
+            "Atlas dimensions {w}x{h} exceed maximum {MAX_ATLAS_DIMENSION}"
+        )));
+        return GOUD_INVALID_ATLAS;
+    }
+    let atlas = TextureAtlas::new(cat, w, h);
     with_store(context_id, |store| store.insert(atlas))
 }
 

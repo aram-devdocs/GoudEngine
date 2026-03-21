@@ -90,7 +90,10 @@ impl TextureAtlas {
         } else {
             max_height
         };
-        let pixel_count = (w as usize) * (h as usize) * 4;
+        let pixel_count = (w as usize)
+            .checked_mul(h as usize)
+            .and_then(|n| n.checked_mul(4))
+            .expect("atlas dimensions too large");
         Self {
             texture_data: vec![0u8; pixel_count],
             width: w,
