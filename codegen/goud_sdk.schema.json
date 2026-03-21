@@ -11208,6 +11208,9 @@
             }
           }
         },
+        "drawSpriteBatch": {
+          "ffi": "goud_renderer_draw_sprite_batch"
+        },
         "setViewport": {
           "ffi": "goud_renderer_set_viewport"
         },

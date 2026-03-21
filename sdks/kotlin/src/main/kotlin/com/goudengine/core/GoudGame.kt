@@ -284,24 +284,7 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
 
     fun drawSpriteBatch(cmds: List<com.goudengine.types.SpriteCmd>): Int {
         if (cmds.isEmpty()) return 0
-        val count = cmds.size
-        val textures = LongArray(count)
-        val floats = FloatArray(count * 13)
-        val zLayers = IntArray(count)
-        for (i in cmds.indices) {
-            val c = cmds[i]
-            textures[i] = c.texture
-            val off = i * 13
-            floats[off] = c.x; floats[off+1] = c.y
-            floats[off+2] = c.width; floats[off+3] = c.height
-            floats[off+4] = c.rotation
-            floats[off+5] = c.srcX; floats[off+6] = c.srcY
-            floats[off+7] = c.srcW; floats[off+8] = c.srcH
-            floats[off+9] = c.r; floats[off+10] = c.g
-            floats[off+11] = c.b; floats[off+12] = c.a
-            zLayers[i] = c.zLayer
-        }
-        return GoudGameNative.drawSpriteBatch(contextId, textures, floats, zLayers, count)
+        return GoudGameNative.drawSpriteBatch(contextId, cmds.toTypedArray())
     }
 
     fun setViewport(x: Int, y: Int, width: Int, height: Int) {

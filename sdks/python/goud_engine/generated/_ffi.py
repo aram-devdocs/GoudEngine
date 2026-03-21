@@ -467,6 +467,8 @@ def _setup():
     _lib.goud_draw_text.restype = ctypes.c_bool
     _lib.goud_renderer_draw_sprite_rect.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
     _lib.goud_renderer_draw_sprite_rect.restype = ctypes.c_bool
+    _lib.goud_renderer_draw_sprite_batch.argtypes = [GoudContextId, ctypes.POINTER(FfiSpriteCmd), ctypes.c_uint32]
+    _lib.goud_renderer_draw_sprite_batch.restype = ctypes.c_uint32
     _lib.goud_renderer_set_viewport.argtypes = [GoudContextId, ctypes.c_int32, ctypes.c_int32, ctypes.c_uint32, ctypes.c_uint32]
     _lib.goud_renderer_set_viewport.restype = None
     _lib.goud_renderer_enable_depth_test.argtypes = [GoudContextId]

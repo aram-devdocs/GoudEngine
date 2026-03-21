@@ -486,6 +486,9 @@ namespace GoudEngine
         public static extern bool goud_renderer_draw_sprite_rect(GoudContextId context_id, ulong texture, float x, float y, float width, float height, float rotation, float src_x, float src_y, float src_w, float src_h, uint src_mode, float r, float g, float b, float a);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_renderer_draw_sprite_batch(GoudContextId context_id, ref FfiSpriteCmd cmds, uint count);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void goud_renderer_set_viewport(GoudContextId context_id, int x, int y, uint width, uint height);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

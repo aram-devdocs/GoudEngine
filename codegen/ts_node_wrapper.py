@@ -82,7 +82,7 @@ def gen_node_wrapper():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IRenderMetrics, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IDebuggerCapture, IDebuggerReplayArtifact, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D, IP2pMeshConfig, IRollbackConfig, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
+        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IRenderMetrics, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IDebuggerCapture, IDebuggerReplayArtifact, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D, IP2pMeshConfig, IRollbackConfig, PreloadAssetInput, PreloadAssetKind, ISpriteCmd } from '../types/engine.g.js';",
         "import { PhysicsBackend2D, RenderBackendKind, WindowBackendKind } from '../types/input.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",

@@ -58,6 +58,7 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/window/properties.rs",
     // renderer module
     "src/ffi/renderer/lifecycle.rs",
+    "src/ffi/renderer/draw/batch.rs",
     "src/ffi/renderer/draw/ffi.rs",
     "src/ffi/renderer/draw/mod.rs",
     "src/ffi/renderer/draw/helpers.rs",

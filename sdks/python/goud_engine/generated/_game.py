@@ -507,6 +507,7 @@ class GoudGame:
 
     def draw_sprite_batch(self, cmds):
         """Draws a batch of sprites in a single GPU pass for high performance"""
+        return self._lib.goud_renderer_draw_sprite_batch(self._ctx, cmds)
 
     def set_viewport(self, x, y, width, height):
         """Sets the rendering viewport"""
