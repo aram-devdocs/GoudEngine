@@ -730,10 +730,24 @@ def reorder_jni_params(params: list[dict], mapping: dict) -> list[dict]:
 
 
 def java_native_source(class_name: str, methods: list[GeneratedMethod]) -> str:
+    # Collect imports for types from other packages
+    _TYPES_PKG_TYPES = {"SpriteCmd"}
+    imports = set()
+    for method in methods:
+        for param in method.params:
+            raw = base_type(param["type"]).rstrip("[]")
+            if raw in _TYPES_PKG_TYPES:
+                imports.add(f"import com.goudengine.types.{raw};")
     lines = [
         JAVA_HEADER,
         "package com.goudengine.internal;",
         "",
+    ]
+    for imp in sorted(imports):
+        lines.append(imp)
+    if imports:
+        lines.append("")
+    lines += [
         f"public final class {class_name} {{",
         f"    private {class_name}() {{}}",
         "",
