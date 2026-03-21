@@ -89,8 +89,8 @@ use goud_engine::ffi::renderer::{
     goud_renderer_disable_blending, goud_renderer_disable_depth_test, goud_renderer_draw_quad,
     goud_renderer_draw_sprite, goud_renderer_draw_sprite_batch, goud_renderer_draw_sprite_rect,
     goud_renderer_draw_text, goud_renderer_enable_blending, goud_renderer_enable_depth_test,
-    goud_renderer_end, goud_renderer_get_stats, goud_renderer_set_viewport,
-    goud_texture_destroy, goud_texture_load, FfiSpriteCmd, GoudRenderStats,
+    goud_renderer_end, goud_renderer_get_stats, goud_renderer_set_viewport, goud_texture_destroy,
+    goud_texture_load, FfiSpriteCmd, GoudRenderStats,
 };
 use goud_engine::ffi::renderer3d::{
     goud_renderer3d_add_light, goud_renderer3d_configure_fog, goud_renderer3d_configure_grid,
@@ -663,26 +663,26 @@ impl GoudGame {
         }
         let ffi_cmds: Vec<FfiSpriteCmd> = cmds
             .iter()
-            .map(|cmd| FfiSpriteCmd {
-                texture: cmd.texture.unwrap_or(0.0) as u64,
-                x: cmd.x.unwrap_or(0.0) as f32,
-                y: cmd.y.unwrap_or(0.0) as f32,
-                width: cmd.width.unwrap_or(0.0) as f32,
-                height: cmd.height.unwrap_or(0.0) as f32,
-                rotation: cmd.rotation.unwrap_or(0.0) as f32,
-                src_x: cmd.src_x.unwrap_or(0.0) as f32,
-                src_y: cmd.src_y.unwrap_or(0.0) as f32,
-                src_w: cmd.src_w.unwrap_or(0.0) as f32,
-                src_h: cmd.src_h.unwrap_or(0.0) as f32,
-                r: cmd.r.unwrap_or(1.0) as f32,
-                g: cmd.g.unwrap_or(1.0) as f32,
-                b: cmd.b.unwrap_or(1.0) as f32,
-                a: cmd.a.unwrap_or(1.0) as f32,
-                z_layer: cmd.z_layer.unwrap_or(0),
+            .map(|c| FfiSpriteCmd {
+                texture: c.texture.unwrap_or(0.0) as u64,
+                x: c.x.unwrap_or(0.0) as f32,
+                y: c.y.unwrap_or(0.0) as f32,
+                width: c.width.unwrap_or(0.0) as f32,
+                height: c.height.unwrap_or(0.0) as f32,
+                rotation: c.rotation.unwrap_or(0.0) as f32,
+                src_x: c.src_x.unwrap_or(0.0) as f32,
+                src_y: c.src_y.unwrap_or(0.0) as f32,
+                src_w: c.src_w.unwrap_or(0.0) as f32,
+                src_h: c.src_h.unwrap_or(0.0) as f32,
+                r: c.r.unwrap_or(1.0) as f32,
+                g: c.g.unwrap_or(1.0) as f32,
+                b: c.b.unwrap_or(1.0) as f32,
+                a: c.a.unwrap_or(1.0) as f32,
+                z_layer: c.z_layer.unwrap_or(0),
                 _padding: 0,
             })
             .collect();
-        // SAFETY: ffi_cmds is a valid, non-empty Vec; pointer and count are correct.
+        // SAFETY: ffi_cmds is a valid Vec with len() elements, pointer is valid for the call duration.
         unsafe {
             goud_renderer_draw_sprite_batch(
                 self.context_id,
