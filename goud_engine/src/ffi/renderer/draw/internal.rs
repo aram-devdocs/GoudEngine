@@ -7,6 +7,30 @@ use crate::libs::graphics::backend::{
 use super::super::immediate::{model_matrix, ortho_matrix, ImmediateStateData};
 use super::super::texture::GoudTextureHandle;
 
+/// Converts pixel-space source rectangle coordinates to normalized UV coordinates.
+///
+/// When `src_w` or `src_h` is 0, the corresponding UV dimension maps to the
+/// full texture extent (1.0), matching the "use full texture" convention.
+pub(crate) fn pixel_to_uv(
+    src_x: f32,
+    src_y: f32,
+    src_w: f32,
+    src_h: f32,
+    tex_w: u32,
+    tex_h: u32,
+) -> (f32, f32, f32, f32) {
+    let tw = tex_w as f32;
+    let th = tex_h as f32;
+    if tw == 0.0 || th == 0.0 {
+        return (0.0, 0.0, 1.0, 1.0);
+    }
+    let uv_x = src_x / tw;
+    let uv_y = src_y / th;
+    let uv_w = if src_w == 0.0 { 1.0 } else { src_w / tw };
+    let uv_h = if src_h == 0.0 { 1.0 } else { src_h / th };
+    (uv_x, uv_y, uv_w, uv_h)
+}
+
 /// Internal function to draw a sprite (delegates to `draw_sprite_rect_internal` with full UV).
 pub(crate) fn draw_sprite_internal(
     window_state: &mut WindowState,
@@ -191,4 +215,46 @@ pub(crate) fn draw_quad_rotated_internal(
     backend.draw_indexed(PrimitiveTopology::Triangles, 6, 0)?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::pixel_to_uv;
+
+    #[test]
+    fn test_pixel_to_uv_conversion() {
+        let (uv_x, uv_y, uv_w, uv_h) = pixel_to_uv(64.0, 32.0, 32.0, 32.0, 256, 256);
+        assert!((uv_x - 0.25).abs() < f32::EPSILON);
+        assert!((uv_y - 0.125).abs() < f32::EPSILON);
+        assert!((uv_w - 0.125).abs() < f32::EPSILON);
+        assert!((uv_h - 0.125).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn test_pixel_to_uv_identity() {
+        // Full texture should map to (0,0,1,1)
+        let (uv_x, uv_y, uv_w, uv_h) = pixel_to_uv(0.0, 0.0, 128.0, 64.0, 128, 64);
+        assert!((uv_x).abs() < f32::EPSILON);
+        assert!((uv_y).abs() < f32::EPSILON);
+        assert!((uv_w - 1.0).abs() < f32::EPSILON);
+        assert!((uv_h - 1.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn test_pixel_to_uv_zero_src_uses_full_texture() {
+        let (uv_x, uv_y, uv_w, uv_h) = pixel_to_uv(0.0, 0.0, 0.0, 0.0, 256, 256);
+        assert!((uv_x).abs() < f32::EPSILON);
+        assert!((uv_y).abs() < f32::EPSILON);
+        assert!((uv_w - 1.0).abs() < f32::EPSILON);
+        assert!((uv_h - 1.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn test_pixel_to_uv_zero_texture_size() {
+        let (uv_x, uv_y, uv_w, uv_h) = pixel_to_uv(10.0, 10.0, 32.0, 32.0, 0, 0);
+        assert!((uv_x).abs() < f32::EPSILON);
+        assert!((uv_y).abs() < f32::EPSILON);
+        assert!((uv_w - 1.0).abs() < f32::EPSILON);
+        assert!((uv_h - 1.0).abs() < f32::EPSILON);
+    }
 }

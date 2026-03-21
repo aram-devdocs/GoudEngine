@@ -1649,7 +1649,7 @@ GoudResult goud_scene_unload(struct GoudContextId context_id, const uint8_t *nam
 /* === Renderer === */
 
 /**
- * Draws a batch of sprites in a single GPU pass. Sprites are sorted by
+ * Draws a batch of sprites in a single GPU pass.
  */
 uint32_t goud_renderer_draw_sprite_batch(struct GoudContextId context_id, const struct FfiSpriteCmd *cmds, uint32_t count);
 

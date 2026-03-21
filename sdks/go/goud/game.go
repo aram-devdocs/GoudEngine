@@ -547,9 +547,44 @@ func (g *Game) PostprocessPassCount() uint32 {
 	return 0
 }
 
+// DrawSpriteBatch draws a batch of sprites in a single GPU pass.
+// Each SpriteCmd specifies texture, position, size, rotation, source rect (pixels), color, and z-layer.
+// Returns the number of sprites actually drawn.
+func (g *Game) DrawSpriteBatch(cmds []SpriteCmd) uint32 {
+	if len(cmds) == 0 {
+		return 0
+	}
+	ffiCmds := make([]ffi.SpriteCmdData, len(cmds))
+	for i, cmd := range cmds {
+		ffiCmds[i] = ffi.SpriteCmdData{
+			Texture:  cmd.Texture,
+			X:        cmd.X,
+			Y:        cmd.Y,
+			Width:    cmd.Width,
+			Height:   cmd.Height,
+			Rotation: cmd.Rotation,
+			SrcX:     cmd.SrcX,
+			SrcY:     cmd.SrcY,
+			SrcW:     cmd.SrcW,
+			SrcH:     cmd.SrcH,
+			R:        cmd.R,
+			G:        cmd.G,
+			B:        cmd.B,
+			A:        cmd.A,
+			ZLayer:   cmd.ZLayer,
+		}
+	}
+	return ffi.RendererDrawSpriteBatch(g.ctx, ffiCmds)
+}
+
 // DrawSpriteRect draws a sprite with a source rectangle.
-func (g *Game) DrawSpriteRect(texture uint64, x, y, width, height, rotation, srcX, srcY, srcW, srcH float32, color Color) bool {
-	return ffi.RendererDrawSpriteRect(g.ctx, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, color.R, color.G, color.B, color.A)
+// srcMode: 0 = normalized UVs (0.0-1.0), 1 = pixel coordinates (default).
+func (g *Game) DrawSpriteRect(texture uint64, x, y, width, height, rotation, srcX, srcY, srcW, srcH float32, color Color, srcMode ...uint32) bool {
+	mode := uint32(1)
+	if len(srcMode) > 0 {
+		mode = srcMode[0]
+	}
+	return ffi.RendererDrawSpriteRect(g.ctx, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, mode, color.R, color.G, color.B, color.A)
 }
 
 // SetViewport Sets the rendering viewport

@@ -384,8 +384,13 @@ def _gen_draw_sprite(lines: list[str]) -> None:
 def _gen_draw_sprite_rect(lines: list[str]) -> None:
     lines.extend([
         "// DrawSpriteRect draws a sprite with a source rectangle.",
-        "func (g *Game) DrawSpriteRect(texture uint64, x, y, width, height, rotation, srcX, srcY, srcW, srcH float32, color Color) bool {",
-        "\treturn ffi.RendererDrawSpriteRect(g.ctx, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, color.R, color.G, color.B, color.A)",
+        "// srcMode: 0 = normalized UVs (0.0-1.0), 1 = pixel coordinates (default).",
+        "func (g *Game) DrawSpriteRect(texture uint64, x, y, width, height, rotation, srcX, srcY, srcW, srcH float32, color Color, srcMode ...uint32) bool {",
+        "\tmode := uint32(1)",
+        "\tif len(srcMode) > 0 {",
+        "\t\tmode = srcMode[0]",
+        "\t}",
+        "\treturn ffi.RendererDrawSpriteRect(g.ctx, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, mode, color.R, color.G, color.B, color.A)",
         "}",
         "",
     ])

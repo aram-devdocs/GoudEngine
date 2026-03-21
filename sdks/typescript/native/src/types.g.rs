@@ -153,3 +153,23 @@ pub fn color_from_u8(r: u32, g: u32, b: u32, a: u32) -> Color {
         a: a as f64 / 255.0,
     }
 }
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct NapiSpriteCmd {
+    pub texture: Option<f64>,
+    pub x: Option<f64>,
+    pub y: Option<f64>,
+    pub width: Option<f64>,
+    pub height: Option<f64>,
+    pub rotation: Option<f64>,
+    pub src_x: Option<f64>,
+    pub src_y: Option<f64>,
+    pub src_w: Option<f64>,
+    pub src_h: Option<f64>,
+    pub r: Option<f64>,
+    pub g: Option<f64>,
+    pub b: Option<f64>,
+    pub a: Option<f64>,
+    pub z_layer: Option<i32>,
+}

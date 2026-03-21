@@ -1865,8 +1865,8 @@ func GoudRendererDrawSprite(context_id C.GoudContextId, texture C.GoudTextureHan
 }
 
 // GoudRendererDrawSpriteRect wraps goud_renderer_draw_sprite_rect.
-func GoudRendererDrawSpriteRect(context_id C.GoudContextId, texture C.GoudTextureHandle, x float32, y float32, width float32, height float32, rotation float32, src_x float32, src_y float32, src_w float32, src_h float32, r float32, g float32, b float32, a float32) bool {
-	return bool(C.goud_renderer_draw_sprite_rect(context_id, texture, C.float(x), C.float(y), C.float(width), C.float(height), C.float(rotation), C.float(src_x), C.float(src_y), C.float(src_w), C.float(src_h), C.float(r), C.float(g), C.float(b), C.float(a)))
+func GoudRendererDrawSpriteRect(context_id C.GoudContextId, texture C.GoudTextureHandle, x float32, y float32, width float32, height float32, rotation float32, src_x float32, src_y float32, src_w float32, src_h float32, src_mode uint32, r float32, g float32, b float32, a float32) bool {
+	return bool(C.goud_renderer_draw_sprite_rect(context_id, texture, C.float(x), C.float(y), C.float(width), C.float(height), C.float(rotation), C.float(src_x), C.float(src_y), C.float(src_w), C.float(src_h), C.uint32_t(src_mode), C.float(r), C.float(g), C.float(b), C.float(a)))
 }
 
 // GoudRendererDrawText wraps goud_renderer_draw_text.

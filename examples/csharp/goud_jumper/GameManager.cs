@@ -141,13 +141,15 @@ public class GameManager
         float displayWidth = isGoingLeft ? -spriteWidth : spriteWidth;
         
         // Draw using DrawSpriteRect with source rectangle for sprite sheet animation
-        game.DrawSpriteRect(textureId, 
-            playerX + spriteWidth / 2, 
-            playerY + spriteHeight / 2, 
-            displayWidth, 
+        // Source rect uses normalized UV coordinates, so pass SrcRectMode.Normalized
+        game.DrawSpriteRect(textureId,
+            playerX + spriteWidth / 2,
+            playerY + spriteHeight / 2,
+            displayWidth,
             spriteHeight,
             0f,
-            sourceRect.X, sourceRect.Y, sourceRect.Width, sourceRect.Height);
+            sourceRect.X, sourceRect.Y, sourceRect.Width, sourceRect.Height,
+            srcMode: SrcRectMode.Normalized);
     }
 
     private void UpdatePlayerPosition(float deltaTime)

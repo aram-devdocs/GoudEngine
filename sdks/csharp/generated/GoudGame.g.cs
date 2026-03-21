@@ -7,6 +7,25 @@ using System.Text.Json;
 
 namespace GoudEngine
 {
+    /// <summary>Source rectangle coordinate mode for DrawSpriteRect.</summary>
+    public enum SrcRectMode : uint
+    {
+        /// <summary>Source rectangle values are normalized UV coordinates (0.0-1.0).</summary>
+        Normalized = 0,
+        /// <summary>Source rectangle values are in pixel coordinates.</summary>
+        Pixels = 1,
+    }
+
+    /// <summary>A sprite command for batch rendering via DrawSpriteBatch.</summary>
+    public struct SpriteCmd
+    {
+        public ulong Texture;
+        public float X, Y, Width, Height, Rotation;
+        public float SrcX, SrcY, SrcW, SrcH;
+        public Color? Color;
+        public int ZLayer;
+    }
+
     /// <summary>Main game engine instance. Creates a window, manages rendering, input, and ECS.</summary>
     public class GoudGame : IDisposable
     {
@@ -756,10 +775,29 @@ namespace GoudEngine
         }
 
         /// <summary>Draws a sprite with source rectangle for sprite sheets</summary>
-        public bool DrawSpriteRect(ulong texture, float x, float y, float width, float height, float rotation, float srcX, float srcY, float srcW, float srcH, Color? color = null)
+        public bool DrawSpriteRect(ulong texture, float x, float y, float width, float height, float rotation, float srcX, float srcY, float srcW, float srcH, Color? color = null, uint srcMode = 1)
         {
             var c = color ?? Color.White();
-            return NativeMethods.goud_renderer_draw_sprite_rect(_ctx, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, c.R, c.G, c.B, c.A);
+            return NativeMethods.goud_renderer_draw_sprite_rect(_ctx, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, (uint)srcMode, c.R, c.G, c.B, c.A);
+        }
+
+        /// <summary>Draws a batch of sprites in a single GPU pass for high performance</summary>
+        public unsafe uint DrawSpriteBatch(SpriteCmd[] cmds)
+        {
+            if (cmds == null || cmds.Length == 0) return 0;
+            const int StackAllocThreshold = 512;
+            FfiSpriteCmd[] heapBuf = cmds.Length > StackAllocThreshold ? new FfiSpriteCmd[cmds.Length] : null;
+            Span<FfiSpriteCmd> ffi = heapBuf != null ? heapBuf.AsSpan() : stackalloc FfiSpriteCmd[cmds.Length];
+            for (int i = 0; i < cmds.Length; i++)
+            {
+                ref readonly var s = ref cmds[i];
+                var c = s.Color ?? Color.White();
+                ffi[i] = new FfiSpriteCmd { Texture = s.Texture, X = s.X, Y = s.Y, Width = s.Width, Height = s.Height, Rotation = s.Rotation, SrcX = s.SrcX, SrcY = s.SrcY, SrcW = s.SrcW, SrcH = s.SrcH, R = c.R, G = c.G, B = c.B, A = c.A, ZLayer = s.ZLayer, _Padding = 0 };
+            }
+            fixed (FfiSpriteCmd* ptr = ffi)
+            {
+                return NativeMethods.goud_renderer_draw_sprite_batch(_ctx, ptr, (uint)cmds.Length);
+            }
         }
 
         /// <summary>Sets the rendering viewport</summary>

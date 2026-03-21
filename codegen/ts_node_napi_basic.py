@@ -35,6 +35,30 @@ def gen_napi_rust_types():
             lines += ["#[napi]", f"pub fn {fn_name}() -> Color {{", f"    Color {{ r: {float(val[0])}, g: {float(val[1])}, b: {float(val[2])}, a: {float(val[3])} }}", "}"]
         lines.append("")
 
+    # NapiSpriteCmd – batch-rendering command passed from JS to Rust
+    lines += [
+        "#[napi(object)]",
+        "#[derive(Clone, Debug)]",
+        "pub struct NapiSpriteCmd {",
+        "    pub texture: Option<f64>,",
+        "    pub x: Option<f64>,",
+        "    pub y: Option<f64>,",
+        "    pub width: Option<f64>,",
+        "    pub height: Option<f64>,",
+        "    pub rotation: Option<f64>,",
+        "    pub src_x: Option<f64>,",
+        "    pub src_y: Option<f64>,",
+        "    pub src_w: Option<f64>,",
+        "    pub src_h: Option<f64>,",
+        "    pub r: Option<f64>,",
+        "    pub g: Option<f64>,",
+        "    pub b: Option<f64>,",
+        "    pub a: Option<f64>,",
+        "    pub z_layer: Option<i32>,",
+        "}",
+        "",
+    ]
+
     write_generated(NATIVE_SRC / "types.g.rs", "\n".join(lines))
 
 

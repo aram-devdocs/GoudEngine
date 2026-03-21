@@ -173,6 +173,40 @@ def _enum_package(enum_name: str) -> str:
     return ENUM_SUBDIRS.get(enum_name, "core")
 
 
+def _reorder_for_native(params: list[dict], ffi_entry: dict) -> list[dict]:
+    """Reorder params so param_order items come first, expand_params last.
+
+    This mirrors ``reorder_jni_params`` in gen_jni.py so the Kotlin call args
+    match the JNI native method's parameter order.
+    """
+    param_order = ffi_entry.get("param_order")
+    expand_params = ffi_entry.get("expand_params")
+    if not param_order or not expand_params:
+        return params
+
+    expand_names = set(expand_params.keys())
+    param_by_name = {p["name"]: p for p in params}
+
+    ordered: list[dict] = []
+    used: set[str] = set()
+
+    for name in param_order:
+        if name in param_by_name:
+            ordered.append(param_by_name[name])
+            used.add(name)
+
+    for p in params:
+        if p["name"] in expand_names and p["name"] not in used:
+            ordered.append(p)
+            used.add(p["name"])
+
+    for p in params:
+        if p["name"] not in used:
+            ordered.append(p)
+
+    return ordered
+
+
 def _uses_unsupported(method: dict) -> bool:
     """Return True if the method references any unsupported type."""
     ret = method.get("returns", "void")
@@ -300,13 +334,20 @@ def _gen_tool_class(tool_name: str, is_windowed: bool = False):
         # Determine if this is a no_context method
         is_no_context = ffi_entry.get("no_context", False)
 
-        # Build param list
+        # Build param list -- Kotlin signature uses schema order,
+        # but call args must match the JNI native method order which
+        # puts param_order items before expand_params items.
         kt_params_list = []
-        call_args_list = [] if is_no_context else ["contextId"]
         for p in params:
             pname = p["name"]
             ptype = p["type"]
             kt_params_list.append(f"{pname}: {_kt_param_type(ptype)}")
+
+        call_args_list = [] if is_no_context else ["contextId"]
+        reordered = _reorder_for_native(params, ffi_entry)
+        for p in reordered:
+            pname = p["name"]
+            ptype = p["type"]
             call_args_list.append(_param_convert(pname, ptype))
 
         kt_params = ", ".join(kt_params_list)

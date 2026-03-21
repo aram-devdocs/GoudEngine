@@ -496,14 +496,18 @@ class GoudGame:
         """Returns the number of post-processing passes"""
         return self._lib.goud_renderer3d_postprocess_pass_count(self._ctx)
 
-    def draw_sprite_rect(self, texture, x, y, width, height, rotation, src_x, src_y, src_w, src_h, color = None):
+    def draw_sprite_rect(self, texture, x, y, width, height, rotation, src_x, src_y, src_w, src_h, color = None, src_mode = 1):
         """Draws a sprite with source rectangle for sprite sheets"""
         _color_ffi = _ffi_module.FfiColor()
         _color_ffi.r = color.r
         _color_ffi.g = color.g
         _color_ffi.b = color.b
         _color_ffi.a = color.a
-        return self._lib.goud_renderer_draw_sprite_rect(self._ctx, texture, x, y, width, height, rotation, src_x, src_y, src_w, src_h, _color_ffi)
+        return self._lib.goud_renderer_draw_sprite_rect(self._ctx, texture, x, y, width, height, rotation, src_x, src_y, src_w, src_h, _color_ffi, src_mode)
+
+    def draw_sprite_batch(self, cmds):
+        """Draws a batch of sprites in a single GPU pass for high performance"""
+        return self._lib.goud_renderer_draw_sprite_batch(self._ctx, cmds)
 
     def set_viewport(self, x, y, width, height):
         """Sets the rendering viewport"""

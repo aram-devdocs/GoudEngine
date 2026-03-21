@@ -74,9 +74,21 @@ def gen_native_methods():
         "        public fixed float M[9];",
         "    }", "",
     ]
+    # Emit FfiSpriteCmd for batch rendering
+    lines += [
+        "    [StructLayout(LayoutKind.Sequential)]",
+        "    public struct FfiSpriteCmd", "    {",
+        "        public ulong Texture;",
+        "        public float X, Y, Width, Height, Rotation;",
+        "        public float SrcX, SrcY, SrcW, SrcH;",
+        "        public float R, G, B, A;",
+        "        public int ZLayer;",
+        "        public int _Padding;",
+        "    }", "",
+    ]
 
     # P/Invoke declarations
-    lines += ["    public static class NativeMethods", "    {",
+    lines += ["    public static unsafe class NativeMethods", "    {",
               '        private const string DllName = "libgoud_engine";', ""]
     for module, funcs in mapping["ffi_functions"].items():
         if not isinstance(funcs, dict):
@@ -101,6 +113,13 @@ def gen_native_methods():
                     f"        public static extern {ret} {fname}({', '.join(params)});",
                     "",
                 ]
+    # Batch rendering P/Invoke (not in ffi_mapping, added manually)
+    lines += [
+        "        // batch rendering",
+        "        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]",
+        "        public static extern uint goud_renderer_draw_sprite_batch(GoudContextId context_id, FfiSpriteCmd* cmds, uint count);",
+        "",
+    ]
     lines += ["    }", "}", ""]
     write_generated(OUT / "NativeMethods.g.cs", "\n".join(lines))
 

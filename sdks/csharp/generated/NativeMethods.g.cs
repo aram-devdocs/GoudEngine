@@ -248,7 +248,18 @@ namespace GoudEngine
         public fixed float M[9];
     }
 
-    public static class NativeMethods
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiSpriteCmd
+    {
+        public ulong Texture;
+        public float X, Y, Width, Height, Rotation;
+        public float SrcX, SrcY, SrcW, SrcH;
+        public float R, G, B, A;
+        public int ZLayer;
+        public int _Padding;
+    }
+
+    public static unsafe class NativeMethods
     {
         private const string DllName = "libgoud_engine";
 
@@ -472,7 +483,10 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
-        public static extern bool goud_renderer_draw_sprite_rect(GoudContextId context_id, ulong texture, float x, float y, float width, float height, float rotation, float src_x, float src_y, float src_w, float src_h, float r, float g, float b, float a);
+        public static extern bool goud_renderer_draw_sprite_rect(GoudContextId context_id, ulong texture, float x, float y, float width, float height, float rotation, float src_x, float src_y, float src_w, float src_h, uint src_mode, float r, float g, float b, float a);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_renderer_draw_sprite_batch(GoudContextId context_id, ref FfiSpriteCmd cmds, uint count);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void goud_renderer_set_viewport(GoudContextId context_id, int x, int y, uint width, uint height);
@@ -1882,6 +1896,10 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_ui_events_read(IntPtr mgr, uint index, ref FfiUiEvent out_event);
+
+        // batch rendering
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_renderer_draw_sprite_batch(GoudContextId context_id, FfiSpriteCmd* cmds, uint count);
 
     }
 }

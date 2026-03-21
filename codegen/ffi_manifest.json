@@ -3062,6 +3062,16 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_renderer_draw_sprite_batch": {
+      "source_file": "ffi/renderer/draw/batch.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "cmds: *const FfiSpriteCmd",
+        "count: u32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
     "goud_renderer_draw_sprite_rect": {
       "source_file": "ffi/renderer/draw/ffi.rs",
       "params": [
@@ -3076,6 +3086,7 @@
         "src_y: f32",
         "src_w: f32",
         "src_h: f32",
+        "src_mode: u32",
         "r: f32",
         "g: f32",
         "b: f32",
@@ -5020,5 +5031,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 503
+  "total_count": 504
 }

@@ -117,8 +117,8 @@ func RendererDrawSprite(bits ContextBits, texture uint64, x, y, width, height, r
 }
 
 // RendererDrawSpriteRect draws a sprite with a source rectangle.
-func RendererDrawSpriteRect(bits ContextBits, texture uint64, x, y, width, height, rotation, srcX, srcY, srcW, srcH, r, g, b, a float32) bool {
-	return bool(C.goud_renderer_draw_sprite_rect(ctxFromBits(bits), C.GoudTextureHandle(texture), C.float(x), C.float(y), C.float(width), C.float(height), C.float(rotation), C.float(srcX), C.float(srcY), C.float(srcW), C.float(srcH), C.float(r), C.float(g), C.float(b), C.float(a)))
+func RendererDrawSpriteRect(bits ContextBits, texture uint64, x, y, width, height, rotation, srcX, srcY, srcW, srcH float32, srcMode uint32, r, g, b, a float32) bool {
+	return bool(C.goud_renderer_draw_sprite_rect(ctxFromBits(bits), C.GoudTextureHandle(texture), C.float(x), C.float(y), C.float(width), C.float(height), C.float(rotation), C.float(srcX), C.float(srcY), C.float(srcW), C.float(srcH), C.uint32_t(srcMode), C.float(r), C.float(g), C.float(b), C.float(a)))
 }
 
 // RendererDrawQuad draws a colored rectangle.
@@ -387,6 +387,53 @@ func LastErrorOperation() string {
 // ErrorRecoveryClass returns the recovery class for an error code.
 func ErrorRecoveryClass(code int32) int32 {
 	return int32(C.goud_error_recovery_class(C.GoudErrorCode(code)))
+}
+
+// ---- Sprite Batch bridges ----
+
+// SpriteCmdData holds Go-native fields for a single batched sprite command.
+type SpriteCmdData struct {
+	Texture  uint64
+	X, Y     float32
+	Width    float32
+	Height   float32
+	Rotation float32
+	SrcX     float32
+	SrcY     float32
+	SrcW     float32
+	SrcH     float32
+	R, G, B, A float32
+	ZLayer   int32
+}
+
+// RendererDrawSpriteBatch draws a batch of sprites in a single GPU pass.
+// It converts the Go-native SpriteCmdData slice to C FfiSpriteCmd structs
+// and forwards to the FFI function.
+func RendererDrawSpriteBatch(bits ContextBits, cmds []SpriteCmdData) uint32 {
+	if len(cmds) == 0 {
+		return 0
+	}
+	ffiCmds := make([]C.FfiSpriteCmd, len(cmds))
+	for i, cmd := range cmds {
+		ffiCmds[i] = C.FfiSpriteCmd{
+			texture:  C.uint64_t(cmd.Texture),
+			x:        C.float(cmd.X),
+			y:        C.float(cmd.Y),
+			width:    C.float(cmd.Width),
+			height:   C.float(cmd.Height),
+			rotation: C.float(cmd.Rotation),
+			src_x:    C.float(cmd.SrcX),
+			src_y:    C.float(cmd.SrcY),
+			src_w:    C.float(cmd.SrcW),
+			src_h:    C.float(cmd.SrcH),
+			r:        C.float(cmd.R),
+			g:        C.float(cmd.G),
+			b:        C.float(cmd.B),
+			a:        C.float(cmd.A),
+			z_layer:  C.int32_t(cmd.ZLayer),
+		}
+	}
+	return uint32(C.goud_renderer_draw_sprite_batch(ctxFromBits(bits), &ffiCmds[0], C.uint32_t(len(cmds))))
 }
 
 // ---- Component bridges ----

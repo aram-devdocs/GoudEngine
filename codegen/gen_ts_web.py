@@ -156,7 +156,7 @@ def gen_web_wrapper():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IRenderMetrics, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IDebuggerCapture, IDebuggerReplayArtifact, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, IP2pMeshConfig, IRollbackConfig, PreloadAssetInput, PreloadAssetKind } from '../types/engine.g.js';",
+        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IRenderMetrics, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IDebuggerCapture, IDebuggerReplayArtifact, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, INetworkConnectResult, INetworkPacket, IP2pMeshConfig, IRollbackConfig, PreloadAssetInput, PreloadAssetKind, ISpriteCmd } from '../types/engine.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "import { PhysicsBackend2D, RenderBackendKind, WindowBackendKind } from '../types/input.g.js';",
         "import { attachInputHandlers } from './input.g.js';",
@@ -616,9 +616,14 @@ def gen_web_wrapper():
     lines.append("    this.handle.draw_sprite(texture, x, y, width, height, rotation, c.r, c.g, c.b, c.a);")
     lines.append("  }")
     emit_jsdoc(lines, _method_docs.get("draw_sprite_rect"))
-    lines.append("  drawSpriteRect(texture: number, x: number, y: number, width: number, height: number, rotation = 0, srcX = 0, srcY = 0, srcW = 1, srcH = 1, color?: IColor): boolean {")
+    lines.append("  drawSpriteRect(texture: number, x: number, y: number, width: number, height: number, rotation = 0, srcX = 0, srcY = 0, srcW = 1, srcH = 1, color?: IColor, srcMode = 1): boolean {")
     lines.append("    const c = color ?? Color.white();")
+    lines.append("    // WASM path only supports normalized UVs; srcMode is ignored")
     lines.append("    return this.handle.draw_sprite_rect(texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, c.r, c.g, c.b, c.a);")
+    lines.append("  }")
+    lines.append("  /** Draws a batch of sprites (not yet supported on WASM target, returns 0). */")
+    lines.append("  drawSpriteBatch(_cmds: ISpriteCmd[]): number {")
+    lines.append("    return 0;")
     lines.append("  }")
     emit_jsdoc(lines, _method_docs.get("draw_quad"))
     lines.append("  drawQuad(x: number, y: number, width: number, height: number, color?: IColor): void {")
