@@ -107,7 +107,7 @@ impl SpatialGrid {
             cell_size,
             entity_cells: HashMap::with_capacity(capacity),
             entity_positions: HashMap::with_capacity(capacity),
-            grid: HashMap::new(),
+            grid: HashMap::with_capacity(capacity),
         }
     }
 

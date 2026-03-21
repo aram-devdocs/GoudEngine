@@ -41,23 +41,15 @@ pub extern "C" fn goud_spatial_grid_create(cell_size: f32) -> u32 {
         }
     };
 
-    // Find a valid handle that is not the sentinel and not already in use.
-    let mut handle = reg.next_handle;
-    let start = handle;
-    loop {
-        if handle != GOUD_INVALID_SPATIAL_GRID_HANDLE && !reg.grids.contains_key(&handle) {
-            break;
-        }
-        handle = handle.wrapping_add(1);
-        if handle == start {
-            // All handles exhausted (extremely unlikely: 2^32 - 1 live grids).
+    let handle = match registry::allocate_handle(&mut reg) {
+        Some(h) => h,
+        None => {
             set_last_error(GoudError::InternalError(
                 "spatial grid handle space exhausted".to_string(),
             ));
             return GOUD_INVALID_SPATIAL_GRID_HANDLE;
         }
-    }
-    reg.next_handle = handle.wrapping_add(1);
+    };
     reg.grids.insert(handle, grid);
 
     handle
@@ -94,22 +86,15 @@ pub extern "C" fn goud_spatial_grid_create_with_capacity(cell_size: f32, capacit
         }
     };
 
-    // Find a valid handle that is not the sentinel and not already in use.
-    let mut handle = reg.next_handle;
-    let start = handle;
-    loop {
-        if handle != GOUD_INVALID_SPATIAL_GRID_HANDLE && !reg.grids.contains_key(&handle) {
-            break;
-        }
-        handle = handle.wrapping_add(1);
-        if handle == start {
+    let handle = match registry::allocate_handle(&mut reg) {
+        Some(h) => h,
+        None => {
             set_last_error(GoudError::InternalError(
                 "spatial grid handle space exhausted".to_string(),
             ));
             return GOUD_INVALID_SPATIAL_GRID_HANDLE;
         }
-    }
-    reg.next_handle = handle.wrapping_add(1);
+    };
     reg.grids.insert(handle, grid);
 
     handle

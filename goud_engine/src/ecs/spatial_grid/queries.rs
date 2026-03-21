@@ -40,6 +40,7 @@ impl SpatialGrid {
     /// assert_eq!(nearby[0], e1);
     /// ```
     pub fn query_radius(&self, center: Vec2, radius: f32) -> Vec<Entity> {
+        debug_assert!(radius >= 0.0, "query_radius called with negative radius");
         let radius_sq = radius * radius;
         let cell_size = self.cell_size();
 

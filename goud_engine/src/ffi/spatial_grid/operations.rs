@@ -90,14 +90,9 @@ pub extern "C" fn goud_spatial_grid_remove(handle: u32, entity_id: u64) -> i32 {
 
     match reg.grids.get_mut(&handle) {
         Some(grid) => {
-            if grid.remove(entity) {
-                0
-            } else {
-                set_last_error(GoudError::InvalidState(
-                    "entity not found in spatial grid".to_string(),
-                ));
-                GoudError::InvalidState(String::new()).error_code()
-            }
+            // Idempotent: removing a nonexistent entity is a no-op (returns success).
+            grid.remove(entity);
+            0
         }
         None => {
             set_last_error(GoudError::InvalidState(

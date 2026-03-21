@@ -48,4 +48,24 @@ pub(super) mod registry {
             })
         })
     }
+
+    /// Allocates a unique handle that is not the sentinel and not already in use.
+    ///
+    /// Returns `Some(handle)` on success, `None` if the entire handle space is
+    /// exhausted (2^32 - 1 live grids).
+    pub(super) fn allocate_handle(reg: &mut SpatialGridRegistry) -> Option<u32> {
+        let start = reg.next_handle;
+        let mut handle = start;
+        loop {
+            if handle != super::GOUD_INVALID_SPATIAL_GRID_HANDLE && !reg.grids.contains_key(&handle)
+            {
+                reg.next_handle = handle.wrapping_add(1);
+                return Some(handle);
+            }
+            handle = handle.wrapping_add(1);
+            if handle == start {
+                return None;
+            }
+        }
+    }
 }
