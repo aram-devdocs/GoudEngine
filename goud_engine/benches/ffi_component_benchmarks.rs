@@ -83,8 +83,7 @@ fn bench_ffi_component_query(c: &mut Criterion) {
                 };
                 // Simulate reading each component (what C# foreach would do).
                 let mut sum = 0.0f32;
-                for i in 0..returned as usize {
-                    let ptr = ptrs[i];
+                for &ptr in &ptrs[..returned as usize] {
                     // SAFETY: ptr points to valid [f32; 2] data in component storage.
                     let val = unsafe { *(ptr as *const [f32; 2]) };
                     sum += val[0];
