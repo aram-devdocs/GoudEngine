@@ -1529,6 +1529,46 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_destroy<'loca
 
 #[allow(non_snake_case)]
 #[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setFixedTimestep<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    stepSize: jni::sys::jfloat,
+) -> () {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_setFixedTimestep", (), |env| -> crate::jni::helpers::JniCallResult<()> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::window::fixed_timestep::goud_fixed_timestep_set(goud_context_id_from_jlong(contextId), stepSize as _);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_fixed_timestep_set", None);
+                return Err(());
+            }
+            Ok(())
+    });
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setMaxFixedSteps<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    maxSteps: jni::sys::jint,
+) -> () {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_setMaxFixedSteps", (), |env| -> crate::jni::helpers::JniCallResult<()> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::window::fixed_timestep::goud_fixed_timestep_set_max_steps(goud_context_id_from_jlong(contextId), maxSteps as _);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_fixed_timestep_set_max_steps", None);
+                return Err(());
+            }
+            Ok(())
+    });
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_loadTexture<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
@@ -3584,6 +3624,28 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_drawSpriteBat
     };
             if crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer_draw_sprite_batch", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_drawTextBatch<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    cmds: jni::objects::JObject<'local>,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_drawTextBatch", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
+        crate::ffi::renderer::goud_renderer_draw_text_batch(goud_context_id_from_jlong(contextId), cmds as _)
+    };
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer_draw_text_batch", Some(result as i64));
                 return Err(());
             }
             Ok(result as i32)

@@ -331,6 +331,29 @@ class FfiUiEvent(ctypes.Structure):
         ("current_node_id", ctypes.c_uint64)
     ]
 
+class FfiAtlasEntry(ctypes.Structure):
+    _fields_ = [
+        ("u_min", ctypes.c_float),
+        ("v_min", ctypes.c_float),
+        ("u_max", ctypes.c_float),
+        ("v_max", ctypes.c_float),
+        ("pixel_x", ctypes.c_uint32),
+        ("pixel_y", ctypes.c_uint32),
+        ("pixel_w", ctypes.c_uint32),
+        ("pixel_h", ctypes.c_uint32)
+    ]
+
+class FfiAtlasStats(ctypes.Structure):
+    _fields_ = [
+        ("texture_count", ctypes.c_uint32),
+        ("width", ctypes.c_uint32),
+        ("height", ctypes.c_uint32),
+        ("used_pixels", ctypes.c_uint64),
+        ("total_pixels", ctypes.c_uint64),
+        ("efficiency", ctypes.c_float),
+        ("wasted_pixels", ctypes.c_uint64)
+    ]
+
 class FfiSpriteCmd(ctypes.Structure):
     _fields_ = [
         ("texture", ctypes.c_uint64),
@@ -349,6 +372,24 @@ class FfiSpriteCmd(ctypes.Structure):
         ("a", ctypes.c_float),
         ("z_layer", ctypes.c_int32),
         ("_padding", ctypes.c_int32),
+    ]
+
+class FfiTextCmd(ctypes.Structure):
+    _fields_ = [
+        ("font_handle", ctypes.c_uint64),
+        ("text", ctypes.c_char_p),
+        ("x", ctypes.c_float),
+        ("y", ctypes.c_float),
+        ("font_size", ctypes.c_float),
+        ("alignment", ctypes.c_uint8),
+        ("direction", ctypes.c_uint8),
+        ("_pad0", ctypes.c_uint16),
+        ("max_width", ctypes.c_float),
+        ("line_spacing", ctypes.c_float),
+        ("r", ctypes.c_float),
+        ("g", ctypes.c_float),
+        ("b", ctypes.c_float),
+        ("a", ctypes.c_float),
     ]
 
 # ── Function signatures ──
@@ -383,6 +424,10 @@ def _setup():
     _lib.goud_engine_config_set_debugger.restype = ctypes.c_bool
     _lib.goud_engine_config_set_aspect_ratio_lock.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
     _lib.goud_engine_config_set_aspect_ratio_lock.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_fixed_timestep.argtypes = [ctypes.c_void_p, ctypes.c_float]
+    _lib.goud_engine_config_set_fixed_timestep.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_max_fixed_steps.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    _lib.goud_engine_config_set_max_fixed_steps.restype = ctypes.c_bool
     _lib.goud_engine_create.argtypes = [ctypes.c_void_p]
     _lib.goud_engine_create.restype = GoudContextId
 
@@ -457,6 +502,18 @@ def _setup():
     _lib.goud_window_toggle_fullscreen.restype = ctypes.c_int32
     _lib.goud_window_set_aspect_ratio_lock.argtypes = [GoudContextId, ctypes.c_uint32]
     _lib.goud_window_set_aspect_ratio_lock.restype = ctypes.c_int32
+    _lib.goud_fixed_timestep_begin.argtypes = [GoudContextId]
+    _lib.goud_fixed_timestep_begin.restype = ctypes.c_bool
+    _lib.goud_fixed_timestep_step.argtypes = [GoudContextId]
+    _lib.goud_fixed_timestep_step.restype = ctypes.c_bool
+    _lib.goud_fixed_timestep_alpha.argtypes = [GoudContextId]
+    _lib.goud_fixed_timestep_alpha.restype = ctypes.c_float
+    _lib.goud_fixed_timestep_dt.argtypes = [GoudContextId]
+    _lib.goud_fixed_timestep_dt.restype = ctypes.c_float
+    _lib.goud_fixed_timestep_set.argtypes = [GoudContextId, ctypes.c_float]
+    _lib.goud_fixed_timestep_set.restype = ctypes.c_bool
+    _lib.goud_fixed_timestep_set_max_steps.argtypes = [GoudContextId, ctypes.c_uint32]
+    _lib.goud_fixed_timestep_set_max_steps.restype = ctypes.c_bool
 
     # renderer
     _lib.goud_renderer_begin.argtypes = [GoudContextId]
@@ -489,6 +546,8 @@ def _setup():
     _lib.goud_renderer_draw_sprite_rect.restype = ctypes.c_bool
     _lib.goud_renderer_draw_sprite_batch.argtypes = [GoudContextId, ctypes.POINTER(FfiSpriteCmd), ctypes.c_uint32]
     _lib.goud_renderer_draw_sprite_batch.restype = ctypes.c_uint32
+    _lib.goud_renderer_draw_text_batch.argtypes = [GoudContextId, ctypes.POINTER(FfiTextCmd), ctypes.c_uint32]
+    _lib.goud_renderer_draw_text_batch.restype = ctypes.c_uint32
     _lib.goud_renderer_set_viewport.argtypes = [GoudContextId, ctypes.c_int32, ctypes.c_int32, ctypes.c_uint32, ctypes.c_uint32]
     _lib.goud_renderer_set_viewport.restype = None
     _lib.goud_renderer_enable_depth_test.argtypes = [GoudContextId]
@@ -501,6 +560,24 @@ def _setup():
     _lib.goud_renderer_disable_blending.restype = None
     _lib.goud_renderer_get_stats.argtypes = [GoudContextId, ctypes.POINTER(GoudRenderStats)]
     _lib.goud_renderer_get_stats.restype = ctypes.c_bool
+    _lib.goud_atlas_create.argtypes = [GoudContextId, ctypes.c_char_p, ctypes.c_uint32, ctypes.c_uint32]
+    _lib.goud_atlas_create.restype = ctypes.c_uint64
+    _lib.goud_atlas_add_from_file.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_char_p, ctypes.c_char_p]
+    _lib.goud_atlas_add_from_file.restype = ctypes.c_bool
+    _lib.goud_atlas_add_texture.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_char_p, ctypes.c_uint64]
+    _lib.goud_atlas_add_texture.restype = ctypes.c_bool
+    _lib.goud_atlas_add_pixels.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_char_p, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32, ctypes.c_uint32]
+    _lib.goud_atlas_add_pixels.restype = ctypes.c_bool
+    _lib.goud_atlas_finalize.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_atlas_finalize.restype = ctypes.c_uint64
+    _lib.goud_atlas_get_entry.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_char_p, ctypes.POINTER(FfiAtlasEntry)]
+    _lib.goud_atlas_get_entry.restype = ctypes.c_bool
+    _lib.goud_atlas_get_stats.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(FfiAtlasStats)]
+    _lib.goud_atlas_get_stats.restype = ctypes.c_bool
+    _lib.goud_atlas_get_texture.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_atlas_get_texture.restype = ctypes.c_uint64
+    _lib.goud_atlas_destroy.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_atlas_destroy.restype = ctypes.c_bool
 
     # debug
     _lib.goud_debug_get_fps_stats.argtypes = [GoudContextId, ctypes.POINTER(FpsStats)]

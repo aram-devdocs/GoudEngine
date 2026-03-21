@@ -58,6 +58,8 @@ export interface IInputCapabilities { supportsGamepad: boolean; supportsTouch: b
 export interface INetworkCapabilities { supportsHosting: boolean; maxConnections: number; maxChannels: number; maxMessageSize: number; }
 /** Sprite command for batched rendering via drawSpriteBatch. Position, size, and source-rect values are in screen-space pixels. When srcW and srcH are both 0 the full texture is used. */
 export interface ISpriteCmd { texture?: number; x?: number; y?: number; width?: number; height?: number; rotation?: number; srcX?: number; srcY?: number; srcW?: number; srcH?: number; r?: number; g?: number; b?: number; a?: number; zLayer?: number; }
+/** Text command for batched rendering via drawTextBatch. */
+export interface ITextCmd { fontHandle?: number; text?: string; x?: number; y?: number; fontSize?: number; alignment?: number; direction?: number; maxWidth?: number; lineSpacing?: number; r?: number; g?: number; b?: number; a?: number; }
 
 /** Opaque handle to an ECS entity */
 export interface IEntity {
@@ -158,6 +160,8 @@ export interface IGoudGame {
   readonly totalTime: number;
   /** Number of frames processed */
   readonly frameCount: number;
+  /** Interpolation alpha for render smoothing between fixed timesteps (0.0 to 1.0) */
+  readonly interpolationAlpha: number;
   /** Returns true if the window close has been requested */
   shouldClose(): boolean;
   /** Signals the window to close */
@@ -172,6 +176,12 @@ export interface IGoudGame {
   endFrame(): void;
   /** Runs the game loop. Calls the update callback each frame with delta time. Blocks until the window is closed. */
   run(update: (dt: number) => void): void;
+  /** Runs the game loop with a fixed timestep. fixedUpdate runs at the configured fixed rate, update runs once per visual frame. */
+  runWithFixedUpdate(fixedUpdate: (dt: number) => void, update: (dt: number) => void): void;
+  /** Sets the fixed timestep step size in seconds. Pass 0 to disable. */
+  setFixedTimestep(stepSize: number): void;
+  /** Sets the maximum fixed steps per frame to prevent spiral of death. */
+  setMaxFixedSteps(maxSteps: number): void;
   /** Loads a texture from a file path and returns its handle */
   loadTexture(path: string): Promise<number>;
   /** Destroys a previously loaded texture */
@@ -336,6 +346,8 @@ export interface IGoudGame {
   drawSpriteRect(texture: number, x: number, y: number, width: number, height: number, rotation: number, srcX: number, srcY: number, srcW: number, srcH: number, color?: IColor, srcMode?: number): boolean;
   /** Draws a batch of sprites in a single GPU pass for high performance */
   drawSpriteBatch(cmds: ISpriteCmd[]): number;
+  /** Draws a batch of text labels in a single pass for high performance */
+  drawTextBatch(cmds: ITextCmd[]): number;
   /** Sets the rendering viewport */
   setViewport(x: number, y: number, width: number, height: number): void;
   /** Enables depth testing */
@@ -572,6 +584,8 @@ export interface IGoudGame {
   rpcDrainOne(handle: number): Uint8Array;
   /** Draws a batch of sprites in a single GPU pass for high performance. */
   drawSpriteBatch(cmds: ISpriteCmd[]): number;
+  /** Draws a batch of text labels in a single pass for high performance. */
+  drawTextBatch(cmds: ITextCmd[]): number;
   /** Preloads textures/fonts before `run()` starts and reports coarse per-asset progress. */
   preload(assets: PreloadAssetInput[], options?: IPreloadOptions): Promise<Record<string, number>>;
   // Animation Layer Stack & Events

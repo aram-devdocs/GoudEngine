@@ -14,12 +14,14 @@ use crate::ffi::window::with_window_state;
 use crate::libs::graphics::backend::TextureOps;
 use crate::rendering::text::{GlyphAtlas, TextBatch, TextLayoutConfig};
 
+mod batch;
 mod draw_impl;
 mod parse;
 
 #[cfg(test)]
 mod tests;
 
+pub use batch::{goud_renderer_draw_text_batch, FfiTextCmd};
 use draw_impl::draw_text_internal;
 use parse::{parse_text_alignment, parse_text_direction, read_utf8_cstr};
 

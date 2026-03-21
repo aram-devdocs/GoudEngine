@@ -741,6 +741,9 @@ def java_native_source(class_name: str, methods: list[GeneratedMethod]) -> str:
         "",
     ]
     for method in methods:
+        # Skip methods with callback parameters — JNI cannot express them.
+        if any(p["type"].startswith("callback") for p in method.params):
+            continue
         java_params = []
         if method.handle_type is not None and not method.mapping.get("no_context"):
             java_params.append(f"long {handle_arg_name(method.handle_type)}")
@@ -2168,6 +2171,9 @@ def rust_source(methods: list[GeneratedMethod]) -> str:
     lines.extend(build_local_ffi_structs())
     lines.extend(build_type_helpers())
     for method in methods:
+        # Skip methods with callback parameters — JNI cannot express them.
+        if any(p["type"].startswith("callback") for p in method.params):
+            continue
         lines.extend(rust_method_source(method))
     return "\n".join(lines)
 
@@ -2199,6 +2205,22 @@ def write_java_sources(methods: list[GeneratedMethod]) -> None:
             sc_lines.append(f"    public {jtype} {jname};")
         sc_lines += ["", "    public SpriteCmd() {}", "}", ""]
         write_generated(JAVA_DIR / "SpriteCmd.java", "\n".join(sc_lines))
+    # TextCmd is not in schema types but is used as an array parameter in drawTextBatch.
+    # Generate a minimal carrier so the test fixtures compile.
+    if "TextCmd" not in USED_TYPES:
+        _TEXT_CMD_FIELDS = [
+            ("long", "fontHandle"), ("String", "text"),
+            ("float", "x"), ("float", "y"), ("float", "fontSize"),
+            ("int", "alignment"), ("int", "direction"),
+            ("float", "maxWidth"), ("float", "lineSpacing"),
+            ("float", "r"), ("float", "g"), ("float", "b"), ("float", "a"),
+        ]
+        tc_lines = [JAVA_HEADER, "package com.goudengine.internal;", ""]
+        tc_lines.append("public final class TextCmd {")
+        for jtype, jname in _TEXT_CMD_FIELDS:
+            tc_lines.append(f"    public {jtype} {jname};")
+        tc_lines += ["", "    public TextCmd() {}", "}", ""]
+        write_generated(JAVA_DIR / "TextCmd.java", "\n".join(tc_lines))
     write_generated(JAVA_DIR / "JniSmokeMain.java", smoke_java_source())
 
 

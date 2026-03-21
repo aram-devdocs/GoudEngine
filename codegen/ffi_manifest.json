@@ -273,6 +273,100 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_atlas_add_from_file": {
+      "source_file": "ffi/renderer/atlas/ffi.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "atlas: GoudAtlasHandle",
+        "key: *const c_char",
+        "path: *const c_char"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_atlas_add_pixels": {
+      "source_file": "ffi/renderer/atlas/ffi.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "atlas: GoudAtlasHandle",
+        "key: *const c_char",
+        "pixels: *const u8",
+        "width: u32",
+        "height: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_atlas_add_texture": {
+      "source_file": "ffi/renderer/atlas/ffi.rs",
+      "params": [
+        "_context_id: GoudContextId",
+        "_atlas: GoudAtlasHandle",
+        "_key: *const c_char",
+        "_texture: GoudTextureHandle"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_atlas_create": {
+      "source_file": "ffi/renderer/atlas/ffi.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "category: *const c_char",
+        "max_width: u32",
+        "max_height: u32"
+      ],
+      "return_type": "GoudAtlasHandle",
+      "is_unsafe": true
+    },
+    "goud_atlas_destroy": {
+      "source_file": "ffi/renderer/atlas/ffi.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "atlas: GoudAtlasHandle"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_atlas_finalize": {
+      "source_file": "ffi/renderer/atlas/ffi.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "atlas: GoudAtlasHandle"
+      ],
+      "return_type": "GoudTextureHandle",
+      "is_unsafe": false
+    },
+    "goud_atlas_get_entry": {
+      "source_file": "ffi/renderer/atlas/ffi.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "atlas: GoudAtlasHandle",
+        "key: *const c_char",
+        "out_entry: *mut FfiAtlasEntry"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_atlas_get_stats": {
+      "source_file": "ffi/renderer/atlas/ffi.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "atlas: GoudAtlasHandle",
+        "out_stats: *mut FfiAtlasStats"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_atlas_get_texture": {
+      "source_file": "ffi/renderer/atlas/ffi.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "atlas: GoudAtlasHandle"
+      ],
+      "return_type": "GoudTextureHandle",
+      "is_unsafe": false
+    },
     "goud_audio_activate": {
       "source_file": "ffi/audio/controls.rs",
       "params": [
@@ -1264,6 +1358,15 @@
       "return_type": "bool",
       "is_unsafe": true
     },
+    "goud_engine_config_set_fixed_timestep": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle",
+        "step: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
     "goud_engine_config_set_fps_overlay": {
       "source_file": "ffi/engine_config.rs",
       "params": [
@@ -1278,6 +1381,15 @@
       "params": [
         "handle: EngineConfigHandle",
         "mode: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_engine_config_set_max_fixed_steps": {
+      "source_file": "ffi/engine_config.rs",
+      "params": [
+        "handle: EngineConfigHandle",
+        "max: u32"
       ],
       "return_type": "bool",
       "is_unsafe": true
@@ -1463,6 +1575,56 @@
       ],
       "return_type": "i32",
       "is_unsafe": true
+    },
+    "goud_fixed_timestep_alpha": {
+      "source_file": "ffi/window/fixed_timestep.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_fixed_timestep_begin": {
+      "source_file": "ffi/window/fixed_timestep.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_fixed_timestep_dt": {
+      "source_file": "ffi/window/fixed_timestep.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_fixed_timestep_set": {
+      "source_file": "ffi/window/fixed_timestep.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "step: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_fixed_timestep_set_max_steps": {
+      "source_file": "ffi/window/fixed_timestep.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "max: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_fixed_timestep_step": {
+      "source_file": "ffi/window/fixed_timestep.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
     },
     "goud_font_destroy": {
       "source_file": "ffi/renderer/text.rs",
@@ -3114,6 +3276,16 @@
         "a: f32"
       ],
       "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_renderer_draw_text_batch": {
+      "source_file": "ffi/renderer/text/batch.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "cmds: *const FfiTextCmd",
+        "count: u32"
+      ],
+      "return_type": "u32",
       "is_unsafe": true
     },
     "goud_renderer_enable_blending": {
@@ -5116,5 +5288,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 513
+  "total_count": 531
 }

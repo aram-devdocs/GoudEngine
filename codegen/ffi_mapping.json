@@ -357,6 +357,31 @@
         "previous_node_id",
         "current_node_id"
       ]
+    },
+    "AtlasEntry": {
+      "ffi_name": "FfiAtlasEntry",
+      "fields": [
+        "u_min",
+        "v_min",
+        "u_max",
+        "v_max",
+        "pixel_x",
+        "pixel_y",
+        "pixel_w",
+        "pixel_h"
+      ]
+    },
+    "AtlasStats": {
+      "ffi_name": "FfiAtlasStats",
+      "fields": [
+        "texture_count",
+        "width",
+        "height",
+        "used_pixels",
+        "total_pixels",
+        "efficiency",
+        "wasted_pixels"
+      ]
     }
   },
   "ffi_handles": {
@@ -387,6 +412,10 @@
     "UiManagerHandle": {
       "type": "*mut c_void",
       "invalid": "null"
+    },
+    "GoudAtlasHandle": {
+      "type": "u64",
+      "invalid": "u64::MAX"
     }
   },
   "ctypes_mappings": {
@@ -429,6 +458,8 @@
       "goud_engine_config_set_window_backend": {},
       "goud_engine_config_set_debugger": {},
       "goud_engine_config_set_aspect_ratio_lock": {},
+      "goud_engine_config_set_fixed_timestep": {},
+      "goud_engine_config_set_max_fixed_steps": {},
       "goud_engine_create": {}
     },
     "context": {
@@ -468,7 +499,13 @@
       "goud_window_set_fullscreen": {},
       "goud_window_get_fullscreen": {},
       "goud_window_toggle_fullscreen": {},
-      "goud_window_set_aspect_ratio_lock": {}
+      "goud_window_set_aspect_ratio_lock": {},
+      "goud_fixed_timestep_begin": {},
+      "goud_fixed_timestep_step": {},
+      "goud_fixed_timestep_alpha": {},
+      "goud_fixed_timestep_dt": {},
+      "goud_fixed_timestep_set": {},
+      "goud_fixed_timestep_set_max_steps": {}
     },
     "renderer": {
       "goud_renderer_begin": {},
@@ -488,12 +525,22 @@
       },
       "goud_renderer_draw_sprite_rect": {},
       "goud_renderer_draw_sprite_batch": {},
+      "goud_renderer_draw_text_batch": {},
       "goud_renderer_set_viewport": {},
       "goud_renderer_enable_depth_test": {},
       "goud_renderer_disable_depth_test": {},
       "goud_renderer_clear_depth": {},
       "goud_renderer_disable_blending": {},
-      "goud_renderer_get_stats": {}
+      "goud_renderer_get_stats": {},
+      "goud_atlas_create": {},
+      "goud_atlas_add_from_file": {},
+      "goud_atlas_add_texture": {},
+      "goud_atlas_add_pixels": {},
+      "goud_atlas_finalize": {},
+      "goud_atlas_get_entry": {},
+      "goud_atlas_get_stats": {},
+      "goud_atlas_get_texture": {},
+      "goud_atlas_destroy": {}
     },
     "debug": {
       "goud_debug_get_fps_stats": {},

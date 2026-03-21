@@ -9,6 +9,8 @@ public final class GoudGameNative {
     public static native void close(long contextId);
     public static native boolean setWindowSize(long contextId, int width, int height);
     public static native void destroy(long contextId);
+    public static native void setFixedTimestep(long contextId, float stepSize);
+    public static native void setMaxFixedSteps(long contextId, int maxSteps);
     public static native long loadTexture(long contextId, String path);
     public static native void destroyTexture(long contextId, long handle);
     public static native long loadFont(long contextId, String path);
@@ -90,6 +92,7 @@ public final class GoudGameNative {
     public static native int postprocessPassCount(long contextId);
     public static native boolean drawSpriteRect(long contextId, long texture, float x, float y, float width, float height, float rotation, float srcX, float srcY, float srcW, float srcH, int srcMode, Color color);
     public static native int drawSpriteBatch(long contextId, SpriteCmd[] cmds);
+    public static native int drawTextBatch(long contextId, TextCmd[] cmds);
     public static native void setViewport(long contextId, int x, int y, int width, int height);
     public static native void enableDepthTest(long contextId);
     public static native void disableDepthTest(long contextId);

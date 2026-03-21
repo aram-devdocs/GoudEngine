@@ -26,6 +26,18 @@ namespace GoudEngine
         public int ZLayer;
     }
 
+    /// <summary>A text command for batch rendering via DrawTextBatch.</summary>
+    public struct TextCmd
+    {
+        public ulong FontHandle;
+        public string Text;
+        public float X, Y, FontSize;
+        public TextAlignment Alignment;
+        public TextDirection Direction;
+        public float MaxWidth, LineSpacing;
+        public Color? Color;
+    }
+
     /// <summary>Main game engine instance. Creates a window, manages rendering, input, and ECS.</summary>
     public class GoudGame : IDisposable
     {
@@ -105,6 +117,8 @@ namespace GoudEngine
 
         public uint FrameCount => _frameCount;
 
+        public float InterpolationAlpha => NativeMethods.goud_fixed_timestep_alpha(_ctx);
+
         /// <summary>Returns true if the window close has been requested</summary>
         public bool ShouldClose()
         {
@@ -154,6 +168,34 @@ namespace GoudEngine
                 update(_deltaTime);
                 EndFrame();
             }
+        }
+
+        /// <summary>Runs the game loop with a fixed timestep. fixedUpdate runs at the configured fixed rate, update runs once per visual frame.</summary>
+        public void RunWithFixedUpdate(Action<float> fixedUpdate, Action<float> update)
+        {
+            while (!ShouldClose())
+            {
+                BeginFrame();
+                if (NativeMethods.goud_fixed_timestep_begin(_ctx))
+                {
+                    while (NativeMethods.goud_fixed_timestep_step(_ctx))
+                        fixedUpdate(NativeMethods.goud_fixed_timestep_dt(_ctx));
+                }
+                update(_deltaTime);
+                EndFrame();
+            }
+        }
+
+        /// <summary>Sets the fixed timestep step size in seconds. Pass 0 to disable.</summary>
+        public void SetFixedTimestep(float stepSize)
+        {
+            NativeMethods.goud_fixed_timestep_set(_ctx, stepSize);
+        }
+
+        /// <summary>Sets the maximum fixed steps per frame to prevent spiral of death.</summary>
+        public void SetMaxFixedSteps(uint maxSteps)
+        {
+            NativeMethods.goud_fixed_timestep_set_max_steps(_ctx, maxSteps);
         }
 
         /// <summary>Loads a texture from a file path and returns its handle</summary>
@@ -797,6 +839,34 @@ namespace GoudEngine
             fixed (FfiSpriteCmd* ptr = ffi)
             {
                 return NativeMethods.goud_renderer_draw_sprite_batch(_ctx, ptr, (uint)cmds.Length);
+            }
+        }
+
+        /// <summary>Draws a batch of text labels in a single pass for high performance</summary>
+        public unsafe uint DrawTextBatch(TextCmd[] cmds)
+        {
+            if (cmds == null || cmds.Length == 0) return 0;
+            var handles = new System.Collections.Generic.List<GCHandle>(cmds.Length);
+            try
+            {
+                var ffi = new FfiTextCmd[cmds.Length];
+                for (int i = 0; i < cmds.Length; i++)
+                {
+                    ref readonly var t = ref cmds[i];
+                    var c = t.Color ?? Color.White();
+                    byte[] bytes = System.Text.Encoding.UTF8.GetBytes(t.Text + '\0');
+                    var h = GCHandle.Alloc(bytes, GCHandleType.Pinned);
+                    handles.Add(h);
+                    ffi[i] = new FfiTextCmd { FontHandle = t.FontHandle, Text = h.AddrOfPinnedObject(), X = t.X, Y = t.Y, FontSize = t.FontSize, Alignment = (byte)t.Alignment, Direction = (byte)t.Direction, _Pad0 = 0, MaxWidth = t.MaxWidth, LineSpacing = t.LineSpacing > 0 ? t.LineSpacing : 1.0f, R = c.R, G = c.G, B = c.B, A = c.A };
+                }
+                fixed (FfiTextCmd* ptr = ffi)
+                {
+                    return NativeMethods.goud_renderer_draw_text_batch(_ctx, ptr, (uint)cmds.Length);
+                }
+            }
+            finally
+            {
+                foreach (var h in handles) h.Free();
             }
         }
 

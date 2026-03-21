@@ -259,29 +259,6 @@ func NewAnimationEventData(entity uint64, name string, frameIndex uint32, payloa
 	}
 }
 
-// SpriteCmd describes a single sprite for batched rendering via DrawSpriteBatch.
-// Position, size, and source-rect values are in screen-space pixels.
-// When SrcW and SrcH are both 0 the full texture is used.
-type SpriteCmd struct {
-	Texture        uint64
-	X, Y           float32
-	Width, Height  float32
-	Rotation       float32
-	SrcX, SrcY     float32
-	SrcW, SrcH     float32
-	R, G, B, A     float32
-	ZLayer         int32
-}
-
-// NewSpriteCmd creates a new SpriteCmd.
-func NewSpriteCmd(texture uint64, x, y, width, height, rotation, srcX, srcY, srcW, srcH, r, g, b, a float32, zLayer int32) SpriteCmd {
-	return SpriteCmd{
-		Texture: texture, X: x, Y: y, Width: width, Height: height,
-		Rotation: rotation, SrcX: srcX, SrcY: srcY, SrcW: srcW, SrcH: srcH,
-		R: r, G: g, B: b, A: a, ZLayer: zLayer,
-	}
-}
-
 // RenderStats Per-frame rendering statistics
 type RenderStats struct {
 	DrawCalls uint32
@@ -802,5 +779,55 @@ func NewRollbackConfig(maxRollbackFrames uint32, inputDelayFrames uint32, desync
 		MaxRollbackFrames: maxRollbackFrames,
 		InputDelayFrames: inputDelayFrames,
 		DesyncDetection: desyncDetection,
+	}
+}
+
+// AtlasEntry Describes a packed texture's position within a texture atlas
+type AtlasEntry struct {
+	UMin float32
+	VMin float32
+	UMax float32
+	VMax float32
+	PixelX uint32
+	PixelY uint32
+	PixelW uint32
+	PixelH uint32
+}
+
+// NewAtlasEntry creates a new AtlasEntry.
+func NewAtlasEntry(uMin float32, vMin float32, uMax float32, vMax float32, pixelX uint32, pixelY uint32, pixelW uint32, pixelH uint32) AtlasEntry {
+	return AtlasEntry{
+		UMin: uMin,
+		VMin: vMin,
+		UMax: uMax,
+		VMax: vMax,
+		PixelX: pixelX,
+		PixelY: pixelY,
+		PixelW: pixelW,
+		PixelH: pixelH,
+	}
+}
+
+// AtlasStats Statistics about a packed texture atlas
+type AtlasStats struct {
+	TextureCount uint32
+	Width uint32
+	Height uint32
+	UsedPixels uint64
+	TotalPixels uint64
+	Efficiency float32
+	WastedPixels uint64
+}
+
+// NewAtlasStats creates a new AtlasStats.
+func NewAtlasStats(textureCount uint32, width uint32, height uint32, usedPixels uint64, totalPixels uint64, efficiency float32, wastedPixels uint64) AtlasStats {
+	return AtlasStats{
+		TextureCount: textureCount,
+		Width: width,
+		Height: height,
+		UsedPixels: usedPixels,
+		TotalPixels: totalPixels,
+		Efficiency: efficiency,
+		WastedPixels: wastedPixels,
 	}
 }
