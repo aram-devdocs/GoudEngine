@@ -63,6 +63,7 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
         title: 'fake',
         totalTime: 9,
         frameCount: 10,
+        interpolationAlpha: 0.5,
         shouldClose() {
           shouldCloseCalls += 1;
           return shouldCloseCalls > 1;
@@ -137,6 +138,13 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
     game.run((dt) => {
       assert.equal(dt, 0.125);
     });
+
+    // Reset shouldClose counter for runWithFixedUpdate test
+    shouldCloseCalls = 0;
+    game.runWithFixedUpdate(
+      (dt) => { /* fixedUpdate */ },
+      (dt) => { /* update */ },
+    );
 
     assert.deepEqual(game.getMousePosition(), { x: 3, y: 4 });
     assert.deepEqual(game.getMouseDelta(), { x: 5, y: 6 });
@@ -338,6 +346,14 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
     assert.equal(game.audioUpdateCrossfades(0.016), 0);
     assert.equal(game.audioActiveCrossfadeCount(), 0);
     assert.equal(game.audioActivate(), 0);
+
+    assert.equal(game.interpolationAlpha, 0.5);
+    game.setFixedTimestep(0.016);
+    game.setMaxFixedSteps(8);
+    assert.equal(game.drawTextBatch([{ fontHandle: 1, text: 'hi', x: 0, y: 0, fontSize: 16, alignment: 0, direction: 0, maxWidth: 0, lineSpacing: 1, r: 1, g: 1, b: 1, a: 1 }]), 0);
+    assert.equal(game.componentCount(1), 0);
+    assert.equal(game.componentGetEntities(1, 0, 10), 0);
+    assert.equal(game.componentGetAll(1, 0, 0, 10), 0);
 
     assert.equal(game.checkHotSwapShortcut(), 0);
     assert.equal(game.loadScene('s', '{}'), 0);
