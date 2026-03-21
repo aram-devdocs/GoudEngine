@@ -852,6 +852,18 @@ class GoudGame:
         """Checks if multiple entities have a generic component"""
         return self._lib.goud_component_has_batch(self._ctx, entities, type_id_hash, out_results)
 
+    def component_count(self, type_id_hash):
+        """Returns the number of entities with a specific component type"""
+        return self._lib.goud_component_count(self._ctx, type_id_hash)
+
+    def component_get_entities(self, type_id_hash, out_entities, max_count):
+        """Gets entity IDs for all entities with a specific component type"""
+        return self._lib.goud_component_get_entities(self._ctx, type_id_hash, out_entities, max_count)
+
+    def component_get_all(self, type_id_hash, out_entities, out_data_ptrs, max_count):
+        """Gets entity IDs and data pointers for all entities with a specific component type"""
+        return self._lib.goud_component_get_all(self._ctx, type_id_hash, out_entities, out_data_ptrs, max_count)
+
     def get_render_capabilities(self):
         """Queries the render provider's capabilities"""
         _out = _ffi_module.RenderCapabilities()
@@ -1609,6 +1621,18 @@ class GoudContext:
     def component_has_batch(self, entities, type_id_hash, out_results):
         """Checks if multiple entities have a generic component"""
         return self._lib.goud_component_has_batch(self._ctx, entities, type_id_hash, out_results)
+
+    def component_count(self, type_id_hash):
+        """Returns the number of entities with a specific component type"""
+        return self._lib.goud_component_count(self._ctx, type_id_hash)
+
+    def component_get_entities(self, type_id_hash, out_entities, max_count):
+        """Gets entity IDs for all entities with a specific component type"""
+        return self._lib.goud_component_get_entities(self._ctx, type_id_hash, out_entities, max_count)
+
+    def component_get_all(self, type_id_hash, out_entities, out_data_ptrs, max_count):
+        """Gets entity IDs and data pointers for all entities with a specific component type"""
+        return self._lib.goud_component_get_all(self._ctx, type_id_hash, out_entities, out_data_ptrs, max_count)
 
     def scene_create(self, name):
         """Creates a new named scene and returns its ID"""

@@ -114,6 +114,24 @@ def gen_init() -> None:
         root_init.extend(["    RecoveryClass,", ")", ""])
         extra_exports.append("RecoveryClass")
 
+    # FNV-1a hash helper for generic component type registration.
+    root_init.extend([
+        "",
+        "def component_type_hash(type_name: str) -> int:",
+        '    """Compute an FNV-1a 64-bit hash for a component type name.',
+        "",
+        "    The result matches the Rust and C# codegen implementations, so it can",
+        "    be passed directly to ``component_register_type`` and related FFI calls.",
+        '    """',
+        "    h = 0xCBF29CE484222325",
+        '    for b in type_name.encode("utf-8"):',
+        "        h ^= b",
+        "        h = (h * 0x100000001B3) & 0xFFFFFFFFFFFFFFFF",
+        "    return h",
+        "",
+    ])
+    extra_exports.append("component_type_hash")
+
     root_init.append("__all__ = list(_generated_all) + [")
     for export in extra_exports:
         root_init.append(f'    "{export}",')

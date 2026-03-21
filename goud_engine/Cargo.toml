@@ -105,6 +105,10 @@ name = "ecs_benchmarks"
 harness = false
 
 [[bench]]
+name = "ffi_component_benchmarks"
+harness = false
+
+[[bench]]
 name = "asset_benchmarks"
 harness = false
 
