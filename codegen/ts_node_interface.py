@@ -143,6 +143,8 @@ def gen_interface():
         if cap_type.get("doc"):
             lines.append(f"/** {cap_type['doc']} */")
         lines.append(f"export interface {iface_name} {{ {cap_str}; }}")
+    lines.append("/** Sprite command for batched rendering via drawSpriteBatch. Position, size, and source-rect values are in screen-space pixels. When srcW and srcH are both 0 the full texture is used. */")
+    lines.append("export interface ISpriteCmd { texture?: number; x?: number; y?: number; width?: number; height?: number; rotation?: number; srcX?: number; srcY?: number; srcW?: number; srcH?: number; r?: number; g?: number; b?: number; a?: number; zLayer?: number; }")
     lines.append("")
 
     if schema["types"].get("Entity", {}).get("doc"):
@@ -276,6 +278,8 @@ def gen_interface():
         else:
             lines.append(f"  {mn}({sig}): {ts_ret};")
 
+    lines.append("  /** Draws a batch of sprites in a single GPU pass for high performance. */")
+    lines.append("  drawSpriteBatch(cmds: ISpriteCmd[]): number;")
     lines.append("  /** Preloads textures/fonts before `run()` starts and reports coarse per-asset progress. */")
     lines.append("  preload(assets: PreloadAssetInput[], options?: IPreloadOptions): Promise<Record<string, number>>;")
 

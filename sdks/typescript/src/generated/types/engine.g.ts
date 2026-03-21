@@ -56,7 +56,6 @@ export interface IAudioCapabilities { supportsSpatial: boolean; maxChannels: num
 export interface IInputCapabilities { supportsGamepad: boolean; supportsTouch: boolean; maxGamepads: number; }
 /** Capabilities reported by the active network provider */
 export interface INetworkCapabilities { supportsHosting: boolean; maxConnections: number; maxChannels: number; maxMessageSize: number; }
-
 /** Sprite command for batched rendering via drawSpriteBatch. Position, size, and source-rect values are in screen-space pixels. When srcW and srcH are both 0 the full texture is used. */
 export interface ISpriteCmd { texture?: number; x?: number; y?: number; width?: number; height?: number; rotation?: number; srcX?: number; srcY?: number; srcW?: number; srcH?: number; r?: number; g?: number; b?: number; a?: number; zLayer?: number; }
 
@@ -335,8 +334,6 @@ export interface IGoudGame {
   postprocessPassCount(): number;
   /** Draws a sprite with source rectangle for sprite sheets */
   drawSpriteRect(texture: number, x: number, y: number, width: number, height: number, rotation: number, srcX: number, srcY: number, srcW: number, srcH: number, color?: IColor, srcMode?: number): boolean;
-  /** Draws a batch of sprites in a single GPU pass. Returns the number of sprites actually drawn. */
-  drawSpriteBatch(cmds: ISpriteCmd[]): number;
   /** Sets the rendering viewport */
   setViewport(x: number, y: number, width: number, height: number): void;
   /** Enables depth testing */
@@ -571,6 +568,8 @@ export interface IGoudGame {
   rpcReceiveResponse(handle: number, callId: number): Uint8Array;
   /** Drains outbound RPC messages and copies the next one into the caller's buffer. */
   rpcDrainOne(handle: number): Uint8Array;
+  /** Draws a batch of sprites in a single GPU pass for high performance. */
+  drawSpriteBatch(cmds: ISpriteCmd[]): number;
   /** Preloads textures/fonts before `run()` starts and reports coarse per-asset progress. */
   preload(assets: PreloadAssetInput[], options?: IPreloadOptions): Promise<Record<string, number>>;
   // Animation Layer Stack & Events
