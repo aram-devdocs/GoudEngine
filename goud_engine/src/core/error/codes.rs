@@ -222,10 +222,6 @@ pub const ERR_PROVIDER_OPERATION_FAILED: GoudErrorCode = 602;
 // Script Errors (800-899): Scripting engine errors
 // -----------------------------------------------------------------------------
 
-/// Base code for scripting engine errors.
-#[allow(dead_code)]
-pub const SCRIPT_ERROR_BASE: GoudErrorCode = 800;
-
 /// Script execution error (syntax, runtime, etc.).
 /// Recovery: check the error message for script-engine-specific details.
 pub const ERR_SCRIPT_ERROR: GoudErrorCode = 800;

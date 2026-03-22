@@ -141,7 +141,7 @@ class FpsStats(ctypes.Structure):
         ("frame_time_ms", ctypes.c_float)
     ]
 
-class RenderMetrics(ctypes.Structure):
+class FfiRenderMetrics(ctypes.Structure):
     _fields_ = [
         ("draw_call_count", ctypes.c_uint32),
         ("sprites_submitted", ctypes.c_uint32),
@@ -352,6 +352,23 @@ class FfiAtlasStats(ctypes.Structure):
         ("total_pixels", ctypes.c_uint64),
         ("efficiency", ctypes.c_float),
         ("wasted_pixels", ctypes.c_uint64)
+    ]
+
+class FfiPoolStats(ctypes.Structure):
+    _fields_ = [
+        ("capacity", ctypes.c_uint32),
+        ("active", ctypes.c_uint32),
+        ("available", ctypes.c_uint32),
+        ("high_water_mark", ctypes.c_uint32),
+        ("total_acquires", ctypes.c_uint64),
+        ("total_releases", ctypes.c_uint64)
+    ]
+
+class FfiArenaStats(ctypes.Structure):
+    _fields_ = [
+        ("bytes_allocated", ctypes.c_uint64),
+        ("bytes_capacity", ctypes.c_uint64),
+        ("reset_count", ctypes.c_uint64)
     ]
 
 class FfiSpriteCmd(ctypes.Structure):
@@ -582,7 +599,7 @@ def _setup():
     # debug
     _lib.goud_debug_get_fps_stats.argtypes = [GoudContextId, ctypes.POINTER(FpsStats)]
     _lib.goud_debug_get_fps_stats.restype = ctypes.c_int32
-    _lib.goud_render_get_metrics.argtypes = [GoudContextId, ctypes.POINTER(RenderMetrics)]
+    _lib.goud_render_get_metrics.argtypes = [GoudContextId, ctypes.POINTER(FfiRenderMetrics)]
     _lib.goud_render_get_metrics.restype = ctypes.c_int32
     _lib.goud_debug_set_fps_overlay_enabled.argtypes = [GoudContextId, ctypes.c_bool]
     _lib.goud_debug_set_fps_overlay_enabled.restype = ctypes.c_int32
@@ -1537,6 +1554,32 @@ def _setup():
     _lib.goud_spatial_grid_query_radius.restype = ctypes.c_int32
     _lib.goud_spatial_grid_entity_count.argtypes = [ctypes.c_uint32]
     _lib.goud_spatial_grid_entity_count.restype = ctypes.c_int32
+
+    # entity_pool
+    _lib.goud_entity_pool_create.argtypes = [ctypes.c_uint32]
+    _lib.goud_entity_pool_create.restype = ctypes.c_uint32
+    _lib.goud_entity_pool_destroy.argtypes = [ctypes.c_uint32]
+    _lib.goud_entity_pool_destroy.restype = ctypes.c_int32
+    _lib.goud_entity_pool_acquire.argtypes = [ctypes.c_uint32]
+    _lib.goud_entity_pool_acquire.restype = ctypes.c_uint64
+    _lib.goud_entity_pool_acquire_batch.argtypes = [ctypes.c_uint32, ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint64)]
+    _lib.goud_entity_pool_acquire_batch.restype = ctypes.c_uint32
+    _lib.goud_entity_pool_release.argtypes = [ctypes.c_uint32, ctypes.c_uint32]
+    _lib.goud_entity_pool_release.restype = ctypes.c_int32
+    _lib.goud_entity_pool_release_batch.argtypes = [ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint32), ctypes.c_uint32]
+    _lib.goud_entity_pool_release_batch.restype = ctypes.c_uint32
+    _lib.goud_entity_pool_stats.argtypes = [ctypes.c_uint32, ctypes.POINTER(FfiPoolStats)]
+    _lib.goud_entity_pool_stats.restype = ctypes.c_int32
+
+    # frame_arena
+    _lib.goud_frame_arena_reset.argtypes = []
+    _lib.goud_frame_arena_reset.restype = ctypes.c_int32
+    _lib.goud_frame_arena_stats.argtypes = [ctypes.POINTER(FfiArenaStats)]
+    _lib.goud_frame_arena_stats.restype = ctypes.c_int32
+
+    # render_metrics
+    _lib.goud_renderer_get_frame_metrics.argtypes = [GoudContextId, ctypes.POINTER(FfiRenderMetrics)]
+    _lib.goud_renderer_get_frame_metrics.restype = ctypes.c_int32
 
 _setup()
 

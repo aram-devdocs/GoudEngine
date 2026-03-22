@@ -4,7 +4,6 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use super::super::snapshot::{RouteSummaryV1, RuntimeManifestV1};
 use super::super::types::RuntimeRouteId;
-use super::super::types::RuntimeSurfaceKind;
 use super::capture::CaptureArtifactV1;
 use super::replay::ReplayExportEnvelopeV1;
 use super::state::{lock_runtime, DebuggerRuntimeState, RuntimeArtifactsState};
@@ -437,9 +436,4 @@ pub(super) fn manifest_path(runtime: &DebuggerRuntimeState) -> Option<PathBuf> {
         .artifacts
         .as_ref()
         .map(|artifacts| artifacts.manifest_path.clone())
-}
-
-#[allow(dead_code)]
-fn _surface_kind_marker(kind: RuntimeSurfaceKind) -> RuntimeSurfaceKind {
-    kind
 }

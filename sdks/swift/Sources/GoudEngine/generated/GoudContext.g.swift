@@ -118,7 +118,7 @@ public final class GoudContext {
     public func startDebuggerReplay(recording: Data) {
         recording.withUnsafeBytes { recordingRawBuf in
             let recordingBasePtr = recordingRawBuf.baseAddress?.assumingMemoryBound(to: UInt8.self) ?? UnsafePointer<UInt8>(bitPattern: 1)!
-            let _ = goud_debugger_start_replay(_ctx, recordingBasePtr, recording.count)
+            let _ = goud_debugger_start_replay(_ctx, recordingBasePtr, Int32(recording.count))
         }
     }
 
@@ -140,6 +140,21 @@ public final class GoudContext {
     /// Returns the number of living entities
     public func entityCount() -> UInt32 {
         return goud_entity_count(_ctx)
+    }
+
+    /// Returns the number of entities with a specific component type
+    public func componentCount(typeIdHash: UInt64) -> UInt32 {
+        return goud_component_count(_ctx, typeIdHash)
+    }
+
+    /// Gets entity IDs for all entities with a specific component type
+    public func componentGetEntities(typeIdHash: UInt64, outEntities: UnsafeMutableRawPointer, maxCount: UInt32) -> UInt32 {
+        return goud_component_get_entities(_ctx, typeIdHash, outEntities, maxCount)
+    }
+
+    /// Gets entity IDs and data pointers for all entities with a specific component type
+    public func componentGetAll(typeIdHash: UInt64, outEntities: UnsafeMutableRawPointer, outDataPtrs: UnsafeMutableRawPointer, maxCount: UInt32) -> UInt32 {
+        return goud_component_get_all(_ctx, typeIdHash, outEntities, outDataPtrs, maxCount)
     }
 
     /// Destroys a scene by ID

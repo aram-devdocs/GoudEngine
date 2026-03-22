@@ -52,6 +52,9 @@ fn net_err(msg: impl Into<String>) -> GoudError {
 // Internal event type
 // =============================================================================
 
+// Variants are constructed by the async WebRTC receive loop (not yet wired)
+// and consumed in poll_events match below. Suppressed because the send-side
+// is not yet implemented.
 #[allow(dead_code)]
 enum InternalWebRtcEvent {
     Connected(ConnectionId),

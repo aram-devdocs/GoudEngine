@@ -5,7 +5,7 @@ import json
 from . import _ffi as _ffi_module
 from ._ffi import (get_lib, GoudContextId, FfiVec2, FfiTransform2D, FfiSprite, FfiColor, FfiUiStyle, FfiUiEvent,
     FfiNetworkStats, GoudRenderStats, GoudContact,
-    GoudMemoryCategoryStats, GoudMemorySummary)
+    GoudMemoryCategoryStats, GoudMemorySummary, FfiRenderMetrics)
 from ._types import (Entity, Vec2, Color, Transform2D, Sprite, RenderStats, UiStyle, UiEvent,
     RenderCapabilities, PhysicsCapabilities, AudioCapabilities, InputCapabilities, NetworkStats,
     NetworkSimulationConfig, NetworkConnectResult, NetworkPacket, NetworkCapabilities,
@@ -593,7 +593,7 @@ class GoudGame:
 
     def get_render_metrics(self):
         """Returns per-frame render metrics including draw calls, culling stats, batch efficiency, and timing"""
-        _metrics = _ffi_module.RenderMetrics()
+        _metrics = FfiRenderMetrics()
         self._lib.goud_render_get_metrics(self._ctx, ctypes.byref(_metrics))
         return RenderMetrics(_metrics.draw_call_count, _metrics.sprites_submitted, _metrics.sprites_drawn, _metrics.sprites_culled, _metrics.batches_submitted, _metrics.avg_sprites_per_batch, _metrics.sprite_render_ms, _metrics.text_render_ms, _metrics.ui_render_ms, _metrics.total_render_ms, _metrics.text_draw_calls, _metrics.text_glyph_count, _metrics.ui_draw_calls)
 
@@ -1703,6 +1703,12 @@ class GoudContext:
     def scene_transition_tick(self, delta_time):
         """Advances the active transition by delta time"""
         return self._lib.goud_scene_transition_tick(self._ctx, delta_time)
+
+    def get_frame_metrics(self):
+        """Returns per-frame render metrics from the debugger snapshot for this context"""
+        _out_metrics = FfiRenderMetrics()
+        self._lib.goud_renderer_get_frame_metrics(self._ctx, ctypes.byref(_out_metrics))
+        return RenderMetrics(_out_metrics.draw_call_count, _out_metrics.sprites_submitted, _out_metrics.sprites_drawn, _out_metrics.sprites_culled, _out_metrics.batches_submitted, _out_metrics.avg_sprites_per_batch, _out_metrics.sprite_render_ms, _out_metrics.text_render_ms, _out_metrics.ui_render_ms, _out_metrics.total_render_ms, _out_metrics.text_draw_calls, _out_metrics.text_glyph_count, _out_metrics.ui_draw_calls)
 
 
 class PhysicsWorld2D:

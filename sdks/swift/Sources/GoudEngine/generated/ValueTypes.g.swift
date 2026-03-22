@@ -434,7 +434,7 @@ public struct RenderMetrics: Equatable {
         self.uiDrawCalls = uiDrawCalls
     }
 
-    internal init(ffi: CGoudEngine.RenderMetrics) {
+    internal init(ffi: FfiRenderMetrics) {
         self.drawCallCount = ffi.draw_call_count
         self.spritesSubmitted = ffi.sprites_submitted
         self.spritesDrawn = ffi.sprites_drawn
@@ -450,8 +450,8 @@ public struct RenderMetrics: Equatable {
         self.uiDrawCalls = ffi.ui_draw_calls
     }
 
-    internal func toFFI() -> CGoudEngine.RenderMetrics {
-        var ffi = CGoudEngine.RenderMetrics()
+    internal func toFFI() -> FfiRenderMetrics {
+        var ffi = FfiRenderMetrics()
         ffi.draw_call_count = drawCallCount
         ffi.sprites_submitted = spritesSubmitted
         ffi.sprites_drawn = spritesDrawn
@@ -1138,6 +1138,174 @@ public struct AtlasStats: Equatable {
         ffi.efficiency = efficiency
         ffi.wasted_pixels = wastedPixels
         return ffi
+    }
+
+}
+
+/// Diagnostic statistics snapshot for an entity pool
+public struct PoolStats: Equatable {
+    /// Total number of slots in the pool
+    public var capacity: UInt32
+    /// Number of slots currently acquired (in use)
+    public var active: UInt32
+    /// Number of slots currently available for acquisition
+    public var available: UInt32
+    /// Peak number of simultaneously active slots since pool creation
+    public var highWaterMark: UInt32
+    /// Cumulative number of successful acquire operations
+    public var totalAcquires: UInt64
+    /// Cumulative number of successful release operations
+    public var totalReleases: UInt64
+
+    public init(capacity: UInt32 = 0, active: UInt32 = 0, available: UInt32 = 0, highWaterMark: UInt32 = 0, totalAcquires: UInt64 = 0, totalReleases: UInt64 = 0) {
+        self.capacity = capacity
+        self.active = active
+        self.available = available
+        self.highWaterMark = highWaterMark
+        self.totalAcquires = totalAcquires
+        self.totalReleases = totalReleases
+    }
+
+    internal init(ffi: FfiPoolStats) {
+        self.capacity = ffi.capacity
+        self.active = ffi.active
+        self.available = ffi.available
+        self.highWaterMark = ffi.high_water_mark
+        self.totalAcquires = ffi.total_acquires
+        self.totalReleases = ffi.total_releases
+    }
+
+    internal func toFFI() -> FfiPoolStats {
+        var ffi = FfiPoolStats()
+        ffi.capacity = capacity
+        ffi.active = active
+        ffi.available = available
+        ffi.high_water_mark = highWaterMark
+        ffi.total_acquires = totalAcquires
+        ffi.total_releases = totalReleases
+        return ffi
+    }
+
+}
+
+/// Diagnostic statistics snapshot for the frame arena allocator
+public struct ArenaStats: Equatable {
+    /// Number of bytes currently allocated within the arena
+    public var bytesAllocated: UInt64
+    /// Total byte capacity of the arena backing storage
+    public var bytesCapacity: UInt64
+    /// Number of times the arena has been reset since creation
+    public var resetCount: UInt64
+
+    public init(bytesAllocated: UInt64 = 0, bytesCapacity: UInt64 = 0, resetCount: UInt64 = 0) {
+        self.bytesAllocated = bytesAllocated
+        self.bytesCapacity = bytesCapacity
+        self.resetCount = resetCount
+    }
+
+    internal init(ffi: FfiArenaStats) {
+        self.bytesAllocated = ffi.bytes_allocated
+        self.bytesCapacity = ffi.bytes_capacity
+        self.resetCount = ffi.reset_count
+    }
+
+    internal func toFFI() -> FfiArenaStats {
+        var ffi = FfiArenaStats()
+        ffi.bytes_allocated = bytesAllocated
+        ffi.bytes_capacity = bytesCapacity
+        ffi.reset_count = resetCount
+        return ffi
+    }
+
+}
+
+/// Describes a single sprite for batched rendering via DrawSpriteBatch
+public struct SpriteCmd: Equatable {
+    /// Texture handle from goud_texture_load
+    public var texture: UInt64
+    /// X position in screen-space pixels
+    public var x: Float
+    /// Y position in screen-space pixels
+    public var y: Float
+    /// Width of the sprite on screen
+    public var width: Float
+    /// Height of the sprite on screen
+    public var height: Float
+    /// Rotation in radians
+    public var rotation: Float
+    /// Source rectangle X in pixel coords
+    public var srcX: Float
+    /// Source rectangle Y in pixel coords
+    public var srcY: Float
+    /// Source rectangle width in pixel coords (0 = full)
+    public var srcW: Float
+    /// Source rectangle height in pixel coords (0 = full)
+    public var srcH: Float
+    /// Red color tint (1.0 = no tint)
+    public var r: Float
+    /// Green color tint
+    public var g: Float
+    /// Blue color tint
+    public var b: Float
+    /// Alpha (1.0 = fully opaque)
+    public var a: Float
+    /// Z-layer for draw ordering
+    public var zLayer: Int32
+
+    public init(texture: UInt64 = 0, x: Float = 0, y: Float = 0, width: Float = 0, height: Float = 0, rotation: Float = 0, srcX: Float = 0, srcY: Float = 0, srcW: Float = 0, srcH: Float = 0, r: Float = 0, g: Float = 0, b: Float = 0, a: Float = 0, zLayer: Int32 = 0) {
+        self.texture = texture
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.rotation = rotation
+        self.srcX = srcX
+        self.srcY = srcY
+        self.srcW = srcW
+        self.srcH = srcH
+        self.r = r
+        self.g = g
+        self.b = b
+        self.a = a
+        self.zLayer = zLayer
+    }
+
+}
+
+/// Describes a single text draw command for batched rendering via DrawTextBatch
+public struct TextCmd: Equatable {
+    /// Font handle from goud_font_load
+    public var fontHandle: UInt64
+    /// X position in screen-space pixels
+    public var x: Float
+    /// Y position in screen-space pixels
+    public var y: Float
+    /// Font size in pixels
+    public var fontSize: Float
+    /// Maximum line width (0 = no wrap)
+    public var maxWidth: Float
+    /// Line spacing multiplier (default 1.0)
+    public var lineSpacing: Float
+    /// Red color component
+    public var r: Float
+    /// Green color component
+    public var g: Float
+    /// Blue color component
+    public var b: Float
+    /// Alpha (1.0 = fully opaque)
+    public var a: Float
+
+    public init(fontHandle: UInt64 = 0, x: Float = 0, y: Float = 0, fontSize: Float = 0, maxWidth: Float = 0, lineSpacing: Float = 0, r: Float = 0, g: Float = 0, b: Float = 0, a: Float = 0) {
+        self.fontHandle = fontHandle
+        self.x = x
+        self.y = y
+        self.fontSize = fontSize
+        self.maxWidth = maxWidth
+        self.lineSpacing = lineSpacing
+        self.r = r
+        self.g = g
+        self.b = b
+        self.a = a
     }
 
 }

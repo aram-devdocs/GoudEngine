@@ -574,6 +574,11 @@ func (g *Game) DrawSpriteBatch(cmds []SpriteCmd) uint32 {
 	return 0
 }
 
+// DrawTextBatch Draws a batch of text labels in a single pass for high performance
+func (g *Game) DrawTextBatch(cmds []TextCmd) uint32 {
+	return 0
+}
+
 // SetViewport Sets the rendering viewport
 func (g *Game) SetViewport(x int32, y int32, width uint32, height uint32) {
 	ffi.RendererSetViewport(g.ctx, x, y, width, height)
@@ -844,6 +849,21 @@ func (g *Game) ComponentRemoveBatch(entities []EntityID, typeIdHash uint64) uint
 
 // ComponentHasBatch Checks if multiple entities have a generic component
 func (g *Game) ComponentHasBatch(entities []EntityID, typeIdHash uint64, outResults []uint8) uint32 {
+	return 0
+}
+
+// ComponentCount Returns the number of entities with a specific component type
+func (g *Game) ComponentCount(typeIdHash uint64) uint32 {
+	return 0
+}
+
+// ComponentGetEntities Gets entity IDs for all entities with a specific component type
+func (g *Game) ComponentGetEntities(typeIdHash uint64, outEntities uintptr, maxCount uint32) uint32 {
+	return 0
+}
+
+// ComponentGetAll Gets entity IDs and data pointers for all entities with a specific component type
+func (g *Game) ComponentGetAll(typeIdHash uint64, outEntities uintptr, outDataPtrs uintptr, maxCount uint32) uint32 {
 	return 0
 }
 

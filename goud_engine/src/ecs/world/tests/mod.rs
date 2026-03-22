@@ -33,5 +33,6 @@ mod despawn_tests;
 mod entity_world_mut_tests;
 mod insert_batch_builder_tests;
 mod insert_tests;
+mod pool_ops_tests;
 mod remove_tests;
 mod spawn_tests;

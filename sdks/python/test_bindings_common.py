@@ -282,6 +282,7 @@ def _new_fake_generated_package(package_name, fake_lib):
     ffi_mod.GoudContact = GoudContact
     ffi_mod.FpsStats = FpsStats
     ffi_mod.RenderMetrics = RenderMetrics
+    ffi_mod.FfiRenderMetrics = RenderMetrics
     ffi_mod.get_lib = lambda: fake_lib
     sys.modules[f"{package_name}._ffi"] = ffi_mod
 

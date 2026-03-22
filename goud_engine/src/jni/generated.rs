@@ -14,6 +14,39 @@ use crate::ffi::*;
 use jni::objects::{JByteArray, JClass, JLongArray, JObject, JString};
 use jni::sys::{jboolean, jbyteArray, jdouble, jfloat, jint, jlong, jlongArray, jobject, jstring};
 
+pub(crate) fn set_ArenaStats_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::arena::FfiArenaStats) -> crate::jni::helpers::JniCallResult<()> {
+    crate::jni::helpers::ensure_no_pending_exception(env)?;
+    crate::jni::helpers::set_long_field(env, obj, "bytesAllocated", value.bytes_allocated as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "bytesCapacity", value.bytes_capacity as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "resetCount", value.reset_count as i64)?;
+    Ok(())
+}
+
+pub(crate) fn new_ArenaStats<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::arena::FfiArenaStats) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/ArenaStats")?;
+    set_ArenaStats_fields(env, &obj, value)?;
+    Ok(obj)
+}
+
+pub(crate) fn read_ArenaStats<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<crate::ffi::arena::FfiArenaStats> {
+    if obj.is_null() {
+        crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
+        return Err(());
+    }
+    let field_bytesAllocated = crate::jni::helpers::get_long_field(env, obj, "bytesAllocated")? as u64;
+    let field_bytesCapacity = crate::jni::helpers::get_long_field(env, obj, "bytesCapacity")? as u64;
+    let field_resetCount = crate::jni::helpers::get_long_field(env, obj, "resetCount")? as u64;
+    Ok(crate::ffi::arena::FfiArenaStats {
+        bytes_allocated: field_bytesAllocated,
+        bytes_capacity: field_bytesCapacity,
+        reset_count: field_resetCount,
+    })
+}
+
+pub(crate) fn write_back_ArenaStats<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::arena::FfiArenaStats) -> crate::jni::helpers::JniCallResult<()> {
+    set_ArenaStats_fields(env, obj, value)
+}
+
 pub(crate) fn set_AudioCapabilities_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::types::capabilities::AudioCapabilities) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
     crate::jni::helpers::set_boolean_field(env, obj, "supportsSpatial", value.supports_spatial)?;
@@ -585,6 +618,48 @@ pub(crate) fn write_back_PhysicsRaycastHit2D<'local>(env: &mut jni::JNIEnv<'loca
     set_PhysicsRaycastHit2D_fields(env, obj, value)
 }
 
+pub(crate) fn set_PoolStats_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::pool::queries::FfiPoolStats) -> crate::jni::helpers::JniCallResult<()> {
+    crate::jni::helpers::ensure_no_pending_exception(env)?;
+    crate::jni::helpers::set_int_field(env, obj, "capacity", value.capacity as i32)?;
+    crate::jni::helpers::set_int_field(env, obj, "active", value.active as i32)?;
+    crate::jni::helpers::set_int_field(env, obj, "available", value.available as i32)?;
+    crate::jni::helpers::set_int_field(env, obj, "highWaterMark", value.high_water_mark as i32)?;
+    crate::jni::helpers::set_long_field(env, obj, "totalAcquires", value.total_acquires as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "totalReleases", value.total_releases as i64)?;
+    Ok(())
+}
+
+pub(crate) fn new_PoolStats<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::pool::queries::FfiPoolStats) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/PoolStats")?;
+    set_PoolStats_fields(env, &obj, value)?;
+    Ok(obj)
+}
+
+pub(crate) fn read_PoolStats<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<crate::ffi::pool::queries::FfiPoolStats> {
+    if obj.is_null() {
+        crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
+        return Err(());
+    }
+    let field_capacity = crate::jni::helpers::get_int_field(env, obj, "capacity")? as _;
+    let field_active = crate::jni::helpers::get_int_field(env, obj, "active")? as _;
+    let field_available = crate::jni::helpers::get_int_field(env, obj, "available")? as _;
+    let field_highWaterMark = crate::jni::helpers::get_int_field(env, obj, "highWaterMark")? as _;
+    let field_totalAcquires = crate::jni::helpers::get_long_field(env, obj, "totalAcquires")? as u64;
+    let field_totalReleases = crate::jni::helpers::get_long_field(env, obj, "totalReleases")? as u64;
+    Ok(crate::ffi::pool::queries::FfiPoolStats {
+        capacity: field_capacity,
+        active: field_active,
+        available: field_available,
+        high_water_mark: field_highWaterMark,
+        total_acquires: field_totalAcquires,
+        total_releases: field_totalReleases,
+    })
+}
+
+pub(crate) fn write_back_PoolStats<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::pool::queries::FfiPoolStats) -> crate::jni::helpers::JniCallResult<()> {
+    set_PoolStats_fields(env, obj, value)
+}
+
 pub(crate) fn set_Rect_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::FfiRect) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
     crate::jni::helpers::set_float_field(env, obj, "x", value.x)?;
@@ -660,7 +735,7 @@ pub(crate) fn write_back_RenderCapabilities<'local>(env: &mut jni::JNIEnv<'local
     set_RenderCapabilities_fields(env, obj, value)
 }
 
-pub(crate) fn set_RenderMetrics_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::sdk::debug_overlay::RenderMetrics) -> crate::jni::helpers::JniCallResult<()> {
+pub(crate) fn set_RenderMetrics_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::types::FfiRenderMetrics) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
     crate::jni::helpers::set_int_field(env, obj, "drawCallCount", value.draw_call_count as i32)?;
     crate::jni::helpers::set_int_field(env, obj, "spritesSubmitted", value.sprites_submitted as i32)?;
@@ -678,13 +753,13 @@ pub(crate) fn set_RenderMetrics_fields<'local>(env: &mut jni::JNIEnv<'local>, ob
     Ok(())
 }
 
-pub(crate) fn new_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, value: crate::sdk::debug_overlay::RenderMetrics) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
+pub(crate) fn new_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::types::FfiRenderMetrics) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
     let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/RenderMetrics")?;
     set_RenderMetrics_fields(env, &obj, value)?;
     Ok(obj)
 }
 
-pub(crate) fn read_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<crate::sdk::debug_overlay::RenderMetrics> {
+pub(crate) fn read_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<crate::ffi::types::FfiRenderMetrics> {
     if obj.is_null() {
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
@@ -702,7 +777,7 @@ pub(crate) fn read_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, obj: &jn
     let field_textDrawCalls = crate::jni::helpers::get_int_field(env, obj, "textDrawCalls")? as _;
     let field_textGlyphCount = crate::jni::helpers::get_int_field(env, obj, "textGlyphCount")? as _;
     let field_uiDrawCalls = crate::jni::helpers::get_int_field(env, obj, "uiDrawCalls")? as _;
-    Ok(crate::sdk::debug_overlay::RenderMetrics {
+    Ok(crate::ffi::types::FfiRenderMetrics {
         draw_call_count: field_drawCallCount,
         sprites_submitted: field_spritesSubmitted,
         sprites_drawn: field_spritesDrawn,
@@ -719,7 +794,7 @@ pub(crate) fn read_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, obj: &jn
     })
 }
 
-pub(crate) fn write_back_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::sdk::debug_overlay::RenderMetrics) -> crate::jni::helpers::JniCallResult<()> {
+pub(crate) fn write_back_RenderMetrics<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::types::FfiRenderMetrics) -> crate::jni::helpers::JniCallResult<()> {
     set_RenderMetrics_fields(env, obj, value)
 }
 
@@ -2158,42 +2233,6 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_isAlive<'loca
 
 #[allow(non_snake_case)]
 #[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_isAliveBatch<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    entities: jni::objects::JLongArray<'local>,
-    outResults: jni::objects::JByteArray<'local>,
-) -> jni::sys::jint {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_isAliveBatch", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let entities_values = require_entity_array(env, entities, "entities")?;
-            if outResults.is_null() {
-                crate::jni::helpers::throw_null_pointer(env, "outResults is null")?;
-                return Err(());
-            }
-            let results_len = crate::jni::helpers::byte_array_length(env, &outResults)?;
-            if results_len < entities_values.len() {
-                crate::jni::helpers::throw_illegal_argument(env, "outResults is smaller than entities")?;
-                return Err(());
-            }
-            let mut result_bytes = vec![0u8; results_len];
-            let written = unsafe { // SAFETY: the entity and output buffers remain valid for the duration of the FFI call.
-        crate::ffi::entity::queries::goud_entity_is_alive_batch(goud_context_id_from_jlong(contextId), if entities_values.is_empty() { std::ptr::null() } else { entities_values.as_ptr() } as _, entities_values.len() as u32, result_bytes.as_mut_ptr())
-    };
-            if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_entity_is_alive_batch", Some(written as i64));
-                return Err(());
-            }
-            let written_len = crate::jni::helpers::checked_output_length(env, "goud_entity_is_alive_batch", "outResults", written as usize, result_bytes.len())?;
-            crate::jni::helpers::write_byte_array(env, &outResults, &result_bytes[..written_len])?;
-            Ok(written_len as i32)
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_addTransform2d<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
@@ -2690,29 +2729,6 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_spawnBatch<'l
             let written_len = crate::jni::helpers::checked_output_length(env, "goud_entity_spawn_batch", "entities", written as usize, entities.len())?;
             entities.truncate(written_len);
             new_entity_array(env, &entities)
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_despawnBatch<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    entities: jni::objects::JLongArray<'local>,
-) -> jni::sys::jint {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_despawnBatch", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let entities_values = require_entity_array(env, entities, "entities")?;
-            let written = unsafe { // SAFETY: the entity buffer remains valid for the duration of the FFI call.
-        crate::ffi::entity::lifecycle::goud_entity_despawn_batch(goud_context_id_from_jlong(contextId), if entities_values.is_empty() { std::ptr::null() } else { entities_values.as_ptr() } as _, entities_values.len() as u32)
-    };
-            if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_entity_despawn_batch", Some(written as i64));
-                return Err(());
-            }
-            Ok(written as i32)
     })
 }
 
@@ -3605,50 +3621,6 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_drawSpriteRec
                 return Err(());
             }
             Ok(crate::jni::helpers::to_jboolean(result))
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_drawSpriteBatch<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    cmds: jni::objects::JObject<'local>,
-) -> jni::sys::jint {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_drawSpriteBatch", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
-        crate::ffi::renderer::goud_renderer_draw_sprite_batch(goud_context_id_from_jlong(contextId), cmds as _)
-    };
-            if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer_draw_sprite_batch", Some(result as i64));
-                return Err(());
-            }
-            Ok(result as i32)
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_drawTextBatch<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    cmds: jni::objects::JObject<'local>,
-) -> jni::sys::jint {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_drawTextBatch", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
-        crate::ffi::renderer::goud_renderer_draw_text_batch(goud_context_id_from_jlong(contextId), cmds as _)
-    };
-            if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer_draw_text_batch", Some(result as i64));
-                return Err(());
-            }
-            Ok(result as i32)
     })
 }
 
@@ -4891,62 +4863,21 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_componentHas<
 
 #[allow(non_snake_case)]
 #[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_componentRemoveBatch<'local>(
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_componentCount<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
     contextId: jni::sys::jlong,
-    entities: jni::objects::JLongArray<'local>,
     typeIdHash: jni::sys::jlong,
 ) -> jni::sys::jint {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_componentRemoveBatch", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_componentCount", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let entities_values = require_entity_array(env, entities, "entities")?;
-            let written = unsafe { // SAFETY: the entity buffer remains valid for the duration of the FFI call.
-        crate::ffi::component::goud_component_remove_batch(goud_context_id_from_jlong(contextId), if entities_values.is_empty() { std::ptr::null() } else { entities_values.as_ptr() } as _, entities_values.len() as u32, typeIdHash as u64)
-    };
+            let result = crate::ffi::component::query::goud_component_count(goud_context_id_from_jlong(contextId), typeIdHash as _);
             if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_component_remove_batch", Some(written as i64));
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_component_count", Some(result as i64));
                 return Err(());
             }
-            Ok(written as i32)
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_componentHasBatch<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    entities: jni::objects::JLongArray<'local>,
-    typeIdHash: jni::sys::jlong,
-    outResults: jni::objects::JByteArray<'local>,
-) -> jni::sys::jint {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_componentHasBatch", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let entities_values = require_entity_array(env, entities, "entities")?;
-            if outResults.is_null() {
-                crate::jni::helpers::throw_null_pointer(env, "outResults is null")?;
-                return Err(());
-            }
-            let results_len = crate::jni::helpers::byte_array_length(env, &outResults)?;
-            if results_len < entities_values.len() {
-                crate::jni::helpers::throw_illegal_argument(env, "outResults is smaller than entities")?;
-                return Err(());
-            }
-            let mut result_bytes = vec![0u8; results_len];
-            let written = unsafe { // SAFETY: the entity and output buffers remain valid for the duration of the FFI call.
-        crate::ffi::component::goud_component_has_batch(goud_context_id_from_jlong(contextId), if entities_values.is_empty() { std::ptr::null() } else { entities_values.as_ptr() } as _, entities_values.len() as u32, typeIdHash as u64, result_bytes.as_mut_ptr())
-    };
-            if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_component_has_batch", Some(written as i64));
-                return Err(());
-            }
-            let written_len = crate::jni::helpers::checked_output_length(env, "goud_component_has_batch", "outResults", written as usize, result_bytes.len())?;
-            crate::jni::helpers::write_byte_array(env, &outResults, &result_bytes[..written_len])?;
-            Ok(written_len as i32)
+            Ok(result as i32)
     })
 }
 
@@ -7748,29 +7679,6 @@ pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_despawn<'l
 
 #[allow(non_snake_case)]
 #[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_despawnBatch<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    entities: jni::objects::JLongArray<'local>,
-) -> jni::sys::jint {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudContextNative_despawnBatch", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let entities_values = require_entity_array(env, entities, "entities")?;
-            let written = unsafe { // SAFETY: the entity buffer remains valid for the duration of the FFI call.
-        crate::ffi::entity::lifecycle::goud_entity_despawn_batch(goud_context_id_from_jlong(contextId), if entities_values.is_empty() { std::ptr::null() } else { entities_values.as_ptr() } as _, entities_values.len() as u32)
-    };
-            if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_entity_despawn_batch", Some(written as i64));
-                return Err(());
-            }
-            Ok(written as i32)
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
 pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_cloneEntity<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
@@ -7826,42 +7734,6 @@ pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_isAlive<'l
                 return Err(());
             }
             Ok(crate::jni::helpers::to_jboolean(result))
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_isAliveBatch<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    entities: jni::objects::JLongArray<'local>,
-    outResults: jni::objects::JByteArray<'local>,
-) -> jni::sys::jint {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudContextNative_isAliveBatch", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let entities_values = require_entity_array(env, entities, "entities")?;
-            if outResults.is_null() {
-                crate::jni::helpers::throw_null_pointer(env, "outResults is null")?;
-                return Err(());
-            }
-            let results_len = crate::jni::helpers::byte_array_length(env, &outResults)?;
-            if results_len < entities_values.len() {
-                crate::jni::helpers::throw_illegal_argument(env, "outResults is smaller than entities")?;
-                return Err(());
-            }
-            let mut result_bytes = vec![0u8; results_len];
-            let written = unsafe { // SAFETY: the entity and output buffers remain valid for the duration of the FFI call.
-        crate::ffi::entity::queries::goud_entity_is_alive_batch(goud_context_id_from_jlong(contextId), if entities_values.is_empty() { std::ptr::null() } else { entities_values.as_ptr() } as _, entities_values.len() as u32, result_bytes.as_mut_ptr())
-    };
-            if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_entity_is_alive_batch", Some(written as i64));
-                return Err(());
-            }
-            let written_len = crate::jni::helpers::checked_output_length(env, "goud_entity_is_alive_batch", "outResults", written as usize, result_bytes.len())?;
-            crate::jni::helpers::write_byte_array(env, &outResults, &result_bytes[..written_len])?;
-            Ok(written_len as i32)
     })
 }
 
@@ -8428,62 +8300,21 @@ pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_componentH
 
 #[allow(non_snake_case)]
 #[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_componentRemoveBatch<'local>(
+pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_componentCount<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
     contextId: jni::sys::jlong,
-    entities: jni::objects::JLongArray<'local>,
     typeIdHash: jni::sys::jlong,
 ) -> jni::sys::jint {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudContextNative_componentRemoveBatch", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudContextNative_componentCount", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
             crate::jni::helpers::prepare_call(env)?;
             crate::jni::helpers::clear_last_error();
-            let entities_values = require_entity_array(env, entities, "entities")?;
-            let written = unsafe { // SAFETY: the entity buffer remains valid for the duration of the FFI call.
-        crate::ffi::component::goud_component_remove_batch(goud_context_id_from_jlong(contextId), if entities_values.is_empty() { std::ptr::null() } else { entities_values.as_ptr() } as _, entities_values.len() as u32, typeIdHash as u64)
-    };
+            let result = crate::ffi::component::query::goud_component_count(goud_context_id_from_jlong(contextId), typeIdHash as _);
             if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_component_remove_batch", Some(written as i64));
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_component_count", Some(result as i64));
                 return Err(());
             }
-            Ok(written as i32)
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_componentHasBatch<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    entities: jni::objects::JLongArray<'local>,
-    typeIdHash: jni::sys::jlong,
-    outResults: jni::objects::JByteArray<'local>,
-) -> jni::sys::jint {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudContextNative_componentHasBatch", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let entities_values = require_entity_array(env, entities, "entities")?;
-            if outResults.is_null() {
-                crate::jni::helpers::throw_null_pointer(env, "outResults is null")?;
-                return Err(());
-            }
-            let results_len = crate::jni::helpers::byte_array_length(env, &outResults)?;
-            if results_len < entities_values.len() {
-                crate::jni::helpers::throw_illegal_argument(env, "outResults is smaller than entities")?;
-                return Err(());
-            }
-            let mut result_bytes = vec![0u8; results_len];
-            let written = unsafe { // SAFETY: the entity and output buffers remain valid for the duration of the FFI call.
-        crate::ffi::component::goud_component_has_batch(goud_context_id_from_jlong(contextId), if entities_values.is_empty() { std::ptr::null() } else { entities_values.as_ptr() } as _, entities_values.len() as u32, typeIdHash as u64, result_bytes.as_mut_ptr())
-    };
-            if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_component_has_batch", Some(written as i64));
-                return Err(());
-            }
-            let written_len = crate::jni::helpers::checked_output_length(env, "goud_component_has_batch", "outResults", written as usize, result_bytes.len())?;
-            crate::jni::helpers::write_byte_array(env, &outResults, &result_bytes[..written_len])?;
-            Ok(written_len as i32)
+            Ok(result as i32)
     })
 }
 
@@ -8799,6 +8630,30 @@ pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_sceneTrans
                 return Err(());
             }
             Ok(result.code as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudContextNative_getFrameMetrics<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+) -> jni::sys::jobject {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudContextNative_getFrameMetrics", crate::jni::helpers::null_object(), |env| -> crate::jni::helpers::JniCallResult<jni::sys::jobject> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let mut out_out_metrics = unsafe { // SAFETY: zeroed out-parameter storage is only used before the FFI call writes it.
+        std::mem::zeroed()
+    };
+            let status = unsafe { // SAFETY: out-parameter storage and marshaled inputs remain valid for the duration of the FFI call.
+        crate::ffi::renderer::goud_renderer_get_frame_metrics(goud_context_id_from_jlong(contextId), &mut out_out_metrics as _)
+    };
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer_get_frame_metrics", None);
+                return Err(());
+            }
+            Ok(new_RenderMetrics(env, out_out_metrics)?.into_raw())
     })
 }
 
@@ -13119,6 +12974,148 @@ pub extern "system" fn Java_com_goudengine_internal_AudioNative_cleanupFinished<
                 return Err(());
             }
             Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_EntityPoolNative_create<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    capacity: jni::sys::jint,
+) -> jni::sys::jobject {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_EntityPoolNative_create", crate::jni::helpers::null_object(), |env| -> crate::jni::helpers::JniCallResult<jni::sys::jobject> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::pool::lifecycle::goud_entity_pool_create(capacity as _);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_entity_pool_create", None);
+                return Err(());
+            }
+            Ok(new_GoudPoolHandle(env, result)?.into_raw())
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_EntityPoolNative_destroy<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    handle: jni::sys::jlong,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_EntityPoolNative_destroy", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::pool::lifecycle::goud_entity_pool_destroy(handle as crate::ffi::pool::GoudPoolHandle);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_entity_pool_destroy", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_EntityPoolNative_acquire<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    handle: jni::sys::jlong,
+) -> jni::sys::jlong {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_EntityPoolNative_acquire", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jlong> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::pool::operations::goud_entity_pool_acquire(handle as crate::ffi::pool::GoudPoolHandle);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_entity_pool_acquire", None);
+                return Err(());
+            }
+            Ok(result as i64)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_EntityPoolNative_release<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    handle: jni::sys::jlong,
+    slotIndex: jni::sys::jint,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_EntityPoolNative_release", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::pool::operations::goud_entity_pool_release(handle as crate::ffi::pool::GoudPoolHandle, slotIndex as _);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_entity_pool_release", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_EntityPoolNative_stats<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    handle: jni::sys::jlong,
+) -> jni::sys::jobject {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_EntityPoolNative_stats", crate::jni::helpers::null_object(), |env| -> crate::jni::helpers::JniCallResult<jni::sys::jobject> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let mut out_out_stats = unsafe { // SAFETY: zeroed out-parameter storage is only used before the FFI call writes it.
+        std::mem::zeroed()
+    };
+            let status = unsafe { // SAFETY: out-parameter storage and marshaled inputs remain valid for the duration of the FFI call.
+        crate::ffi::pool::queries::goud_entity_pool_stats(handle as crate::ffi::pool::GoudPoolHandle, &mut out_out_stats as _)
+    };
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_entity_pool_stats", None);
+                return Err(());
+            }
+            Ok(new_PoolStats(env, out_out_stats)?.into_raw())
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_FrameArenaNative_reset<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_FrameArenaNative_reset", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::arena::goud_frame_arena_reset();
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_frame_arena_reset", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_FrameArenaNative_stats<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+) -> jni::sys::jobject {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_FrameArenaNative_stats", crate::jni::helpers::null_object(), |env| -> crate::jni::helpers::JniCallResult<jni::sys::jobject> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let mut out_out_stats = unsafe { // SAFETY: zeroed out-parameter storage is only used before the FFI call writes it.
+        std::mem::zeroed()
+    };
+            let status = unsafe { // SAFETY: out-parameter storage and marshaled inputs remain valid for the duration of the FFI call.
+        crate::ffi::arena::goud_frame_arena_stats(&mut out_out_stats as _)
+    };
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_frame_arena_stats", None);
+                return Err(());
+            }
+            Ok(new_ArenaStats(env, out_out_stats)?.into_raw())
     })
 }
 

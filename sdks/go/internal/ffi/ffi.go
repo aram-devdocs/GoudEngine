@@ -580,9 +580,33 @@ func GoudComponentAddBatch(context_id C.GoudContextId, entity_ids *C.uint64_t, c
 	return uint32(C.goud_component_add_batch(context_id, entity_ids, C.uint32_t(count), C.uint64_t(type_id_hash), data_ptr, C.size_t(component_size)))
 }
 
+// GoudComponentCount wraps goud_component_count.
+func GoudComponentCount(context_id C.GoudContextId, type_id_hash uint64) uint32 {
+	return uint32(C.goud_component_count(context_id, C.uint64_t(type_id_hash)))
+}
+
 // GoudComponentGet wraps goud_component_get.
 func GoudComponentGet(context_id C.GoudContextId, entity_id C.GoudEntityId, type_id_hash uint64) *C.uint8_t {
 	return C.goud_component_get(context_id, entity_id, C.uint64_t(type_id_hash))
+}
+
+// GoudComponentGetAll wraps goud_component_get_all.
+func GoudComponentGetAll(context_id C.GoudContextId, type_id_hash uint64, out_entities *C.uint64_t, out_data_ptrs **C.uint8_t, max_count uint32) uint32 {
+	if out_entities == nil {
+		return 0
+	}
+	if out_data_ptrs == nil {
+		return 0
+	}
+	return uint32(C.goud_component_get_all(context_id, C.uint64_t(type_id_hash), out_entities, out_data_ptrs, C.uint32_t(max_count)))
+}
+
+// GoudComponentGetEntities wraps goud_component_get_entities.
+func GoudComponentGetEntities(context_id C.GoudContextId, type_id_hash uint64, out_entities *C.uint64_t, max_count uint32) uint32 {
+	if out_entities == nil {
+		return 0
+	}
+	return uint32(C.goud_component_get_entities(context_id, C.uint64_t(type_id_hash), out_entities, C.uint32_t(max_count)))
 }
 
 // GoudComponentGetMut wraps goud_component_get_mut.
@@ -963,6 +987,50 @@ func GoudEntityIsAliveBatch(context_id C.GoudContextId, entity_ids *C.uint64_t, 
 	return uint32(C.goud_entity_is_alive_batch(context_id, entity_ids, C.uint32_t(count), out_results))
 }
 
+// GoudEntityPoolAcquire wraps goud_entity_pool_acquire.
+func GoudEntityPoolAcquire(handle uint32) uint64 {
+	return uint64(C.goud_entity_pool_acquire(C.uint32_t(handle)))
+}
+
+// GoudEntityPoolAcquireBatch wraps goud_entity_pool_acquire_batch.
+func GoudEntityPoolAcquireBatch(handle uint32, count uint32, out_entities *C.uint64_t) uint32 {
+	if out_entities == nil {
+		return 0
+	}
+	return uint32(C.goud_entity_pool_acquire_batch(C.uint32_t(handle), C.uint32_t(count), out_entities))
+}
+
+// GoudEntityPoolCreate wraps goud_entity_pool_create.
+func GoudEntityPoolCreate(capacity uint32) uint32 {
+	return uint32(C.goud_entity_pool_create(C.uint32_t(capacity)))
+}
+
+// GoudEntityPoolDestroy wraps goud_entity_pool_destroy.
+func GoudEntityPoolDestroy(handle uint32) int32 {
+	return int32(C.goud_entity_pool_destroy(C.uint32_t(handle)))
+}
+
+// GoudEntityPoolRelease wraps goud_entity_pool_release.
+func GoudEntityPoolRelease(handle uint32, slot_index uint32) int32 {
+	return int32(C.goud_entity_pool_release(C.uint32_t(handle), C.uint32_t(slot_index)))
+}
+
+// GoudEntityPoolReleaseBatch wraps goud_entity_pool_release_batch.
+func GoudEntityPoolReleaseBatch(handle uint32, slot_indices *C.uint32_t, count uint32) uint32 {
+	if slot_indices == nil {
+		return 0
+	}
+	return uint32(C.goud_entity_pool_release_batch(C.uint32_t(handle), slot_indices, C.uint32_t(count)))
+}
+
+// GoudEntityPoolStats wraps goud_entity_pool_stats.
+func GoudEntityPoolStats(handle uint32, out_stats *C.FfiPoolStats) int32 {
+	if out_stats == nil {
+		return -1
+	}
+	return int32(C.goud_entity_pool_stats(C.uint32_t(handle), out_stats))
+}
+
 // GoudEntitySpawnBatch wraps goud_entity_spawn_batch.
 func GoudEntitySpawnBatch(context_id C.GoudContextId, count uint32, out_entities *C.uint64_t) uint32 {
 	if out_entities == nil {
@@ -1030,6 +1098,19 @@ func GoudFontLoad(context_id C.GoudContextId, path *C.char) C.GoudFontHandle {
 		return 0
 	}
 	return C.goud_font_load(context_id, path)
+}
+
+// GoudFrameArenaReset wraps goud_frame_arena_reset.
+func GoudFrameArenaReset() int32 {
+	return int32(C.goud_frame_arena_reset())
+}
+
+// GoudFrameArenaStats wraps goud_frame_arena_stats.
+func GoudFrameArenaStats(out_stats *C.FfiArenaStats) int32 {
+	if out_stats == nil {
+		return -1
+	}
+	return int32(C.goud_frame_arena_stats(out_stats))
 }
 
 // GoudInputActionJustPressed wraps goud_input_action_just_pressed.
@@ -1997,6 +2078,14 @@ func GoudRendererDrawText(context_id C.GoudContextId, font_handle C.GoudFontHand
 	return bool(C.goud_renderer_draw_text(context_id, font_handle, text, C.float(x), C.float(y), C.float(font_size), C.uint8_t(alignment), C.float(max_width), C.float(line_spacing), C.uint8_t(direction), C.float(r), C.float(g), C.float(b), C.float(a)))
 }
 
+// GoudRendererDrawTextBatch wraps goud_renderer_draw_text_batch.
+func GoudRendererDrawTextBatch(context_id C.GoudContextId, cmds *C.FfiTextCmd, count uint32) uint32 {
+	if cmds == nil {
+		return 0
+	}
+	return uint32(C.goud_renderer_draw_text_batch(context_id, cmds, C.uint32_t(count)))
+}
+
 // GoudRendererEnableBlending wraps goud_renderer_enable_blending.
 func GoudRendererEnableBlending(context_id C.GoudContextId) {
 	C.goud_renderer_enable_blending(context_id)
@@ -2015,6 +2104,14 @@ func GoudRendererEnd(context_id C.GoudContextId) bool {
 // GoudRendererGetCoordinateOrigin wraps goud_renderer_get_coordinate_origin.
 func GoudRendererGetCoordinateOrigin(context_id C.GoudContextId) uint32 {
 	return uint32(C.goud_renderer_get_coordinate_origin(context_id))
+}
+
+// GoudRendererGetFrameMetrics wraps goud_renderer_get_frame_metrics.
+func GoudRendererGetFrameMetrics(context_id C.GoudContextId, out_metrics *C.FfiRenderMetrics) int32 {
+	if out_metrics == nil {
+		return -1
+	}
+	return int32(C.goud_renderer_get_frame_metrics(context_id, out_metrics))
 }
 
 // GoudRendererGetStats wraps goud_renderer_get_stats.
@@ -2265,6 +2362,54 @@ func GoudSkeletonPlayClip(context_id C.GoudContextId, entity_id uint64, clip_nam
 // GoudSkeletonSetBoneTransform wraps goud_skeleton_set_bone_transform.
 func GoudSkeletonSetBoneTransform(context_id C.GoudContextId, entity_id uint64, bone_index int32, x float32, y float32, rotation float32) int32 {
 	return int32(C.goud_skeleton_set_bone_transform(context_id, C.uint64_t(entity_id), C.int32_t(bone_index), C.float(x), C.float(y), C.float(rotation)))
+}
+
+// GoudSpatialGridClear wraps goud_spatial_grid_clear.
+func GoudSpatialGridClear(handle uint32) int32 {
+	return int32(C.goud_spatial_grid_clear(C.uint32_t(handle)))
+}
+
+// GoudSpatialGridCreate wraps goud_spatial_grid_create.
+func GoudSpatialGridCreate(cell_size float32) uint32 {
+	return uint32(C.goud_spatial_grid_create(C.float(cell_size)))
+}
+
+// GoudSpatialGridCreateWithCapacity wraps goud_spatial_grid_create_with_capacity.
+func GoudSpatialGridCreateWithCapacity(cell_size float32, capacity uint32) uint32 {
+	return uint32(C.goud_spatial_grid_create_with_capacity(C.float(cell_size), C.uint32_t(capacity)))
+}
+
+// GoudSpatialGridDestroy wraps goud_spatial_grid_destroy.
+func GoudSpatialGridDestroy(handle uint32) int32 {
+	return int32(C.goud_spatial_grid_destroy(C.uint32_t(handle)))
+}
+
+// GoudSpatialGridEntityCount wraps goud_spatial_grid_entity_count.
+func GoudSpatialGridEntityCount(handle uint32) int32 {
+	return int32(C.goud_spatial_grid_entity_count(C.uint32_t(handle)))
+}
+
+// GoudSpatialGridInsert wraps goud_spatial_grid_insert.
+func GoudSpatialGridInsert(handle uint32, entity_id uint64, x float32, y float32) int32 {
+	return int32(C.goud_spatial_grid_insert(C.uint32_t(handle), C.uint64_t(entity_id), C.float(x), C.float(y)))
+}
+
+// GoudSpatialGridQueryRadius wraps goud_spatial_grid_query_radius.
+func GoudSpatialGridQueryRadius(handle uint32, center_x float32, center_y float32, radius float32, out_entities *C.uint64_t, capacity uint32) int32 {
+	if out_entities == nil {
+		return -1
+	}
+	return int32(C.goud_spatial_grid_query_radius(C.uint32_t(handle), C.float(center_x), C.float(center_y), C.float(radius), out_entities, C.uint32_t(capacity)))
+}
+
+// GoudSpatialGridRemove wraps goud_spatial_grid_remove.
+func GoudSpatialGridRemove(handle uint32, entity_id uint64) int32 {
+	return int32(C.goud_spatial_grid_remove(C.uint32_t(handle), C.uint64_t(entity_id)))
+}
+
+// GoudSpatialGridUpdate wraps goud_spatial_grid_update.
+func GoudSpatialGridUpdate(handle uint32, entity_id uint64, x float32, y float32) int32 {
+	return int32(C.goud_spatial_grid_update(C.uint32_t(handle), C.uint64_t(entity_id), C.float(x), C.float(y)))
 }
 
 // GoudSpriteAnimatorFromClip wraps goud_sprite_animator_from_clip.

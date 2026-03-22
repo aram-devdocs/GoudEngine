@@ -1022,5 +1022,24 @@ def test_generated_types_ffi_runtime_with_fake_lib():
     assert isinstance(text.get_line_spacing(), float)
     assert "Text(" in repr(text)
 
+    # SpriteCmd
+    sc = types_mod.SpriteCmd(texture=1, x=10.0, y=20.0, width=32.0, height=32.0,
+                              rotation=0.5, src_x=0.0, src_y=0.0, src_w=32.0, src_h=32.0,
+                              r=1.0, g=1.0, b=1.0, a=1.0, z_layer=5)
+    assert sc.texture == 1
+    assert sc.x == 10.0
+    assert sc.width == 32.0
+    assert sc.z_layer == 5
+    assert "SpriteCmd(" in repr(sc)
+
+    # TextCmd
+    tc = types_mod.TextCmd(font_handle=42, x=100.0, y=200.0, font_size=16.0,
+                            max_width=300.0, line_spacing=1.2,
+                            r=0.0, g=0.0, b=0.0, a=1.0)
+    assert tc.font_handle == 42
+    assert tc.font_size == 16.0
+    assert tc.line_spacing == 1.2
+    assert "TextCmd(" in repr(tc)
+
     print("  Generated _types.py fake-lib FFI runtime coverage passed")
     return True

@@ -96,6 +96,7 @@
 //! - No data races (contexts are Send+Sync, errors are thread-local)
 
 pub mod animation;
+pub mod arena;
 #[cfg(feature = "native")]
 pub mod audio;
 pub mod collision;
@@ -115,6 +116,7 @@ pub mod input;
 pub mod network;
 pub mod physics;
 pub mod plugin;
+pub mod pool;
 pub mod providers;
 #[cfg(feature = "native")]
 pub mod renderer;
@@ -134,7 +136,7 @@ pub use context::{
     GoudContext, GoudContextHandle, GoudContextId, GoudContextRegistry, GOUD_INVALID_CONTEXT_ID,
 };
 pub use entity::GOUD_INVALID_ENTITY_ID;
-pub use types::{FfiVec2, GoudEntityId, GoudResult};
+pub use types::{FfiRenderMetrics, FfiVec2, GoudEntityId, GoudResult};
 
 // Re-export error types from core module
 pub use crate::core::error::{GoudError, GoudErrorCode, GoudResult as CoreResult};

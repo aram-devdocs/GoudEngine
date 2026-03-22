@@ -139,5 +139,5 @@ Keep PRs focused. One logical change per PR. Large refactors should be discussed
 | ECS patterns | `.agents/rules/ecs-patterns.md` |
 | SDK development | `.agents/rules/sdk-development.md` |
 | Architecture docs | `docs/architecture/` |
-| Development guide | `docs/DEVELOPMENT.md` |
-| Build guide | `docs/BUILDING.md` |
+| Development guide | `docs/src/development/dev-setup.md` |
+| Build guide | `docs/src/development/building.md` |

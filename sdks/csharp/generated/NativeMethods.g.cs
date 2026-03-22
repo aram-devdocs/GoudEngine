@@ -92,6 +92,24 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct FfiRenderMetrics
+    {
+        public uint DrawCallCount;
+        public uint SpritesSubmitted;
+        public uint SpritesDrawn;
+        public uint SpritesCulled;
+        public uint BatchesSubmitted;
+        public float AvgSpritesPerBatch;
+        public float SpriteRenderMs;
+        public float TextRenderMs;
+        public float UiRenderMs;
+        public float TotalRenderMs;
+        public uint TextDrawCalls;
+        public uint TextGlyphCount;
+        public uint UiDrawCalls;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct GoudDebuggerConfig
     {
         [MarshalAs(UnmanagedType.U1)]
@@ -265,6 +283,25 @@ namespace GoudEngine
         public ulong TotalPixels;
         public float Efficiency;
         public ulong WastedPixels;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiPoolStats
+    {
+        public uint Capacity;
+        public uint Active;
+        public uint Available;
+        public uint HighWaterMark;
+        public ulong TotalAcquires;
+        public ulong TotalReleases;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FfiArenaStats
+    {
+        public ulong BytesAllocated;
+        public ulong BytesCapacity;
+        public ulong ResetCount;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -615,7 +652,7 @@ namespace GoudEngine
         public static extern int goud_debug_get_fps_stats(GoudContextId context_id, ref FpsStats out_stats);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int goud_render_get_metrics(GoudContextId context_id, ref RenderMetrics out_metrics);
+        public static extern int goud_render_get_metrics(GoudContextId context_id, ref FfiRenderMetrics out_metrics);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_debug_set_fps_overlay_enabled(GoudContextId context_id, [MarshalAs(UnmanagedType.U1)] bool enabled);
@@ -2036,6 +2073,39 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_spatial_grid_entity_count(uint handle);
+
+        // entity_pool
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_entity_pool_create(uint capacity);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_entity_pool_destroy(uint handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ulong goud_entity_pool_acquire(uint handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_entity_pool_acquire_batch(uint handle, uint count, ref ulong out_entities);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_entity_pool_release(uint handle, uint slot_index);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_entity_pool_release_batch(uint handle, IntPtr slot_indices, uint count);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_entity_pool_stats(uint handle, ref FfiPoolStats out_stats);
+
+        // frame_arena
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_frame_arena_reset();
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_frame_arena_stats(ref FfiArenaStats out_stats);
+
+        // render_metrics
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer_get_frame_metrics(GoudContextId context_id, ref FfiRenderMetrics out_metrics);
 
         // batch rendering
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

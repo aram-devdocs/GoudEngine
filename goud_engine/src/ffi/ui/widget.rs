@@ -2,8 +2,9 @@
 
 use crate::ui::{UiButton, UiComponent, UiImage, UiLabel, UiManager, UiSlider, UiStyleOverrides};
 
-use super::{component_from_widget_kind, unpack_node_id, FfiUiStyle, ERR_NULL_MANAGER};
-const ERR_NULL_ARG: i32 = -2;
+use super::{
+    component_from_widget_kind, unpack_node_id, FfiUiStyle, ERR_NULL_MANAGER, ERR_NULL_PTR,
+};
 const ERR_NODE_NOT_FOUND: i32 = -3;
 const ERR_INVALID_UTF8: i32 = -4;
 const ERR_UNKNOWN_WIDGET: i32 = -5;
@@ -13,7 +14,7 @@ fn read_utf8_bytes(ptr: *const u8, len: usize) -> Result<String, i32> {
         return Ok(String::new());
     }
     if ptr.is_null() {
-        return Err(ERR_NULL_ARG);
+        return Err(ERR_NULL_PTR);
     }
     // SAFETY: Caller provides a non-null pointer valid for `len` bytes.
     let bytes = unsafe { std::slice::from_raw_parts(ptr, len) };
@@ -87,7 +88,7 @@ pub unsafe extern "C" fn goud_ui_set_style(
         return ERR_NULL_MANAGER;
     }
     if style.is_null() {
-        return ERR_NULL_ARG;
+        return ERR_NULL_PTR;
     }
 
     // SAFETY: `style` is checked non-null above and expected valid by caller.

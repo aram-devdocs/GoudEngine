@@ -1708,3 +1708,65 @@ class AtlasStats:
 
     def __repr__(self):
         return f"AtlasStats(texture_count={self.texture_count}, width={self.width}, height={self.height}, used_pixels={self.used_pixels}, total_pixels={self.total_pixels}, efficiency={self.efficiency}, wasted_pixels={self.wasted_pixels})"
+
+class PoolStats:
+    """Diagnostic statistics snapshot for an entity pool"""
+    def __init__(self, capacity: int = 0, active: int = 0, available: int = 0, high_water_mark: int = 0, total_acquires: int = 0, total_releases: int = 0):
+        self.capacity = capacity
+        self.active = active
+        self.available = available
+        self.high_water_mark = high_water_mark
+        self.total_acquires = total_acquires
+        self.total_releases = total_releases
+
+    def __repr__(self):
+        return f"PoolStats(capacity={self.capacity}, active={self.active}, available={self.available}, high_water_mark={self.high_water_mark}, total_acquires={self.total_acquires}, total_releases={self.total_releases})"
+
+class ArenaStats:
+    """Diagnostic statistics snapshot for the frame arena allocator"""
+    def __init__(self, bytes_allocated: int = 0, bytes_capacity: int = 0, reset_count: int = 0):
+        self.bytes_allocated = bytes_allocated
+        self.bytes_capacity = bytes_capacity
+        self.reset_count = reset_count
+
+    def __repr__(self):
+        return f"ArenaStats(bytes_allocated={self.bytes_allocated}, bytes_capacity={self.bytes_capacity}, reset_count={self.reset_count})"
+
+class SpriteCmd:
+    """Describes a single sprite for batched rendering via DrawSpriteBatch"""
+    def __init__(self, texture: int = 0, x: float = 0.0, y: float = 0.0, width: float = 0.0, height: float = 0.0, rotation: float = 0.0, src_x: float = 0.0, src_y: float = 0.0, src_w: float = 0.0, src_h: float = 0.0, r: float = 0.0, g: float = 0.0, b: float = 0.0, a: float = 0.0, z_layer: int = 0):
+        self.texture = texture
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.rotation = rotation
+        self.src_x = src_x
+        self.src_y = src_y
+        self.src_w = src_w
+        self.src_h = src_h
+        self.r = r
+        self.g = g
+        self.b = b
+        self.a = a
+        self.z_layer = z_layer
+
+    def __repr__(self):
+        return f"SpriteCmd(texture={self.texture}, x={self.x}, y={self.y}, width={self.width}, height={self.height}, rotation={self.rotation}, src_x={self.src_x}, src_y={self.src_y}, src_w={self.src_w}, src_h={self.src_h}, r={self.r}, g={self.g}, b={self.b}, a={self.a}, z_layer={self.z_layer})"
+
+class TextCmd:
+    """Describes a single text draw command for batched rendering via DrawTextBatch"""
+    def __init__(self, font_handle: int = 0, x: float = 0.0, y: float = 0.0, font_size: float = 0.0, max_width: float = 0.0, line_spacing: float = 0.0, r: float = 0.0, g: float = 0.0, b: float = 0.0, a: float = 0.0):
+        self.font_handle = font_handle
+        self.x = x
+        self.y = y
+        self.font_size = font_size
+        self.max_width = max_width
+        self.line_spacing = line_spacing
+        self.r = r
+        self.g = g
+        self.b = b
+        self.a = a
+
+    def __repr__(self):
+        return f"TextCmd(font_handle={self.font_handle}, x={self.x}, y={self.y}, font_size={self.font_size}, max_width={self.max_width}, line_spacing={self.line_spacing}, r={self.r}, g={self.g}, b={self.b}, a={self.a})"

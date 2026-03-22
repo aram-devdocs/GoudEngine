@@ -49,6 +49,7 @@ mod draw;
 mod handles;
 mod immediate;
 mod lifecycle;
+pub mod metrics;
 mod text;
 mod texture;
 

@@ -1,24 +1,47 @@
-# C SDK
+# GoudEngine C SDK
 
-The C SDK is a header-only layer over the generated `goud_engine.h` surface.
-It keeps the raw ABI available and adds a small set of `static inline` helpers
-for common native workflows:
+> **Alpha** -- This SDK is under active development. APIs change frequently. [Report issues](https://github.com/aram-devdocs/GoudEngine/issues)
 
-- status-code helpers with `goud_get_last_error`
-- explicit ownership helpers for `goud_context` and `goud_engine_config`
-- representative wrappers for entity, asset, renderer, input, and audio calls
+Header-only C layer over GoudEngine's generated `goud_engine.h` FFI surface.
 
-Build the native library first:
+## Installation
+
+Build the native library, then include the staged headers:
 
 ```bash
-./build.sh --local --core-only --skip-csharp-sdk-build
+cargo build --release
 ```
-
-After that, include the staged headers from `sdks/c/include/`:
 
 ```c
 #include <goud/goud.h>
 ```
 
-`goud_engine.h` remains the source of truth for the raw ABI. The C SDK only
-adds convenience wrappers on top of it.
+## Quick Start
+
+```c
+#include <goud/goud.h>
+
+int main(void) {
+    goud_engine_config* config = goud_engine_config_create();
+    goud_engine_config_set_title(config, "My Game");
+    goud_engine_config_set_size(config, 800, 600);
+
+    goud_context ctx = goud_engine_config_build(config);
+    // game loop here
+    goud_context_destroy(ctx);
+    return 0;
+}
+```
+
+## Documentation
+
+See the [Getting Started guide](../../docs/src/getting-started/c-cpp.md) for installation, CMake integration, and examples.
+
+## Architecture
+
+This SDK is a header-only convenience layer -- all engine logic lives in Rust. `goud_engine.h` is the source of truth for the raw ABI. The C SDK adds `static inline` helpers for common workflows.
+
+## Links
+
+- [Full documentation](../../docs/src/getting-started/c-cpp.md)
+- [License: MIT](https://github.com/aram-devdocs/GoudEngine/blob/main/LICENSE)

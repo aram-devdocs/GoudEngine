@@ -64,7 +64,6 @@ struct StateSnapshot<S: GameState> {
     state: S,
     /// Inputs that were used to produce this frame's state (applied to go from
     /// frame-1 to frame). Stored for diagnostic and replay purposes.
-    #[allow(dead_code)]
     inputs: HashMap<PlayerId, Vec<u8>>,
 }
 

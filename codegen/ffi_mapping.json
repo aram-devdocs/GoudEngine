@@ -83,7 +83,7 @@
       ]
     },
     "RenderMetrics": {
-      "ffi_name": "RenderMetrics",
+      "ffi_name": "FfiRenderMetrics",
       "fields": [
         "draw_call_count",
         "sprites_submitted",
@@ -382,6 +382,25 @@
         "efficiency",
         "wasted_pixels"
       ]
+    },
+    "PoolStats": {
+      "ffi_name": "FfiPoolStats",
+      "fields": [
+        "capacity",
+        "active",
+        "available",
+        "high_water_mark",
+        "total_acquires",
+        "total_releases"
+      ]
+    },
+    "ArenaStats": {
+      "ffi_name": "FfiArenaStats",
+      "fields": [
+        "bytes_allocated",
+        "bytes_capacity",
+        "reset_count"
+      ]
     }
   },
   "ffi_handles": {
@@ -416,6 +435,10 @@
     "GoudAtlasHandle": {
       "type": "u64",
       "invalid": "u64::MAX"
+    },
+    "GoudPoolHandle": {
+      "type": "u32",
+      "invalid": "u32::MAX"
     }
   },
   "ctypes_mappings": {
@@ -439,7 +462,11 @@
     "*mut FfiUiEvent": "ctypes.POINTER(FfiUiEvent)",
     "*mut c_void": "ctypes.c_void_p",
     "Option<CollisionCallback>": "ctypes.c_void_p",
-    "*const c_char": "ctypes.c_char_p"
+    "*const c_char": "ctypes.c_char_p",
+    "*mut FfiPoolStats": "ctypes.POINTER(FfiPoolStats)",
+    "*mut FfiArenaStats": "ctypes.POINTER(FfiArenaStats)",
+    "*mut FfiRenderMetrics": "ctypes.POINTER(RenderMetrics)",
+    "*const u32": "ctypes.POINTER(ctypes.c_uint32)"
   },
   "ffi_functions": {
     "_comment": "Complete list of extern C functions used by the SDK. Module grouping and alias metadata live here; params/returns/unsafe are resolved from ffi_manifest.json.",
@@ -1053,6 +1080,22 @@
       "goud_spatial_grid_update": {},
       "goud_spatial_grid_query_radius": {},
       "goud_spatial_grid_entity_count": {}
+    },
+    "entity_pool": {
+      "goud_entity_pool_create": {},
+      "goud_entity_pool_destroy": {},
+      "goud_entity_pool_acquire": {},
+      "goud_entity_pool_acquire_batch": {},
+      "goud_entity_pool_release": {},
+      "goud_entity_pool_release_batch": {},
+      "goud_entity_pool_stats": {}
+    },
+    "frame_arena": {
+      "goud_frame_arena_reset": {},
+      "goud_frame_arena_stats": {}
+    },
+    "render_metrics": {
+      "goud_renderer_get_frame_metrics": {}
     }
   }
 }

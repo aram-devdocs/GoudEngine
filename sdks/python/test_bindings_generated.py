@@ -464,6 +464,108 @@ def test_generated_new_api_names():
     return True
 
 
+def test_phase0_ffi_surface():
+    """Verify all Phase 0 feature FFI function declarations and struct layouts exist."""
+    print("Testing Phase 0 FFI surface (SpatialGrid, Atlas, Batch, Timestep, Metrics)...")
+
+    ffi_src = (_GENERATED_DIR / "_ffi.py").read_text()
+
+    # -- SpatialGrid API --
+    spatial_fns = [
+        "goud_spatial_grid_create",
+        "goud_spatial_grid_create_with_capacity",
+        "goud_spatial_grid_destroy",
+        "goud_spatial_grid_clear",
+        "goud_spatial_grid_insert",
+        "goud_spatial_grid_remove",
+        "goud_spatial_grid_update",
+        "goud_spatial_grid_query_radius",
+        "goud_spatial_grid_entity_count",
+    ]
+
+    # -- Atlas API --
+    atlas_fns = [
+        "goud_atlas_create",
+        "goud_atlas_add_from_file",
+        "goud_atlas_add_pixels",
+        "goud_atlas_finalize",
+        "goud_atlas_get_entry",
+        "goud_atlas_get_stats",
+        "goud_atlas_get_texture",
+        "goud_atlas_destroy",
+    ]
+
+    # -- Batch API --
+    batch_fns = [
+        "goud_renderer_draw_sprite_batch",
+        "goud_renderer_draw_text_batch",
+    ]
+
+    # -- Fixed Timestep API --
+    timestep_fns = [
+        "goud_fixed_timestep_begin",
+        "goud_fixed_timestep_step",
+        "goud_fixed_timestep_alpha",
+        "goud_fixed_timestep_dt",
+        "goud_fixed_timestep_set",
+        "goud_fixed_timestep_set_max_steps",
+    ]
+
+    # -- Render Metrics API --
+    metrics_fns = [
+        "goud_renderer_get_frame_metrics",
+    ]
+
+    all_fns = spatial_fns + atlas_fns + batch_fns + timestep_fns + metrics_fns
+    missing = []
+    for fn_name in all_fns:
+        key = f"_lib.{fn_name}.argtypes"
+        if key not in ffi_src:
+            missing.append(fn_name)
+    assert not missing, f"Missing Phase 0 FFI function declarations: {missing}"
+
+    # -- Struct layout: FfiRenderMetrics (13 fields) --
+    expected_render_metrics_fields = [
+        ("draw_call_count", "ctypes.c_uint32"),
+        ("sprites_submitted", "ctypes.c_uint32"),
+        ("sprites_drawn", "ctypes.c_uint32"),
+        ("sprites_culled", "ctypes.c_uint32"),
+        ("batches_submitted", "ctypes.c_uint32"),
+        ("avg_sprites_per_batch", "ctypes.c_float"),
+        ("sprite_render_ms", "ctypes.c_float"),
+        ("text_render_ms", "ctypes.c_float"),
+        ("ui_render_ms", "ctypes.c_float"),
+        ("total_render_ms", "ctypes.c_float"),
+        ("text_draw_calls", "ctypes.c_uint32"),
+        ("text_glyph_count", "ctypes.c_uint32"),
+        ("ui_draw_calls", "ctypes.c_uint32"),
+    ]
+    assert "class FfiRenderMetrics(ctypes.Structure):" in ffi_src, \
+        "FfiRenderMetrics struct not found in _ffi.py"
+    for field_name, field_type in expected_render_metrics_fields:
+        pattern = f'("{field_name}", {field_type})'
+        assert pattern in ffi_src, \
+            f"FfiRenderMetrics missing field: {field_name} with type {field_type}"
+
+    # -- Struct existence: FfiSpriteCmd, FfiTextCmd, FfiAtlasEntry, FfiAtlasStats --
+    assert "class FfiSpriteCmd(ctypes.Structure):" in ffi_src, \
+        "FfiSpriteCmd struct not found in _ffi.py"
+    assert "class FfiTextCmd(ctypes.Structure):" in ffi_src, \
+        "FfiTextCmd struct not found in _ffi.py"
+    assert "class FfiAtlasEntry(ctypes.Structure):" in ffi_src, \
+        "FfiAtlasEntry struct not found in _ffi.py"
+    assert "class FfiAtlasStats(ctypes.Structure):" in ffi_src, \
+        "FfiAtlasStats struct not found in _ffi.py"
+
+    # -- Python-side types: AtlasEntry, AtlasStats --
+    types_src = (_GENERATED_DIR / "_types.py").read_text()
+    assert "class AtlasEntry:" in types_src, "AtlasEntry not found in _types.py"
+    assert "class AtlasStats:" in types_src, "AtlasStats not found in _types.py"
+
+    print("  Phase 0 FFI surface tests passed")
+    return True
+
+
 def test_debugger_helpers():
     """Test the debugger JSON helper functions without requiring the native library."""
     print("Testing debugger helpers...")

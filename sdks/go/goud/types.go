@@ -831,3 +831,111 @@ func NewAtlasStats(textureCount uint32, width uint32, height uint32, usedPixels 
 		WastedPixels: wastedPixels,
 	}
 }
+
+// PoolStats Diagnostic statistics snapshot for an entity pool
+type PoolStats struct {
+	Capacity uint32
+	Active uint32
+	Available uint32
+	HighWaterMark uint32
+	TotalAcquires uint64
+	TotalReleases uint64
+}
+
+// NewPoolStats creates a new PoolStats.
+func NewPoolStats(capacity uint32, active uint32, available uint32, highWaterMark uint32, totalAcquires uint64, totalReleases uint64) PoolStats {
+	return PoolStats{
+		Capacity: capacity,
+		Active: active,
+		Available: available,
+		HighWaterMark: highWaterMark,
+		TotalAcquires: totalAcquires,
+		TotalReleases: totalReleases,
+	}
+}
+
+// ArenaStats Diagnostic statistics snapshot for the frame arena allocator
+type ArenaStats struct {
+	BytesAllocated uint64
+	BytesCapacity uint64
+	ResetCount uint64
+}
+
+// NewArenaStats creates a new ArenaStats.
+func NewArenaStats(bytesAllocated uint64, bytesCapacity uint64, resetCount uint64) ArenaStats {
+	return ArenaStats{
+		BytesAllocated: bytesAllocated,
+		BytesCapacity: bytesCapacity,
+		ResetCount: resetCount,
+	}
+}
+
+// SpriteCmd Describes a single sprite for batched rendering via DrawSpriteBatch
+type SpriteCmd struct {
+	Texture uint64
+	X float32
+	Y float32
+	Width float32
+	Height float32
+	Rotation float32
+	SrcX float32
+	SrcY float32
+	SrcW float32
+	SrcH float32
+	R float32
+	G float32
+	B float32
+	A float32
+	ZLayer int32
+}
+
+// NewSpriteCmd creates a new SpriteCmd.
+func NewSpriteCmd(texture uint64, x float32, y float32, width float32, height float32, rotation float32, srcX float32, srcY float32, srcW float32, srcH float32, r float32, g float32, b float32, a float32, zLayer int32) SpriteCmd {
+	return SpriteCmd{
+		Texture: texture,
+		X: x,
+		Y: y,
+		Width: width,
+		Height: height,
+		Rotation: rotation,
+		SrcX: srcX,
+		SrcY: srcY,
+		SrcW: srcW,
+		SrcH: srcH,
+		R: r,
+		G: g,
+		B: b,
+		A: a,
+		ZLayer: zLayer,
+	}
+}
+
+// TextCmd Describes a single text draw command for batched rendering via DrawTextBatch
+type TextCmd struct {
+	FontHandle uint64
+	X float32
+	Y float32
+	FontSize float32
+	MaxWidth float32
+	LineSpacing float32
+	R float32
+	G float32
+	B float32
+	A float32
+}
+
+// NewTextCmd creates a new TextCmd.
+func NewTextCmd(fontHandle uint64, x float32, y float32, fontSize float32, maxWidth float32, lineSpacing float32, r float32, g float32, b float32, a float32) TextCmd {
+	return TextCmd{
+		FontHandle: fontHandle,
+		X: x,
+		Y: y,
+		FontSize: fontSize,
+		MaxWidth: maxWidth,
+		LineSpacing: lineSpacing,
+		R: r,
+		G: g,
+		B: b,
+		A: a,
+	}
+}

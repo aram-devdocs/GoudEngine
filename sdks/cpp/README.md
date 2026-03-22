@@ -1,33 +1,15 @@
-# C++ SDK
+# GoudEngine C++ SDK
 
-The C++ SDK is a header-only C++17 layer in `namespace goud`.
-It builds on the C SDK instead of calling raw Rust FFI exports directly.
+> **Alpha** -- This SDK is under active development. APIs change frequently. [Report issues](https://github.com/aram-devdocs/GoudEngine/issues)
 
-The wrapper adds:
+Header-only C++17 RAII layer over GoudEngine's C SDK in `namespace goud`.
 
-- `goud::Error` for last-error snapshots
-- `goud::EngineConfig` with move-only ownership
-- `goud::Context` and `goud::Engine` RAII wrappers with `noexcept` destructors
-- optional `std::unique_ptr` and `std::shared_ptr` constructors where shared or transferred ownership is clearer than a raw handle
-
-## Package Manager Installation
+## Installation
 
 ### vcpkg
 
 ```bash
 vcpkg install goud-engine
-```
-
-Then in your `CMakeLists.txt`:
-
-```cmake
-cmake_minimum_required(VERSION 3.15)
-project(MyGame LANGUAGES CXX)
-
-find_package(GoudEngine CONFIG REQUIRED)
-
-add_executable(my_game main.cpp)
-target_link_libraries(my_game PRIVATE GoudEngine::GoudEngine)
 ```
 
 ### Conan
@@ -36,29 +18,7 @@ target_link_libraries(my_game PRIVATE GoudEngine::GoudEngine)
 conan install --requires=goud-engine/<VERSION>
 ```
 
-Then in your `CMakeLists.txt`:
-
-```cmake
-cmake_minimum_required(VERSION 3.15)
-project(MyGame LANGUAGES CXX)
-
-find_package(GoudEngine REQUIRED)
-
-add_executable(my_game main.cpp)
-target_link_libraries(my_game PRIVATE GoudEngine::GoudEngine)
-```
-
-## Prerequisites
-
-Build the native library first:
-
-```bash
-cargo build --release
-```
-
-## CMake Integration
-
-### Using `find_package`
+### CMake (from source)
 
 ```cmake
 cmake_minimum_required(VERSION 3.14)
@@ -73,42 +33,7 @@ add_executable(my_game main.cpp)
 target_link_libraries(my_game PRIVATE GoudEngine::GoudEngine)
 ```
 
-If `GOUD_ENGINE_ROOT` is not set, the find module falls back to the repo root
-relative to `sdks/cpp/cmake/`.
-
-### Using `add_subdirectory`
-
-```cmake
-add_subdirectory(path/to/GoudEngine/sdks/cpp)
-target_link_libraries(my_game PRIVATE GoudEngine)
-```
-
-### Building tests and examples
-
-```bash
-cmake -B build -DGOUD_BUILD_TESTS=ON -DGOUD_BUILD_EXAMPLES=ON sdks/cpp
-cmake --build build
-ctest --test-dir build
-```
-
-## Meson Integration
-
-### As a subproject
-
-Place `sdks/cpp/subprojects/goud-engine.wrap` in your project's `subprojects/`
-directory, then:
-
-```meson
-goud_dep = dependency('goud-engine-cpp', fallback: ['goud-engine', 'goud_engine_dep'])
-executable('my_game', 'main.cpp', dependencies: goud_dep)
-```
-
-### Direct dependency
-
-```meson
-goud_sub = subproject('goud-engine')
-goud_dep = goud_sub.get_variable('goud_engine_dep')
-```
+Build the native library first: `cargo build --release`
 
 ## Quick Start
 
@@ -123,12 +48,12 @@ int main() {
     auto engine = goud::Engine::create(std::move(config));
     engine.enableBlending();
 
-    goud_color clear_color{0.2f, 0.3f, 0.4f, 1.0f};
+    goud_color clear{0.2f, 0.3f, 0.4f, 1.0f};
 
     while (!engine.shouldClose()) {
         engine.pollEvents();
         engine.context().beginFrame();
-        engine.context().clear(clear_color);
+        engine.context().clear(clear);
         engine.context().endFrame();
         engine.swapBuffers();
     }
@@ -138,5 +63,22 @@ int main() {
 
 ## Documentation
 
-API reference generated with Doxygen is available at the
-[C/C++ API docs](https://aram-devdocs.github.io/GoudEngine/api/c-cpp/) page.
+See the [Getting Started guide](../../docs/src/getting-started/c-cpp.md) for installation, CMake/Meson integration, and examples.
+
+## Testing
+
+```bash
+cmake -B build -DGOUD_BUILD_TESTS=ON sdks/cpp
+cmake --build build
+ctest --test-dir build
+```
+
+## Architecture
+
+This SDK is a header-only convenience layer -- all engine logic lives in Rust. It builds on top of the C SDK (`goud/goud.h`) and adds `goud::Error`, `goud::EngineConfig`, `goud::Context`, and `goud::Engine` RAII wrappers.
+
+## Links
+
+- [Full documentation](../../docs/src/getting-started/c-cpp.md)
+- [API reference (Doxygen)](https://aram-devdocs.github.io/GoudEngine/api/c-cpp/)
+- [License: MIT](https://github.com/aram-devdocs/GoudEngine/blob/main/LICENSE)

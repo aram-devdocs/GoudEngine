@@ -257,14 +257,15 @@ pub unsafe extern "C" fn goud_rollback_create(
         desync_detection: config.desync_detection != 0,
     };
 
-    // SAFETY: Caller guarantees these u64 values are valid function pointers
-    // cast from extern "C" fn types matching the FfiAdvanceFn/FfiHashFn/
-    // FfiCloneFn/FfiFreeFn signatures.
     let game_state = FfiGameState {
         state_ptr,
+        // SAFETY: Caller guarantees this u64 is a valid FfiAdvanceFn function pointer.
         advance_fn: unsafe { std::mem::transmute::<u64, FfiAdvanceFn>(advance_fn) },
+        // SAFETY: Caller guarantees this u64 is a valid FfiHashFn function pointer.
         hash_fn: unsafe { std::mem::transmute::<u64, FfiHashFn>(hash_fn) },
+        // SAFETY: Caller guarantees this u64 is a valid FfiCloneFn function pointer.
         clone_fn: unsafe { std::mem::transmute::<u64, FfiCloneFn>(clone_fn) },
+        // SAFETY: Caller guarantees this u64 is a valid FfiFreeFn function pointer.
         free_fn: unsafe { std::mem::transmute::<u64, FfiFreeFn>(free_fn) },
     };
 

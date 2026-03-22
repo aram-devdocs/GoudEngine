@@ -1572,6 +1572,68 @@
       "return_type": "u32",
       "is_unsafe": true
     },
+    "goud_entity_pool_acquire": {
+      "source_file": "ffi/pool/operations.rs",
+      "params": [
+        "handle: u32"
+      ],
+      "return_type": "u64",
+      "is_unsafe": false
+    },
+    "goud_entity_pool_acquire_batch": {
+      "source_file": "ffi/pool/operations.rs",
+      "params": [
+        "handle: u32",
+        "count: u32",
+        "out_entities: *mut u64"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
+    "goud_entity_pool_create": {
+      "source_file": "ffi/pool/lifecycle.rs",
+      "params": [
+        "capacity: u32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_entity_pool_destroy": {
+      "source_file": "ffi/pool/lifecycle.rs",
+      "params": [
+        "handle: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_entity_pool_release": {
+      "source_file": "ffi/pool/operations.rs",
+      "params": [
+        "handle: u32",
+        "slot_index: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_entity_pool_release_batch": {
+      "source_file": "ffi/pool/operations.rs",
+      "params": [
+        "handle: u32",
+        "slot_indices: *const u32",
+        "count: u32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
+    "goud_entity_pool_stats": {
+      "source_file": "ffi/pool/queries.rs",
+      "params": [
+        "handle: u32",
+        "out_stats: *mut FfiPoolStats"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_entity_spawn_batch": {
       "source_file": "ffi/entity/lifecycle.rs",
       "params": [
@@ -1674,6 +1736,20 @@
         "path: *const c_char"
       ],
       "return_type": "GoudFontHandle",
+      "is_unsafe": true
+    },
+    "goud_frame_arena_reset": {
+      "source_file": "ffi/arena/mod.rs",
+      "params": [],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_frame_arena_stats": {
+      "source_file": "ffi/arena/mod.rs",
+      "params": [
+        "out_stats: *mut FfiArenaStats"
+      ],
+      "return_type": "i32",
       "is_unsafe": true
     },
     "goud_input_action_just_pressed": {
@@ -3351,6 +3427,15 @@
       ],
       "return_type": "u32",
       "is_unsafe": false
+    },
+    "goud_renderer_get_frame_metrics": {
+      "source_file": "ffi/renderer/metrics.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "out_metrics: *mut FfiRenderMetrics"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
     },
     "goud_renderer_get_stats": {
       "source_file": "ffi/renderer/handles.rs",
@@ -5320,5 +5405,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 534
+  "total_count": 544
 }
