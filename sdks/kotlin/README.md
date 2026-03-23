@@ -10,7 +10,7 @@ Thin Kotlin/JVM wrapper over GoudEngine's FFI layer via JNI.
 
 ```kotlin
 dependencies {
-    implementation("com.goudengine:goud-engine-kotlin:0.0.832")
+    implementation("io.github.aram-devdocs:goud-engine-kotlin:0.0.833")
 }
 ```
 

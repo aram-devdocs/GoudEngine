@@ -6,7 +6,7 @@ plugins {
     id("org.jetbrains.dokka") version "1.9.10"
 }
 
-group = "com.goudengine"
+group = "io.github.aram-devdocs"
 version = "0.0.833" // x-release-please-version
 
 repositories {
@@ -77,7 +77,7 @@ java {
 publishing {
     publications {
         create<MavenPublication>("mavenKotlin") {
-            groupId = "com.goudengine"
+            groupId = "io.github.aram-devdocs"
             artifactId = "goud-engine-kotlin"
             from(components["java"])
             pom {
@@ -106,8 +106,8 @@ publishing {
     }
     repositories {
         maven {
-            name = "OSSRH"
-            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            name = "CentralPortal"
+            url = uri("https://central.sonatype.com/repository/maven-releases/")
             credentials {
                 username = System.getenv("MAVEN_USERNAME") ?: ""
                 password = System.getenv("MAVEN_PASSWORD") ?: ""

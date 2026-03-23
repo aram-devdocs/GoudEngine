@@ -49,13 +49,13 @@ Used by: `publish-pypi` job to publish Python SDK to PyPI
 ### maven Environment
 
 #### `MAVEN_USERNAME`
-- Where to obtain: [Maven Central Repository > Account > User Token](https://s01.oss.sonatype.org/)
+- Where to obtain: [Maven Central Repository > Account > User Token](https://central.sonatype.com/)
 - Type: JIRA/OSS account username or user token (username format)
-- Scope: Publish to `com.goudengine:goud-engine-kotlin`
+- Scope: Publish to `io.github.aram-devdocs:goud-engine-kotlin`
 - Used by: `publish-kotlin` Gradle plugin configuration
 
 #### `MAVEN_PASSWORD`
-- Where to obtain: [Maven Central Repository > Account > User Token](https://s01.oss.sonatype.org/)
+- Where to obtain: [Maven Central Repository > Account > User Token](https://central.sonatype.com/)
 - Type: User token password (not your account password)
 - Scope: Paired with `MAVEN_USERNAME`
 - Used by: `publish-kotlin` Gradle plugin configuration

@@ -12,6 +12,9 @@
 [![npm](https://img.shields.io/npm/v/goudengine.svg)](https://www.npmjs.com/package/goudengine)
 [![NuGet](https://img.shields.io/nuget/v/GoudEngine.svg)](https://www.nuget.org/packages/GoudEngine/)
 [![PyPI](https://img.shields.io/pypi/v/goudengine.svg)](https://pypi.org/project/goudengine/)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.aram-devdocs/goud-engine-kotlin.svg)](https://central.sonatype.com/artifact/io.github.aram-devdocs/goud-engine-kotlin)
+[![LuaRocks](https://img.shields.io/luarocks/v/aram-devdocs/goudengine.svg)](https://luarocks.org/modules/aram-devdocs/goudengine)
+[![Go Reference](https://pkg.go.dev/badge/github.com/aram-devdocs/goud-engine-go/goud.svg)](https://pkg.go.dev/github.com/aram-devdocs/goud-engine-go/goud)
 
 [![total downloads](https://img.shields.io/badge/total_downloads-5%2C593-brightgreen)](#downloads)
 

@@ -24,6 +24,9 @@ NUGET_SEARCH_URL = "https://azuresearch-usnc.nuget.org/query?q=packageid:GoudEng
 NUGET_REGISTRATION_URL = "https://api.nuget.org/v3/registration5-gz-semver2/goudengine/index.json"
 NPM_URL = "https://api.npmjs.org/downloads/range/2020-01-01:2099-12-31/goudengine"
 PYPI_URL = "https://pypistats.org/api/packages/goudengine/overall?mirrors=false"
+MAVEN_SEARCH_URL = "https://central.sonatype.com/api/v1/search?q=g:io.github.aram-devdocs+AND+a:goud-engine-kotlin"
+LUAROCKS_URL = "https://luarocks.org/api/1/modules/aram-devdocs/goudengine"
+GO_PROXY_URL = "https://proxy.golang.org/github.com/aram-devdocs/goud-engine-go/goud/@v/list"
 
 README_MARKER_PATTERN = re.compile(
     r"<!-- COMMUNITY-STATS:START -->.*?<!-- COMMUNITY-STATS:END -->",
@@ -98,6 +101,33 @@ def fetch_npm_total() -> int:
     return sum(int(day.get("downloads", 0)) for day in payload.get("downloads", []))
 
 
+def fetch_maven_total() -> int:
+    payload = fetch_json(MAVEN_SEARCH_URL)
+    items = payload.get("items", [])
+    if items:
+        return int(items[0].get("downloadCount", 0))
+    return 0
+
+
+def fetch_luarocks_total() -> int:
+    payload = fetch_json(LUAROCKS_URL)
+    return int(payload.get("downloads", 0))
+
+
+def fetch_go_versions() -> int:
+    """Return number of published Go module versions as a proxy for activity."""
+    request = urllib.request.Request(
+        GO_PROXY_URL,
+        headers={"User-Agent": "GoudEngine Community Stats"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            lines = response.read().decode().strip().splitlines()
+            return len(lines)
+    except Exception:  # noqa: BLE001
+        return 0
+
+
 def fetch_pypi_daily_downloads() -> dict[str, int]:
     payload = fetch_json(PYPI_URL, retries=5)
     return {
@@ -153,6 +183,9 @@ def build_stats_block(entry: dict[str, int | str]) -> str:
             f"| NuGet | [{format_number(int(entry['nuget']))}](https://www.nuget.org/packages/GoudEngine/) |",
             f"| PyPI | [{format_number(int(entry['pypi']))}](https://pypi.org/project/goudengine/) |",
             f"| npm | [{format_number(int(entry['npm']))}](https://www.npmjs.com/package/goudengine) |",
+            f"| Maven Central | [{format_number(int(entry.get('maven', 0)))}](https://central.sonatype.com/artifact/io.github.aram-devdocs/goud-engine-kotlin) |",
+            f"| LuaRocks | [{format_number(int(entry.get('luarocks', 0)))}](https://luarocks.org/modules/aram-devdocs/goudengine) |",
+            f"| Go | [{int(entry.get('go_versions', 0))} versions](https://pkg.go.dev/github.com/aram-devdocs/goud-engine-go/goud) |",
             "",
             "<sub>PyPI totals exclude mirrors.</sub>",
             "",
@@ -191,11 +224,17 @@ def main() -> None:
         crates_total = fetch_crates_total()
         nuget_total = fetch_nuget_total()
         npm_total = fetch_npm_total()
+        maven_total = safe_fetch_int(fetch_maven_total, 0)
+        luarocks_total = safe_fetch_int(fetch_luarocks_total, 0)
+        go_versions = safe_fetch_int(fetch_go_versions, 0)
         latest_pypi_daily = fetch_pypi_daily_downloads()
     else:
         crates_total = safe_fetch_int(fetch_crates_total, int(previous_entry.get("crates_io", 0)))
         nuget_total = safe_fetch_int(fetch_nuget_total, int(previous_entry.get("nuget", 0)))
         npm_total = safe_fetch_int(fetch_npm_total, int(previous_entry.get("npm", 0)))
+        maven_total = safe_fetch_int(fetch_maven_total, int(previous_entry.get("maven", 0)))
+        luarocks_total = safe_fetch_int(fetch_luarocks_total, int(previous_entry.get("luarocks", 0)))
+        go_versions = safe_fetch_int(fetch_go_versions, int(previous_entry.get("go_versions", 0)))
         try:
             latest_pypi_daily = fetch_pypi_daily_downloads()
         except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError, urllib.error.URLError):
@@ -213,7 +252,10 @@ def main() -> None:
         "nuget": nuget_total,
         "pypi": pypi_total,
         "npm": npm_total,
-        "total": crates_total + nuget_total + pypi_total + npm_total,
+        "maven": maven_total,
+        "luarocks": luarocks_total,
+        "go_versions": go_versions,
+        "total": crates_total + nuget_total + pypi_total + npm_total + maven_total + luarocks_total,
     }
 
     write_json(PYPI_DAILY, merged_pypi_daily)

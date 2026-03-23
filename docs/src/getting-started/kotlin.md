@@ -40,7 +40,7 @@ dependencies {
 
 ```kotlin
 dependencies {
-    implementation("com.goudengine:goud-engine-kotlin:0.0.832")
+    implementation("io.github.aram-devdocs:goud-engine-kotlin:0.0.833")
 }
 ```
 
