@@ -35,7 +35,7 @@ env_logger = { version = "0.11.6", optional = true }
 gl = { version = "0.14.0", optional = true }
 glfw = { version = "0.59.0", optional = true }
 log = "0.4.17"
-jni = { version = "0.22.4", features = ["invocation"], optional = true }
+jni = { version = "0.21", features = ["invocation"], optional = true }
 mlua = { version = "0.11", optional = true, default-features = false, features = ["lua54", "vendored"] }
 thiserror = "2.0.12"
 image = "0.25"
@@ -59,9 +59,9 @@ gltf = { version = "1.4", optional = true }
 tobj = { version = "4.0", optional = true, features = ["ahash"] }
 bytemuck = "1.14"
 goud_engine_macros = { version = "=0.0.833", path = "../goud_engine_macros" } # x-release-please-version
-wgpu = { version = "29", optional = true }
+wgpu = { version = "28", optional = true }
 winit = { version = "0.30", optional = true }
-naga = { version = "29", optional = true, features = ["glsl-in", "wgsl-out"] }
+naga = { version = "28", optional = true, features = ["glsl-in", "wgsl-out"] }
 pollster = { version = "0.4", optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
 wasm-bindgen-futures = { version = "0.4", optional = true }

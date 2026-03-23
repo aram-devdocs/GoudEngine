@@ -112,3 +112,22 @@ sdks/c/tests/build/
 # Claude worktrees (ephemeral, per-session)
 .claude/worktrees/
 .mcp.json
+
+# Gradle build artifacts
+.gradle/
+**/build/libs/
+**/build/classes/
+**/build/kotlin/
+**/build/generated/
+**/build/tmp/
+**/build/reports/
+**/build/native/
+
+# Go compiled binaries
+examples/go/*/feature_lab
+examples/go/*/flappy_bird
+examples/go/*/sandbox
+
+# Coverage artifacts
+.coverage
+**/coverage/
