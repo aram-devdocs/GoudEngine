@@ -23,7 +23,7 @@ class GameManager(game: GoudGame) {
     }
 
     fun update(game: GoudGame) {
-        val dt = game.deltaTime()
+        val dt = game.deltaTime
 
         when (state) {
             State.MENU -> {

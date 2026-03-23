@@ -209,4 +209,10 @@ public final class GoudGameNative {
     public static native int rpcProcessIncoming(long handle, long peerId, byte[] data);
     public static native byte[] rpcReceiveResponse(long handle, long callId);
     public static native byte[] rpcDrainOne(long handle);
+    public static native float windowPollEvents(long contextId);
+    public static native void windowClear(long contextId, float r, float g, float b, float a);
+    public static native int rendererBegin(long contextId);
+    public static native void rendererEnableBlending(long contextId);
+    public static native int rendererEnd(long contextId);
+    public static native void windowSwapBuffers(long contextId);
 }

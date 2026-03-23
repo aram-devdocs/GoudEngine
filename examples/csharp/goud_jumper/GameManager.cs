@@ -149,7 +149,7 @@ public class GameManager
             spriteHeight,
             0f,
             sourceRect.X, sourceRect.Y, sourceRect.Width, sourceRect.Height,
-            srcMode: SrcRectMode.Normalized);
+            srcMode: (uint)SrcRectMode.Normalized);
     }
 
     private void UpdatePlayerPosition(float deltaTime)

@@ -44,6 +44,16 @@ impl NativeRenderBackend {
         self.info().clone()
     }
 
+    /// Returns `true` when the active backend accepts WGSL shader sources.
+    pub(crate) fn is_wgsl_backend(&self) -> bool {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(_) => false,
+            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            Self::Wgpu(_) => true,
+        }
+    }
+
     pub(crate) fn bind_texture_by_index(&mut self, index: u32, unit: u32) -> GoudResult<()> {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
@@ -92,5 +102,10 @@ impl SharedNativeRenderBackend {
 
     pub(crate) fn resize_surface(&self, width: u32, height: u32) {
         self.lock().resize_surface(width, height);
+    }
+
+    /// Returns `true` when the active backend accepts WGSL shader sources.
+    pub(crate) fn is_wgsl_backend(&self) -> bool {
+        self.lock().is_wgsl_backend()
     }
 }

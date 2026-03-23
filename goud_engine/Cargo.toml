@@ -12,7 +12,7 @@ categories = ["game-engines", "graphics", "rendering"]
 
 [features]
 default = ["native"]
-native = ["wgpu-backend", "dep:rodio", "dep:notify", "dep:cc", "dep:bindgen", "dep:cbindgen", "dep:tiled", "dep:rayon", "dep:env_logger", "dep:toml", "dep:gltf", "dep:tobj", "dep:jni", "net-udp", "net-tcp", "net-ws"]
+native = ["wgpu-backend", "dep:rodio", "dep:notify", "dep:cc", "dep:bindgen", "dep:cbindgen", "dep:tiled", "dep:rayon", "dep:env_logger", "dep:toml", "dep:gltf", "dep:tobj", "dep:jni", "net-udp", "net-tcp", "net-ws", "rapier2d", "rapier3d"]
 legacy-glfw-opengl = ["dep:gl", "dep:glfw"]
 lua = ["dep:mlua"]
 net-udp = []

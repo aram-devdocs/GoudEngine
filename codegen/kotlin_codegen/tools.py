@@ -314,6 +314,45 @@ def _gen_tool_class(tool_name: str, is_windowed: bool = False):
     lines.append("    }")
     lines.append("")
 
+    # Lifecycle methods (beginFrame, endFrame, deltaTime) — windowed tools only
+    lifecycle = ffi_tools.get("lifecycle", {})
+    if is_windowed and lifecycle:
+        def _snake_to_camel(s: str) -> str:
+            parts = s.split("_")
+            return parts[0] + "".join(p.capitalize() for p in parts[1:])
+
+        lines.append("    private var _deltaTime: Float = 0f")
+        lines.append("")
+        lines.append("    /** Time elapsed since the last frame, in seconds. */")
+        lines.append("    val deltaTime: Float get() = _deltaTime")
+        lines.append("")
+
+        if "beginFrame" in lifecycle:
+            lines.append("    /** Begins a new frame: polls events, clears the screen, and prepares the renderer. */")
+            lines.append("    fun beginFrame(r: Float = 0f, g: Float = 0f, b: Float = 0f, a: Float = 1f) {")
+            for step in lifecycle["beginFrame"]["sequence"]:
+                ffi = step["ffi"]
+                java_name = _snake_to_camel(ffi.removeprefix("goud_"))
+                capture = step.get("capture_return")
+                if capture == "delta_time":
+                    lines.append(f"        _deltaTime = {native_cls}.{java_name}(contextId)")
+                elif ffi == "goud_window_clear":
+                    lines.append(f"        {native_cls}.{java_name}(contextId, r, g, b, a)")
+                else:
+                    lines.append(f"        {native_cls}.{java_name}(contextId)")
+            lines.append("    }")
+            lines.append("")
+
+        if "endFrame" in lifecycle:
+            lines.append("    /** Ends the current frame: finishes rendering and swaps buffers. */")
+            lines.append("    fun endFrame() {")
+            for step in lifecycle["endFrame"]["sequence"]:
+                ffi = step["ffi"]
+                java_name = _snake_to_camel(ffi.removeprefix("goud_"))
+                lines.append(f"        {native_cls}.{java_name}(contextId)")
+            lines.append("    }")
+            lines.append("")
+
     # Methods
     for method in tool.get("methods", []):
         mn = method["name"]

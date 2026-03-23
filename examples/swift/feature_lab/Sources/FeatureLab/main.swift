@@ -3,6 +3,8 @@
 // Headless smoke test that exercises SDK surface without requiring a window.
 // Prints pass/fail for each check and exits 0 on success, 1 on any failure.
 
+import Foundation
+
 import GoudEngine
 
 struct CheckResult {

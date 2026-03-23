@@ -1,5 +1,8 @@
 """Generator for GoudGame.g.swift."""
 
+import json
+from pathlib import Path
+
 from .context import HEADER_COMMENT, OUT, schema, mapping, write_generated
 from .shared_helpers import (
     swift_file_header,
@@ -16,6 +19,75 @@ from .shared_helpers import (
     convert_return_from_ffi,
     safe_swift_name,
 )
+
+# Load the FFI manifest to determine actual C parameter types
+_CODEGEN_DIR = Path(__file__).resolve().parent.parent
+_FFI_MANIFEST_PATH = _CODEGEN_DIR / "ffi_manifest.json"
+_ffi_manifest: dict = {}
+if _FFI_MANIFEST_PATH.exists():
+    _raw = json.loads(_FFI_MANIFEST_PATH.read_text())
+    _ffi_manifest = _raw.get("functions", _raw)
+
+
+def _ffi_string_len_cast(ffi_name: str, param_name: str) -> str | None:
+    """Determine the correct Swift integer cast for a string length param.
+
+    Looks for a ``_len`` param following the string's ``_ptr`` param in the
+    FFI manifest.  Returns ``None`` when the C function takes a plain
+    ``const char *`` (null-terminated) with no length parameter.
+    """
+    func_info = _ffi_manifest.get(ffi_name)
+    if not func_info:
+        return None  # assume null-terminated if no manifest info
+    params = func_info.get("params", [])
+    snake = _to_snake(param_name)
+    # Look for a ptr param matching this string name (ptr+len pattern uses *const u8)
+    for i, p in enumerate(params):
+        if f"{snake}_ptr" in p and "*const u8" in p:
+            # Found a ptr+len style param — look at next param for the length type
+            if i + 1 < len(params):
+                next_p = params[i + 1]
+                if ": u32" in next_p:
+                    return "UInt32"
+                if ": i32" in next_p:
+                    return "Int32"
+                if ": usize" in next_p:
+                    return ""  # usize maps to Int, no cast needed
+            return "Int32"
+    # If we get here, the C function uses const char * (null-terminated) — no length needed
+    return None
+
+
+def _to_snake(name: str) -> str:
+    """Convert camelCase to snake_case."""
+    import re
+    return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
+
+
+def _ffi_bytes_len_cast(ffi_name: str) -> str:
+    """Determine the correct Swift integer cast for a bytes/Data length param.
+
+    Looks up the FFI manifest to find the actual Rust type of the length
+    parameter (the param immediately following a ``*const u8`` pointer).
+    Returns e.g. ``"Int32"`` for ``i32``, ``"UInt32"`` for ``u32``, or
+    empty string for ``usize`` (which maps to Swift ``Int`` == ``.count``).
+    """
+    func_info = _ffi_manifest.get(ffi_name)
+    if not func_info:
+        return ""
+    params = func_info.get("params", [])
+    for i, p in enumerate(params):
+        if "*const u8" in p or "*mut u8" in p:
+            # Next param is likely the length
+            if i + 1 < len(params):
+                next_p = params[i + 1]
+                if ": u32" in next_p:
+                    return "UInt32"
+                if ": i32" in next_p:
+                    return "Int32"
+                if ": usize" in next_p:
+                    return ""  # usize maps to Int, no cast needed
+    return ""  # default: no cast (Int)
 
 
 # ── Swift type for FFI out-param scalars ──────────────────────────
@@ -171,8 +243,11 @@ def gen_game() -> None:
         "componentRegisterType", "componentAdd", "componentRemove",
         "componentHas", "componentGet", "componentGetMut",
         "componentAddBatch", "componentRemoveBatch", "componentHasBatch",
+        "componentGetEntities", "componentGetAll",
         "networkConnect", "networkConnectWithPeer", "networkSend",
         "networkReceive", "networkReceivePacket",
+        # P2P/rollback methods with complex FFI pointer patterns
+        "p2pJoinMesh", "rollbackCreate",
         "physicsCollisionEventsCount", "physicsCollisionEventsRead",
         # Callback types not supported in Swift codegen yet
         "run", "runWithFixedUpdate",
@@ -339,6 +414,14 @@ def _gen_method(tool_name: str, m: dict, ffi_name: str, handle_var: str) -> list
         if pname_raw in string_params_set or ptype == "string":
             string_wrap_params.append(p)
             call_args.append(f"{pname}Ptr")
+            # Params explicitly in string_params may need ptr+len pairs (Rust slices)
+            if pname_raw in string_params_set:
+                len_cast = _ffi_string_len_cast(ffi_name, pname_raw)
+                if len_cast is not None:
+                    if len_cast:
+                        call_args.append(f"{len_cast}({pname}.utf8.count)")
+                    else:
+                        call_args.append(f"{pname}.utf8.count")
             continue
 
         # Value type params
@@ -351,7 +434,11 @@ def _gen_method(tool_name: str, m: dict, ffi_name: str, handle_var: str) -> list
         # bytes/array params
         if ptype in ("bytes", "u8[]", "Data"):
             call_args.append(f"{pname}BasePtr")
-            call_args.append(f"Int32({pname}.count)")
+            len_cast = _ffi_bytes_len_cast(ffi_name)
+            if len_cast:
+                call_args.append(f"{len_cast}({pname}.count)")
+            else:
+                call_args.append(f"{pname}.count")
             continue
         if ptype.endswith("[]"):
             call_args.append(f"{pname}BasePtr")

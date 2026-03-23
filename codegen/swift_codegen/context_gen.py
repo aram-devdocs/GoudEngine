@@ -47,6 +47,7 @@ def gen_context() -> None:
         "componentRegisterType", "componentAdd", "componentRemove",
         "componentHas", "componentGet", "componentGetMut",
         "componentAddBatch", "componentRemoveBatch", "componentHasBatch",
+        "componentGetEntities", "componentGetAll",
         "networkConnect", "networkConnectWithPeer", "networkSend",
         "networkReceive", "networkReceivePacket",
         "stepDebugger",
