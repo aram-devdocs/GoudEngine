@@ -27,7 +27,16 @@
         "sdks/typescript/package.json",
         "codegen/goud_sdk.schema.json",
         "ports/vcpkg/vcpkg.json",
-        { "type": "generic", "path": "sdks/Doxyfile" }
+        { "type": "generic", "path": "sdks/Doxyfile" },
+        { "type": "generic", "path": "codegen/generated/goud_engine.h" },
+        { "type": "generic", "path": "sdks/go/include/goud_engine.h" },
+        { "type": "generic", "path": "sdks/swift/Sources/CGoudEngine/include/goud_engine.h" },
+        { "type": "generic", "path": "sdks/csharp/include/goud_engine.h" },
+        { "type": "generic", "path": "sdks/python/goud_engine/include/goud_engine.h" },
+        { "type": "generic", "path": "sdks/c/include/goud_engine.h" },
+        { "type": "generic", "path": "sdks/cpp/include/goud_engine.h" },
+        { "type": "generic", "path": "sdks/cpp/include/goud/goud.g.hpp" },
+        { "type": "generic", "path": "sdks/kotlin/build.gradle.kts" }
       ]
     }
   }

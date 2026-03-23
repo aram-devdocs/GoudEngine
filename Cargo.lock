@@ -1742,14 +1742,14 @@ dependencies = [
 
 [[package]]
 name = "goud-engine"
-version = "0.0.832"
+version = "0.0.833"
 dependencies = [
  "goud-engine-core",
 ]
 
 [[package]]
 name = "goud-engine-core"
-version = "0.0.832"
+version = "0.0.833"
 dependencies = [
  "bincode",
  "bindgen",
@@ -1803,7 +1803,7 @@ dependencies = [
 
 [[package]]
 name = "goud-engine-node"
-version = "0.0.832"
+version = "0.0.833"
 dependencies = [
  "goud-engine-core",
  "napi",
@@ -1813,7 +1813,7 @@ dependencies = [
 
 [[package]]
 name = "goud_engine_macros"
-version = "0.0.832"
+version = "0.0.833"
 dependencies = [
  "proc-macro2",
  "quote",

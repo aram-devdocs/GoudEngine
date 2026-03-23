@@ -753,7 +753,7 @@ def generate() -> None:
 
     lines: list[str] = []
     lines.append(f"// {sdk_common.HEADER_COMMENT}")
-    lines.append(f"// Schema version: {version}")
+    lines.append(f"// Schema version: {version} x-release-please-version")
     lines.append("")
     lines.append("#ifndef GOUD_CPP_SDK_GENERATED_HPP")
     lines.append("#define GOUD_CPP_SDK_GENERATED_HPP")

@@ -74,7 +74,7 @@ plugins {{
 }}
 
 group = "com.goudengine"
-version = "{version}"
+version = "{version}" // x-release-please-version
 
 repositories {{
     mavenCentral()

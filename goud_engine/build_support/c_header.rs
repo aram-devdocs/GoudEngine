@@ -289,7 +289,7 @@ fn section_banner(title: &str) -> String {
 
 fn header_macro_block(version: &str) -> String {
     format!(
-        "#define GOUD_ENGINE_VERSION \"{version}\"\n\n#ifndef GOUD_DEPRECATED\n#  if defined(_MSC_VER)\n#    define GOUD_DEPRECATED __declspec(deprecated)\n#    define GOUD_DEPRECATED_MSG(msg) __declspec(deprecated(msg))\n#  elif defined(__GNUC__) || defined(__clang__)\n#    define GOUD_DEPRECATED __attribute__((deprecated))\n#    define GOUD_DEPRECATED_MSG(msg) __attribute__((deprecated(msg)))\n#  else\n#    define GOUD_DEPRECATED\n#    define GOUD_DEPRECATED_MSG(msg)\n#  endif\n#endif"
+        "#define GOUD_ENGINE_VERSION \"{version}\" /* x-release-please-version */\n\n#ifndef GOUD_DEPRECATED\n#  if defined(_MSC_VER)\n#    define GOUD_DEPRECATED __declspec(deprecated)\n#    define GOUD_DEPRECATED_MSG(msg) __declspec(deprecated(msg))\n#  elif defined(__GNUC__) || defined(__clang__)\n#    define GOUD_DEPRECATED __attribute__((deprecated))\n#    define GOUD_DEPRECATED_MSG(msg) __attribute__((deprecated(msg)))\n#  else\n#    define GOUD_DEPRECATED\n#    define GOUD_DEPRECATED_MSG(msg)\n#  endif\n#endif"
     )
 }
 
