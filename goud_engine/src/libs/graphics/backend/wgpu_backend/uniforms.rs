@@ -97,6 +97,65 @@ impl WgpuBackend {
         Ok(())
     }
 
+    /// Uploads per-draw-command uniform data into aligned slots and returns
+    /// the byte offset for each command.  Grows the GPU buffer if needed.
+    pub(super) fn upload_per_draw_uniforms(&mut self) -> Vec<u32> {
+        let align = self.device.limits().min_uniform_buffer_offset_alignment as usize;
+        let slot_size = {
+            let snap = self
+                .draw_commands
+                .iter()
+                .map(|c| c.uniform_snapshot.len())
+                .max()
+                .unwrap_or(256);
+            (snap + align - 1) & !(align - 1)
+        };
+
+        let total_needed = self.draw_commands.len() * slot_size;
+        let cmd_offsets: Vec<u32> = (0..self.draw_commands.len())
+            .map(|i| (i * slot_size) as u32)
+            .collect();
+
+        // Grow uniform buffers up-front before any writes.
+        for cmd in &self.draw_commands {
+            if let Some(meta) = self.shaders.get_mut(&cmd.shader) {
+                if total_needed > meta.uniform_buffer.size() as usize {
+                    let new_size = total_needed.next_power_of_two().max(slot_size);
+                    meta.uniform_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
+                        label: Some("uniforms"),
+                        size: new_size as u64,
+                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                        mapped_at_creation: false,
+                    });
+                    meta.uniform_bind_group =
+                        self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                            label: None,
+                            layout: &self.uniform_bind_group_layout,
+                            entries: &[wgpu::BindGroupEntry {
+                                binding: 0,
+                                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                                    buffer: &meta.uniform_buffer,
+                                    offset: 0,
+                                    size: std::num::NonZeroU64::new(slot_size as u64),
+                                }),
+                            }],
+                        });
+                }
+            }
+        }
+
+        // Write all uniform snapshots into the (now correctly-sized) buffer.
+        for (i, cmd) in self.draw_commands.iter().enumerate() {
+            let offset = cmd_offsets[i] as u64;
+            if let Some(meta) = self.shaders.get(&cmd.shader) {
+                self.queue
+                    .write_buffer(&meta.uniform_buffer, offset, &cmd.uniform_snapshot);
+            }
+        }
+
+        cmd_offsets
+    }
+
     /// Writes bytes into the staging buffer of the currently bound shader.
     pub(super) fn write_uniform(&mut self, location: i32, data: &[u8]) {
         if location < 0 {

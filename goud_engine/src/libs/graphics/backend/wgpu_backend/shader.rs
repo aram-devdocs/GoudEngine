@@ -32,12 +32,9 @@ impl WgpuBackend {
             .validate(&module)
             .map_err(|e| GoudError::ShaderCompilationFailed(format!("Validation: {e}")))?;
 
-        let wgsl = naga::back::wgsl::write_string(
-            &module,
-            &info,
-            naga::back::wgsl::WriterFlags::empty(),
-        )
-        .map_err(|e| GoudError::ShaderCompilationFailed(format!("WGSL write: {e}")))?;
+        let wgsl =
+            naga::back::wgsl::write_string(&module, &info, naga::back::wgsl::WriterFlags::empty())
+                .map_err(|e| GoudError::ShaderCompilationFailed(format!("WGSL write: {e}")))?;
 
         Ok((module, wgsl))
     }
@@ -48,10 +45,7 @@ impl WgpuBackend {
     /// bindings in group 0, binding 0 (the standard uniform block).  For each
     /// struct member it records the name and byte offset so that
     /// `get_uniform_location_impl` can return the correct location.
-    fn extract_uniform_slots(
-        module: &naga::Module,
-        slots: &mut HashMap<String, UniformSlot>,
-    ) {
+    fn extract_uniform_slots(module: &naga::Module, slots: &mut HashMap<String, UniformSlot>) {
         for (_, gv) in module.global_variables.iter() {
             if gv.space != naga::AddressSpace::Uniform {
                 continue;
@@ -74,7 +68,11 @@ impl WgpuBackend {
                 _ => {
                     if let Some(ref name) = gv.name {
                         let size = ty.inner.size(module.to_ctx());
-                        let offset = slots.values().map(|s| s.offset + s._size).max().unwrap_or(0);
+                        let offset = slots
+                            .values()
+                            .map(|s| s.offset + s._size)
+                            .max()
+                            .unwrap_or(0);
                         // Align to 16 bytes (std140)
                         let aligned = (offset + 15) & !15;
                         slots.entry(name.clone()).or_insert(UniformSlot {
@@ -183,7 +181,6 @@ impl WgpuBackend {
                 uniform_staging: vec![0u8; UNIFORM_BUFFER_SIZE],
                 uniform_buffer,
                 uniform_bind_group,
-                _next_uniform_offset: 0,
             },
         );
         Ok(handle)

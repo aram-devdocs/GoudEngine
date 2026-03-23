@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "goudengine": {
-      "command": "/Users/aramhammoudeh/dev/game/GoudEngine/target/release/goudengine-mcp",
-      "args": []
-    }
-  }
-}

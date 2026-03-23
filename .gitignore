@@ -111,3 +111,4 @@ sdks/c/tests/build/
 
 # Claude worktrees (ephemeral, per-session)
 .claude/worktrees/
+.mcp.json
