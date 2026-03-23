@@ -391,6 +391,7 @@ void main()
 }
 "#;
 
+// NOTE: The Uniforms struct is duplicated in each vertex/fragment shader pair because WGSL modules are self-contained. Layout changes must update all copies.
 pub(super) const INSTANCED_VERTEX_SHADER_3D_WGSL: &str = r#"
 struct Uniforms {
     view: mat4x4<f32>,
@@ -702,7 +703,7 @@ fn main(
 
     if uniforms.fogEnabled != 0 {
         let dist = length(uniforms.viewPos - frag_pos);
-        let fog_factor = clamp(exp(-uniforms.fogDensity * dist), 0.0, 1.0);
+        let fog_factor = clamp(exp(-pow(uniforms.fogDensity * dist, 2.0)), 0.0, 1.0);
         final_color = mix(uniforms.fogColor, final_color, fog_factor);
     }
 
