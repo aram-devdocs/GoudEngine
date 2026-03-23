@@ -105,9 +105,14 @@ sourceSets {{
     }}
 }}
 
+// CI pre-stages native libs into src/main/resources/native/.
+// buildNative is only needed for local development.
+val preStaged = file("src/main/resources/native").let {{ it.exists() && it.listFiles()?.isNotEmpty() == true }}
+
 val buildNative by tasks.registering(Exec::class) {{
     group = "build"
-    description = "Build the native Rust library"
+    description = "Build the native Rust library (skipped when pre-staged)"
+    enabled = !preStaged
     workingDir = rootDir.resolve("../../")
     commandLine("cargo", "build", "--release", "-p", "goud-engine-core")
     doLast {{
@@ -127,7 +132,7 @@ val buildNative by tasks.registering(Exec::class) {{
 }}
 
 tasks.named("processResources") {{
-    dependsOn(buildNative)
+    if (!preStaged) dependsOn(buildNative)
 }}
 
 tasks.jar {{
