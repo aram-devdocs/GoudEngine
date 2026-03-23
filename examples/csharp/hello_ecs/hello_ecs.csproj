@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GoudEngine" Version="0.0.826" />
+    <ProjectReference Include="../../../sdks/csharp/GoudEngine.csproj" />
   </ItemGroup>
 
   <Target Name="CopyNativeLib" AfterTargets="Build">

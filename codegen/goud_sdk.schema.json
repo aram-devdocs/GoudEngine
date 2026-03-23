@@ -11749,10 +11749,7 @@
           "ffi": "goud_renderer_disable_blending"
         },
         "setCoordinateOrigin": {
-          "ffi": "goud_renderer_set_coordinate_origin",
-          "enum_params": {
-            "origin": "u32"
-          }
+          "ffi": "goud_renderer_set_coordinate_origin"
         },
         "getCoordinateOrigin": {
           "ffi": "goud_renderer_get_coordinate_origin"
@@ -12361,7 +12358,8 @@
         },
         "rpcCall": {
           "ffi": "goud_rpc_call",
-          "no_context": true
+          "no_context": true,
+          "out_buffer": true
         },
         "rpcPoll": {
           "ffi": "goud_rpc_poll",
@@ -13673,7 +13671,8 @@
         },
         "rpcCall": {
           "ffi": "goud_rpc_call",
-          "no_context": true
+          "no_context": true,
+          "out_buffer": true
         },
         "rpcPoll": {
           "ffi": "goud_rpc_poll",

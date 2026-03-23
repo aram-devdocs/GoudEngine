@@ -162,6 +162,68 @@ void main() {
 }
 "#;
 
+/// WGSL sprite shader (vertex + fragment combined).
+///
+/// Used by the wgpu backend. Matches the bind group layout in `wgpu_backend/init.rs`:
+///   group(0) binding(0) = uniform buffer (Uniforms struct)
+///   group(1) binding(0) = texture_2d
+///   group(1) binding(1) = sampler
+pub(super) const WGSL_SPRITE_VERTEX_SHADER: &str = r#"
+struct Uniforms {
+    u_projection: mat4x4<f32>,
+    u_model: mat4x4<f32>,
+    u_uv_offset: vec2<f32>,
+    u_uv_scale: vec2<f32>,
+    u_color: vec4<f32>,
+    u_use_texture: u32,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
+struct VertexInput {
+    @location(0) a_position: vec2<f32>,
+    @location(1) a_texcoord: vec2<f32>,
+}
+
+struct VertexOutput {
+    @builtin(position) position: vec4<f32>,
+    @location(0) v_texcoord: vec2<f32>,
+}
+
+@vertex
+fn main(in: VertexInput) -> VertexOutput {
+    var out: VertexOutput;
+    out.position = uniforms.u_projection * uniforms.u_model * vec4<f32>(in.a_position, 0.0, 1.0);
+    out.v_texcoord = in.a_texcoord * uniforms.u_uv_scale + uniforms.u_uv_offset;
+    return out;
+}
+"#;
+
+/// WGSL sprite fragment shader.
+pub(super) const WGSL_SPRITE_FRAGMENT_SHADER: &str = r#"
+struct Uniforms {
+    u_projection: mat4x4<f32>,
+    u_model: mat4x4<f32>,
+    u_uv_offset: vec2<f32>,
+    u_uv_scale: vec2<f32>,
+    u_color: vec4<f32>,
+    u_use_texture: u32,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+@group(1) @binding(0) var u_texture: texture_2d<f32>;
+@group(1) @binding(1) var u_sampler: sampler;
+
+@fragment
+fn main(@location(0) v_texcoord: vec2<f32>) -> @location(0) vec4<f32> {
+    if (uniforms.u_use_texture != 0u) {
+        return textureSample(u_texture, u_sampler, v_texcoord) * uniforms.u_color;
+    } else {
+        return uniforms.u_color;
+    }
+}
+"#;
+
 /// Returns the backend-neutral vertex layout for `QuadVertex`.
 pub(super) fn immediate_vertex_layout() -> VertexLayout {
     VertexLayout::new(std::mem::size_of::<QuadVertex>() as u32)
@@ -205,8 +267,13 @@ pub(super) fn ensure_immediate_state(context_id: GoudContextId) -> Result<(), Go
         with_window_state(context_id, |window_state| {
             let backend = window_state.backend_mut();
 
-            // Create shader
-            let shader = backend.create_shader(SPRITE_VERTEX_SHADER, SPRITE_FRAGMENT_SHADER)?;
+            // Select shader sources based on backend type
+            let (vert_src, frag_src) = if backend.is_wgsl_backend() {
+                (WGSL_SPRITE_VERTEX_SHADER, WGSL_SPRITE_FRAGMENT_SHADER)
+            } else {
+                (SPRITE_VERTEX_SHADER, SPRITE_FRAGMENT_SHADER)
+            };
+            let shader = backend.create_shader(vert_src, frag_src)?;
 
             // Get uniform locations
             let u_projection = backend

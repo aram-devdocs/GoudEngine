@@ -15,6 +15,25 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
         }
     }
 
+    private var _deltaTime: Float = 0f
+
+    /** Time elapsed since the last frame, in seconds. */
+    val deltaTime: Float get() = _deltaTime
+
+    /** Begins a new frame: polls events, clears the screen, and prepares the renderer. */
+    fun beginFrame(r: Float = 0f, g: Float = 0f, b: Float = 0f, a: Float = 1f) {
+        _deltaTime = GoudGameNative.windowPollEvents(contextId)
+        GoudGameNative.windowClear(contextId, r, g, b, a)
+        GoudGameNative.rendererBegin(contextId)
+        GoudGameNative.rendererEnableBlending(contextId)
+    }
+
+    /** Ends the current frame: finishes rendering and swaps buffers. */
+    fun endFrame() {
+        GoudGameNative.rendererEnd(contextId)
+        GoudGameNative.windowSwapBuffers(contextId)
+    }
+
     fun shouldClose(): Boolean =
         GoudGameNative.shouldClose(contextId)
 

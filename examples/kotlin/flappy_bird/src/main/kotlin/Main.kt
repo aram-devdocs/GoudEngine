@@ -11,9 +11,8 @@ fun main() {
     GoudEngine.ensureLoaded()
 
     val game = EngineConfig.create()
-        .title("Flappy Bird - Kotlin")
-        .width(GameConstants.SCREEN_WIDTH)
-        .height(GameConstants.SCREEN_HEIGHT)
+        .setTitle("Flappy Bird - Kotlin")
+        .setSize(GameConstants.SCREEN_WIDTH, GameConstants.SCREEN_HEIGHT)
         .build()
 
     val manager = GameManager(game)

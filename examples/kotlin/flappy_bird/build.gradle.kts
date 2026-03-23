@@ -11,7 +11,7 @@ repositories {
 }
 
 dependencies {
-    implementation(files("../../../sdks/kotlin/build/libs").filter { it.extension == "jar" })
+    implementation(fileTree("../../../sdks/kotlin/build/libs") { include("*.jar") })
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 }
 

@@ -862,6 +862,46 @@ def collect_generated_methods() -> list[GeneratedMethod]:
                     kind="tool",
                 )
             )
+    # Lifecycle methods (beginFrame/endFrame sequence) — add individual FFI functions
+    _LIFECYCLE_METHODS = {
+        "goud_window_poll_events": {"java": "windowPollEvents", "params": [], "returns": "f32"},
+        "goud_window_clear": {"java": "windowClear", "params": [
+            {"name": "r", "type": "f32"}, {"name": "g", "type": "f32"},
+            {"name": "b", "type": "f32"}, {"name": "a", "type": "f32"},
+        ], "returns": "void"},
+        "goud_renderer_begin": {"java": "rendererBegin", "params": [], "returns": "i32"},
+        "goud_renderer_enable_blending": {"java": "rendererEnableBlending", "params": [], "returns": "void"},
+        "goud_renderer_end": {"java": "rendererEnd", "params": [], "returns": "i32"},
+        "goud_window_swap_buffers": {"java": "windowSwapBuffers", "params": [], "returns": "void"},
+    }
+    for tool_name in ["GoudGame"]:
+        ffi_tool = SCHEMA["ffi_tools"].get(tool_name, {})
+        lifecycle = ffi_tool.get("lifecycle", {})
+        if not lifecycle:
+            continue
+        class_name = JAVA_TOOL_NATIVE_NAMES[tool_name]
+        handle_type = ffi_tool.get("handle")
+        seen_ffi = set()
+        for phase_name, phase_def in lifecycle.items():
+            for step in phase_def.get("sequence", []):
+                ffi = step["ffi"]
+                if ffi in _LIFECYCLE_METHODS and ffi not in seen_ffi:
+                    seen_ffi.add(ffi)
+                    info = _LIFECYCLE_METHODS[ffi]
+                    methods.append(
+                        GeneratedMethod(
+                            owner_name=tool_name,
+                            class_name=class_name,
+                            method_name=info["java"],
+                            java_method_name=info["java"],
+                            params=info["params"],
+                            returns=info["returns"],
+                            mapping={"ffi": ffi},
+                            handle_type=handle_type,
+                            kind="tool",
+                        )
+                    )
+
     for type_name, meta in SCHEMA.get("ffi_type_methods", {}).items():
         type_def = SCHEMA["types"][type_name]
         for factory in type_def.get("factories", []):
