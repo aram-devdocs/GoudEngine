@@ -20,6 +20,7 @@ impl WgpuBackend {
             TextureFormat::R8 => wgpu::TextureFormat::R8Unorm,
             TextureFormat::RG8 => wgpu::TextureFormat::Rg8Unorm,
             TextureFormat::RGB8 | TextureFormat::RGBA8 => wgpu::TextureFormat::Rgba8UnormSrgb,
+            TextureFormat::RGBA8Linear => wgpu::TextureFormat::Rgba8Unorm,
             TextureFormat::RGBA16F => wgpu::TextureFormat::Rgba16Float,
             TextureFormat::RGBA32F => wgpu::TextureFormat::Rgba32Float,
             TextureFormat::Depth => wgpu::TextureFormat::Depth32Float,
@@ -49,7 +50,7 @@ impl WgpuBackend {
             let bytes_per_pixel = match format {
                 TextureFormat::R8 => 1,
                 TextureFormat::RG8 => 2,
-                TextureFormat::RGB8 | TextureFormat::RGBA8 => 4,
+                TextureFormat::RGB8 | TextureFormat::RGBA8 | TextureFormat::RGBA8Linear => 4,
                 TextureFormat::RGBA16F => 8,
                 TextureFormat::RGBA32F => 16,
                 _ => 4,

@@ -392,6 +392,29 @@ void main()
 "#;
 
 pub(super) const INSTANCED_VERTEX_SHADER_3D_WGSL: &str = r#"
+struct Uniforms {
+    view: mat4x4<f32>,
+    projection: mat4x4<f32>,
+    lightSpaceMatrix: mat4x4<f32>,
+    viewPos: vec3<f32>,
+    fogDensity: f32,
+    objectColor: vec4<f32>,
+    fogColor: vec3<f32>,
+    numLights: i32,
+    useTexture: i32,
+    shadowsEnabled: i32,
+    fogEnabled: i32,
+    shadowBias: f32,
+    _pad1: f32,
+    _pad2: f32,
+    _pad3: f32,
+    primaryLightDir: vec3<f32>,
+    primaryLightIntensity: f32,
+    primaryLightColor: vec3<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) normal: vec3<f32>,
@@ -405,33 +428,125 @@ struct VertexInput {
 
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
-    @location(0) normal: vec3<f32>,
-    @location(1) color: vec4<f32>,
+    @location(0) frag_pos: vec3<f32>,
+    @location(1) normal: vec3<f32>,
+    @location(2) tex_coord: vec2<f32>,
+    @location(3) inst_color: vec4<f32>,
 };
 
 @vertex
 fn main(input: VertexInput) -> VertexOutput {
-    var output: VertexOutput;
     let model = mat4x4<f32>(input.model_0, input.model_1, input.model_2, input.model_3);
-    output.clip_position = model * vec4<f32>(input.position, 1.0);
-    output.normal = input.normal;
-    output.color = input.color;
+    let world_pos = model * vec4<f32>(input.position, 1.0);
+    var output: VertexOutput;
+    output.clip_position = uniforms.projection * uniforms.view * world_pos;
+    output.frag_pos = world_pos.xyz;
+    output.normal = (model * vec4<f32>(input.normal, 0.0)).xyz;
+    output.tex_coord = input.tex_coord;
+    output.inst_color = input.color;
     return output;
 }
 "#;
 
 pub(super) const INSTANCED_FRAGMENT_SHADER_3D_WGSL: &str = r#"
+struct Uniforms {
+    view: mat4x4<f32>,
+    projection: mat4x4<f32>,
+    lightSpaceMatrix: mat4x4<f32>,
+    viewPos: vec3<f32>,
+    fogDensity: f32,
+    objectColor: vec4<f32>,
+    fogColor: vec3<f32>,
+    numLights: i32,
+    useTexture: i32,
+    shadowsEnabled: i32,
+    fogEnabled: i32,
+    shadowBias: f32,
+    _pad1: f32,
+    _pad2: f32,
+    _pad3: f32,
+    primaryLightDir: vec3<f32>,
+    primaryLightIntensity: f32,
+    primaryLightColor: vec3<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+@group(1) @binding(0) var u_texture: texture_2d<f32>;
+@group(1) @binding(1) var u_sampler: sampler;
+
 @fragment
 fn main(
-    @location(0) normal: vec3<f32>,
-    @location(1) color: vec4<f32>,
+    @location(0) frag_pos: vec3<f32>,
+    @location(1) normal: vec3<f32>,
+    @location(2) tex_coord: vec2<f32>,
+    @location(3) inst_color: vec4<f32>,
 ) -> @location(0) vec4<f32> {
-    let lit = 0.35 + 0.65 * abs(normalize(normal).z);
-    return vec4<f32>(lit * color.rgb, color.a);
+    let norm = normalize(normal);
+    let view_dir = normalize(uniforms.viewPos - frag_pos);
+
+    var light_dir: vec3<f32>;
+    var light_color: vec3<f32>;
+    var light_intensity: f32;
+    if uniforms.primaryLightIntensity > 0.0 {
+        light_dir = normalize(uniforms.primaryLightDir);
+        light_color = uniforms.primaryLightColor;
+        light_intensity = uniforms.primaryLightIntensity;
+    } else {
+        light_dir = normalize(vec3<f32>(0.3, 1.0, 0.5));
+        light_color = vec3<f32>(1.0, 1.0, 1.0);
+        light_intensity = 1.0;
+    }
+
+    let diff = max(dot(norm, light_dir), 0.0);
+    let reflect_dir = reflect(-light_dir, norm);
+    let spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32.0) * 0.5;
+    let lighting = vec3<f32>(0.1) + (diff + spec) * light_color * light_intensity;
+
+    var base_color: vec4<f32>;
+    if uniforms.useTexture != 0 {
+        base_color = textureSample(u_texture, u_sampler, tex_coord);
+    } else {
+        base_color = uniforms.objectColor;
+    }
+    base_color = base_color * inst_color;
+
+    var final_color = lighting * base_color.rgb;
+
+    if uniforms.fogEnabled != 0 {
+        let dist = length(frag_pos - uniforms.viewPos);
+        let fog_factor = clamp(exp(-pow(uniforms.fogDensity * dist, 2.0)), 0.0, 1.0);
+        final_color = mix(uniforms.fogColor, final_color, fog_factor);
+    }
+
+    return vec4<f32>(final_color, base_color.a);
 }
 "#;
 
 pub(super) const VERTEX_SHADER_3D_WGSL: &str = r#"
+struct Uniforms {
+    model: mat4x4<f32>,
+    view: mat4x4<f32>,
+    projection: mat4x4<f32>,
+    lightSpaceMatrix: mat4x4<f32>,
+    viewPos: vec3<f32>,
+    fogDensity: f32,
+    objectColor: vec4<f32>,
+    fogColor: vec3<f32>,
+    numLights: i32,
+    useTexture: i32,
+    shadowsEnabled: i32,
+    fogEnabled: i32,
+    shadowBias: f32,
+    _pad1: f32,
+    _pad2: f32,
+    _pad3: f32,
+    primaryLightDir: vec3<f32>,
+    primaryLightIntensity: f32,
+    primaryLightColor: vec3<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) normal: vec3<f32>,
@@ -440,27 +555,110 @@ struct VertexInput {
 
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
-    @location(0) normal: vec3<f32>,
+    @location(0) frag_pos: vec3<f32>,
+    @location(1) normal: vec3<f32>,
+    @location(2) tex_coord: vec2<f32>,
 };
 
 @vertex
 fn main(input: VertexInput) -> VertexOutput {
+    let world_pos = uniforms.model * vec4<f32>(input.position, 1.0);
     var output: VertexOutput;
-    output.clip_position = vec4<f32>(input.position, 1.0);
-    output.normal = input.normal;
+    output.clip_position = uniforms.projection * uniforms.view * world_pos;
+    output.frag_pos = world_pos.xyz;
+    output.normal = (uniforms.model * vec4<f32>(input.normal, 0.0)).xyz;
+    output.tex_coord = input.tex_coord;
     return output;
 }
 "#;
 
 pub(super) const FRAGMENT_SHADER_3D_WGSL: &str = r#"
+struct Uniforms {
+    model: mat4x4<f32>,
+    view: mat4x4<f32>,
+    projection: mat4x4<f32>,
+    lightSpaceMatrix: mat4x4<f32>,
+    viewPos: vec3<f32>,
+    fogDensity: f32,
+    objectColor: vec4<f32>,
+    fogColor: vec3<f32>,
+    numLights: i32,
+    useTexture: i32,
+    shadowsEnabled: i32,
+    fogEnabled: i32,
+    shadowBias: f32,
+    _pad1: f32,
+    _pad2: f32,
+    _pad3: f32,
+    primaryLightDir: vec3<f32>,
+    primaryLightIntensity: f32,
+    primaryLightColor: vec3<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+@group(1) @binding(0) var u_texture: texture_2d<f32>;
+@group(1) @binding(1) var u_sampler: sampler;
+
 @fragment
-fn main(@location(0) normal: vec3<f32>) -> @location(0) vec4<f32> {
-    let lit = 0.35 + 0.65 * abs(normalize(normal).z);
-    return vec4<f32>(lit, lit, lit, 1.0);
+fn main(
+    @location(0) frag_pos: vec3<f32>,
+    @location(1) normal: vec3<f32>,
+    @location(2) tex_coord: vec2<f32>,
+) -> @location(0) vec4<f32> {
+    let norm = normalize(normal);
+    let view_dir = normalize(uniforms.viewPos - frag_pos);
+
+    // Use primary light from uniform, falling back to a default directional light
+    var light_dir: vec3<f32>;
+    var light_color: vec3<f32>;
+    var light_intensity: f32;
+    if uniforms.primaryLightIntensity > 0.0 {
+        light_dir = normalize(uniforms.primaryLightDir);
+        light_color = uniforms.primaryLightColor;
+        light_intensity = uniforms.primaryLightIntensity;
+    } else {
+        light_dir = normalize(vec3<f32>(0.3, 1.0, 0.5));
+        light_color = vec3<f32>(1.0, 1.0, 1.0);
+        light_intensity = 1.0;
+    }
+
+    let diff = max(dot(norm, light_dir), 0.0);
+    let reflect_dir = reflect(-light_dir, norm);
+    let spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32.0) * 0.5;
+    let lighting = vec3<f32>(0.1) + (diff + spec) * light_color * light_intensity;
+
+    var base_color: vec4<f32>;
+    if uniforms.useTexture != 0 {
+        base_color = textureSample(u_texture, u_sampler, tex_coord);
+    } else {
+        base_color = uniforms.objectColor;
+    }
+
+    var final_color = lighting * base_color.rgb;
+
+    if uniforms.fogEnabled != 0 {
+        let dist = length(frag_pos - uniforms.viewPos);
+        let fog_factor = clamp(exp(-pow(uniforms.fogDensity * dist, 2.0)), 0.0, 1.0);
+        final_color = mix(uniforms.fogColor, final_color, fog_factor);
+    }
+
+    return vec4<f32>(final_color, base_color.a);
 }
 "#;
 
 pub(super) const GRID_VERTEX_SHADER_WGSL: &str = r#"
+struct Uniforms {
+    view: mat4x4<f32>,
+    projection: mat4x4<f32>,
+    viewPos: vec3<f32>,
+    fogDensity: f32,
+    fogColor: vec3<f32>,
+    fogEnabled: i32,
+    alpha: f32,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) color: vec3<f32>,
@@ -469,21 +667,46 @@ struct VertexInput {
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
     @location(0) color: vec3<f32>,
+    @location(1) frag_pos: vec3<f32>,
 };
 
 @vertex
 fn main(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
-    output.clip_position = vec4<f32>(input.position, 1.0);
+    output.clip_position = uniforms.projection * uniforms.view * vec4<f32>(input.position, 1.0);
     output.color = input.color;
+    output.frag_pos = input.position;
     return output;
 }
 "#;
 
 pub(super) const GRID_FRAGMENT_SHADER_WGSL: &str = r#"
+struct Uniforms {
+    view: mat4x4<f32>,
+    projection: mat4x4<f32>,
+    viewPos: vec3<f32>,
+    fogDensity: f32,
+    fogColor: vec3<f32>,
+    fogEnabled: i32,
+    alpha: f32,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
 @fragment
-fn main(@location(0) color: vec3<f32>) -> @location(0) vec4<f32> {
-    return vec4<f32>(color, 1.0);
+fn main(
+    @location(0) color: vec3<f32>,
+    @location(1) frag_pos: vec3<f32>,
+) -> @location(0) vec4<f32> {
+    var final_color = color;
+
+    if uniforms.fogEnabled != 0 {
+        let dist = length(uniforms.viewPos - frag_pos);
+        let fog_factor = clamp(exp(-uniforms.fogDensity * dist), 0.0, 1.0);
+        final_color = mix(uniforms.fogColor, final_color, fog_factor);
+    }
+
+    return vec4<f32>(final_color, uniforms.alpha);
 }
 "#;
 

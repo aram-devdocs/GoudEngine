@@ -68,60 +68,6 @@ impl WgpuBackend {
         }
     }
 
-    pub(super) fn fallback_texture_bind_group(&self) -> wgpu::BindGroup {
-        let fallback_texture = self.device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("wgpu-fallback-texture"),
-            size: wgpu::Extent3d {
-                width: 1,
-                height: 1,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8UnormSrgb,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-            view_formats: &[],
-        });
-        let fallback_view = fallback_texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let fallback_sampler = self
-            .device
-            .create_sampler(&wgpu::SamplerDescriptor::default());
-        self.queue.write_texture(
-            wgpu::TexelCopyTextureInfo {
-                texture: &fallback_texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            &[255, 255, 255, 255],
-            wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(4),
-                rows_per_image: Some(1),
-            },
-            wgpu::Extent3d {
-                width: 1,
-                height: 1,
-                depth_or_array_layers: 1,
-            },
-        );
-        self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("wgpu-fallback-texture-bind-group"),
-            layout: &self.texture_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&fallback_view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&fallback_sampler),
-                },
-            ],
-        })
-    }
-
     pub(super) fn finish_frame_readback(
         &mut self,
         readback: PendingFrameReadback,

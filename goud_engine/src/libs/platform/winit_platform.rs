@@ -274,8 +274,16 @@ impl ApplicationHandler for WinitEventHandler<'_> {
                 }
             }
             WindowEvent::CursorMoved { position, .. } => {
-                self.input
-                    .set_mouse_position(Vec2::new(position.x as f32, position.y as f32));
+                let scale = self
+                    .state
+                    .window
+                    .as_ref()
+                    .map(|w| w.scale_factor())
+                    .unwrap_or(1.0);
+                self.input.set_mouse_position(Vec2::new(
+                    (position.x / scale) as f32,
+                    (position.y / scale) as f32,
+                ));
             }
             WindowEvent::MouseWheel { delta, .. } => {
                 let (dx, dy) = match delta {

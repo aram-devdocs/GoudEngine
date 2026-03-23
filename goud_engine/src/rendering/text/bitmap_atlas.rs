@@ -107,7 +107,7 @@ impl BitmapGlyphAtlas {
             .create_texture(
                 self.atlas_width,
                 self.atlas_height,
-                TextureFormat::RGBA8,
+                TextureFormat::RGBA8Linear,
                 TextureFilter::Linear,
                 TextureWrap::ClampToEdge,
                 &self.texture_data,

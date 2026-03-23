@@ -97,11 +97,15 @@ pub struct WgpuBackend {
     bound_textures: Vec<Option<TextureHandle>>,
     current_layout: Option<VertexLayout>,
     current_vertex_bindings: Vec<VertexBufferBinding>,
+    current_topology: PrimitiveTopology,
 
     // Pipeline cache
     pipeline_cache: HashMap<PipelineKey, wgpu::RenderPipeline>,
     uniform_bind_group_layout: wgpu::BindGroupLayout,
     texture_bind_group_layout: wgpu::BindGroupLayout,
+
+    // Cached 1x1 white fallback texture bind group for draws without a bound texture.
+    fallback_tex_bind_group: wgpu::BindGroup,
 }
 
 // SAFETY: wgpu Device and Queue are Send+Sync. Surface is Send.

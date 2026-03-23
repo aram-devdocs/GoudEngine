@@ -54,7 +54,7 @@ pub(super) fn texture_format_to_gl(format: TextureFormat) -> (u32, u32, u32) {
         TextureFormat::R8 => (gl::R8, gl::RED, gl::UNSIGNED_BYTE),
         TextureFormat::RG8 => (gl::RG8, gl::RG, gl::UNSIGNED_BYTE),
         TextureFormat::RGB8 => (gl::RGB8, gl::RGB, gl::UNSIGNED_BYTE),
-        TextureFormat::RGBA8 => (gl::RGBA8, gl::RGBA, gl::UNSIGNED_BYTE),
+        TextureFormat::RGBA8 | TextureFormat::RGBA8Linear => (gl::RGBA8, gl::RGBA, gl::UNSIGNED_BYTE),
         TextureFormat::RGBA16F => (gl::RGBA16F, gl::RGBA, gl::HALF_FLOAT),
         TextureFormat::RGBA32F => (gl::RGBA32F, gl::RGBA, gl::FLOAT),
         TextureFormat::Depth => (gl::DEPTH_COMPONENT24, gl::DEPTH_COMPONENT, gl::UNSIGNED_INT),

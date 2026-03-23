@@ -34,6 +34,12 @@ void main() {
 "#;
 
 const TEXT_VERTEX_SHADER_WGSL: &str = r#"
+struct Uniforms {
+    u_viewport: vec2<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
 struct VertexInput {
     @location(0) position: vec2<f32>,
     @location(1) tex_coord: vec2<f32>,
@@ -42,22 +48,36 @@ struct VertexInput {
 
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
-    @location(0) color: vec4<f32>,
+    @location(0) tex_coord: vec2<f32>,
+    @location(1) color: vec4<f32>,
 };
 
 @vertex
 fn main(input: VertexInput) -> VertexOutput {
+    let safe_viewport = max(uniforms.u_viewport, vec2<f32>(1.0, 1.0));
+    let ndc_x = (input.position.x / safe_viewport.x) * 2.0 - 1.0;
+    let ndc_y = 1.0 - (input.position.y / safe_viewport.y) * 2.0;
+
     var output: VertexOutput;
-    output.clip_position = vec4<f32>(input.position, 0.0, 1.0);
+    output.clip_position = vec4<f32>(ndc_x, ndc_y, 0.0, 1.0);
+    output.tex_coord = input.tex_coord;
     output.color = input.color;
     return output;
 }
 "#;
 
 const TEXT_FRAGMENT_SHADER_WGSL: &str = r#"
+struct Uniforms {
+    u_viewport: vec2<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+@group(1) @binding(0) var u_texture: texture_2d<f32>;
+@group(1) @binding(1) var u_sampler: sampler;
+
 @fragment
-fn main(@location(0) color: vec4<f32>) -> @location(0) vec4<f32> {
-    return color;
+fn main(@location(0) tex_coord: vec2<f32>, @location(1) color: vec4<f32>) -> @location(0) vec4<f32> {
+    return textureSample(u_texture, u_sampler, tex_coord) * color;
 }
 "#;
 

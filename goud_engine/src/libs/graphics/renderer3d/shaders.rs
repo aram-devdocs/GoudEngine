@@ -40,6 +40,9 @@ pub(super) struct MainUniforms {
     pub(super) fog_color: i32,
     pub(super) fog_density: i32,
     pub(super) lights: Vec<LightUniforms>,
+    pub(super) primary_light_dir: i32,
+    pub(super) primary_light_color: i32,
+    pub(super) primary_light_intensity: i32,
 }
 
 #[derive(Clone)]
@@ -104,6 +107,9 @@ pub(super) fn resolve_main_uniforms(
         fog_color: loc("fogColor"),
         fog_density: loc("fogDensity"),
         lights,
+        primary_light_dir: loc("primaryLightDir"),
+        primary_light_color: loc("primaryLightColor"),
+        primary_light_intensity: loc("primaryLightIntensity"),
     }
 }
 

@@ -80,6 +80,11 @@ pub struct TextBatch {
     shader: Option<ShaderHandle>,
     /// Per-frame statistics.
     stats: TextRenderStats,
+    /// Buffer handles from previous draw calls that must be destroyed after
+    /// the wgpu render pass completes. In the deferred wgpu pipeline, draw
+    /// commands reference buffer handles — so we cannot destroy them until the
+    /// next frame when the render pass has already consumed them.
+    stale_buffers: Vec<BufferHandle>,
 }
 
 impl TextBatch {
@@ -95,6 +100,7 @@ impl TextBatch {
             index_buffer: None,
             shader: None,
             stats: TextRenderStats::default(),
+            stale_buffers: Vec::new(),
         }
     }
 
@@ -329,6 +335,13 @@ impl TextBatch {
         backend: &mut dyn RenderBackend,
         viewport: (u32, u32),
     ) -> Result<(), String> {
+        // Destroy buffers from previous draw calls that are no longer referenced
+        // by any pending wgpu draw commands (the render pass has already consumed
+        // them by the time the next end() is called).
+        for handle in self.stale_buffers.drain(..) {
+            backend.destroy_buffer(handle);
+        }
+
         if self.batches.is_empty() {
             return Ok(());
         }
@@ -389,6 +402,18 @@ impl TextBatch {
         }
 
         self.stats.draw_calls = self.batches.len();
+
+        // Orphan the current VBO/IBO so the next draw_prepared_layout_frame()
+        // creates fresh buffers. The old handles remain valid in the wgpu
+        // backend's buffer map and are referenced by the draw commands we just
+        // recorded.  They'll be destroyed at the start of the next end() call,
+        // after the render pass has consumed them.
+        if let Some(vbo) = self.vertex_buffer.take() {
+            self.stale_buffers.push(vbo);
+        }
+        if let Some(ibo) = self.index_buffer.take() {
+            self.stale_buffers.push(ibo);
+        }
 
         Ok(())
     }
