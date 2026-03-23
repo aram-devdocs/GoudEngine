@@ -467,30 +467,25 @@ impl Renderer3D {
         self.backend
             .set_uniform_float(uniforms.shadow_bias, self.shadow_bias);
 
-        // Set primary light from the first enabled light in the array.
-        // WGSL shaders use this because the lights[] array can't be reflected
-        // by naga's top-level-only uniform extraction.
-        if let Some((_, light)) = self.lights.iter().find(|(_, l)| l.enabled) {
-            let (dx, dy, dz) = if light.light_type == super::types::LightType::Directional {
-                // Directional: use -direction as light dir (towards the light)
-                (-light.direction.x, -light.direction.y, -light.direction.z)
+        if let Some((_, l)) = self.lights.iter().find(|(_, l)| l.enabled) {
+            let d = if l.light_type == super::types::LightType::Directional {
+                (-l.direction.x, -l.direction.y, -l.direction.z)
             } else {
-                // Point/spot: use position as a rough direction from origin
-                (light.position.x, light.position.y, light.position.z)
+                (l.position.x, l.position.y, l.position.z)
             };
             self.backend
-                .set_uniform_vec3(uniforms.primary_light_dir, dx, dy, dz);
+                .set_uniform_vec3(uniforms.primary_light_dir, d.0, d.1, d.2);
+            self.backend.set_uniform_vec3(
+                uniforms.primary_light_color,
+                l.color.x,
+                l.color.y,
+                l.color.z,
+            );
             self.backend
-                .set_uniform_vec3(uniforms.primary_light_color, light.color.x, light.color.y, light.color.z);
-            self.backend
-                .set_uniform_float(uniforms.primary_light_intensity, light.intensity);
+                .set_uniform_float(uniforms.primary_light_intensity, l.intensity);
         }
     }
 }
-
-// ============================================================================
-// Helper
-// ============================================================================
 
 /// Convert a cgmath [`Matrix4`] to a column-major `[f32; 16]` array.
 ///

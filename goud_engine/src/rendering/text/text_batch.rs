@@ -80,10 +80,7 @@ pub struct TextBatch {
     shader: Option<ShaderHandle>,
     /// Per-frame statistics.
     stats: TextRenderStats,
-    /// Buffer handles from previous draw calls that must be destroyed after
-    /// the wgpu render pass completes. In the deferred wgpu pipeline, draw
-    /// commands reference buffer handles — so we cannot destroy them until the
-    /// next frame when the render pass has already consumed them.
+    /// Buffer handles orphaned by previous draw calls, destroyed next `end()`.
     stale_buffers: Vec<BufferHandle>,
 }
 
@@ -335,9 +332,8 @@ impl TextBatch {
         backend: &mut dyn RenderBackend,
         viewport: (u32, u32),
     ) -> Result<(), String> {
-        // Destroy buffers from previous draw calls that are no longer referenced
-        // by any pending wgpu draw commands (the render pass has already consumed
-        // them by the time the next end() is called).
+        // Destroy buffers orphaned by previous draw calls (safe — the wgpu
+        // render pass has already consumed them by now).
         for handle in self.stale_buffers.drain(..) {
             backend.destroy_buffer(handle);
         }
@@ -403,17 +399,10 @@ impl TextBatch {
 
         self.stats.draw_calls = self.batches.len();
 
-        // Orphan the current VBO/IBO so the next draw_prepared_layout_frame()
-        // creates fresh buffers. The old handles remain valid in the wgpu
-        // backend's buffer map and are referenced by the draw commands we just
-        // recorded.  They'll be destroyed at the start of the next end() call,
-        // after the render pass has consumed them.
-        if let Some(vbo) = self.vertex_buffer.take() {
-            self.stale_buffers.push(vbo);
-        }
-        if let Some(ibo) = self.index_buffer.take() {
-            self.stale_buffers.push(ibo);
-        }
+        // Orphan VBO/IBO so the next call creates fresh buffers (required for
+        // wgpu's deferred pipeline — draw commands reference these handles).
+        self.stale_buffers.extend(self.vertex_buffer.take());
+        self.stale_buffers.extend(self.index_buffer.take());
 
         Ok(())
     }
@@ -484,13 +473,8 @@ impl crate::core::providers::diagnostics::DiagnosticsSource for TextBatch {
     fn diagnostics_key(&self) -> &str {
         "text_batch"
     }
-
     fn collect_diagnostics(&self) -> serde_json::Value {
-        let stats = self.stats();
-        serde_json::json!({
-            "glyph_count": stats.glyph_count,
-            "draw_calls": stats.draw_calls,
-        })
+        serde_json::json!({ "glyph_count": self.stats.glyph_count, "draw_calls": self.stats.draw_calls })
     }
 }
 
