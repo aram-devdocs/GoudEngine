@@ -40,7 +40,6 @@ pub(super) struct WgpuShaderMeta {
     pub(super) uniform_staging: Vec<u8>,
     pub(super) uniform_buffer: wgpu::Buffer,
     pub(super) uniform_bind_group: wgpu::BindGroup,
-    pub(super) _next_uniform_offset: usize,
 }
 
 // =============================================================================

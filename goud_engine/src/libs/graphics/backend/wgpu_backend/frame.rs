@@ -34,61 +34,9 @@ impl FrameOps for WgpuBackend {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-        // Upload per-draw-command uniform data using dynamic offsets.
-        // Each command's uniform snapshot is written at a 256-byte-aligned
-        // offset in the shader's uniform buffer. During the render pass
-        // each draw uses `set_bind_group` with the matching dynamic offset.
-        let align = self
-            .device
-            .limits()
-            .min_uniform_buffer_offset_alignment as usize;
-        let slot_size = {
-            // Round up the snapshot size to alignment
-            let snap = self
-                .draw_commands
-                .first()
-                .map(|c| c.uniform_snapshot.len())
-                .unwrap_or(256);
-            (snap + align - 1) & !(align - 1)
-        };
-
-        // Compute the per-command dynamic offset, expanding the buffer if needed.
-        let mut cmd_offsets: Vec<u32> = Vec::with_capacity(self.draw_commands.len());
-        for (i, cmd) in self.draw_commands.iter().enumerate() {
-            let offset = i * slot_size;
-            cmd_offsets.push(offset as u32);
-
-            if let Some(meta) = self.shaders.get_mut(&cmd.shader) {
-                // Grow the buffer if it's too small
-                let needed = offset + cmd.uniform_snapshot.len();
-                if needed > meta.uniform_buffer.size() as usize {
-                    let new_size = ((needed + slot_size - 1) / slot_size) * slot_size * 2;
-                    meta.uniform_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
-                        label: Some("uniforms"),
-                        size: new_size as u64,
-                        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                        mapped_at_creation: false,
-                    });
-                    meta.uniform_bind_group =
-                        self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                            label: None,
-                            layout: &self.uniform_bind_group_layout,
-                            entries: &[wgpu::BindGroupEntry {
-                                binding: 0,
-                                resource: wgpu::BindingResource::Buffer(
-                                    wgpu::BufferBinding {
-                                        buffer: &meta.uniform_buffer,
-                                        offset: 0,
-                                        size: std::num::NonZeroU64::new(slot_size as u64),
-                                    },
-                                ),
-                            }],
-                        });
-                }
-                self.queue
-                    .write_buffer(&meta.uniform_buffer, offset as u64, &cmd.uniform_snapshot);
-            }
-        }
+        // Upload per-draw-command uniform data into aligned dynamic-offset
+        // slots.  Returns the byte offset for each command.
+        let cmd_offsets = self.upload_per_draw_uniforms();
 
         let load_op = if self.needs_clear {
             self.needs_clear = false;
@@ -149,11 +97,7 @@ impl FrameOps for WgpuBackend {
                 }
 
                 if let Some(shader_meta) = self.shaders.get(&cmd.shader) {
-                    pass.set_bind_group(
-                        0,
-                        &shader_meta.uniform_bind_group,
-                        &[cmd_offsets[i]],
-                    );
+                    pass.set_bind_group(0, &shader_meta.uniform_bind_group, &[cmd_offsets[i]]);
                 }
 
                 if let Some((_unit, tex_handle)) = cmd.bound_textures.first() {
