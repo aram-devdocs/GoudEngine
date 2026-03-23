@@ -377,7 +377,7 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
 
     const sendCall = calls.find(([name]) => name === 'networkSend');
     assert.ok(sendCall);
-    assert.ok(Buffer.isBuffer(sendCall[1][2]));
+    assert.ok(sendCall[1][2] instanceof Uint8Array);
 
     const simCall = calls.find(([name]) => name === 'setNetworkSimulation');
     assert.deepEqual(simCall[1][1], {
@@ -535,7 +535,7 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
     });
 
     const sendCall = calls.find(([name]) => name === 'networkSend');
-    assert.ok(Buffer.isBuffer(sendCall[1][2]));
+    assert.ok(sendCall[1][2] instanceof Uint8Array);
 
     const simCall = calls.find(([name]) => name === 'setNetworkSimulation');
     assert.deepEqual(simCall[1][1], {
