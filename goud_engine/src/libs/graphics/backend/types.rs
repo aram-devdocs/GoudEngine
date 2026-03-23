@@ -78,6 +78,7 @@ pub enum TextureFormat {
     RGBA8 = 3,
     /// 8-bit RGBA channels, linear (no sRGB decode). Use for font atlases
     /// and other data textures where sRGB gamma correction is undesirable.
+    /// Discriminant 12 leaves 6–11 reserved for future compressed/HDR variants.
     RGBA8Linear = 12,
     /// 16-bit floating point RGBA
     RGBA16F = 4,

@@ -471,7 +471,7 @@ impl Renderer3D {
             let d = if l.light_type == super::types::LightType::Directional {
                 (-l.direction.x, -l.direction.y, -l.direction.z)
             } else {
-                (l.position.x, l.position.y, l.position.z)
+                (l.position.x, l.position.y, l.position.z) // approximate — full multi-light needs per-fragment position
             };
             self.backend
                 .set_uniform_vec3(uniforms.primary_light_dir, d.0, d.1, d.2);

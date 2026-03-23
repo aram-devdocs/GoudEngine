@@ -50,10 +50,7 @@ impl WgpuBackend {
 
         let size = window.inner_size();
         let caps = surface.get_capabilities(&adapter);
-        // Prefer a non-sRGB surface to match OpenGL's blending behavior.
-        // OpenGL without GL_FRAMEBUFFER_SRGB blends in sRGB space; an sRGB
-        // wgpu surface blends in linear space which changes antialiasing
-        // appearance. Using a non-sRGB surface keeps visual parity.
+        // Prefer a non-sRGB surface so blending stays in gamma-encoded space, matching OpenGL's default behavior (no GL_FRAMEBUFFER_SRGB). An sRGB surface applies hardware gamma expansion on read, changing blend results.
         let surface_format = caps
             .formats
             .iter()
