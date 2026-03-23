@@ -1,8 +1,7 @@
 //! Uniform buffer writing, draw command recording, and texture snapshot helpers.
 
 use super::{
-    init::UNIFORM_BUFFER_SIZE, DrawCommand, DrawType, PipelineKey, PrimitiveTopology,
-    TextureHandle, WgpuBackend,
+    init::UNIFORM_BUFFER_SIZE, DrawCommand, DrawType, PipelineKey, TextureHandle, WgpuBackend,
 };
 use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::{VertexBufferBinding, VertexStepMode};
@@ -81,7 +80,7 @@ impl WgpuBackend {
             index_buffer: self.bound_index_buffer,
             vertex_bindings,
             bound_textures: self.snapshot_textures(),
-            topology: PrimitiveTopology::Triangles,
+            topology: self.current_topology,
             depth_test: self.depth_test_enabled,
             depth_write: self.depth_write_enabled,
             depth_func: self.depth_func,

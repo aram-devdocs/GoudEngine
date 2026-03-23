@@ -269,7 +269,7 @@ impl GlyphAtlas {
             .create_texture(
                 self.width,
                 self.height,
-                TextureFormat::RGBA8,
+                TextureFormat::RGBA8Linear,
                 TextureFilter::Linear,
                 TextureWrap::ClampToEdge,
                 &self.texture_data,

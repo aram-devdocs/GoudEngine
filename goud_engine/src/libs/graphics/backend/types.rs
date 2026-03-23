@@ -74,8 +74,11 @@ pub enum TextureFormat {
     RG8 = 1,
     /// 8-bit RGB channels
     RGB8 = 2,
-    /// 8-bit RGBA channels (most common)
+    /// 8-bit RGBA channels (most common, sRGB in wgpu)
     RGBA8 = 3,
+    /// 8-bit RGBA channels, linear (no sRGB decode). Use for font atlases
+    /// and other data textures where sRGB gamma correction is undesirable.
+    RGBA8Linear = 12,
     /// 16-bit floating point RGBA
     RGBA16F = 4,
     /// 32-bit floating point RGBA

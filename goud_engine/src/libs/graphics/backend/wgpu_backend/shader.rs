@@ -56,11 +56,23 @@ impl WgpuBackend {
                 naga::TypeInner::Struct { members, .. } => {
                     for m in members {
                         if let Some(ref name) = m.name {
-                            let size = module.types[m.ty].inner.size(module.to_ctx());
+                            let member_ty = &module.types[m.ty];
+                            let size = member_ty.inner.size(module.to_ctx());
                             slots.entry(name.clone()).or_insert(UniformSlot {
                                 offset: m.offset as usize,
                                 _size: size as usize,
                             });
+
+                            // Recurse into array-of-struct members to support
+                            // names like "lights[0].position" used by the 3D
+                            // renderer's per-light uniform lookups.
+                            Self::extract_array_of_struct_slots(
+                                module,
+                                name,
+                                m.offset as usize,
+                                &member_ty.inner,
+                                slots,
+                            );
                         }
                     }
                 }
@@ -80,6 +92,48 @@ impl WgpuBackend {
                             _size: size as usize,
                         });
                     }
+                }
+            }
+        }
+    }
+
+    /// For a member whose type is `Array { base: Struct, .. }`, enumerate each
+    /// array element's struct members and insert slots named
+    /// `"{array_name}[{index}].{field_name}"`.
+    fn extract_array_of_struct_slots(
+        module: &naga::Module,
+        array_name: &str,
+        array_base_offset: usize,
+        inner: &naga::TypeInner,
+        slots: &mut HashMap<String, UniformSlot>,
+    ) {
+        let (base_ty_handle, count, stride) = match inner {
+            naga::TypeInner::Array { base, size, stride } => {
+                let count = match size {
+                    naga::ArraySize::Constant(n) => n.get() as usize,
+                    _ => return,
+                };
+                (*base, count, *stride as usize)
+            }
+            _ => return,
+        };
+
+        let base_ty = &module.types[base_ty_handle];
+        let struct_members = match &base_ty.inner {
+            naga::TypeInner::Struct { members, .. } => members,
+            _ => return,
+        };
+
+        for idx in 0..count {
+            let element_offset = array_base_offset + idx * stride;
+            for m in struct_members {
+                if let Some(ref field_name) = m.name {
+                    let slot_name = format!("{array_name}[{idx}].{field_name}");
+                    let size = module.types[m.ty].inner.size(module.to_ctx());
+                    slots.entry(slot_name).or_insert(UniformSlot {
+                        offset: element_offset + m.offset as usize,
+                        _size: size as usize,
+                    });
                 }
             }
         }

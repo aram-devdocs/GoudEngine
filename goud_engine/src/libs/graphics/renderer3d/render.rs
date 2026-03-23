@@ -466,6 +466,25 @@ impl Renderer3D {
             .set_uniform_int(uniforms.shadows_enabled, i32::from(shadows_enabled));
         self.backend
             .set_uniform_float(uniforms.shadow_bias, self.shadow_bias);
+
+        // Set primary light from the first enabled light in the array.
+        // WGSL shaders use this because the lights[] array can't be reflected
+        // by naga's top-level-only uniform extraction.
+        if let Some((_, light)) = self.lights.iter().find(|(_, l)| l.enabled) {
+            let (dx, dy, dz) = if light.light_type == super::types::LightType::Directional {
+                // Directional: use -direction as light dir (towards the light)
+                (-light.direction.x, -light.direction.y, -light.direction.z)
+            } else {
+                // Point/spot: use position as a rough direction from origin
+                (light.position.x, light.position.y, light.position.z)
+            };
+            self.backend
+                .set_uniform_vec3(uniforms.primary_light_dir, dx, dy, dz);
+            self.backend
+                .set_uniform_vec3(uniforms.primary_light_color, light.color.x, light.color.y, light.color.z);
+            self.backend
+                .set_uniform_float(uniforms.primary_light_intensity, light.intensity);
+        }
     }
 }
 

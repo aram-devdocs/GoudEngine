@@ -21,6 +21,9 @@ impl FrameOps for WgpuBackend {
             surface_view,
         });
         self.draw_commands.clear();
+        // Always clear each frame to match OpenGL's glClear() behavior and avoid
+        // uninitialized surface data showing through as garbage artifacts.
+        self.needs_clear = true;
         Ok(())
     }
 
@@ -119,8 +122,7 @@ impl FrameOps for WgpuBackend {
                         pass.set_bind_group(1, &bg, &[]);
                     }
                 } else {
-                    let fallback_bg = self.fallback_texture_bind_group();
-                    pass.set_bind_group(1, &fallback_bg, &[]);
+                    pass.set_bind_group(1, &self.fallback_tex_bind_group, &[]);
                 }
 
                 if let Some(ib_handle) = cmd.index_buffer {
@@ -423,38 +425,42 @@ impl DrawOps for WgpuBackend {
 
     fn draw_arrays(
         &mut self,
-        _topology: PrimitiveTopology,
+        topology: PrimitiveTopology,
         first: u32,
         count: u32,
     ) -> GoudResult<()> {
+        self.current_topology = topology;
         self.record_draw(DrawType::Arrays { first, count })
     }
 
     fn draw_indexed(
         &mut self,
-        _topology: PrimitiveTopology,
+        topology: PrimitiveTopology,
         count: u32,
         offset: usize,
     ) -> GoudResult<()> {
+        self.current_topology = topology;
         self.record_draw(DrawType::Indexed { count, offset })
     }
 
     fn draw_indexed_u16(
         &mut self,
-        _topology: PrimitiveTopology,
+        topology: PrimitiveTopology,
         count: u32,
         offset: usize,
     ) -> GoudResult<()> {
+        self.current_topology = topology;
         self.record_draw(DrawType::IndexedU16 { count, offset })
     }
 
     fn draw_arrays_instanced(
         &mut self,
-        _topology: PrimitiveTopology,
+        topology: PrimitiveTopology,
         first: u32,
         count: u32,
         instance_count: u32,
     ) -> GoudResult<()> {
+        self.current_topology = topology;
         self.record_draw(DrawType::ArraysInstanced {
             first,
             count,
@@ -464,11 +470,12 @@ impl DrawOps for WgpuBackend {
 
     fn draw_indexed_instanced(
         &mut self,
-        _topology: PrimitiveTopology,
+        topology: PrimitiveTopology,
         count: u32,
         offset: usize,
         instance_count: u32,
     ) -> GoudResult<()> {
+        self.current_topology = topology;
         self.record_draw(DrawType::IndexedInstanced {
             count,
             offset,

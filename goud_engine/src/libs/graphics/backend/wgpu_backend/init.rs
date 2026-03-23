@@ -2,7 +2,7 @@
 
 use super::{
     BackendCapabilities, BackendInfo, BlendFactor, CullFace, DepthFunc, FrontFace, HashMap,
-    TextureOps, WgpuBackend,
+    PrimitiveTopology, TextureOps, WgpuBackend,
 };
 use crate::core::{
     error::{GoudError, GoudResult},
@@ -50,10 +50,14 @@ impl WgpuBackend {
 
         let size = window.inner_size();
         let caps = surface.get_capabilities(&adapter);
+        // Prefer a non-sRGB surface to match OpenGL's blending behavior.
+        // OpenGL without GL_FRAMEBUFFER_SRGB blends in sRGB space; an sRGB
+        // wgpu surface blends in linear space which changes antialiasing
+        // appearance. Using a non-sRGB surface keeps visual parity.
         let surface_format = caps
             .formats
             .iter()
-            .find(|f| f.is_srgb())
+            .find(|f| !f.is_srgb())
             .copied()
             .unwrap_or(caps.formats[0]);
         let surface_supports_copy_src = caps.usages.contains(wgpu::TextureUsages::COPY_SRC);
@@ -138,6 +142,40 @@ impl WgpuBackend {
                 ],
             });
 
+        // Create a cached 1x1 white fallback texture + bind group used for draws
+        // without a bound texture.  Created once here to avoid per-frame allocation.
+        let fallback_tex_bind_group = {
+            let tex = device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("fallback-white-1x1"),
+                size: wgpu::Extent3d { width: 1, height: 1, depth_or_array_layers: 1 },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                view_formats: &[],
+            });
+            queue.write_texture(
+                wgpu::TexelCopyTextureInfo {
+                    texture: &tex, mip_level: 0,
+                    origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All,
+                },
+                &[255u8, 255, 255, 255],
+                wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(4), rows_per_image: Some(1) },
+                wgpu::Extent3d { width: 1, height: 1, depth_or_array_layers: 1 },
+            );
+            let view = tex.create_view(&wgpu::TextureViewDescriptor::default());
+            let sampler = device.create_sampler(&wgpu::SamplerDescriptor::default());
+            device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("fallback-texture-bg"),
+                layout: &texture_bind_group_layout,
+                entries: &[
+                    wgpu::BindGroupEntry { binding: 0, resource: wgpu::BindingResource::TextureView(&view) },
+                    wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::Sampler(&sampler) },
+                ],
+            })
+        };
+
         Ok(Self {
             info,
             device,
@@ -175,9 +213,11 @@ impl WgpuBackend {
             bound_textures: vec![None; MAX_TEXTURE_UNITS],
             current_layout: None,
             current_vertex_bindings: Vec::new(),
+            current_topology: PrimitiveTopology::Triangles,
             pipeline_cache: HashMap::new(),
             uniform_bind_group_layout,
             texture_bind_group_layout,
+            fallback_tex_bind_group,
         })
     }
 
