@@ -70,7 +70,7 @@ def append_context_wrapper(lines):
         "  }",
         "",
         "  networkSend(handle: number, peerId: number, data: Uint8Array, channel: number): number {",
-        "    return this.native.networkSend(handle, peerId, Buffer.from(data), channel);",
+        "    return this.native.networkSend(handle, peerId, new Uint8Array(data), channel);",
         "  }",
         "",
         "  networkReceive(handle: number): Uint8Array {",
