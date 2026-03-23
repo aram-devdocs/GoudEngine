@@ -61,7 +61,7 @@ bytemuck = "1.14"
 goud_engine_macros = { version = "=0.0.833", path = "../goud_engine_macros" } # x-release-please-version
 wgpu = { version = "28", optional = true }
 winit = { version = "0.30", optional = true }
-naga = { version = "28", optional = true, features = ["glsl-in", "wgsl-out"] }
+naga = { version = "29", optional = true, features = ["glsl-in", "wgsl-out"] }
 pollster = { version = "0.4", optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
 wasm-bindgen-futures = { version = "0.4", optional = true }
