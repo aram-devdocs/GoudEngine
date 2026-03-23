@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.835](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.834...v0.0.835) (2026-03-23)
+
+
+### Bug Fixes
+
+* address Claude code review warnings (W1-W5) ([505813f](https://github.com/aram-devdocs/GoudEngine/commit/505813ff346eb6d856e947c441a10a8cf5476ea5))
+* handle RGBA8Linear in OpenGL bytes_per_pixel match ([8a1c734](https://github.com/aram-devdocs/GoudEngine/commit/8a1c7345110b1526fac13263388631574da8b089))
+* replace Buffer.from with Uint8Array in TS codegen templates ([bcf819c](https://github.com/aram-devdocs/GoudEngine/commit/bcf819c0ec71feeb215a365bc64671c7f188af0f))
+* resolve formatting and 500-line limit violations ([7853a6c](https://github.com/aram-devdocs/GoudEngine/commit/7853a6c8c2649b4d9e146cc59ef7aade99e1511b))
+* restore wgpu text rendering, 3D shaders, and mouse coordinates ([1b3c5d2](https://github.com/aram-devdocs/GoudEngine/commit/1b3c5d28703603f0bd31f4048268919dce93f09d))
+* update TS test to expect Uint8Array instead of Buffer ([0157a48](https://github.com/aram-devdocs/GoudEngine/commit/0157a48d36c0254b2b7d8e112e675d3443273c1c))
+
 ## [0.0.834](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.833...v0.0.834) (2026-03-23)
 
 
