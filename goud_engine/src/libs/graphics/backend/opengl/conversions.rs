@@ -97,7 +97,7 @@ pub(super) fn bytes_per_pixel(format: TextureFormat) -> usize {
         TextureFormat::R8 => 1,
         TextureFormat::RG8 => 2,
         TextureFormat::RGB8 => 3,
-        TextureFormat::RGBA8 => 4,
+        TextureFormat::RGBA8 | TextureFormat::RGBA8Linear => 4,
         TextureFormat::RGBA16F => 8,      // 4 channels × 2 bytes
         TextureFormat::RGBA32F => 16,     // 4 channels × 4 bytes
         TextureFormat::Depth => 4,        // 24-bit or 32-bit typically
