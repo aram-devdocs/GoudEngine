@@ -363,7 +363,7 @@ def gen_node_wrapper():
         elif mn == "networkConnectWithPeer":
             lines.append("    return this.native.networkConnectWithPeer(protocol, address, port) as unknown as INetworkConnectResult;")
         elif mn == "networkSend":
-            lines.append("    return this.native.networkSend(handle, peerId, Buffer.from(data), channel);")
+            lines.append("    return this.native.networkSend(handle, peerId, new Uint8Array(data), channel);")
         elif mn == "networkReceivePacket":
             lines.append("    return this.native.networkReceivePacket(handle) as unknown as INetworkPacket | null;")
         elif mn == "setNetworkSimulation":
