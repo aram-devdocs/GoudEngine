@@ -1183,8 +1183,15 @@ class GoudGame:
 
     def rpc_call(self, handle, peer_id, rpc_id, payload):
         """Initiates an RPC call to a peer. Returns the call ID via out parameter."""
-        _payload_buf = (ctypes.c_uint8 * len(payload)).from_buffer_copy(payload)
-        return self._lib.goud_rpc_call(self._ctx, handle, peer_id, rpc_id, ctypes.cast(_payload_buf, ctypes.POINTER(ctypes.c_uint8)), len(payload))
+        _buf_len = 65536
+        _out_buf = (ctypes.c_uint8 * _buf_len)()
+        _out_peer_id = ctypes.c_uint64()
+        _status = self._lib.goud_rpc_call(handle, peer_id, rpc_id, payload, ctypes.cast(_out_buf, ctypes.POINTER(ctypes.c_uint8)), _buf_len, ctypes.byref(_out_peer_id))
+        if _status < 0:
+            raise RuntimeError(f'goud_rpc_call failed with status {_status}')
+        if _status == 0:
+            return b''
+        return bytes(_out_buf[:_status])
 
     def rpc_poll(self, handle, delta_secs):
         """Advances the RPC framework: checks timeouts and processes pending calls."""
