@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.834](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.833...v0.0.834) (2026-03-23)
+
+
+### Bug Fixes
+
+* add codegen drift check to pre-push hook ([e69bb2f](https://github.com/aram-devdocs/GoudEngine/commit/e69bb2fe27d2f5b36206b571a40d1d4776d45444))
+* address code review — buffer growth, line limit, dead code ([3b41174](https://github.com/aram-devdocs/GoudEngine/commit/3b411746ea0f7dfbe5e811333db07e920ead63aa))
+* pin jni to 0.21, wgpu/naga to 28, add build artifacts to gitignore ([e1a41e3](https://github.com/aram-devdocs/GoudEngine/commit/e1a41e307c1f7af0d9e666e5285aad7ff7a05251))
+* regenerate Python SDK for rpcCall out_buffer schema change ([0e4c6c4](https://github.com/aram-devdocs/GoudEngine/commit/0e4c6c404344d105d57c96cb5f2e0ae9266b7507))
+* restore wgpu sprite rendering and fix all SDK example builds ([7479f26](https://github.com/aram-devdocs/GoudEngine/commit/7479f26ba0fb168b45f6da858a8d2cd3d6ed21ca))
+* skip Gradle buildNative when CI pre-stages native libs, update Maven Central URL ([700620a](https://github.com/aram-devdocs/GoudEngine/commit/700620aab65043e109f6b9dbc045deba2b0cd1ec))
+* update generated headers and Cargo.lock to 0.0.833, add release-please version markers ([d386134](https://github.com/aram-devdocs/GoudEngine/commit/d38613425f877c0c8bf186bc66eea4d71b0912e5))
+* update Maven namespace to io.github.aram-devdocs, add all SDK badges and download tracking ([f8845b8](https://github.com/aram-devdocs/GoudEngine/commit/f8845b8695c77c6dc3f43c812a59331a2b52552b))
+
 ## [0.0.833](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.832...v0.0.833) (2026-03-22)
 
 
