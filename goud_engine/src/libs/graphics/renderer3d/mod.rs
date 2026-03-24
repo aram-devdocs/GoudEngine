@@ -11,6 +11,7 @@
 //! enabling backend-agnostic rendering (OpenGL, wgpu, etc.).
 
 mod animation;
+mod animation_math;
 #[cfg(test)]
 mod animation_tests;
 mod core;
