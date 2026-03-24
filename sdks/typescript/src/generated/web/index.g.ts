@@ -1105,6 +1105,16 @@ export class GoudGame implements IGoudGame {
   animationClipAddEvent(_entity: IEntity, _frameIndex: number, _name: string, _payloadType: number, _payloadInt: number, _payloadFloat: number, _payloadString?: string | null): number { return 0; }
   animationEventsCount(): number { return 0; }
   animationEventsRead(_index: number): IAnimationEventData { return { entity: 0, name: '', frameIndex: 0, payloadType: 0, payloadInt: 0, payloadFloat: 0, payloadString: '' }; }
+  setAnimationSpeed(_instanceId: number, _speed: number): boolean { return false; }
+  blendAnimations(_instanceId: number, _animA: number, _animB: number, _blendFactor: number): boolean { return false; }
+  transitionAnimation(_instanceId: number, _targetAnim: number, _duration: number): boolean { return false; }
+  isAnimationPlaying(_instanceId: number): boolean { return false; }
+  getAnimationProgress(_instanceId: number): number { return 0; }
+  createCharacterController(_radius: number, _halfHeight: number, _x: number, _y: number, _z: number, _maxSlopeAngle: number, _stepHeight: number): number { return 0; }
+  destroyCharacterController(_controllerId: number): number { return 0; }
+  moveCharacter(_controllerId: number, _dx: number, _dy: number, _dz: number, _dt: number): any { return {}; }
+  getCharacterPosition(_controllerId: number): any { return { x: 0, y: 0, z: 0 }; }
+  isCharacterGrounded(_controllerId: number): boolean { return false; }
   /** Casts a filtered ray and returns the full hit payload, or null when no hit is found (FFI: goud_physics_raycast_ex) */
   physicsRaycastEx(_originX: number, _originY: number, _dirX: number, _dirY: number, _maxDist: number, _layerMask: number): IPhysicsRaycastHit2D | null { return null; }
   /** Returns the number of queued physics collision events available to read (FFI: goud_physics_collision_events_count) */
