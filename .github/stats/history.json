@@ -94,5 +94,16 @@
     "pypi": 2904,
     "npm": 1166,
     "total": 5593
+  },
+  {
+    "date": "2026-03-24",
+    "crates_io": 39,
+    "nuget": 1511,
+    "pypi": 3321,
+    "npm": 1172,
+    "maven": 0,
+    "luarocks": 0,
+    "go_versions": 0,
+    "total": 6043
   }
 ]
