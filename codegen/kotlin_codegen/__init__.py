@@ -146,6 +146,10 @@ java {{
     withJavadocJar()
 }}
 
+tasks.named<Jar>("sourcesJar") {{
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}}
+
 publishing {{
     publications {{
         create<MavenPublication>("mavenKotlin") {{
