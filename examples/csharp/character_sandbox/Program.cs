@@ -170,7 +170,7 @@ class Program
         // --- Player character ---
         // Use the base model as the player instance.
         game.SetModelPosition(baseModel, playerX, playerY, playerZ);
-        game.SetModelScale(baseModel, 0.01f, 0.01f, 0.01f); // Quaternius model is in cm
+        game.SetModelScale(baseModel, 1f, 1f, 1f); // Model is in meters (1.83m tall)
         game.AddModelToScene(sceneId, baseModel);
 
         // Start with idle animation
@@ -198,7 +198,7 @@ class Program
 
             game.SetModelPosition(npcs[i], npcPositions[i, 0], npcPositions[i, 1], npcPositions[i, 2]);
             game.SetModelRotation(npcs[i], 0f, npcFacings[i], 0f);
-            game.SetModelScale(npcs[i], 0.01f, 0.01f, 0.01f);
+            game.SetModelScale(npcs[i], 1f, 1f, 1f);
             game.AddModelToScene(sceneId, npcs[i]);
 
             // Each NPC loops idle
