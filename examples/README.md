@@ -31,6 +31,7 @@ Related docs:
 | Goud Jumper | C# | Desktop | `examples/csharp/goud_jumper` | `./dev.sh --game goud_jumper` |
 | Isometric RPG | C# | Desktop | `examples/csharp/isometric_rpg` | `./dev.sh --game isometric_rpg` |
 | Hello ECS | C# | Desktop | `examples/csharp/hello_ecs` | `./dev.sh --game hello_ecs` |
+| Character Sandbox | C# | Desktop | `examples/csharp/character_sandbox` | `./dev.sh --game character_sandbox` |
 | Python SDK Demo | Python | Desktop | `examples/python/main.py` | `./dev.sh --sdk python --game python_demo` |
 
 ## Notes
