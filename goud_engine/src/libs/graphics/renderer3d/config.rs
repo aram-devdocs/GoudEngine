@@ -21,7 +21,6 @@ pub struct Render3DConfig {
     pub performance: PerformanceConfig,
 }
 
-
 /// Frustum culling configuration.
 #[derive(Debug, Clone)]
 pub struct FrustumCullingConfig {

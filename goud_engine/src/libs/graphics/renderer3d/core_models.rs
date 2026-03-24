@@ -20,10 +20,7 @@ impl Renderer3D {
 
         let has_skeleton = model_data.skeleton.is_some();
         let gpu_skinning = has_skeleton
-            && matches!(
-                self.config.skinning.mode,
-                super::config::SkinningMode::Gpu
-            )
+            && matches!(self.config.skinning.mode, super::config::SkinningMode::Gpu)
             && self.backend.supports_storage_buffers();
         let is_skinned = gpu_skinning;
         // GPU skinning: 16 floats/vertex (pos+normal+uv+bone_ids+bone_weights).
@@ -197,10 +194,7 @@ impl Renderer3D {
 
         // Pre-compute bone property name strings once at load time to avoid
         // per-frame format!() allocations during animation sampling.
-        let bone_count = model_data
-            .skeleton
-            .as_ref()
-            .map_or(0, |s| s.bones.len());
+        let bone_count = model_data.skeleton.as_ref().map_or(0, |s| s.bones.len());
         let cached_bone_prop_names: Vec<BonePropertyNames> =
             (0..bone_count).map(BonePropertyNames::new).collect();
 

@@ -141,8 +141,14 @@ impl Renderer3D {
             .and_then(|sid| self.scenes.get(&sid))
             .map(|s| &s.models);
 
-        // Collect draw data: (obj_ids, mat_ids, bone_matrices).
-        let mut draws: Vec<(Vec<u32>, Vec<u32>, Vec<[f32; 16]>)> = Vec::new();
+        // Collect draw data using raw pointers to avoid cloning Vec data per frame.
+        struct SkinnedDraw {
+            obj_ids: *const Vec<u32>,
+            mat_ids: *const Vec<u32>,
+            bone_mats: *const Vec<[f32; 16]>,
+        }
+
+        let mut draws: Vec<SkinnedDraw> = Vec::new();
 
         for (&model_id, model) in &self.models {
             if !model.is_skinned {
@@ -154,11 +160,11 @@ impl Renderer3D {
                 }
             }
             if let Some(player) = self.animation_players.get(&model_id) {
-                draws.push((
-                    model.mesh_object_ids.clone(),
-                    model.mesh_material_ids.clone(),
-                    player.bone_matrices.clone(),
-                ));
+                draws.push(SkinnedDraw {
+                    obj_ids: &model.mesh_object_ids as *const _,
+                    mat_ids: &model.mesh_material_ids as *const _,
+                    bone_mats: &player.bone_matrices as *const _,
+                });
             }
         }
 
@@ -176,11 +182,11 @@ impl Renderer3D {
                 }
             }
             if let Some(player) = self.animation_players.get(&inst_id) {
-                draws.push((
-                    inst.mesh_object_ids.clone(),
-                    inst.mesh_material_ids.clone(),
-                    player.bone_matrices.clone(),
-                ));
+                draws.push(SkinnedDraw {
+                    obj_ids: &inst.mesh_object_ids as *const _,
+                    mat_ids: &inst.mesh_material_ids as *const _,
+                    bone_mats: &player.bone_matrices as *const _,
+                });
             }
         }
 
@@ -188,10 +194,8 @@ impl Renderer3D {
             return;
         }
 
-        let gpu_skinning = matches!(
-            self.config.skinning.mode,
-            super::config::SkinningMode::Gpu
-        ) && self.backend.supports_storage_buffers();
+        let gpu_skinning = matches!(self.config.skinning.mode, super::config::SkinningMode::Gpu)
+            && self.backend.supports_storage_buffers();
 
         let _ = self.backend.bind_shader(self.skinned_shader_handle);
         let skinned_unis = self.skinned_uniforms.clone();
@@ -205,15 +209,21 @@ impl Renderer3D {
             lights,
         );
 
-        for (obj_ids, mat_ids, bone_mats) in &draws {
+        for draw in &draws {
+            // SAFETY: self.models, self.model_instances, and self.animation_players
+            // are not mutated during this draw loop -- only the backend receives calls.
+            let obj_ids = unsafe { &*draw.obj_ids };
+            let mat_ids = unsafe { &*draw.mat_ids };
+            let bone_mats = unsafe { &*draw.bone_mats };
+
             if gpu_skinning {
                 // Upload bone matrices to a storage buffer for the GPU skinning shader.
                 let bone_data: &[u8] = bytemuck::cast_slice(bone_mats);
                 self.ensure_bone_storage_buffer(bone_data.len());
                 if let Some(storage_handle) = self.bone_storage_buffer {
-                    if let Err(e) =
-                        self.backend
-                            .update_storage_buffer(storage_handle, 0, bone_data)
+                    if let Err(e) = self
+                        .backend
+                        .update_storage_buffer(storage_handle, 0, bone_data)
                     {
                         log::error!("Failed to upload bone matrices to storage buffer: {e}");
                     }
@@ -329,6 +339,11 @@ impl Renderer3D {
     /// packs all instances' bone matrices into a single storage buffer, builds
     /// per-instance attribute data (model matrix + bone offset + color), and
     /// issues one instanced draw call per unique model per sub-mesh.
+    ///
+    /// Currently not called from the render loop (the per-instance draw path in
+    /// `render_skinned_models` is faster at typical NPC counts). Retained for
+    /// future use when instance counts justify the batching overhead.
+    #[allow(dead_code)]
     pub(super) fn render_instanced_skinned_models(
         &mut self,
         view_arr: &[f32; 16],
@@ -339,18 +354,15 @@ impl Renderer3D {
         lights: &[super::types::Light],
         _texture_manager: Option<&dyn super::texture::TextureManagerTrait>,
     ) {
-        let gpu_skinning = matches!(
-            self.config.skinning.mode,
-            super::config::SkinningMode::Gpu
-        ) && self.backend.supports_storage_buffers();
+        let gpu_skinning = matches!(self.config.skinning.mode, super::config::SkinningMode::Gpu)
+            && self.backend.supports_storage_buffers();
 
         if !gpu_skinning {
             return;
         }
 
         // Group instances by source_model_id.
-        let mut groups: std::collections::HashMap<u32, Vec<u32>> =
-            std::collections::HashMap::new();
+        let mut groups: std::collections::HashMap<u32, Vec<u32>> = std::collections::HashMap::new();
         for (&inst_id, inst) in &self.model_instances {
             let source = match self.models.get(&inst.source_model_id) {
                 Some(m) if m.is_skinned => m,
@@ -438,15 +450,15 @@ impl Renderer3D {
                     }
                     for _ in player.bone_matrices.len()..gd.bone_count {
                         packed_bones.extend_from_slice(&[
-                            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-                            0.0, 0.0, 1.0,
+                            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+                            0.0, 1.0,
                         ]);
                     }
                 } else {
                     for _ in 0..gd.bone_count {
                         packed_bones.extend_from_slice(&[
-                            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-                            0.0, 0.0, 1.0,
+                            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+                            0.0, 1.0,
                         ]);
                     }
                 }
@@ -481,9 +493,9 @@ impl Renderer3D {
             let bone_data: &[u8] = bytemuck::cast_slice(&packed_bones);
             self.ensure_bone_storage_buffer(bone_data.len());
             if let Some(storage_handle) = self.bone_storage_buffer {
-                if let Err(e) =
-                    self.backend
-                        .update_storage_buffer(storage_handle, 0, bone_data)
+                if let Err(e) = self
+                    .backend
+                    .update_storage_buffer(storage_handle, 0, bone_data)
                 {
                     log::error!("Instanced skinning storage buffer upload failed: {e}");
                     continue;
@@ -495,14 +507,43 @@ impl Renderer3D {
             let instance_count = gd.instance_ids.len() as u32;
 
             use crate::libs::graphics::backend::{BufferType, BufferUsage, VertexBufferBinding};
-            let instance_buffer = match self.backend.create_buffer(
-                BufferType::Vertex,
-                BufferUsage::Dynamic,
-                instance_bytes,
-            ) {
-                Ok(h) => h,
-                Err(e) => {
-                    log::error!("Failed to create instanced skinned instance buffer: {e}");
+
+            // Reuse persistent instance buffer; grow with next-power-of-two sizing.
+            let required_size = instance_bytes.len();
+            if self.instanced_skinned_instance_buffer.is_none()
+                || self.instanced_skinned_instance_buffer_size < required_size
+            {
+                if let Some(old) = self.instanced_skinned_instance_buffer.take() {
+                    self.backend.destroy_buffer(old);
+                }
+                let alloc_size = required_size.next_power_of_two().max(64);
+                let initial = vec![0u8; alloc_size];
+                match self
+                    .backend
+                    .create_buffer(BufferType::Vertex, BufferUsage::Dynamic, &initial)
+                {
+                    Ok(h) => {
+                        self.instanced_skinned_instance_buffer = Some(h);
+                        self.instanced_skinned_instance_buffer_size = alloc_size;
+                    }
+                    Err(e) => {
+                        log::error!("Failed to create instanced skinned instance buffer: {e}");
+                        self.backend.unbind_storage_buffer();
+                        continue;
+                    }
+                }
+            }
+
+            let instance_buffer = match self.instanced_skinned_instance_buffer {
+                Some(h) => {
+                    if let Err(e) = self.backend.update_buffer(h, 0, instance_bytes) {
+                        log::error!("Failed to update instanced skinned instance buffer: {e}");
+                        self.backend.unbind_storage_buffer();
+                        continue;
+                    }
+                    h
+                }
+                None => {
                     self.backend.unbind_storage_buffer();
                     continue;
                 }
@@ -543,7 +584,7 @@ impl Renderer3D {
                 self.stats.active_instances += instance_count;
             }
 
-            self.backend.destroy_buffer(instance_buffer);
+            // Buffer is kept alive for reuse -- do not destroy.
             self.backend.unbind_storage_buffer();
         }
 

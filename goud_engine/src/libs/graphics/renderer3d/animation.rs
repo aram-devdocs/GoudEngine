@@ -50,6 +50,10 @@ pub struct AnimationPlayer {
     pub transition: Option<AnimationTransition>,
     /// Computed bone matrices for the current frame (column-major 4x4).
     pub bone_matrices: Vec<[f32; 16]>,
+    /// Pre-allocated scratch buffer for local transforms (avoids per-frame allocation).
+    pub scratch_local: Vec<[f32; 16]>,
+    /// Pre-allocated scratch buffer for global transforms (avoids per-frame allocation).
+    pub scratch_global: Vec<[f32; 16]>,
 }
 
 impl AnimationPlayer {
@@ -64,6 +68,8 @@ impl AnimationPlayer {
             blend_factor: 0.0,
             transition: None,
             bone_matrices: vec![identity; bone_count],
+            scratch_local: vec![identity; bone_count],
+            scratch_global: vec![identity; bone_count],
         }
     }
 
@@ -168,8 +174,9 @@ impl AnimationPlayer {
     /// Advance animation time and compute bone matrices.
     pub fn update(&mut self, dt: f32, skeleton: &SkeletonData, animations: &[KeyframeAnimation]) {
         // Fallback: build property names per call when no cached names available.
-        let fallback: Vec<BonePropertyNames> =
-            (0..skeleton.bones.len()).map(BonePropertyNames::new).collect();
+        let fallback: Vec<BonePropertyNames> = (0..skeleton.bones.len())
+            .map(BonePropertyNames::new)
+            .collect();
         self.update_with_names(dt, skeleton, animations, &fallback);
     }
 
@@ -205,36 +212,58 @@ impl AnimationPlayer {
             return;
         }
 
-        // 3. Sample primary bone poses.
-        let primary_matrices = if let Some(ref state) = self.primary {
+        // Ensure scratch buffers are the right size.
+        if self.scratch_local.len() != bone_count {
+            self.scratch_local.resize(bone_count, IDENTITY_MAT4);
+            self.scratch_global.resize(bone_count, IDENTITY_MAT4);
+        }
+        if self.bone_matrices.len() != bone_count {
+            self.bone_matrices.resize(bone_count, IDENTITY_MAT4);
+        }
+
+        // 3. Sample primary bone poses into self.bone_matrices using scratch buffers.
+        if let Some(ref state) = self.primary {
             if let Some(anim) = animations.get(state.clip_index) {
-                compute_bone_matrices_with_names(skeleton, anim, state.time, prop_names)
+                compute_bone_matrices_into(
+                    skeleton,
+                    anim,
+                    state.time,
+                    prop_names,
+                    &mut self.scratch_local,
+                    &mut self.scratch_global,
+                    &mut self.bone_matrices,
+                );
             } else {
-                identity_matrices(bone_count)
+                for m in self.bone_matrices.iter_mut() {
+                    *m = IDENTITY_MAT4;
+                }
             }
         } else {
-            identity_matrices(bone_count)
-        };
+            for m in self.bone_matrices.iter_mut() {
+                *m = IDENTITY_MAT4;
+            }
+        }
 
-        // 4. If blending, sample secondary and lerp.
-        let final_matrices = if self.blend_factor > f32::EPSILON {
+        // 4. If blending, sample secondary and lerp in-place.
+        if self.blend_factor > f32::EPSILON {
             if let Some(ref state) = self.secondary {
                 if let Some(anim) = animations.get(state.clip_index) {
-                    let secondary_matrices =
+                    // We need the secondary bone matrices. Use the allocating
+                    // path here since blending is relatively rare (only during
+                    // active transitions) and the scratch buffers are already
+                    // consumed by the primary computation above.
+                    let secondary =
                         compute_bone_matrices_with_names(skeleton, anim, state.time, prop_names);
-                    slerp_bone_matrices(&primary_matrices, &secondary_matrices, self.blend_factor)
-                } else {
-                    primary_matrices
+                    let t = self.blend_factor;
+                    let inv_t = 1.0 - t;
+                    for (primary, sec) in self.bone_matrices.iter_mut().zip(secondary.iter()) {
+                        for (p, &s) in primary.iter_mut().zip(sec.iter()) {
+                            *p = *p * inv_t + s * t;
+                        }
+                    }
                 }
-            } else {
-                primary_matrices
             }
-        } else {
-            primary_matrices
-        };
-
-        // 5. Store results.
-        self.bone_matrices = final_matrices;
+        }
     }
 }
 
@@ -355,6 +384,49 @@ pub(in crate::libs::graphics::renderer3d) fn compute_bone_matrices_with_names(
     result
 }
 
+/// Compute bone matrices into pre-allocated scratch buffers (zero per-frame allocation).
+///
+/// `local_transforms` and `global_transforms` are scratch buffers that must be at least
+/// `bone_count` in length. `result` receives the final bone matrices.
+fn compute_bone_matrices_into(
+    skeleton: &SkeletonData,
+    anim: &KeyframeAnimation,
+    time: f32,
+    prop_names: &[BonePropertyNames],
+    local_transforms: &mut [[f32; 16]],
+    global_transforms: &mut [[f32; 16]],
+    result: &mut [[f32; 16]],
+) {
+    let bone_count = skeleton.bones.len();
+
+    for (i, names) in prop_names.iter().enumerate().take(bone_count) {
+        let (tx, ty, tz) = sample_translation_indexed(anim, names, time);
+        let (rx, ry, rz, rw) = sample_rotation_indexed(anim, names, time);
+        let (sx, sy, sz) = sample_scale_indexed(anim, names, time);
+
+        local_transforms[i] = build_trs_matrix(tx, ty, tz, rx, ry, rz, rw, sx, sy, sz);
+    }
+
+    // Walk hierarchy: compute global transforms.
+    for i in 0..bone_count {
+        let parent = skeleton.bones[i].parent_index;
+        if parent >= 0 && (parent as usize) < bone_count {
+            global_transforms[i] =
+                mat4_mul(&global_transforms[parent as usize], &local_transforms[i]);
+        } else {
+            global_transforms[i] = local_transforms[i];
+        }
+    }
+
+    // Final: global * inverse_bind.
+    for i in 0..bone_count {
+        result[i] = mat4_mul(
+            &global_transforms[i],
+            &skeleton.bones[i].inverse_bind_matrix,
+        );
+    }
+}
+
 fn sample_translation_indexed(
     anim: &KeyframeAnimation,
     names: &BonePropertyNames,
@@ -468,5 +540,6 @@ pub(crate) fn mat4_mul(a: &[f32; 16], b: &[f32; 16]) -> [f32; 16] {
     out
 }
 
-// Re-export from animation_math submodule.
-use super::animation_math::{identity_matrices, slerp_bone_matrices};
+// Note: identity_matrices and slerp_bone_matrices from animation_math are no
+// longer used here -- bone matrix computation now writes into pre-allocated
+// scratch buffers and blending is done inline to avoid per-frame allocations.
