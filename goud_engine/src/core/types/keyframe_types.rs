@@ -4,6 +4,7 @@
 //! `assets/` (Layer 3) can depend on them without creating upward imports.
 
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 // =============================================================================
 // EasingFunction
@@ -176,7 +177,7 @@ pub fn interpolate(keyframes: &[Keyframe], t: f32) -> f32 {
 /// assert_eq!(anim.name(), "bounce");
 /// assert_eq!(anim.channel_count(), 1);
 /// ```
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct KeyframeAnimation {
     /// Human-readable name for this animation.
     pub name: String,
@@ -184,16 +185,42 @@ pub struct KeyframeAnimation {
     pub duration: f32,
     /// Property channels with keyframes.
     pub channels: Vec<AnimationChannel>,
+    /// O(1) lookup index: `target_property` -> channel index. Built lazily on first use.
+    #[serde(skip)]
+    channel_index: Option<HashMap<String, usize>>,
+}
+
+impl PartialEq for KeyframeAnimation {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+            && self.duration == other.duration
+            && self.channels == other.channels
+    }
 }
 
 impl KeyframeAnimation {
-    /// Creates a new keyframe animation.
+    /// Creates a new keyframe animation with a pre-built channel index.
     pub fn new(name: String, duration: f32, channels: Vec<AnimationChannel>) -> Self {
-        Self {
+        let mut anim = Self {
             name,
             duration,
             channels,
+            channel_index: None,
+        };
+        anim.build_channel_index();
+        anim
+    }
+
+    /// Builds the `target_property` -> channel index mapping for O(1) lookups.
+    ///
+    /// Called automatically by [`new`](Self::new). Call this explicitly after
+    /// deserializing or mutating `channels` directly.
+    pub fn build_channel_index(&mut self) {
+        let mut map = HashMap::with_capacity(self.channels.len());
+        for (i, ch) in self.channels.iter().enumerate() {
+            map.insert(ch.target_property.clone(), i);
         }
+        self.channel_index = Some(map);
     }
 
     /// Returns the animation name.
@@ -222,8 +249,15 @@ impl KeyframeAnimation {
     }
 
     /// Finds a channel by target property name.
+    ///
+    /// Uses the pre-built index for O(1) lookup when available, falling back to
+    /// linear scan otherwise.
     pub fn channel_by_property(&self, property: &str) -> Option<&AnimationChannel> {
-        self.channels.iter().find(|c| c.target_property == property)
+        if let Some(ref idx) = self.channel_index {
+            idx.get(property).and_then(|&i| self.channels.get(i))
+        } else {
+            self.channels.iter().find(|c| c.target_property == property)
+        }
     }
 
     /// Returns the total number of keyframes across all channels.

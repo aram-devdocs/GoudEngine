@@ -9,8 +9,6 @@ use crate::libs::graphics::backend::{
 use cgmath::{perspective, Deg, Matrix4};
 
 impl Renderer3D {
-    /// Render the scene -- grid, objects, skinned meshes, and overlays --
-    /// using the current camera and light state.
     ///
     /// When a current scene is set, only objects/models/lights belonging to that
     /// scene are rendered and the scene's fog/skybox/grid configs are used.
@@ -63,8 +61,11 @@ impl Renderer3D {
         let view = self.camera.view_matrix();
         let view_arr = mat4_to_array(&view);
         let proj_arr = mat4_to_array(&projection);
-        let shadow_map =
-            build_directional_shadow_map(&self.objects, &self.lights, self.shadow_map_size);
+        let shadow_map = if self.shadows_enabled {
+            build_directional_shadow_map(&self.objects, &self.lights, self.shadow_map_size)
+        } else {
+            None
+        };
         let shadow_matrix = shadow_map
             .as_ref()
             .map(|map| mat4_to_array(&map.light_space_matrix))

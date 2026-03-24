@@ -52,9 +52,10 @@ impl AnimationLoader {
             AssetLoadError::decode_failed(format!("Animation file is not valid UTF-8: {e}"))
         })?;
 
-        let animation: KeyframeAnimation = serde_json::from_str(text).map_err(|e| {
+        let mut animation: KeyframeAnimation = serde_json::from_str(text).map_err(|e| {
             AssetLoadError::decode_failed(format!("Failed to parse animation JSON: {e}"))
         })?;
+        animation.build_channel_index();
 
         Ok(animation)
     }

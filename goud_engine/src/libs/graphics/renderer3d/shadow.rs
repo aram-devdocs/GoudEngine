@@ -14,6 +14,13 @@ pub(super) struct SoftwareShadowMap {
     pub(super) rgba8: Vec<u8>,
 }
 
+/// Maximum total vertex count for CPU shadow rasterization.
+///
+/// Scenes exceeding this threshold skip the software shadow pass entirely.
+/// The CPU rasterizer is a compatibility bridge; once a GPU shadow pass exists
+/// this limit can be removed.
+const MAX_SHADOW_VERTICES: usize = 10_000;
+
 pub(super) fn build_directional_shadow_map(
     objects: &HashMap<u32, Object3D>,
     lights: &HashMap<u32, Light>,
@@ -27,6 +34,17 @@ pub(super) fn build_directional_shadow_map(
     } else {
         Vector3::new(0.0, -1.0, 0.0)
     };
+
+    // Count total vertices across all objects. Each vertex uses 8 floats
+    // (pos + normal + uv), so divide by the stride to get the vertex count.
+    let total_vertex_floats: usize = objects
+        .values()
+        .map(|o| o.vertices.len())
+        .sum();
+    let total_vertices = total_vertex_floats / 8;
+    if total_vertices > MAX_SHADOW_VERTICES {
+        return None;
+    }
 
     let meshes = objects
         .values()
