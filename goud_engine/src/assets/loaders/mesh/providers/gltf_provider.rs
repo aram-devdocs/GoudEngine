@@ -112,7 +112,7 @@ impl ModelProvider for GltfProvider {
                 start_index,
                 index_count,
                 material_index: primitive.material().index().map(|i| i as u32),
-                material: None, // TODO: extract material
+                material: extract_primitive_material(&primitive),
                 bounds,
             });
         }
@@ -137,6 +137,29 @@ impl ModelProvider for GltfProvider {
             animations,
         })
     }
+}
+
+/// Extract material properties from a glTF primitive's material.
+fn extract_primitive_material(
+    primitive: &gltf::Primitive,
+) -> Option<crate::core::types::MeshMaterial> {
+    use crate::core::types::MeshMaterial;
+    let mat = primitive.material();
+    let pbr = mat.pbr_metallic_roughness();
+    let bc = pbr.base_color_factor();
+    Some(MeshMaterial {
+        name: mat.name().map(|s| s.to_string()),
+        base_color_factor: bc,
+        base_color_texture_path: None,
+        normal_texture_path: None,
+        metallic_roughness_texture_path: None,
+        emissive_texture_path: None,
+        emissive_factor: [0.0, 0.0, 0.0],
+        metallic_factor: pbr.metallic_factor(),
+        roughness_factor: pbr.roughness_factor(),
+        alpha_cutoff: None,
+        double_sided: mat.double_sided(),
+    })
 }
 
 /// Compute per-face normals from triangle positions when NORMAL is absent.
