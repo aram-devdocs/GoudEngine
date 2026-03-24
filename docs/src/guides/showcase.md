@@ -53,6 +53,7 @@ C#-specific gameplay and renderer examples.
 | Goud Jumper | C# | Desktop | `examples/csharp/goud_jumper` | `./dev.sh --game goud_jumper` | Platform movement and collision. | ![Goud Jumper C# desktop preview](../generated/showcase/goud-jumper-csharp-desktop.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/csharp/goud_jumper) |
 | Isometric RPG | C# | Desktop | `examples/csharp/isometric_rpg` | `./dev.sh --game isometric_rpg` | Isometric camera and RPG systems. | ![Isometric RPG C# desktop preview](../generated/showcase/isometric-rpg-csharp-desktop.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/csharp/isometric_rpg) |
 | Hello ECS | C# | Desktop | `examples/csharp/hello_ecs` | `./dev.sh --game hello_ecs` | Minimal ECS starter. | ![Hello ECS C# desktop preview](../generated/showcase/hello-ecs-csharp-desktop.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/csharp/hello_ecs) |
+| Character Sandbox | C# | Desktop | `examples/csharp/character_sandbox` | `./dev.sh --game character_sandbox` | 3D character sandbox with model loading, skeletal animation, scene management. | ![Character Sandbox C# desktop preview](../generated/showcase/character-sandbox-csharp-desktop.png) | [GitHub](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/csharp/character_sandbox) |
 
 ## Starter demos
 
