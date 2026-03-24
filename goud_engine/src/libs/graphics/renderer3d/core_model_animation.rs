@@ -71,7 +71,11 @@ impl Renderer3D {
                 .filter_map(|&id| {
                     let model = self.resolve_source_model(id)?;
                     let skel = model.skeleton.as_ref()?;
-                    Some((id, skel as *const SkeletonData, &model.animations as *const _))
+                    Some((
+                        id,
+                        skel as *const SkeletonData,
+                        &model.animations as *const _,
+                    ))
                 })
                 .collect();
 
@@ -205,7 +209,11 @@ fn cpu_skin_submesh(
     for v in 0..vert_count {
         let base = v * FPV;
         let pos = [bind_verts[base], bind_verts[base + 1], bind_verts[base + 2]];
-        let nrm = [bind_verts[base + 3], bind_verts[base + 4], bind_verts[base + 5]];
+        let nrm = [
+            bind_verts[base + 3],
+            bind_verts[base + 4],
+            bind_verts[base + 5],
+        ];
 
         let bi = if v < bone_indices.len() {
             bone_indices[v]
@@ -233,7 +241,7 @@ fn cpu_skin_submesh(
             }
             total_weight += w;
             let m = &bone_matrices[idx]; // column-major [f32; 16]
-            // Transform position: M * [pos, 1]
+                                         // Transform position: M * [pos, 1]
             sp[0] += w * (m[0] * pos[0] + m[4] * pos[1] + m[8] * pos[2] + m[12]);
             sp[1] += w * (m[1] * pos[0] + m[5] * pos[1] + m[9] * pos[2] + m[13]);
             sp[2] += w * (m[2] * pos[0] + m[6] * pos[1] + m[10] * pos[2] + m[14]);

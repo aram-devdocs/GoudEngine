@@ -304,8 +304,7 @@ fn compute_bone_matrices(
     let mut result = vec![IDENTITY_MAT4; bone_count];
 
     // Build property name strings once, not per-channel.
-    let prop_names: Vec<BonePropertyNames> =
-        (0..bone_count).map(BonePropertyNames::new).collect();
+    let prop_names: Vec<BonePropertyNames> = (0..bone_count).map(BonePropertyNames::new).collect();
 
     for names in &prop_names {
         let (tx, ty, tz) = sample_translation_indexed(anim, names, time);
