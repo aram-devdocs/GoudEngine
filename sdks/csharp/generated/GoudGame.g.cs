@@ -888,7 +888,7 @@ namespace GoudEngine
         {
             unsafe
             {
-                int _required = NativeMethods.goud_renderer3d_get_animation_name(_ctx, modelId, animIndex, IntPtr.Zero, 0);
+                int _required = NativeMethods.goud_renderer3d_get_animation_name(_ctx, modelId, animIndex, IntPtr.Zero, (int)0);
                 if (_required == -1)
                 {
                     var _ex = GoudException.FromLastError();
@@ -902,7 +902,7 @@ namespace GoudEngine
                     var _buf = new byte[_bufferSize];
                     fixed (byte* _ptr = _buf)
                     {
-                        int _written = NativeMethods.goud_renderer3d_get_animation_name(_ctx, modelId, animIndex, (IntPtr)_ptr, _buf.Length);
+                        int _written = NativeMethods.goud_renderer3d_get_animation_name(_ctx, modelId, animIndex, (IntPtr)_ptr, (int)_buf.Length);
                         if (_written == -1)
                         {
                             var _ex = GoudException.FromLastError();

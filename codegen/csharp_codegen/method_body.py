@@ -365,6 +365,13 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
                 ffi_args_parts.append(pname)
             ffi_param_index += 1
 
+        # Determine the buffer length parameter index.
+        # buffer_protocol methods have pattern: [...params..., ptr, len]
+        # The length parameter is the last one in the FFI signature.
+        buf_ptr_param_index = ffi_param_index
+        buf_len_param_index = buf_ptr_param_index + 1
+        buf_len_ffi_type = _ffi_param_type_at(ffi_fn, buf_len_param_index)
+
         def _buffer_call(ptr_expr: str, len_expr: str) -> str:
             prefix = "" if no_ctx else "_ctx, "
             arg_prefix = ", ".join(ffi_args_parts)
@@ -377,7 +384,7 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
         L += [
             "            unsafe",
             "            {",
-            f"                int _required = {_buffer_call('IntPtr.Zero', '(nuint)0')};",
+            f"                int _required = {_buffer_call('IntPtr.Zero', _cs_len_cast_expr(buf_len_ffi_type, '0'))};",
             "                if (_required == -1)",
             "                {",
             "                    var _ex = GoudException.FromLastError();",
@@ -391,7 +398,7 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
             "                    var _buf = new byte[_bufferSize];",
             "                    fixed (byte* _ptr = _buf)",
             "                    {",
-            f"                        int _written = {_buffer_call('(IntPtr)_ptr', '(nuint)_buf.Length')};",
+            f"                        int _written = {_buffer_call('(IntPtr)_ptr', _cs_len_cast_expr(buf_len_ffi_type, '_buf.Length'))};",
             "                        if (_written == -1)",
             "                        {",
             "                            var _ex = GoudException.FromLastError();",
@@ -441,6 +448,13 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
                     ffi_args_parts.append(pname)
             ffi_param_index += 1
 
+        # Determine the buffer length parameter index.
+        # buffer_protocol methods have pattern: [...params..., ptr, len]
+        # The length parameter is the last one in the FFI signature.
+        buf_ptr_param_index = ffi_param_index
+        buf_len_param_index = buf_ptr_param_index + 1
+        buf_len_ffi_type = _ffi_param_type_at(ffi_fn, buf_len_param_index)
+
         def _buffer_call(ptr_expr: str, len_expr: str) -> str:
             prefix = "" if no_ctx else "_ctx, "
             arg_prefix = ", ".join(ffi_args_parts)
@@ -453,7 +467,7 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
         L += [
             "            unsafe",
             "            {",
-            f"                int _required = {_buffer_call('IntPtr.Zero', '(nuint)0')};",
+            f"                int _required = {_buffer_call('IntPtr.Zero', _cs_len_cast_expr(buf_len_ffi_type, '0'))};",
             "                if (_required == -1)",
             "                {",
             "                    var _ex = GoudException.FromLastError();",
@@ -470,7 +484,7 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
             "                    var _buf = new byte[_bufferSize];",
             "                    fixed (byte* _ptr = _buf)",
             "                    {",
-            f"                        int _written = {_buffer_call('(IntPtr)_ptr', '(nuint)_buf.Length')};",
+            f"                        int _written = {_buffer_call('(IntPtr)_ptr', _cs_len_cast_expr(buf_len_ffi_type, '_buf.Length'))};",
             "                        if (_written == -1)",
             "                        {",
             "                            var _ex = GoudException.FromLastError();",
