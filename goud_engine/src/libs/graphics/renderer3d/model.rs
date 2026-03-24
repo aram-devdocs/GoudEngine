@@ -1,7 +1,6 @@
 //! Model and model instance types for the 3D renderer.
 
-use crate::assets::loaders::animation::KeyframeAnimation;
-use crate::assets::loaders::mesh::{MeshBounds, SkeletonData};
+use crate::core::types::{KeyframeAnimation, MeshBounds, SkeletonData};
 
 /// A loaded 3D model consisting of one or more sub-mesh objects and materials.
 ///

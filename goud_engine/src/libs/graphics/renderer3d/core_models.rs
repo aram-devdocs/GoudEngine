@@ -5,7 +5,7 @@ use super::core::Renderer3D;
 use super::mesh::upload_buffer;
 use super::model::{Model3D, ModelInstance3D};
 use super::types::{Material3D, MaterialType, Object3D, PbrProperties};
-use crate::assets::loaders::mesh::{MeshBounds, ModelData};
+use crate::core::types::{MeshBounds, ModelData};
 use cgmath::{Vector3, Vector4};
 
 impl Renderer3D {

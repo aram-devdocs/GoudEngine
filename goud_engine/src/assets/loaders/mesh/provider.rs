@@ -5,49 +5,15 @@
 //! implemented behind the [`ModelProvider`] trait and registered in a
 //! [`ModelProviderRegistry`].  The registry performs extension-based dispatch
 //! so callers never touch format-specific types.
+//!
+//! The struct definitions for `SkeletonData`, `BoneData`, and `ModelData` now
+//! live in `core::types::mesh_data`.  This module re-exports them for backward
+//! compatibility.
 
 use crate::assets::{AssetLoadError, LoadContext};
 
-use super::asset::MeshAsset;
-use crate::assets::loaders::animation::KeyframeAnimation;
-
-/// Format-agnostic skeleton data extracted from a model file.
-///
-/// Bone indices and weights are stored per-vertex, parallel to the mesh
-/// vertex array.  Phase A0 providers may return `None` for skeleton data;
-/// full extraction lands in Phase B.
-#[derive(Debug, Clone)]
-pub struct SkeletonData {
-    /// Bones in the skeleton hierarchy.
-    pub bones: Vec<BoneData>,
-    /// Per-vertex bone indices (4 influences per vertex).
-    pub bone_indices: Vec<[u32; 4]>,
-    /// Per-vertex bone weights (4 influences per vertex).
-    pub bone_weights: Vec<[f32; 4]>,
-}
-
-/// A single bone in a skeleton hierarchy.
-#[derive(Debug, Clone)]
-pub struct BoneData {
-    /// Human-readable bone name.
-    pub name: String,
-    /// Index of the parent bone, or -1 for root bones.
-    pub parent_index: i32,
-    /// Column-major 4x4 inverse bind matrix.
-    pub inverse_bind_matrix: [f32; 16],
-}
-
-/// Complete output of a model provider: mesh geometry plus optional
-/// skeleton and animation data.
-#[derive(Debug, Clone)]
-pub struct ModelData {
-    /// Parsed mesh geometry (vertices, indices, sub-meshes, bounds).
-    pub mesh: MeshAsset,
-    /// Optional skeleton for skinned meshes.
-    pub skeleton: Option<SkeletonData>,
-    /// Animations embedded in the model file.
-    pub animations: Vec<KeyframeAnimation>,
-}
+// Re-export skeleton and model data types from the canonical core location.
+pub use crate::core::types::mesh_data::{BoneData, ModelData, SkeletonData};
 
 /// A pluggable parser for a specific 3D model format.
 ///
