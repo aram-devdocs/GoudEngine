@@ -5,6 +5,7 @@
 //! providers.
 
 mod fbx_provider;
+mod gltf_helpers;
 mod gltf_provider;
 mod obj_provider;
 
