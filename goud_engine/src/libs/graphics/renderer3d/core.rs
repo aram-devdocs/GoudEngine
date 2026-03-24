@@ -244,14 +244,6 @@ impl Renderer3D {
         })
     }
 
-    // ========================================================================
-    // Primitive creation
-    // ========================================================================
-
-    // ========================================================================
-    // Object manipulation
-    // ========================================================================
-
     /// Set object position
     pub fn set_object_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         if let Some(obj) = self.objects.get_mut(&id) {
@@ -292,9 +284,7 @@ impl Renderer3D {
         }
     }
 
-    // ========================================================================
     // Lighting
-    // ========================================================================
 
     /// Add a light and return its ID.
     pub fn add_light(&mut self, light: Light) -> u32 {
@@ -320,9 +310,7 @@ impl Renderer3D {
         self.lights.remove(&id).is_some()
     }
 
-    // ========================================================================
     // Camera
-    // ========================================================================
 
     /// Set camera position
     pub fn set_camera_position(&mut self, x: f32, y: f32, z: f32) {
@@ -385,9 +373,7 @@ impl Renderer3D {
         self.shadow_bias
     }
 
-    // ========================================================================
     // Grid / Skybox / Fog configuration
-    // ========================================================================
 
     /// Configure grid
     pub fn configure_grid(&mut self, config: GridConfig) {
