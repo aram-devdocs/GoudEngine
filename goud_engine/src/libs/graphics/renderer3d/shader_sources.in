@@ -892,8 +892,7 @@ void main() {
 
 // NOTE: The Uniforms struct matches the main 3D vertex shader since the
 // skinned shader shares the same fragment shader (FRAGMENT_SHADER_3D_WGSL).
-// Bone matrices are uploaded as individual mat4 uniforms via the same
-// uniform buffer, addressed by the SkinnedUniforms locations.
+// Bone matrices are read from a storage buffer at @group(2) @binding(0).
 pub(super) const SKINNED_VERTEX_SHADER_WGSL: &str = r#"
 struct Uniforms {
     model: mat4x4<f32>,
@@ -918,6 +917,7 @@ struct Uniforms {
 }
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
+@group(2) @binding(0) var<storage, read> boneMatrices: array<mat4x4<f32>>;
 
 struct VertexInput {
     @location(0) position: vec3<f32>,
@@ -936,16 +936,148 @@ struct VertexOutput {
 
 @vertex
 fn main(input: VertexInput) -> VertexOutput {
-    // CPU skinning deforms the vertex data before upload, so the shader
-    // receives already-skinned positions.  Apply the standard model/view/
-    // projection transform (identical to the non-skinned path).
-    // GPU skinning via storage-buffer bone matrices will be added in Phase F.
-    let world_pos = uniforms.model * vec4<f32>(input.position, 1.0);
+    let bone_idx = vec4<i32>(input.bone_ids);
+    let w = input.bone_weights;
+
+    // Compute skinning matrix from weighted bone transforms.
+    var skin_matrix = w.x * boneMatrices[bone_idx.x]
+                    + w.y * boneMatrices[bone_idx.y]
+                    + w.z * boneMatrices[bone_idx.z]
+                    + w.w * boneMatrices[bone_idx.w];
+
+    let skinned_pos = skin_matrix * vec4<f32>(input.position, 1.0);
+    let world_pos = uniforms.model * skinned_pos;
+
+    // Transform normal through the skinning matrix (upper 3x3).
+    let skinned_normal = (skin_matrix * vec4<f32>(input.normal, 0.0)).xyz;
+    let world_normal = (uniforms.model * vec4<f32>(skinned_normal, 0.0)).xyz;
+
     var output: VertexOutput;
     output.clip_position = uniforms.projection * uniforms.view * world_pos;
     output.frag_pos = world_pos.xyz;
-    output.normal = (uniforms.model * vec4<f32>(input.normal, 0.0)).xyz;
+    output.normal = world_normal;
     output.tex_coord = input.tex_coord;
+    return output;
+}
+"#;
+
+pub(super) const INSTANCED_SKINNED_VERTEX_SHADER: &str = r#"
+#version 330 core
+
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aNormal;
+layout (location = 2) in vec2 aTexCoord;
+layout (location = 3) in vec4 aBoneIds;
+layout (location = 4) in vec4 aBoneWeights;
+// Per-instance attributes
+layout (location = 5) in vec4 iModelCol0;
+layout (location = 6) in vec4 iModelCol1;
+layout (location = 7) in vec4 iModelCol2;
+layout (location = 8) in vec4 iModelCol3;
+layout (location = 9) in float iBoneOffset;
+layout (location = 10) in vec4 iColor;
+
+out vec3 FragPos;
+out vec3 Normal;
+out vec2 TexCoord;
+out vec4 InstanceColor;
+out vec4 FragPosLightSpace;
+
+uniform mat4 view;
+uniform mat4 projection;
+uniform mat4 lightSpaceMatrix;
+uniform mat4 boneMatrices[128];
+
+void main() {
+    mat4 model = mat4(iModelCol0, iModelCol1, iModelCol2, iModelCol3);
+    ivec4 boneIdx = ivec4(aBoneIds);
+    int base = int(iBoneOffset);
+    mat4 skinMatrix = aBoneWeights.x * boneMatrices[base + boneIdx.x]
+                    + aBoneWeights.y * boneMatrices[base + boneIdx.y]
+                    + aBoneWeights.z * boneMatrices[base + boneIdx.z]
+                    + aBoneWeights.w * boneMatrices[base + boneIdx.w];
+    vec4 skinnedPos = skinMatrix * vec4(aPos, 1.0);
+    vec4 worldPos = model * skinnedPos;
+    FragPos = worldPos.xyz;
+    Normal = mat3(transpose(inverse(model * skinMatrix))) * aNormal;
+    TexCoord = aTexCoord;
+    InstanceColor = iColor;
+    FragPosLightSpace = lightSpaceMatrix * worldPos;
+    gl_Position = projection * view * worldPos;
+}
+"#;
+
+pub(super) const INSTANCED_SKINNED_VERTEX_SHADER_WGSL: &str = r#"
+struct Uniforms {
+    view: mat4x4<f32>,
+    projection: mat4x4<f32>,
+    lightSpaceMatrix: mat4x4<f32>,
+    viewPos: vec3<f32>,
+    fogDensity: f32,
+    objectColor: vec4<f32>,
+    fogColor: vec3<f32>,
+    numLights: i32,
+    useTexture: i32,
+    shadowsEnabled: i32,
+    fogEnabled: i32,
+    shadowBias: f32,
+    _pad1: f32,
+    _pad2: f32,
+    _pad3: f32,
+    primaryLightDir: vec3<f32>,
+    primaryLightIntensity: f32,
+    primaryLightColor: vec3<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+@group(2) @binding(0) var<storage, read> boneMatrices: array<mat4x4<f32>>;
+
+struct VertexInput {
+    @location(0) position: vec3<f32>,
+    @location(1) normal: vec3<f32>,
+    @location(2) tex_coord: vec2<f32>,
+    @location(3) bone_ids: vec4<f32>,
+    @location(4) bone_weights: vec4<f32>,
+    // Per-instance attributes
+    @location(5) model_0: vec4<f32>,
+    @location(6) model_1: vec4<f32>,
+    @location(7) model_2: vec4<f32>,
+    @location(8) model_3: vec4<f32>,
+    @location(9) bone_offset: f32,
+    @location(10) color: vec4<f32>,
+};
+
+struct VertexOutput {
+    @builtin(position) clip_position: vec4<f32>,
+    @location(0) frag_pos: vec3<f32>,
+    @location(1) normal: vec3<f32>,
+    @location(2) tex_coord: vec2<f32>,
+    @location(3) inst_color: vec4<f32>,
+};
+
+@vertex
+fn main(input: VertexInput) -> VertexOutput {
+    let model = mat4x4<f32>(input.model_0, input.model_1, input.model_2, input.model_3);
+    let bone_idx = vec4<i32>(input.bone_ids);
+    let base = i32(input.bone_offset);
+    let w = input.bone_weights;
+
+    var skin_matrix = w.x * boneMatrices[base + bone_idx.x]
+                    + w.y * boneMatrices[base + bone_idx.y]
+                    + w.z * boneMatrices[base + bone_idx.z]
+                    + w.w * boneMatrices[base + bone_idx.w];
+
+    let skinned_pos = skin_matrix * vec4<f32>(input.position, 1.0);
+    let world_pos = model * skinned_pos;
+    let skinned_normal = (skin_matrix * vec4<f32>(input.normal, 0.0)).xyz;
+    let world_normal = (model * vec4<f32>(skinned_normal, 0.0)).xyz;
+
+    var output: VertexOutput;
+    output.clip_position = uniforms.projection * uniforms.view * world_pos;
+    output.frag_pos = world_pos.xyz;
+    output.normal = world_normal;
+    output.tex_coord = input.tex_coord;
+    output.inst_color = input.color;
     return output;
 }
 "#;

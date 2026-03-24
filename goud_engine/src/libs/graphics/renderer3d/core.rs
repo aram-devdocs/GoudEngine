@@ -15,15 +15,17 @@ use super::debug_draw::build_debug_draw_vertices;
 use super::mesh::generate_plane_vertices;
 use super::mesh::{
     create_axis_mesh, create_grid_mesh, create_postprocess_quad, grid_vertex_layout,
-    instance_vertex_layout, object_vertex_layout, postprocess_vertex_layout, skinned_vertex_layout,
-    upload_buffer,
+    instance_vertex_layout, instanced_skinned_instance_layout, object_vertex_layout,
+    postprocess_vertex_layout, skinned_vertex_layout, upload_buffer,
 };
 use super::model::{Model3D, ModelInstance3D};
 use super::shaders::{
-    resolve_grid_uniforms, resolve_main_uniforms, resolve_skinned_uniforms, GridUniforms,
-    MainUniforms, SkinnedUniforms, FRAGMENT_SHADER_3D, FRAGMENT_SHADER_3D_WGSL,
-    GRID_FRAGMENT_SHADER, GRID_FRAGMENT_SHADER_WGSL, GRID_VERTEX_SHADER, GRID_VERTEX_SHADER_WGSL,
-    INSTANCED_FRAGMENT_SHADER_3D, INSTANCED_FRAGMENT_SHADER_3D_WGSL, INSTANCED_VERTEX_SHADER_3D,
+    resolve_grid_uniforms, resolve_instanced_skinned_uniforms, resolve_main_uniforms,
+    resolve_skinned_uniforms, GridUniforms, InstancedSkinnedUniforms, MainUniforms,
+    SkinnedUniforms, FRAGMENT_SHADER_3D, FRAGMENT_SHADER_3D_WGSL, GRID_FRAGMENT_SHADER,
+    GRID_FRAGMENT_SHADER_WGSL, GRID_VERTEX_SHADER, GRID_VERTEX_SHADER_WGSL,
+    INSTANCED_FRAGMENT_SHADER_3D, INSTANCED_FRAGMENT_SHADER_3D_WGSL, INSTANCED_SKINNED_VERTEX_SHADER,
+    INSTANCED_SKINNED_VERTEX_SHADER_WGSL, INSTANCED_VERTEX_SHADER_3D,
     INSTANCED_VERTEX_SHADER_3D_WGSL, POSTPROCESS_FRAGMENT_SHADER, POSTPROCESS_FRAGMENT_SHADER_WGSL,
     POSTPROCESS_VERTEX_SHADER, POSTPROCESS_VERTEX_SHADER_WGSL, SKINNED_VERTEX_SHADER,
     SKINNED_VERTEX_SHADER_WGSL, VERTEX_SHADER_3D, VERTEX_SHADER_3D_WGSL,
@@ -97,6 +99,20 @@ pub struct Renderer3D {
     pub(super) model_instances: HashMap<u32, ModelInstance3D>,
     pub(super) next_model_id: u32,
     pub(super) animation_players: HashMap<u32, AnimationPlayer>,
+    /// Shader and uniforms for instanced skinned rendering.
+    #[allow(dead_code)] // Infrastructure for instanced skinned render path.
+    pub(super) instanced_skinned_shader_handle: ShaderHandle,
+    #[allow(dead_code)]
+    pub(super) instanced_skinned_uniforms: InstancedSkinnedUniforms,
+    /// Per-instance vertex layout for instanced skinned rendering:
+    /// model_0..model_3 (4 x vec4) + bone_offset (f32) + color (vec4) = 84 bytes.
+    #[allow(dead_code)]
+    pub(super) instanced_skinned_instance_layout: VertexLayout,
+    /// Storage buffer handle for GPU skinning bone matrices.
+    pub(super) bone_storage_buffer: Option<BufferHandle>,
+    /// Tracks allocated size of bone_storage_buffer in bytes.
+    #[allow(dead_code)]
+    pub(super) bone_storage_buffer_size: usize,
     pub(super) postprocess_pipeline: PostProcessPipeline,
     pub(super) stats: Renderer3DStats,
     pub(super) anti_aliasing_mode: AntiAliasingMode,
@@ -184,6 +200,20 @@ impl Renderer3D {
             .map_err(|e| format!("Skinned 3D shader: {e}"))?;
         let skinned_uniforms = resolve_skinned_uniforms(backend.as_ref(), skinned_shader_handle);
 
+        // Instanced skinned shader uses the instanced fragment shader.
+        let (vs, fs) = shaders!(
+            (INSTANCED_SKINNED_VERTEX_SHADER, INSTANCED_FRAGMENT_SHADER_3D),
+            (
+                INSTANCED_SKINNED_VERTEX_SHADER_WGSL,
+                INSTANCED_FRAGMENT_SHADER_3D_WGSL
+            )
+        );
+        let instanced_skinned_shader_handle = backend
+            .create_shader(vs, fs)
+            .map_err(|e| format!("Instanced skinned shader: {e}"))?;
+        let instanced_skinned_uniforms =
+            resolve_instanced_skinned_uniforms(backend.as_ref(), instanced_skinned_shader_handle);
+
         let (grid_buffer, grid_vertex_count) = create_grid_mesh(backend.as_mut(), 20.0, 20)?;
         let (axis_buffer, axis_vertex_count) = create_axis_mesh(backend.as_mut(), 5.0)?;
         let particle_verts = generate_plane_vertices(1.0, 1.0);
@@ -248,6 +278,11 @@ impl Renderer3D {
             model_instances: HashMap::new(),
             next_model_id: 1,
             animation_players: HashMap::new(),
+            instanced_skinned_shader_handle,
+            instanced_skinned_uniforms,
+            instanced_skinned_instance_layout: instanced_skinned_instance_layout(),
+            bone_storage_buffer: None,
+            bone_storage_buffer_size: 0,
             postprocess_pipeline: PostProcessPipeline::new(),
             stats: Renderer3DStats::default(),
             anti_aliasing_mode: AntiAliasingMode::Off,
@@ -503,12 +538,16 @@ impl Drop for Renderer3D {
         if self.backend.is_buffer_valid(self.debug_draw_buffer) {
             self.backend.destroy_buffer(self.debug_draw_buffer);
         }
+        if let Some(buf) = self.bone_storage_buffer {
+            self.backend.destroy_buffer(buf);
+        }
         for &sh in &[
             self.shader_handle,
             self.instanced_shader_handle,
             self.grid_shader_handle,
             self.postprocess_shader_handle,
             self.skinned_shader_handle,
+            self.instanced_skinned_shader_handle,
         ] {
             self.backend.destroy_shader(sh);
         }

@@ -58,6 +58,27 @@ impl FrameOps for WgpuBackend {
 
         self.build_missing_pipelines(&cmd_keys);
 
+        // Build per-command storage buffer bind groups for GPU skinning.
+        let storage_bind_groups: Vec<Option<wgpu::BindGroup>> = self
+            .draw_commands
+            .iter()
+            .map(|cmd| {
+                cmd.storage_buffer.and_then(|buf_handle| {
+                    self.buffers.get(&buf_handle).map(|meta| {
+                        self.device
+                            .create_bind_group(&wgpu::BindGroupDescriptor {
+                                label: Some("skinning-storage-bg"),
+                                layout: &self.storage_bind_group_layout,
+                                entries: &[wgpu::BindGroupEntry {
+                                    binding: 0,
+                                    resource: meta.buffer.as_entire_binding(),
+                                }],
+                            })
+                    })
+                })
+            })
+            .collect();
+
         let readback = self
             .surface_supports_copy_src
             .then(|| self.prepare_frame_readback());
@@ -110,6 +131,15 @@ impl FrameOps for WgpuBackend {
                     }
                 } else {
                     pass.set_bind_group(1, &self.fallback_tex_bind_group, &[]);
+                }
+
+                // Set storage buffer bind group at group(2) for GPU skinning.
+                if cmd.storage_buffer.is_some() {
+                    if let Some(ref bg) = storage_bind_groups[i] {
+                        pass.set_bind_group(2, bg, &[]);
+                    } else {
+                        pass.set_bind_group(2, &self.fallback_storage_bind_group, &[]);
+                    }
                 }
 
                 if let Some(ib_handle) = cmd.index_buffer {
@@ -277,6 +307,34 @@ impl BufferOps for WgpuBackend {
 
     fn unbind_buffer(&mut self, buffer_type: BufferType) {
         self.unbind_buffer_impl(buffer_type);
+    }
+
+    fn supports_storage_buffers(&self) -> bool {
+        true
+    }
+
+    fn create_storage_buffer(&mut self, data: &[u8]) -> GoudResult<BufferHandle> {
+        self.create_storage_buffer_impl(data)
+    }
+
+    fn update_storage_buffer(
+        &mut self,
+        handle: BufferHandle,
+        offset: usize,
+        data: &[u8],
+    ) -> GoudResult<()> {
+        self.update_storage_buffer_impl(handle, offset, data)
+    }
+
+    fn bind_storage_buffer(&mut self, handle: BufferHandle, _binding: u32) -> GoudResult<()> {
+        // Record the storage buffer handle so subsequent draw commands include
+        // it. The actual bind group is created at end_frame time.
+        self.bound_storage_buffer = Some(handle);
+        Ok(())
+    }
+
+    fn unbind_storage_buffer(&mut self) {
+        self.bound_storage_buffer = None;
     }
 }
 

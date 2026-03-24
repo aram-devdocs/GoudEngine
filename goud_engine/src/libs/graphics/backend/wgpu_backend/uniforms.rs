@@ -51,6 +51,7 @@ impl WgpuBackend {
             cull_face: cmd.cull_face as u8,
             front_face: cmd.front_face as u8,
             vertex_layout_hash: hasher.finish(),
+            has_storage: cmd.storage_buffer.is_some(),
         }
     }
 
@@ -107,6 +108,7 @@ impl WgpuBackend {
             uniform_ring_offset,
             uniform_ring_size,
             draw_type,
+            storage_buffer: self.bound_storage_buffer,
         });
         Ok(())
     }

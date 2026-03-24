@@ -126,6 +126,53 @@ pub(super) fn skinned_vertex_layout() -> VertexLayout {
         ))
 }
 
+/// Build the per-instance layout for instanced skinned rendering:
+/// model_0..model_3 (4 x vec4) + bone_offset (1f) + _pad (3f) + color (vec4) = 88 bytes.
+///
+/// Bone offset is at location 9 (1 float), followed by 3 floats of padding
+/// so that the color vec4 at location 10 starts 16-byte aligned.
+pub(super) fn instanced_skinned_instance_layout() -> VertexLayout {
+    // 4 * 16 (model cols) + 4 (bone_offset) + 12 (pad) + 16 (color) = 96 bytes
+    VertexLayout::new(96)
+        .with_attribute(VertexAttribute::new(
+            5,
+            VertexAttributeType::Float4,
+            0,
+            false,
+        ))
+        .with_attribute(VertexAttribute::new(
+            6,
+            VertexAttributeType::Float4,
+            16,
+            false,
+        ))
+        .with_attribute(VertexAttribute::new(
+            7,
+            VertexAttributeType::Float4,
+            32,
+            false,
+        ))
+        .with_attribute(VertexAttribute::new(
+            8,
+            VertexAttributeType::Float4,
+            48,
+            false,
+        ))
+        .with_attribute(VertexAttribute::new(
+            9,
+            VertexAttributeType::Float,
+            64,
+            false,
+        ))
+        // 3 floats padding at offset 68 (not declared as attribute)
+        .with_attribute(VertexAttribute::new(
+            10,
+            VertexAttributeType::Float4,
+            80,
+            false,
+        ))
+}
+
 /// Build the fullscreen post-process layout: clip pos (2f) + uv (2f).
 pub(super) fn postprocess_vertex_layout() -> VertexLayout {
     VertexLayout::new(16)

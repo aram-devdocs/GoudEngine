@@ -18,11 +18,17 @@ impl Renderer3D {
             return 0;
         }
 
-        // Force standard render path — skinned shader causes instances to disappear.
-        // CPU skinning deforms vertex positions on the CPU and re-uploads each frame.
-        let is_skinned = false;
-        let floats_per_vertex: usize = 8; // pos(3) + normal(3) + uv(2)
         let has_skeleton = model_data.skeleton.is_some();
+        let gpu_skinning = has_skeleton
+            && matches!(
+                self.config.skinning.mode,
+                super::config::SkinningMode::Gpu
+            )
+            && self.backend.supports_storage_buffers();
+        let is_skinned = gpu_skinning;
+        // GPU skinning: 16 floats/vertex (pos+normal+uv+bone_ids+bone_weights).
+        // CPU skinning: 8 floats/vertex (pos+normal+uv); bone data stored separately.
+        let floats_per_vertex: usize = if is_skinned { 16 } else { 8 };
         let mut mesh_object_ids = Vec::new();
         let mut mesh_material_ids = Vec::new();
         let mut bind_pose_vertices: Vec<Vec<f32>> = Vec::new();
@@ -69,8 +75,21 @@ impl Renderer3D {
                     verts.extend_from_slice(&v.normal);
                     verts.extend_from_slice(&v.uv);
                     if has_skeleton {
-                        sub_bi.push(bone_indices.get(vi).copied().unwrap_or([0; 4]));
-                        sub_bw.push(bone_weights.get(vi).copied().unwrap_or([0.0; 4]));
+                        let bi = bone_indices.get(vi).copied().unwrap_or([0; 4]);
+                        let bw = bone_weights.get(vi).copied().unwrap_or([0.0; 4]);
+                        if is_skinned {
+                            // GPU skinning: interleave bone_ids and bone_weights
+                            // as floats in the vertex buffer.
+                            verts.extend_from_slice(&[
+                                bi[0] as f32,
+                                bi[1] as f32,
+                                bi[2] as f32,
+                                bi[3] as f32,
+                            ]);
+                            verts.extend_from_slice(&bw);
+                        }
+                        sub_bi.push(bi);
+                        sub_bw.push(bw);
                     }
                 }
             }
@@ -79,8 +98,9 @@ impl Renderer3D {
                 continue;
             }
 
-            // Use Dynamic usage for skinned models so we can update_buffer each frame.
-            let buffer = if has_skeleton {
+            // GPU skinning: use Static buffer (vertices include bone data, GPU deforms).
+            // CPU skinning: use Dynamic buffer (CPU deforms and re-uploads each frame).
+            let buffer = if has_skeleton && !is_skinned {
                 use crate::libs::graphics::backend::{BufferType, BufferUsage};
                 self.backend
                     .create_buffer(
@@ -265,8 +285,9 @@ impl Renderer3D {
                     None => continue,
                 };
 
-            // Skinned instances need their own dynamic buffer for CPU skinning.
-            let buffer = if has_skeleton {
+            // CPU-skinned instances need their own dynamic buffer for per-frame re-upload.
+            // GPU-skinned instances share the source buffer (GPU deforms via shader).
+            let buffer = if has_skeleton && !source.is_skinned {
                 if let Some(bp) = bind_poses.get(i) {
                     use crate::libs::graphics::backend::{BufferType, BufferUsage};
                     match self.backend.create_buffer(

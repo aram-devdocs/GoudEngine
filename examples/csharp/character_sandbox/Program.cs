@@ -1,9 +1,10 @@
 // Character Sandbox - Demonstrates model loading, skeletal animation,
 // scene management, character movement, and third-person camera.
 //
-// This example loads a glTF (.glb) animated model (the Khronos Fox sample),
-// instantiates several NPCs, and lets the player walk around a lit ground
-// plane with smooth animation transitions.
+// This example loads a glTF (.glb) animated model, instantiates a
+// configurable number of wandering NPCs, and lets the player walk
+// around a lit ground plane with smooth animation transitions.
+// It doubles as a scalable performance benchmark.
 //
 // CONTROLS:
 //   W / S        - Move forward / backward
@@ -12,11 +13,35 @@
 //   Arrow keys   - Rotate camera yaw (left/right) and pitch (up/down)
 //   G            - Toggle debug grid
 //   F            - Toggle fog
+//   = / +        - Spawn 10 more NPCs
+//   -            - Remove 10 NPCs
+//   0-9          - Play animation  0- 9
+//   Shift+0-9    - Play animation 10-19
+//   Ctrl+0-9     - Play animation 20-29
+//   Alt+0-9      - Play animation 30-39
+//   Tab+0-9      - Play animation 40-44
 //   ESC          - Quit
+//
+// CLI:
+//   dotnet run -- --npcs 200
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using GoudEngine;
+
+// ----------------------------------------------------------------
+// NPC state
+// ----------------------------------------------------------------
+struct NpcState
+{
+    public uint modelId;
+    public float x, z;
+    public float facing;
+    public float targetX, targetZ;
+    public float idleTimer;
+    public bool isMoving;
+}
 
 class Program
 {
@@ -53,10 +78,83 @@ class Program
     static float animTransitionTime = 0.25f; // seconds
 
     // ----------------------------------------------------------------
+    // NPC placement bounds (ground plane is 200x200, keep NPCs inside)
+    // ----------------------------------------------------------------
+    static float npcBoundsMin = -95f;
+    static float npcBoundsMax =  95f;
+
+    // ----------------------------------------------------------------
+    // Helpers
+    // ----------------------------------------------------------------
+    static int ParseNpcCount(string[] args, int defaultCount)
+    {
+        for (int i = 0; i < args.Length - 1; i++)
+        {
+            if (args[i] == "--npcs" && int.TryParse(args[i + 1], out int n) && n >= 0)
+                return n;
+        }
+        return defaultCount;
+    }
+
+    static string ParseBackend(string[] args, string defaultBackend)
+    {
+        for (int i = 0; i < args.Length - 1; i++)
+        {
+            if (args[i] == "--backend")
+                return args[i + 1].ToLowerInvariant();
+        }
+        return defaultBackend;
+    }
+
+    static NpcState CreateNpc(
+        GoudGame game, uint baseModel, uint sceneId,
+        Random rng, int animCount, int idleAnim, int walkAnim)
+    {
+        NpcState npc = new NpcState();
+
+        npc.modelId = game.InstantiateModel(baseModel);
+        if (npc.modelId == 0)
+            return npc;
+
+        npc.x = (float)(rng.NextDouble() * (npcBoundsMax - npcBoundsMin) + npcBoundsMin);
+        npc.z = (float)(rng.NextDouble() * (npcBoundsMax - npcBoundsMin) + npcBoundsMin);
+        npc.facing = (float)(rng.NextDouble() * 360.0);
+
+        npc.targetX = (float)(rng.NextDouble() * (npcBoundsMax - npcBoundsMin) + npcBoundsMin);
+        npc.targetZ = (float)(rng.NextDouble() * (npcBoundsMax - npcBoundsMin) + npcBoundsMin);
+
+        // Start some NPCs idle, some moving
+        npc.isMoving = rng.NextDouble() > 0.5;
+        npc.idleTimer = npc.isMoving ? 0f : (float)(rng.NextDouble() * 2.0 + 1.0);
+
+        game.SetModelPosition(npc.modelId, npc.x, 0f, npc.z);
+        game.SetModelRotation(npc.modelId, 0f, npc.facing, 0f);
+        game.SetModelScale(npc.modelId, 1f, 1f, 1f);
+        game.AddModelToScene(sceneId, npc.modelId);
+
+        // Random starting animation from the available set
+        int startAnim = rng.Next(animCount);
+        game.PlayAnimation(npc.modelId, startAnim, true);
+
+        // Random speed multiplier 0.7 - 1.3
+        float speedMul = 0.7f + (float)(rng.NextDouble() * 0.6);
+        game.SetAnimationSpeed(npc.modelId, speedMul);
+
+        // If moving, switch to walk animation
+        if (npc.isMoving)
+            game.TransitionAnimation(npc.modelId, walkAnim, 0.3f);
+
+        return npc;
+    }
+
+    // ----------------------------------------------------------------
     // Entry point
     // ----------------------------------------------------------------
     static void Main(string[] args)
     {
+        int initialNpcCount = ParseNpcCount(args, 50);
+        string backendName = ParseBackend(args, "wgpu");
+
         Console.WriteLine("========================================");
         Console.WriteLine("  CHARACTER SANDBOX - GoudEngine");
         Console.WriteLine("========================================");
@@ -66,6 +164,8 @@ class Program
         Console.WriteLine("  Arrows     Camera yaw & pitch");
         Console.WriteLine("  G          Toggle grid");
         Console.WriteLine("  F          Toggle fog");
+        Console.WriteLine("  =/+        Spawn 10 more NPCs");
+        Console.WriteLine("  -          Remove 10 NPCs");
         Console.WriteLine("  0-9        Play animation  0- 9");
         Console.WriteLine("  Shift+0-9  Play animation 10-19");
         Console.WriteLine("  Ctrl+0-9   Play animation 20-29");
@@ -73,10 +173,28 @@ class Program
         Console.WriteLine("  Tab+0-9    Play animation 40-44");
         Console.WriteLine("  ESC        Quit");
         Console.WriteLine("========================================");
+        Console.WriteLine($"  Initial NPCs: {initialNpcCount}");
+        Console.WriteLine($"  Backend: {backendName}");
+        Console.WriteLine("  Usage: dotnet run -- --npcs 200 --backend opengl");
         Console.WriteLine();
 
-        // --- Window ---
-        using var game = new GoudGame(1280, 720, "Character Sandbox");
+        // --- Window (backend selectable via --backend wgpu|opengl) ---
+        var config = new EngineConfig()
+            .SetSize(1280, 720)
+            .SetTitle("Character Sandbox");
+        if (backendName == "opengl")
+        {
+            config.SetRenderBackend(RenderBackendKind.OpenGlLegacy);
+            config.SetWindowBackend(WindowBackendKind.GlfwLegacy);
+            Console.WriteLine("Using OpenGL 3.3 + GLFW backend");
+        }
+        else
+        {
+            config.SetRenderBackend(RenderBackendKind.Wgpu);
+            config.SetWindowBackend(WindowBackendKind.Winit);
+            Console.WriteLine("Using wgpu (Vulkan/Metal/DX12) + winit backend");
+        }
+        using var game = config.Build();
 
         // --- Scene setup ---
         uint sceneId = game.CreateScene("main");
@@ -87,31 +205,31 @@ class Program
         game.ConfigureFog(enabled: true, r: 0.1f, g: 0.1f, b: 0.15f, density: 0.015f);
 
         // --- Grid (optional debug aid) ---
-        game.ConfigureGrid(enabled: true, size: 40.0f, divisions: 40);
+        game.ConfigureGrid(enabled: true, size: 200.0f, divisions: 100);
 
         // --- Lights ---
         // Point light above the scene (sun-like)
         uint sunLight = game.AddLight(
             0,                          // type: point
-            0f, 15f, 0f,               // position: directly above center
+            0f, 25f, 0f,               // position: directly above center
             0f, -1f, 0f,               // direction
             1.0f, 0.95f, 0.85f,        // warm white color
-            2.0f, 50f, 0f              // intensity, range, spotAngle
+            2.0f, 120f, 0f             // intensity, range, spotAngle
         );
         game.AddLightToScene(sceneId, sunLight);
 
         // Fill light on the opposite side
         uint fillLight = game.AddLight(
             0,
-            -8f, 8f, 8f,
+            -20f, 15f, 20f,
             0f, -1f, 0f,
             0.3f, 0.4f, 0.6f,          // cool blue fill
-            1.0f, 30f, 0f
+            1.0f, 80f, 0f
         );
         game.AddLightToScene(sceneId, fillLight);
 
-        // --- Ground plane ---
-        uint groundPlane = game.CreatePlane(0, 60f, 60f);
+        // --- Ground plane (200x200) ---
+        uint groundPlane = game.CreatePlane(0, 200f, 200f);
         game.SetObjectPosition(groundPlane, 0f, 0f, 0f);
 
         // Give the ground a greenish material
@@ -182,42 +300,23 @@ class Program
         game.PlayAnimation(baseModel, idleAnim, true);
 
         // --- NPC characters ---
-        // Place 3 NPCs at different positions, each playing idle.
-        uint[] npcs = new uint[3];
-        float[,] npcPositions = new float[,]
-        {
-            {  8f, 0f,  5f },
-            { -6f, 0f,  9f },
-            {  3f, 0f, -7f },
-        };
-        float[] npcFacings = { 45f, -90f, 180f };
+        Random rng = new Random(42); // fixed seed for reproducibility
+        List<NpcState> npcs = new List<NpcState>();
 
-        for (int i = 0; i < npcs.Length; i++)
+        for (int i = 0; i < initialNpcCount; i++)
         {
-            npcs[i] = game.InstantiateModel(baseModel);
-            if (npcs[i] == 0)
-            {
+            NpcState npc = CreateNpc(game, baseModel, sceneId, rng, animCount, idleAnim, walkAnim);
+            if (npc.modelId != 0)
+                npcs.Add(npc);
+            else
                 Console.WriteLine($"WARNING: Failed to instantiate NPC {i}");
-                continue;
-            }
-
-            game.SetModelPosition(npcs[i], npcPositions[i, 0], npcPositions[i, 1], npcPositions[i, 2]);
-            game.SetModelRotation(npcs[i], 0f, npcFacings[i], 0f);
-            game.SetModelScale(npcs[i], 1f, 1f, 1f);
-            game.AddModelToScene(sceneId, npcs[i]);
-
-            // Each NPC loops idle
-            game.PlayAnimation(npcs[i], idleAnim, true);
-            // Slight speed variation so they are not perfectly in sync
-            game.SetAnimationSpeed(npcs[i], 0.85f + 0.1f * i);
-
-            Console.WriteLine($"NPC {i} instantiated (id={npcs[i]}) at ({npcPositions[i, 0]}, {npcPositions[i, 1]}, {npcPositions[i, 2]})");
         }
+        Console.WriteLine($"Spawned {npcs.Count} NPCs");
 
         // --- Decorative cubes (landmarks) ---
         uint pillarMat = game.CreateMaterial(0, 0.6f, 0.6f, 0.6f, 1f, 32f, 0f, 0.5f, 0.2f);
-        float[] pillarX = { 15f, -15f, 15f, -15f };
-        float[] pillarZ = { 15f, 15f, -15f, -15f };
+        float[] pillarX = { 40f, -40f, 40f, -40f };
+        float[] pillarZ = { 40f, 40f, -40f, -40f };
         for (int i = 0; i < pillarX.Length; i++)
         {
             uint pillar = game.CreateCube(0, 1f, 4f, 1f);
@@ -233,6 +332,9 @@ class Program
         int frameCount = 0;
         float fpsTimer = 0f;
         float lastFps  = 0f;
+
+        float npcWalkSpeed = 3f; // NPCs walk slightly slower than the player
+        float npcRotSpeed  = 360f; // degrees per second for NPC turning
 
         // --- Game loop ---
         while (!game.ShouldClose())
@@ -260,6 +362,34 @@ class Program
                 fogEnabled = !fogEnabled;
                 game.SetFogEnabled(fogEnabled);
                 Console.WriteLine($"Fog {(fogEnabled ? "enabled" : "disabled")}");
+            }
+
+            // --- Dynamic NPC spawning / removal ---
+            if (game.IsKeyJustPressed(Keys.Equal))
+            {
+                int before = npcs.Count;
+                for (int i = 0; i < 10; i++)
+                {
+                    NpcState npc = CreateNpc(game, baseModel, sceneId, rng, animCount, idleAnim, walkAnim);
+                    if (npc.modelId != 0)
+                        npcs.Add(npc);
+                }
+                Console.WriteLine($"Spawned NPCs: {before} -> {npcs.Count}");
+            }
+            if (game.IsKeyJustPressed(Keys.Minus))
+            {
+                int toRemove = Math.Min(10, npcs.Count);
+                if (toRemove > 0)
+                {
+                    int before = npcs.Count;
+                    for (int i = 0; i < toRemove; i++)
+                    {
+                        int last = npcs.Count - 1;
+                        game.DestroyModel(npcs[last].modelId);
+                        npcs.RemoveAt(last);
+                    }
+                    Console.WriteLine($"Removed NPCs: {before} -> {npcs.Count}");
+                }
             }
 
             // --- Direct animation playback (number keys) ---
@@ -388,6 +518,65 @@ class Program
                 currentAnim = desired;
             }
 
+            // --- Update NPC wander AI ---
+            for (int i = 0; i < npcs.Count; i++)
+            {
+                NpcState npc = npcs[i];
+
+                if (npc.isMoving)
+                {
+                    // Move toward target
+                    float dx = npc.targetX - npc.x;
+                    float dz = npc.targetZ - npc.z;
+                    float dist = MathF.Sqrt(dx * dx + dz * dz);
+
+                    if (dist < 1.0f)
+                    {
+                        // Arrived at target - idle for 1-3 seconds
+                        npc.isMoving = false;
+                        npc.idleTimer = 1.0f + (float)(rng.NextDouble() * 2.0);
+                        game.TransitionAnimation(npc.modelId, idleAnim, 0.3f);
+                    }
+                    else
+                    {
+                        // Normalize direction and move
+                        float ndx = dx / dist;
+                        float ndz = dz / dist;
+
+                        npc.x += ndx * npcWalkSpeed * dt;
+                        npc.z += ndz * npcWalkSpeed * dt;
+
+                        // Face movement direction (smooth rotation)
+                        float targetFacing = MathF.Atan2(ndx, ndz) * 180f / MathF.PI;
+                        float faceDiff = targetFacing - npc.facing;
+                        while (faceDiff > 180f)  faceDiff -= 360f;
+                        while (faceDiff < -180f) faceDiff += 360f;
+                        if (MathF.Abs(faceDiff) < npcRotSpeed * dt)
+                            npc.facing = targetFacing;
+                        else
+                            npc.facing += MathF.Sign(faceDiff) * npcRotSpeed * dt;
+
+                        game.SetModelPosition(npc.modelId, npc.x, 0f, npc.z);
+                        game.SetModelRotation(npc.modelId, 0f, npc.facing, 0f);
+                    }
+                }
+                else
+                {
+                    // Idling - count down timer
+                    npc.idleTimer -= dt;
+                    if (npc.idleTimer <= 0f)
+                    {
+                        // Pick new random target and start walking
+                        npc.targetX = (float)(rng.NextDouble() * (npcBoundsMax - npcBoundsMin) + npcBoundsMin);
+                        npc.targetZ = (float)(rng.NextDouble() * (npcBoundsMax - npcBoundsMin) + npcBoundsMin);
+                        npc.isMoving = true;
+                        game.TransitionAnimation(npc.modelId, walkAnim, 0.3f);
+                    }
+                }
+
+                npcs[i] = npc; // write back (struct copy)
+            }
+
             // --- Advance all animations ---
             game.UpdateAnimations(dt);
 
@@ -417,22 +606,22 @@ class Program
             game.Render3D();
             game.EndFrame();
 
-            // --- FPS counter ---
+            // --- FPS counter & stats overlay ---
             frameCount++;
             fpsTimer += dt;
             if (fpsTimer >= 1.0f)
             {
                 lastFps = frameCount / fpsTimer;
-                Console.Write($"\rFPS: {lastFps:F1}  Player: ({playerX:F1}, {playerZ:F1})  Anim: {currentAnim}   ");
+                Console.Write($"\rFPS: {lastFps:F1}  NPCs: {npcs.Count}  Player: ({playerX:F1}, {playerZ:F1})  Anim: {currentAnim}   ");
                 frameCount = 0;
                 fpsTimer = 0f;
             }
         }
 
         // --- Cleanup ---
-        for (int i = 0; i < npcs.Length; i++)
+        for (int i = 0; i < npcs.Count; i++)
         {
-            if (npcs[i] != 0) game.DestroyModel(npcs[i]);
+            if (npcs[i].modelId != 0) game.DestroyModel(npcs[i].modelId);
         }
         game.DestroyModel(baseModel);
 
