@@ -2,6 +2,7 @@
 
 use super::animation::AnimationPlayer;
 use super::core::Renderer3D;
+use crate::core::types::{KeyframeAnimation, SkeletonData};
 
 impl Renderer3D {
     /// Advance all animation players by `dt` seconds and update bone matrices.
@@ -9,26 +10,32 @@ impl Renderer3D {
         // Collect model IDs and instance IDs that have animation players.
         let player_ids: Vec<u32> = self.animation_players.keys().copied().collect();
 
-        for id in player_ids {
-            // Resolve skeleton and animations from the source model.
-            let (skeleton, animations) = if let Some(model) = self.models.get(&id) {
-                (model.skeleton.as_ref(), &model.animations)
-            } else if let Some(inst) = self.model_instances.get(&id) {
-                if let Some(model) = self.models.get(&inst.source_model_id) {
-                    (model.skeleton.as_ref(), &model.animations)
-                } else {
-                    continue;
-                }
-            } else {
-                continue;
-            };
+        // Collect (player_id, skeleton_ptr, animations_ptr) to avoid
+        // cloning animation data every frame. This is safe because we only
+        // mutate animation_players, never models, during the update loop.
+        let update_list: Vec<(u32, *const SkeletonData, *const Vec<KeyframeAnimation>)> =
+            player_ids
+                .iter()
+                .filter_map(|&id| {
+                    let model = if self.models.contains_key(&id) {
+                        self.models.get(&id)
+                    } else {
+                        self.model_instances
+                            .get(&id)
+                            .and_then(|inst| self.models.get(&inst.source_model_id))
+                    }?;
+                    let skel = model.skeleton.as_ref()?;
+                    Some((id, skel as *const SkeletonData, &model.animations as *const _))
+                })
+                .collect();
 
-            if let Some(skeleton) = skeleton {
-                // Clone animations to avoid borrow conflicts with animation_players.
-                let anims_cloned = animations.clone();
-                if let Some(player) = self.animation_players.get_mut(&id) {
-                    player.update(dt, skeleton, &anims_cloned);
-                }
+        for (player_id, skel_ptr, anims_ptr) in update_list {
+            if let Some(player) = self.animation_players.get_mut(&player_id) {
+                // SAFETY: models HashMap is not mutated during this loop.
+                // Only animation_players is mutated via get_mut.
+                let skeleton = unsafe { &*skel_ptr };
+                let animations = unsafe { &*anims_ptr };
+                player.update(dt, skeleton, animations);
             }
         }
     }
