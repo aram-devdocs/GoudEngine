@@ -128,6 +128,8 @@ def gen_diagnostic():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
+        "declare const require: any;",
+        "",
         "/**",
         f" * {diag['doc']}",
         " *",
