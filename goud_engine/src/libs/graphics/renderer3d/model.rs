@@ -1,6 +1,6 @@
 //! Model and model instance types for the 3D renderer.
 
-use super::animation::BonePropertyNames;
+use super::animation::{BoneChannelMap, BonePropertyNames};
 use crate::core::types::{KeyframeAnimation, MeshBounds, SkeletonData};
 
 /// A loaded 3D model consisting of one or more sub-mesh objects and materials.
@@ -43,6 +43,12 @@ pub(in crate::libs::graphics::renderer3d) struct Model3D {
     /// Built once at model load time to avoid per-frame `format!()` allocations
     /// in `compute_bone_matrices`.
     pub cached_bone_prop_names: Vec<BonePropertyNames>,
+    /// Pre-computed channel index maps for each animation clip.
+    ///
+    /// One entry per animation in `animations`. Built at model load time so
+    /// that per-frame animation sampling uses direct array indexing instead of
+    /// string-keyed HashMap lookups. See [`BoneChannelMap`].
+    pub bone_channel_maps: Vec<BoneChannelMap>,
 }
 
 /// An instantiated copy of a [`Model3D`] with its own GPU resources.

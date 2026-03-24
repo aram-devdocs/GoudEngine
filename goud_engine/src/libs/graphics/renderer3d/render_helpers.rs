@@ -656,6 +656,13 @@ impl Renderer3D {
             .set_uniform_int(uniforms.shadows_enabled, i32::from(shadows_enabled));
         self.backend
             .set_uniform_float(uniforms.shadow_bias, self.shadow_bias);
+        let texel = if self.shadow_map_size > 0 {
+            1.0 / self.shadow_map_size as f32
+        } else {
+            0.0
+        };
+        self.backend
+            .set_uniform_vec2(uniforms.shadow_texel_size, texel, texel);
 
         if let Some(l) = lights.iter().find(|l| l.enabled) {
             let d = if l.light_type == super::types::LightType::Directional {

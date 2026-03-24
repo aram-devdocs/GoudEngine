@@ -1,6 +1,8 @@
 //! Animation-related methods for [`Renderer3D`].
 
-use super::animation::AnimationPlayer;
+use std::collections::HashMap;
+
+use super::animation::{AnimationPlayer, BoneChannelMap};
 use super::core::Renderer3D;
 use super::model::Model3D;
 use crate::core::types::{KeyframeAnimation, SkeletonData};
@@ -56,43 +58,159 @@ impl Renderer3D {
 
     /// Advance all animation players by `dt` seconds, compute bone matrices,
     /// and apply CPU skinning to deform vertex buffers.
+    ///
+    /// Includes three performance optimizations:
+    /// - **G3 (BoneChannelMap)**: Uses pre-computed channel index maps to
+    ///   eliminate per-frame string HashMap lookups during animation sampling.
+    /// - **G5 (Shared evaluation)**: Groups players with identical animation
+    ///   state (same source model, clip, quantized time) and computes bone
+    ///   matrices once per group.
+    /// - **G6 (Animation LOD)**: Skips or half-rates animation updates for
+    ///   models that are far from the camera.
     pub fn update_animations(&mut self, dt: f32) {
         // Collect model IDs and instance IDs that have animation players.
         let player_ids: Vec<u32> = self.animation_players.keys().copied().collect();
 
         // Phase 1: advance animation time and compute bone matrices.
         //
-        // We collect raw pointers to skeleton/animation/bone-name data to avoid
-        // cloning.
+        // We collect raw pointers to skeleton/animation/channel-map data to
+        // avoid cloning.
         // SAFETY: the models HashMap is not mutated during this loop -- only
         // animation_players is mutated via get_mut.
         type UpdateItem = (
-            u32,
-            *const SkeletonData,
-            *const Vec<KeyframeAnimation>,
-            *const Vec<super::animation::BonePropertyNames>,
+            u32,                                // player ID
+            u32,                                // source model ID (for shared eval grouping)
+            *const SkeletonData,                // skeleton data
+            *const Vec<KeyframeAnimation>,      // animations
+            *const Vec<BoneChannelMap>,          // channel maps (fast path)
         );
         let update_list: Vec<UpdateItem> = player_ids
             .iter()
             .filter_map(|&id| {
-                let model = self.resolve_source_model(id)?;
+                let source_id = if self.models.contains_key(&id) {
+                    id
+                } else {
+                    self.model_instances.get(&id)?.source_model_id
+                };
+                let model = self.models.get(&source_id)?;
                 let skel = model.skeleton.as_ref()?;
                 Some((
                     id,
+                    source_id,
                     skel as *const SkeletonData,
                     &model.animations as *const _,
-                    &model.cached_bone_prop_names as *const _,
+                    &model.bone_channel_maps as *const _,
                 ))
             })
             .collect();
 
-        for &(player_id, skel_ptr, anims_ptr, names_ptr) in &update_list {
+        // -- G6: Animation LOD --
+        // Determine which players to skip or half-rate based on camera distance.
+        let lod_enabled = self.config.skinning.animation_lod_enabled;
+        let lod_dist = self.config.skinning.animation_lod_distance;
+        let lod_skip_dist = self.config.skinning.animation_lod_skip_distance;
+        let camera_pos = self.camera.position;
+        let frame_counter = self.frame_counter;
+
+        // -- G5: Shared Animation Evaluation cache --
+        // Key: (source_model_id, clip_index, quantized_time_bits)
+        // Value: computed bone matrices
+        let shared_eval = self.config.skinning.shared_animation_eval;
+        let mut bone_cache: HashMap<(u32, usize, u32), Vec<[f32; 16]>> = HashMap::new();
+
+        for &(player_id, source_model_id, skel_ptr, anims_ptr, maps_ptr) in &update_list {
+            // -- G6: LOD distance check --
+            if lod_enabled {
+                // Get the position of this model/instance's first mesh object.
+                let obj_pos = self
+                    .models
+                    .get(&player_id)
+                    .map(|m| &m.mesh_object_ids)
+                    .or_else(|| {
+                        self.model_instances
+                            .get(&player_id)
+                            .map(|i| &i.mesh_object_ids)
+                    })
+                    .and_then(|ids| ids.first())
+                    .and_then(|&oid| self.objects.get(&oid))
+                    .map(|obj| obj.position);
+
+                if let Some(pos) = obj_pos {
+                    let dx = camera_pos.x - pos.x;
+                    let dy = camera_pos.y - pos.y;
+                    let dz = camera_pos.z - pos.z;
+                    let dist = (dx * dx + dy * dy + dz * dz).sqrt();
+
+                    if dist > lod_skip_dist {
+                        // Freeze: keep last pose, don't update at all.
+                        continue;
+                    }
+                    if dist > lod_dist {
+                        // Half rate: skip every other frame using player_id parity.
+                        if !frame_counter.wrapping_add(player_id as u64).is_multiple_of(2) {
+                            continue;
+                        }
+                    }
+                }
+            }
+
             if let Some(player) = self.animation_players.get_mut(&player_id) {
                 // SAFETY: models HashMap is not mutated during this loop.
                 let skeleton = unsafe { &*skel_ptr };
                 let animations = unsafe { &*anims_ptr };
-                let prop_names = unsafe { &*names_ptr };
-                player.update_with_names(dt, skeleton, animations, prop_names);
+                let channel_maps = unsafe { &*maps_ptr };
+
+                // -- G5: Shared evaluation --
+                // Check if we can reuse a previously computed result.
+                if shared_eval && player.transition.is_none() && player.blend_factor <= f32::EPSILON
+                {
+                    if let Some(ref state) = player.primary {
+                        if state.playing {
+                            let quantized_time = (state.time * 30.0).round() / 30.0;
+                            let cache_key = (
+                                source_model_id,
+                                state.clip_index,
+                                quantized_time.to_bits(),
+                            );
+
+                            if let Some(cached) = bone_cache.get(&cache_key) {
+                                // Advance time without recomputing matrices.
+                                super::animation::advance_state_pub(
+                                    &mut player.primary,
+                                    dt,
+                                    animations,
+                                );
+                                // Copy cached bone matrices.
+                                let copy_len = cached.len().min(player.bone_matrices.len());
+                                player.bone_matrices[..copy_len]
+                                    .copy_from_slice(&cached[..copy_len]);
+                                continue;
+                            }
+                        }
+                    }
+                }
+
+                // Use the fast channel-map path (G3).
+                if !channel_maps.is_empty() {
+                    player.update_with_channel_maps(dt, skeleton, animations, channel_maps);
+                } else {
+                    // Fallback to string-based path (should not happen if model
+                    // was loaded through load_model, but handle gracefully).
+                    player.update(dt, skeleton, animations);
+                }
+
+                // -- G5: Cache the result for shared eval --
+                if shared_eval && player.transition.is_none() && player.blend_factor <= f32::EPSILON
+                {
+                    if let Some(ref state) = player.primary {
+                        let quantized_time = (state.time * 30.0).round() / 30.0;
+                        let cache_key =
+                            (source_model_id, state.clip_index, quantized_time.to_bits());
+                        bone_cache
+                            .entry(cache_key)
+                            .or_insert_with(|| player.bone_matrices.clone());
+                    }
+                }
             }
         }
 
