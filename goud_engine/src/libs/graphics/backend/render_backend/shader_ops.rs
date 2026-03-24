@@ -11,8 +11,8 @@ pub trait ShaderOps {
     /// Compiles and links a shader program from vertex and fragment shader sources.
     ///
     /// # Arguments
-    /// * `vertex_src` - GLSL vertex shader source code
-    /// * `fragment_src` - GLSL fragment shader source code
+    /// * `vertex_src` - Vertex shader source code (GLSL or WGSL depending on backend)
+    /// * `fragment_src` - Fragment shader source code (GLSL or WGSL depending on backend)
     ///
     /// # Returns
     /// A handle to the compiled shader program, or an error if compilation/linking failed.

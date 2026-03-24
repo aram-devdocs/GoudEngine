@@ -1,5 +1,5 @@
 use crate::libs::graphics::backend::types::ShaderHandle;
-use crate::libs::graphics::backend::RenderBackend;
+use crate::libs::graphics::backend::{RenderBackend, ShaderLanguage};
 
 const TEXT_VERTEX_SHADER: &str = r#"#version 330 core
 layout (location = 0) in vec2 a_position;
@@ -92,11 +92,9 @@ pub(crate) fn ensure_shader(
         *shader_slot = None;
     }
 
-    let use_wgpu_shaders = backend.info().name == "wgpu";
-    let (vertex_shader, fragment_shader) = if use_wgpu_shaders {
-        (TEXT_VERTEX_SHADER_WGSL, TEXT_FRAGMENT_SHADER_WGSL)
-    } else {
-        (TEXT_VERTEX_SHADER, TEXT_FRAGMENT_SHADER)
+    let (vertex_shader, fragment_shader) = match backend.shader_language() {
+        ShaderLanguage::Wgsl => (TEXT_VERTEX_SHADER_WGSL, TEXT_FRAGMENT_SHADER_WGSL),
+        ShaderLanguage::Glsl => (TEXT_VERTEX_SHADER, TEXT_FRAGMENT_SHADER),
     };
 
     let shader = backend

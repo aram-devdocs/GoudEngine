@@ -1,7 +1,7 @@
 //! Unit tests for the graphics backend module.
 
 use super::blend::{BlendFactor, CullFace};
-use super::capabilities::{BackendCapabilities, BackendInfo};
+use super::capabilities::{BackendCapabilities, BackendInfo, ShaderLanguage};
 
 #[test]
 fn test_backend_capabilities_default() {
@@ -28,6 +28,7 @@ fn test_backend_info_clone() {
         vendor: "Test".to_string(),
         renderer: "Test Renderer".to_string(),
         capabilities: BackendCapabilities::default(),
+        shader_language: ShaderLanguage::Glsl,
     };
     let info2 = info.clone();
     assert_eq!(info, info2);

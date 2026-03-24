@@ -63,10 +63,19 @@ impl Default for BackendCapabilities {
     }
 }
 
+/// The shading language accepted by a render backend.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ShaderLanguage {
+    /// OpenGL Shading Language (GLSL 330 core and above).
+    Glsl,
+    /// WebGPU Shading Language (WGSL).
+    Wgsl,
+}
+
 /// Information about the render backend implementation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BackendInfo {
-    /// Backend name (e.g., "OpenGL", "Vulkan", "Metal")
+    /// Backend name (e.g., "OpenGL", "wgpu", "Metal")
     pub name: &'static str,
 
     /// Backend version string (e.g., "OpenGL 3.3 Core")
@@ -80,4 +89,7 @@ pub struct BackendInfo {
 
     /// Supported capabilities
     pub capabilities: BackendCapabilities,
+
+    /// The shading language this backend expects.
+    pub shader_language: ShaderLanguage,
 }

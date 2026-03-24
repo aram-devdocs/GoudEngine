@@ -15,7 +15,7 @@ use crate::libs::graphics::backend::types::{
     VertexAttribute, VertexAttributeType, VertexLayout,
 };
 use crate::libs::graphics::backend::{
-    BlendFactor, BufferOps, DrawOps, RenderBackend, ShaderOps, StateOps, TextureOps,
+    BlendFactor, BufferOps, DrawOps, RenderBackend, ShaderLanguage, ShaderOps, StateOps, TextureOps,
 };
 
 use super::super::immediate::get_coordinate_origin;
@@ -147,6 +147,58 @@ out vec4 FragColor;
 
 void main() {
     FragColor = texture(u_texture, v_texcoord) * v_color;
+}
+"#;
+
+// ============================================================================
+// WGSL batch shader sources (wgpu backend)
+// ============================================================================
+
+const BATCH_VERTEX_SHADER_WGSL: &str = r#"
+struct Uniforms {
+    u_viewport: vec2<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
+struct VertexInput {
+    @location(0) a_position: vec2<f32>,
+    @location(1) a_texcoord: vec2<f32>,
+    @location(2) a_color: vec4<f32>,
+}
+
+struct VertexOutput {
+    @builtin(position) position: vec4<f32>,
+    @location(0) v_texcoord: vec2<f32>,
+    @location(1) v_color: vec4<f32>,
+}
+
+@vertex
+fn main(in: VertexInput) -> VertexOutput {
+    let safe_viewport = max(uniforms.u_viewport, vec2<f32>(1.0, 1.0));
+    let ndc_x = (in.a_position.x / safe_viewport.x) * 2.0 - 1.0;
+    let ndc_y = 1.0 - (in.a_position.y / safe_viewport.y) * 2.0;
+
+    var out: VertexOutput;
+    out.position = vec4<f32>(ndc_x, ndc_y, 0.0, 1.0);
+    out.v_texcoord = in.a_texcoord;
+    out.v_color = in.a_color;
+    return out;
+}
+"#;
+
+const BATCH_FRAGMENT_SHADER_WGSL: &str = r#"
+struct Uniforms {
+    u_viewport: vec2<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+@group(1) @binding(0) var u_texture: texture_2d<f32>;
+@group(1) @binding(1) var u_sampler: sampler;
+
+@fragment
+fn main(@location(0) v_texcoord: vec2<f32>, @location(1) v_color: vec4<f32>) -> @location(0) vec4<f32> {
+    return textureSample(u_texture, u_sampler, v_texcoord) * v_color;
 }
 "#;
 
@@ -311,7 +363,11 @@ pub unsafe extern "C" fn goud_renderer_draw_sprite_batch(
         let needs_init = BATCH_STATE.with(|cell| !cell.borrow().contains_key(&context_key));
 
         if needs_init {
-            let shader = backend.create_shader(BATCH_VERTEX_SHADER, BATCH_FRAGMENT_SHADER)?;
+            let (vert_src, frag_src) = match backend.shader_language() {
+                ShaderLanguage::Wgsl => (BATCH_VERTEX_SHADER_WGSL, BATCH_FRAGMENT_SHADER_WGSL),
+                ShaderLanguage::Glsl => (BATCH_VERTEX_SHADER, BATCH_FRAGMENT_SHADER),
+            };
+            let shader = backend.create_shader(vert_src, frag_src)?;
             let u_viewport = backend
                 .get_uniform_location(shader, "u_viewport")
                 .unwrap_or(-1);

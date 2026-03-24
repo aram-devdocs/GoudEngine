@@ -30,7 +30,7 @@ pub use shader_ops::ShaderOps;
 pub use state_ops::StateOps;
 pub use texture_ops::TextureOps;
 
-use super::capabilities::{BackendCapabilities, BackendInfo};
+use super::capabilities::{BackendCapabilities, BackendInfo, ShaderLanguage};
 
 /// Main render backend trait abstracting graphics operations.
 ///
@@ -98,6 +98,11 @@ pub trait RenderBackend:
     /// Returns the capabilities of this backend.
     fn capabilities(&self) -> &BackendCapabilities {
         &self.info().capabilities
+    }
+
+    /// Returns the shading language accepted by this backend.
+    fn shader_language(&self) -> ShaderLanguage {
+        self.info().shader_language
     }
 }
 

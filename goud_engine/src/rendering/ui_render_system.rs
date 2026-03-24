@@ -16,7 +16,7 @@ use crate::libs::graphics::backend::types::{
     BufferHandle, BufferType, BufferUsage, PrimitiveTopology, ShaderHandle, TextureFilter,
     TextureFormat as BackendTextureFormat, TextureHandle, TextureWrap,
 };
-use crate::libs::graphics::backend::RenderBackend;
+use crate::libs::graphics::backend::{RenderBackend, ShaderLanguage};
 use crate::rendering::sprite_batch::types::SpriteVertex;
 use crate::rendering::text::{DirectTextDrawRequest, TextRenderStats, TextRenderSystem};
 use crate::ui::UiRenderCommand;
@@ -77,9 +77,10 @@ out vec2 v_tex_coord;
 out vec4 v_color;
 
 void main() {
+    vec2 safe_viewport = max(u_viewport, vec2(1.0, 1.0));
     vec2 ndc;
-    ndc.x = (a_position.x / u_viewport.x) * 2.0 - 1.0;
-    ndc.y = 1.0 - (a_position.y / u_viewport.y) * 2.0;
+    ndc.x = (a_position.x / safe_viewport.x) * 2.0 - 1.0;
+    ndc.y = 1.0 - (a_position.y / safe_viewport.y) * 2.0;
     gl_Position = vec4(ndc, 0.0, 1.0);
     v_tex_coord = a_tex_coord;
     v_color = a_color;
@@ -95,6 +96,54 @@ out vec4 FragColor;
 
 void main() {
     FragColor = texture(u_texture, v_tex_coord) * v_color;
+}
+"#;
+
+    const UI_VERTEX_SHADER_WGSL: &str = r#"
+struct Uniforms {
+    u_viewport: vec2<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
+struct VertexInput {
+    @location(0) a_position: vec2<f32>,
+    @location(1) a_tex_coord: vec2<f32>,
+    @location(2) a_color: vec4<f32>,
+}
+
+struct VertexOutput {
+    @builtin(position) position: vec4<f32>,
+    @location(0) v_tex_coord: vec2<f32>,
+    @location(1) v_color: vec4<f32>,
+}
+
+@vertex
+fn main(in: VertexInput) -> VertexOutput {
+    let safe_viewport = max(uniforms.u_viewport, vec2<f32>(1.0, 1.0));
+    let ndc_x = (in.a_position.x / safe_viewport.x) * 2.0 - 1.0;
+    let ndc_y = 1.0 - (in.a_position.y / safe_viewport.y) * 2.0;
+
+    var out: VertexOutput;
+    out.position = vec4<f32>(ndc_x, ndc_y, 0.0, 1.0);
+    out.v_tex_coord = in.a_tex_coord;
+    out.v_color = in.a_color;
+    return out;
+}
+"#;
+
+    const UI_FRAGMENT_SHADER_WGSL: &str = r#"
+struct Uniforms {
+    u_viewport: vec2<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+@group(1) @binding(0) var u_texture: texture_2d<f32>;
+@group(1) @binding(1) var u_sampler: sampler;
+
+@fragment
+fn main(@location(0) v_tex_coord: vec2<f32>, @location(1) v_color: vec4<f32>) -> @location(0) vec4<f32> {
+    return textureSample(u_texture, u_sampler, v_tex_coord) * v_color;
 }
 "#;
 
@@ -286,11 +335,13 @@ void main() {
             self.quad_shader = None;
         }
 
-        let shader = backend
-            .create_shader(Self::UI_VERTEX_SHADER, Self::UI_FRAGMENT_SHADER)
-            .map_err(|e| {
-                GoudError::ShaderCompilationFailed(format!("ui shader creation failed: {e}"))
-            })?;
+        let (vert_src, frag_src) = match backend.shader_language() {
+            ShaderLanguage::Wgsl => (Self::UI_VERTEX_SHADER_WGSL, Self::UI_FRAGMENT_SHADER_WGSL),
+            ShaderLanguage::Glsl => (Self::UI_VERTEX_SHADER, Self::UI_FRAGMENT_SHADER),
+        };
+        let shader = backend.create_shader(vert_src, frag_src).map_err(|e| {
+            GoudError::ShaderCompilationFailed(format!("ui shader creation failed: {e}"))
+        })?;
         self.quad_shader = Some(shader);
         Ok(shader)
     }
