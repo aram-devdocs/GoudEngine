@@ -103,9 +103,16 @@ pub struct WgpuBackend {
     pipeline_cache: HashMap<PipelineKey, wgpu::RenderPipeline>,
     uniform_bind_group_layout: wgpu::BindGroupLayout,
     texture_bind_group_layout: wgpu::BindGroupLayout,
+    /// Bind group layout for storage buffers (used for GPU skinning bone matrices).
+    storage_bind_group_layout: wgpu::BindGroupLayout,
 
     // Cached 1x1 white fallback texture bind group for draws without a bound texture.
     fallback_tex_bind_group: wgpu::BindGroup,
+    /// Fallback empty storage buffer bind group when no storage buffer is bound.
+    fallback_storage_bind_group: wgpu::BindGroup,
+
+    /// Currently bound storage buffer for the next draw command.
+    bound_storage_buffer: Option<BufferHandle>,
 
     /// Per-frame ring buffer for uniform snapshots.  Draw commands store an
     /// `(offset, size)` into this buffer instead of cloning the full 4KB

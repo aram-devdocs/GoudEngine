@@ -72,4 +72,45 @@ pub trait BufferOps {
 
     /// Unbinds the currently bound buffer of the specified type.
     fn unbind_buffer(&mut self, buffer_type: BufferType);
+
+    // ---- Storage buffer support (GPU skinning, large data) ----
+
+    /// Returns whether this backend supports storage buffers (SSBOs).
+    ///
+    /// When `false`, [`SkinningMode::Gpu`] auto-degrades to
+    /// [`SkinningMode::Cpu`] at renderer initialization.
+    fn supports_storage_buffers(&self) -> bool {
+        false
+    }
+
+    /// Creates a read-only storage buffer for large data (e.g. bone matrices).
+    ///
+    /// Default implementation returns `BackendNotSupported`.
+    fn create_storage_buffer(&mut self, _data: &[u8]) -> GoudResult<BufferHandle> {
+        Err(crate::libs::error::GoudError::BackendNotSupported(
+            "storage buffers".into(),
+        ))
+    }
+
+    /// Updates a storage buffer's contents at the given byte offset.
+    fn update_storage_buffer(
+        &mut self,
+        _handle: BufferHandle,
+        _offset: usize,
+        _data: &[u8],
+    ) -> GoudResult<()> {
+        Err(crate::libs::error::GoudError::BackendNotSupported(
+            "storage buffer update".into(),
+        ))
+    }
+
+    /// Binds a storage buffer to the given binding index for shader access.
+    fn bind_storage_buffer(&mut self, _handle: BufferHandle, _binding: u32) -> GoudResult<()> {
+        Err(crate::libs::error::GoudError::BackendNotSupported(
+            "storage buffer bind".into(),
+        ))
+    }
+
+    /// Unbinds the currently bound storage buffer.
+    fn unbind_storage_buffer(&mut self) {}
 }

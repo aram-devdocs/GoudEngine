@@ -194,6 +194,39 @@ impl WgpuBackend {
             })
         };
 
+        let storage_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("storage_bgl"),
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }],
+            });
+
+        // Create fallback storage buffer bind group (empty 64-byte buffer).
+        let fallback_storage_bind_group = {
+            let buf = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("fallback-storage"),
+                size: 64,
+                usage: wgpu::BufferUsages::STORAGE,
+                mapped_at_creation: false,
+            });
+            device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("fallback-storage-bg"),
+                layout: &storage_bind_group_layout,
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: buf.as_entire_binding(),
+                }],
+            })
+        };
+
         Ok(Self {
             info,
             device,
@@ -235,7 +268,10 @@ impl WgpuBackend {
             pipeline_cache: HashMap::new(),
             uniform_bind_group_layout,
             texture_bind_group_layout,
+            storage_bind_group_layout,
             fallback_tex_bind_group,
+            fallback_storage_bind_group,
+            bound_storage_buffer: None,
             uniform_ring: Vec::with_capacity(UNIFORM_BUFFER_SIZE * 64),
         })
     }

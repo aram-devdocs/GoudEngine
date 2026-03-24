@@ -262,6 +262,11 @@ impl Renderer3D {
 
         // Skinned mesh rendering pass — uses dedicated skinned shader with bone uniforms.
         if !self.skinned_meshes.is_empty() {
+            let gpu_skinning = matches!(
+                self.config.skinning.mode,
+                super::config::SkinningMode::Gpu
+            ) && self.backend.supports_storage_buffers();
+
             let _ = self.backend.bind_shader(self.skinned_shader_handle);
             let skinned_unis = self.skinned_uniforms.clone();
             self.apply_main_uniforms(
@@ -306,11 +311,24 @@ impl Renderer3D {
                 self.backend
                     .set_uniform_vec4(skinned_unis.main.object_color, 0.8, 0.8, 0.8, 1.0);
 
-                // Upload bone matrices as uniform array.
-                for (i, mat) in bone_mats.iter().enumerate() {
-                    if i < skinned_unis.bone_matrices.len() {
-                        self.backend
-                            .set_uniform_mat4(skinned_unis.bone_matrices[i], mat);
+                if gpu_skinning {
+                    let bone_data: &[u8] = bytemuck::cast_slice(bone_mats);
+                    self.ensure_bone_storage_buffer(bone_data.len());
+                    if let Some(storage_handle) = self.bone_storage_buffer {
+                        if let Err(e) =
+                            self.backend
+                                .update_storage_buffer(storage_handle, 0, bone_data)
+                        {
+                            log::error!("Failed to upload bone matrices: {e}");
+                        }
+                        let _ = self.backend.bind_storage_buffer(storage_handle, 0);
+                    }
+                } else {
+                    for (i, mat) in bone_mats.iter().enumerate() {
+                        if i < skinned_unis.bone_matrices.len() {
+                            self.backend
+                                .set_uniform_mat4(skinned_unis.bone_matrices[i], mat);
+                        }
                     }
                 }
 
@@ -320,6 +338,10 @@ impl Renderer3D {
                     .backend
                     .draw_arrays(PrimitiveTopology::Triangles, 0, *vc as u32);
                 self.stats.draw_calls += 1;
+
+                if gpu_skinning {
+                    self.backend.unbind_storage_buffer();
+                }
             }
 
             self.backend.unbind_shader();
@@ -327,8 +349,20 @@ impl Renderer3D {
             let _ = self.backend.bind_shader(self.shader_handle);
         }
 
-        // Skinned model rendering pass
+        // Skinned model rendering pass (single-instance).
         self.render_skinned_models(
+            &view_arr,
+            &proj_arr,
+            &shadow_matrix,
+            shadow_map.is_some(),
+            &eff_fog,
+            &filtered_lights,
+            texture_manager,
+        );
+
+        // Instanced skinned rendering pass: groups instances by source model and
+        // draws all instances of the same model in a single draw call.
+        self.render_instanced_skinned_models(
             &view_arr,
             &proj_arr,
             &shadow_matrix,

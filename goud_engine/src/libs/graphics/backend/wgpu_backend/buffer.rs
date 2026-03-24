@@ -132,4 +132,48 @@ impl WgpuBackend {
             BufferType::Uniform => {}
         }
     }
+
+    // ---- Storage buffer support ----
+
+    pub(super) fn create_storage_buffer_impl(&mut self, data: &[u8]) -> GoudResult<BufferHandle> {
+        let size = if data.is_empty() { 64 } else { data.len() };
+        let buffer = if data.is_empty() {
+            self.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("storage"),
+                size: size as u64,
+                usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            })
+        } else {
+            wgpu::util::DeviceExt::create_buffer_init(
+                &self.device,
+                &wgpu::util::BufferInitDescriptor {
+                    label: Some("storage"),
+                    contents: data,
+                    usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+                },
+            )
+        };
+
+        let handle = self.buffer_allocator.allocate();
+        self.buffers.insert(
+            handle,
+            WgpuBufferMeta {
+                buffer,
+                buffer_type: BufferType::Uniform, // Storage buffers tracked similarly
+                size,
+            },
+        );
+        Ok(handle)
+    }
+
+    pub(super) fn update_storage_buffer_impl(
+        &mut self,
+        handle: BufferHandle,
+        offset: usize,
+        data: &[u8],
+    ) -> GoudResult<()> {
+        // Reuse the same update path as regular buffers.
+        self.update_buffer_impl(handle, offset, data)
+    }
 }

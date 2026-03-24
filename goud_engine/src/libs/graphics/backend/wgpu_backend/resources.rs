@@ -77,6 +77,9 @@ pub(super) struct DrawCommand {
     /// Number of bytes of uniform data stored in the ring buffer.
     pub(super) uniform_ring_size: u32,
     pub(super) draw_type: DrawType,
+    /// Optional storage buffer handle for GPU skinning bone matrices.
+    /// When present, a bind group at `@group(2)` is created and bound.
+    pub(super) storage_buffer: Option<BufferHandle>,
 }
 
 pub(super) enum DrawType {
@@ -140,6 +143,8 @@ pub(super) struct PipelineKey {
     pub(super) cull_face: u8,
     pub(super) front_face: u8,
     pub(super) vertex_layout_hash: u64,
+    /// Whether this pipeline uses a storage buffer bind group (group 2).
+    pub(super) has_storage: bool,
 }
 
 // =============================================================================

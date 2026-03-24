@@ -99,57 +99,64 @@ impl Renderer3D {
         // Phase 2: CPU skinning -- deform bind-pose vertices using bone
         // matrices and re-upload each sub-mesh buffer.
         //
-        // We collect the work items first to avoid holding multiple borrows
-        // of `self` simultaneously.
-        struct SkinWork {
-            player_id: u32,
-            uploads: Vec<SkinUpload>,
-        }
+        // Skipped when GPU skinning is active (bone matrices are uploaded to a
+        // storage buffer instead, and the vertex shader performs the deformation).
+        let gpu_skinning = matches!(
+            self.config.skinning.mode,
+            super::config::SkinningMode::Gpu
+        ) && self.backend.supports_storage_buffers();
 
-        let mut work_items: Vec<SkinWork> = Vec::new();
-
-        for &id in &player_ids {
-            let model = match self.resolve_source_model(id) {
-                Some(m) if !m.bind_pose_bone_indices.is_empty() => m,
-                _ => continue,
-            };
-
-            // Resolve the object IDs that belong to this player (model or instance).
-            let obj_ids: &[u32] = if let Some(m) = self.models.get(&id) {
-                &m.mesh_object_ids
-            } else if let Some(inst) = self.model_instances.get(&id) {
-                &inst.mesh_object_ids
-            } else {
-                continue;
-            };
-
-            let uploads = gather_skin_uploads(model, obj_ids, &self.objects);
-            if !uploads.is_empty() {
-                work_items.push(SkinWork {
-                    player_id: id,
-                    uploads,
-                });
+        if !gpu_skinning {
+            struct SkinWork {
+                player_id: u32,
+                uploads: Vec<SkinUpload>,
             }
-        }
 
-        for item in work_items {
-            let bone_matrices = match self.animation_players.get(&item.player_id) {
-                Some(p) => &p.bone_matrices as *const Vec<[f32; 16]>,
-                None => continue,
-            };
+            let mut work_items: Vec<SkinWork> = Vec::new();
 
-            for upload in &item.uploads {
-                // SAFETY: all pointers reference data in self.models / self.animation_players
-                // which are not mutated during this skinning pass (only the backend is).
-                let bind_verts = unsafe { &*upload.bind_verts };
-                let bi = unsafe { &*upload.bone_indices };
-                let bw = unsafe { &*upload.bone_weights };
-                let bone_mats = unsafe { &*bone_matrices };
+            for &id in &player_ids {
+                let model = match self.resolve_source_model(id) {
+                    Some(m) if !m.bind_pose_bone_indices.is_empty() => m,
+                    _ => continue,
+                };
 
-                let deformed = cpu_skin_submesh(bind_verts, bi, bw, bone_mats);
-                let data: &[u8] = bytemuck::cast_slice(&deformed);
-                if let Err(e) = self.backend.update_buffer(upload.buffer_handle, 0, data) {
-                    log::error!("CPU skinning buffer upload failed: {e}");
+                // Resolve the object IDs that belong to this player (model or instance).
+                let obj_ids: &[u32] = if let Some(m) = self.models.get(&id) {
+                    &m.mesh_object_ids
+                } else if let Some(inst) = self.model_instances.get(&id) {
+                    &inst.mesh_object_ids
+                } else {
+                    continue;
+                };
+
+                let uploads = gather_skin_uploads(model, obj_ids, &self.objects);
+                if !uploads.is_empty() {
+                    work_items.push(SkinWork {
+                        player_id: id,
+                        uploads,
+                    });
+                }
+            }
+
+            for item in work_items {
+                let bone_matrices = match self.animation_players.get(&item.player_id) {
+                    Some(p) => &p.bone_matrices as *const Vec<[f32; 16]>,
+                    None => continue,
+                };
+
+                for upload in &item.uploads {
+                    // SAFETY: all pointers reference data in self.models / self.animation_players
+                    // which are not mutated during this skinning pass (only the backend is).
+                    let bind_verts = unsafe { &*upload.bind_verts };
+                    let bi = unsafe { &*upload.bone_indices };
+                    let bw = unsafe { &*upload.bone_weights };
+                    let bone_mats = unsafe { &*bone_matrices };
+
+                    let deformed = cpu_skin_submesh(bind_verts, bi, bw, bone_mats);
+                    let data: &[u8] = bytemuck::cast_slice(&deformed);
+                    if let Err(e) = self.backend.update_buffer(upload.buffer_handle, 0, data) {
+                        log::error!("CPU skinning buffer upload failed: {e}");
+                    }
                 }
             }
         }
