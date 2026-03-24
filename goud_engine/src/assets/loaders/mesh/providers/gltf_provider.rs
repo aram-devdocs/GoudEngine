@@ -23,27 +23,113 @@ impl ModelProvider for GltfProvider {
         &["gltf", "glb"]
     }
 
-    fn load(&self, bytes: &[u8], context: &mut LoadContext) -> Result<ModelData, AssetLoadError> {
-        let mesh = super::super::gltf_parser::parse_gltf(bytes, context)?;
+    fn load(&self, bytes: &[u8], _context: &mut LoadContext) -> Result<ModelData, AssetLoadError> {
+        use crate::core::types::{MeshAsset, MeshBounds, MeshVertex, SubMesh};
 
-        // Parse glTF document again for skin and animation data.
-        // If buffer loading fails (e.g. external URIs), we still return the mesh
-        // but without skeleton/animation data.
         let gltf = gltf::Gltf::from_slice(bytes)
             .map_err(|e| AssetLoadError::decode_failed(format!("GLTF parse error: {e}")))?;
 
-        let (skeleton, animations) = match load_gltf_buffers(&gltf) {
-            Ok(buffers) => {
-                let skeleton = extract_skeleton(&gltf, &buffers, mesh.vertices.len());
-                let animations = extract_all_animations(&gltf, &buffers);
-                (skeleton, animations)
+        let buffers = load_gltf_buffers(&gltf)?;
+
+        // Read mesh data directly from the first mesh's primitives.
+        // This avoids the scene-node flattening path which can reorder vertices.
+        let gltf_mesh = gltf
+            .meshes()
+            .next()
+            .ok_or_else(|| AssetLoadError::decode_failed("GLTF contains no meshes"))?;
+
+        let mut vertices: Vec<MeshVertex> = Vec::new();
+        let mut indices: Vec<u32> = Vec::new();
+        let mut sub_meshes: Vec<SubMesh> = Vec::new();
+        let mut mesh_bounds = MeshBounds::default();
+        let mut has_bounds = false;
+
+        for primitive in gltf_mesh.primitives() {
+            let reader =
+                primitive.reader(|buf| buffers.get(buf.index()).map(|b| b.as_slice()));
+
+            let positions: Vec<[f32; 3]> = reader
+                .read_positions()
+                .ok_or_else(|| {
+                    AssetLoadError::decode_failed("GLTF primitive missing POSITION")
+                })?
+                .collect();
+
+            let normals: Vec<[f32; 3]> = reader
+                .read_normals()
+                .map(|n| n.collect())
+                .unwrap_or_else(|| compute_face_normals(&positions));
+
+            let uvs: Vec<[f32; 2]> = reader
+                .read_tex_coords(0)
+                .map(|tc| tc.into_f32().collect())
+                .unwrap_or_else(|| vec![[0.0, 0.0]; positions.len()]);
+
+            let base_vertex = vertices.len() as u32;
+            let start_index = indices.len() as u32;
+
+            for i in 0..positions.len() {
+                vertices.push(MeshVertex {
+                    position: positions[i],
+                    normal: if i < normals.len() {
+                        normals[i]
+                    } else {
+                        [0.0, 0.0, 1.0]
+                    },
+                    uv: if i < uvs.len() {
+                        uvs[i]
+                    } else {
+                        [0.0, 0.0]
+                    },
+                });
             }
-            Err(e) => {
-                log::warn!("Failed to load glTF buffers for skeleton/animation extraction: {e}");
-                // Buffer loading failed (external URIs, etc.) — skip skin/animation extraction.
-                (None, vec![])
+
+            if let Some(idx_reader) = reader.read_indices() {
+                for idx in idx_reader.into_u32() {
+                    indices.push(base_vertex + idx);
+                }
+            } else {
+                // Unindexed: sequential vertex order.
+                for i in 0..positions.len() as u32 {
+                    indices.push(base_vertex + i);
+                }
             }
+
+            let bounds = MeshBounds::from_positions(&positions);
+            if has_bounds {
+                mesh_bounds = mesh_bounds.union(bounds);
+            } else {
+                mesh_bounds = bounds;
+                has_bounds = true;
+            }
+
+            let index_count = indices.len() as u32 - start_index;
+            sub_meshes.push(SubMesh {
+                name: gltf_mesh
+                    .name()
+                    .unwrap_or("primitive")
+                    .to_string(),
+                start_index,
+                index_count,
+                material_index: primitive.material().index().map(|i| i as u32),
+                material: None, // TODO: extract material
+                bounds,
+            });
+        }
+
+        if vertices.is_empty() {
+            return Err(AssetLoadError::decode_failed("GLTF mesh has no vertices"));
+        }
+
+        let mesh = MeshAsset {
+            vertices,
+            indices,
+            sub_meshes,
+            bounds: mesh_bounds,
         };
+
+        let skeleton = extract_skeleton(&gltf, &buffers, mesh.vertices.len());
+        let animations = extract_all_animations(&gltf, &buffers);
 
         Ok(ModelData {
             mesh,
@@ -51,6 +137,30 @@ impl ModelProvider for GltfProvider {
             animations,
         })
     }
+}
+
+/// Compute per-face normals from triangle positions when NORMAL is absent.
+fn compute_face_normals(positions: &[[f32; 3]]) -> Vec<[f32; 3]> {
+    let mut normals = vec![[0.0f32, 0.0, 1.0]; positions.len()];
+    for tri in 0..(positions.len() / 3) {
+        let i0 = tri * 3;
+        let (v0, v1, v2) = (positions[i0], positions[i0 + 1], positions[i0 + 2]);
+        let e1 = [v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]];
+        let e2 = [v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]];
+        let nx = e1[1] * e2[2] - e1[2] * e2[1];
+        let ny = e1[2] * e2[0] - e1[0] * e2[2];
+        let nz = e1[0] * e2[1] - e1[1] * e2[0];
+        let len = (nx * nx + ny * ny + nz * nz).sqrt();
+        let n = if len > 1e-8 {
+            [nx / len, ny / len, nz / len]
+        } else {
+            [0.0, 0.0, 1.0]
+        };
+        normals[i0] = n;
+        normals[i0 + 1] = n;
+        normals[i0 + 2] = n;
+    }
+    normals
 }
 
 /// Load buffer data from glTF (supports embedded GLB and data URIs).
