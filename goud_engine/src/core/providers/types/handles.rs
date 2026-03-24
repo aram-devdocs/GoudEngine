@@ -32,6 +32,10 @@ pub struct ColliderHandle(pub u64);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct JointHandle(pub u64);
 
+/// Opaque handle to a character controller.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct CharacterControllerHandle(pub u64);
+
 /// Opaque handle to a loaded sound asset.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SoundHandle(pub u64);

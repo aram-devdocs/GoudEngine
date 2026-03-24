@@ -42,6 +42,10 @@ export interface INetworkSimulationConfig { oneWayLatencyMs: number; jitterMs: n
 export interface INetworkConnectResult { handle: number; peerId: number; }
 /** Inbound network payload with the sender peer ID preserved */
 export interface INetworkPacket { peerId: number; data: Uint8Array; }
+/** Axis-aligned bounding box in 3D space */
+export interface IBoundingBox3D { minX: number; minY: number; minZ: number; maxX: number; maxY: number; maxZ: number; }
+/** Result of a character controller move operation */
+export interface ICharacterMoveResult { x: number; y: number; z: number; grounded: boolean; }
 /** Configuration for P2P mesh networking */
 export interface IP2pMeshConfig { maxPeers: number; hostMigration: boolean; topology: number; }
 /** Configuration for rollback netcode session */
@@ -342,6 +346,66 @@ export interface IGoudGame {
   removePostprocessPass(index: number): boolean;
   /** Returns the number of post-processing passes */
   postprocessPassCount(): number;
+  /** Loads a 3D model from a file (glTF, OBJ, FBX) and returns a model handle */
+  loadModel(path: string): number;
+  /** Destroys a 3D model and frees its GPU resources */
+  destroyModel(modelId: number): boolean;
+  /** Creates an independent instance of a source model */
+  instantiateModel(sourceModelId: number): number;
+  /** Overrides the material on a specific sub-mesh of a model (-1 for all sub-meshes) */
+  setModelMaterial(modelId: number, meshIndex: number, materialId: number): boolean;
+  /** Returns the number of sub-meshes in a model */
+  getModelMeshCount(modelId: number): number;
+  /** Returns the axis-aligned bounding box of a model */
+  getModelBoundingBox(modelId: number): IBoundingBox3D;
+  /** Sets the position of a 3D model or instance */
+  setModelPosition(modelId: number, x: number, y: number, z: number): boolean;
+  /** Sets the rotation of a 3D model or instance in degrees */
+  setModelRotation(modelId: number, x: number, y: number, z: number): boolean;
+  /** Sets the scale of a 3D model or instance */
+  setModelScale(modelId: number, x: number, y: number, z: number): boolean;
+  /** Returns the number of animations in a model */
+  getAnimationCount(modelId: number): number;
+  /** Returns the name of an animation by index */
+  getAnimationName(modelId: number, animIndex: number): string;
+  /** Starts playing an animation on a model instance */
+  playAnimation(instanceId: number, animIndex: number, looping: boolean): boolean;
+  /** Stops animation playback on a model instance */
+  stopAnimation(instanceId: number): boolean;
+  /** Sets the playback speed for a model instance's animation */
+  setAnimationSpeed(instanceId: number, speed: number): boolean;
+  /** Sets up blending between two animation clips */
+  blendAnimations(instanceId: number, animA: number, animB: number, blendFactor: number): boolean;
+  /** Starts a timed transition to a target animation clip */
+  transitionAnimation(instanceId: number, targetAnim: number, duration: number): boolean;
+  /** Returns whether an animation is currently playing on a model instance */
+  isAnimationPlaying(instanceId: number): boolean;
+  /** Returns the playback progress (0.0 to 1.0) of the primary animation */
+  getAnimationProgress(instanceId: number): number;
+  /** Advances all animation players by delta_time seconds (call once per frame) */
+  updateAnimations(deltaTime: number): boolean;
+  /** Creates a new named 3D scene and returns its ID */
+  createScene(name: string): number;
+  /** Destroys a 3D scene by ID */
+  destroyScene(sceneId: number): boolean;
+  /** Sets the current active 3D scene */
+  setCurrentScene(sceneId: number): boolean;
+  /** Returns the current active 3D scene ID */
+  getCurrentScene(): number;
+  /** Clears the current active scene so all objects are rendered */
+  clearCurrentScene(): boolean;
+  /** Adds a 3D object to a scene */
+  addObjectToScene(sceneId: number, objectId: number): boolean;
+  /** Removes a 3D object from a scene */
+  removeObjectFromScene(sceneId: number, objectId: number): boolean;
+  /** Adds a model to a 3D scene */
+  addModelToScene(sceneId: number, modelId: number): boolean;
+  /** Removes a model from a 3D scene */
+  removeModelFromScene(sceneId: number, modelId: number): boolean;
+  /** Adds a light to a 3D scene */
+  addLightToScene(sceneId: number, lightId: number): boolean;
+  /** Removes a light from a 3D scene */
+  removeLightFromScene(sceneId: number, lightId: number): boolean;
   /** Draws a sprite with source rectangle for sprite sheets */
   drawSpriteRect(texture: number, x: number, y: number, width: number, height: number, rotation: number, srcX: number, srcY: number, srcW: number, srcH: number, color?: IColor, srcMode?: number): boolean;
   /** Draws a batch of sprites in a single GPU pass for high performance */
@@ -808,6 +872,16 @@ export interface IPhysicsWorld3D {
   setTimestep(dt: number): number;
   /** Get the current fixed physics timestep in seconds */
   getTimestep(): number;
+  /** Creates a capsule-based 3D character controller */
+  createCharacterController(radius: number, halfHeight: number, x: number, y: number, z: number, maxSlopeAngle: number, stepHeight: number): number;
+  /** Moves a character controller by the given displacement */
+  moveCharacter(controllerId: number, dx: number, dy: number, dz: number, dt: number): ICharacterMoveResult;
+  /** Gets the position of a 3D character controller */
+  getCharacterPosition(controllerId: number): IVec3;
+  /** Checks if a 3D character controller is touching the ground */
+  isCharacterGrounded(controllerId: number): boolean;
+  /** Destroys a 3D character controller */
+  destroyCharacterController(controllerId: number): number;
 }
 
 /** Immediate-mode UI manager for creating and managing UI node trees */

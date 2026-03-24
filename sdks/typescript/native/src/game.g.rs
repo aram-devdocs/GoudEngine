@@ -97,13 +97,28 @@ use goud_engine::ffi::renderer::{
     GoudRenderStats,
 };
 use goud_engine::ffi::renderer3d::{
-    goud_renderer3d_add_light, goud_renderer3d_configure_fog, goud_renderer3d_configure_grid,
-    goud_renderer3d_configure_skybox, goud_renderer3d_create_cube, goud_renderer3d_create_cylinder,
-    goud_renderer3d_create_plane, goud_renderer3d_create_sphere, goud_renderer3d_destroy_object,
-    goud_renderer3d_remove_light, goud_renderer3d_render, goud_renderer3d_set_camera_position,
-    goud_renderer3d_set_camera_rotation, goud_renderer3d_set_fog_enabled,
-    goud_renderer3d_set_grid_enabled, goud_renderer3d_set_object_position,
-    goud_renderer3d_set_object_rotation, goud_renderer3d_set_object_scale,
+    goud_renderer3d_add_light, goud_renderer3d_add_light_to_scene,
+    goud_renderer3d_add_model_to_scene, goud_renderer3d_add_object_to_scene,
+    goud_renderer3d_blend_animations, goud_renderer3d_configure_fog,
+    goud_renderer3d_configure_grid, goud_renderer3d_configure_skybox, goud_renderer3d_create_cube,
+    goud_renderer3d_create_cylinder, goud_renderer3d_create_plane, goud_renderer3d_create_scene,
+    goud_renderer3d_create_sphere, goud_renderer3d_destroy_model, goud_renderer3d_destroy_object,
+    goud_renderer3d_destroy_scene, goud_renderer3d_get_animation_count,
+    goud_renderer3d_get_animation_name, goud_renderer3d_get_animation_progress,
+    goud_renderer3d_get_current_scene, goud_renderer3d_get_model_bounding_box,
+    goud_renderer3d_get_model_mesh_count, goud_renderer3d_instantiate_model,
+    goud_renderer3d_is_animation_playing, goud_renderer3d_load_model,
+    goud_renderer3d_play_animation, goud_renderer3d_remove_light,
+    goud_renderer3d_remove_light_from_scene, goud_renderer3d_remove_model_from_scene,
+    goud_renderer3d_remove_object_from_scene, goud_renderer3d_render,
+    goud_renderer3d_set_animation_speed, goud_renderer3d_set_camera_position,
+    goud_renderer3d_set_camera_rotation, goud_renderer3d_set_current_scene,
+    goud_renderer3d_set_fog_enabled, goud_renderer3d_set_grid_enabled,
+    goud_renderer3d_set_model_material, goud_renderer3d_set_model_position,
+    goud_renderer3d_set_model_rotation, goud_renderer3d_set_model_scale,
+    goud_renderer3d_set_object_position, goud_renderer3d_set_object_rotation,
+    goud_renderer3d_set_object_scale, goud_renderer3d_stop_animation,
+    goud_renderer3d_transition_animation, goud_renderer3d_update_animations,
     goud_renderer3d_update_light,
 };
 use goud_engine::ffi::scene::goud_scene_set_active;
@@ -2286,6 +2301,204 @@ impl GoudGame {
     #[napi]
     pub fn render_3d(&self) -> bool {
         goud_renderer3d_render(self.context_id)
+    }
+
+    // =========================================================================
+    // Model Loading
+    // =========================================================================
+
+    #[napi]
+    pub fn load_model(&self, path: String) -> u32 {
+        let c_path = std::ffi::CString::new(path).unwrap_or_default();
+        // SAFETY: c_path is a valid null-terminated C string created above.
+        unsafe { goud_renderer3d_load_model(self.context_id, c_path.as_ptr()) }
+    }
+    #[napi]
+    pub fn destroy_model(&self, model_id: u32) -> bool {
+        goud_renderer3d_destroy_model(self.context_id, model_id)
+    }
+    #[napi]
+    pub fn instantiate_model(&self, source_model_id: u32) -> u32 {
+        goud_renderer3d_instantiate_model(self.context_id, source_model_id)
+    }
+    #[napi]
+    pub fn set_model_material(&self, model_id: u32, mesh_index: i32, material_id: u32) -> bool {
+        goud_renderer3d_set_model_material(self.context_id, model_id, mesh_index, material_id)
+    }
+    #[napi]
+    pub fn get_model_mesh_count(&self, model_id: u32) -> i32 {
+        goud_renderer3d_get_model_mesh_count(self.context_id, model_id)
+    }
+    #[napi]
+    pub fn get_model_bounding_box(&self, model_id: u32) -> Option<Vec<f64>> {
+        let mut min_x: f32 = 0.0;
+        let mut min_y: f32 = 0.0;
+        let mut min_z: f32 = 0.0;
+        let mut max_x: f32 = 0.0;
+        let mut max_y: f32 = 0.0;
+        let mut max_z: f32 = 0.0;
+        // SAFETY: All pointers point to valid stack-allocated f32 values.
+        let ok = unsafe {
+            goud_renderer3d_get_model_bounding_box(
+                self.context_id,
+                model_id,
+                &mut min_x,
+                &mut min_y,
+                &mut min_z,
+                &mut max_x,
+                &mut max_y,
+                &mut max_z,
+            )
+        };
+        if ok {
+            Some(vec![
+                min_x as f64,
+                min_y as f64,
+                min_z as f64,
+                max_x as f64,
+                max_y as f64,
+                max_z as f64,
+            ])
+        } else {
+            None
+        }
+    }
+    #[napi]
+    pub fn set_model_position(&self, model_id: u32, x: f64, y: f64, z: f64) -> bool {
+        goud_renderer3d_set_model_position(self.context_id, model_id, x as f32, y as f32, z as f32)
+    }
+    #[napi]
+    pub fn set_model_rotation(&self, model_id: u32, x: f64, y: f64, z: f64) -> bool {
+        goud_renderer3d_set_model_rotation(self.context_id, model_id, x as f32, y as f32, z as f32)
+    }
+    #[napi]
+    pub fn set_model_scale(&self, model_id: u32, x: f64, y: f64, z: f64) -> bool {
+        goud_renderer3d_set_model_scale(self.context_id, model_id, x as f32, y as f32, z as f32)
+    }
+
+    // =========================================================================
+    // 3D Animation
+    // =========================================================================
+
+    #[napi]
+    pub fn get_animation_count(&self, model_id: u32) -> i32 {
+        goud_renderer3d_get_animation_count(self.context_id, model_id)
+    }
+    #[napi]
+    pub fn get_animation_name(&self, model_id: u32, anim_index: i32) -> Option<String> {
+        let mut buf = vec![0i8; 256];
+        // SAFETY: buf points to 256 writable bytes, buf_len matches.
+        let len = unsafe {
+            goud_renderer3d_get_animation_name(
+                self.context_id,
+                model_id,
+                anim_index,
+                buf.as_mut_ptr(),
+                256,
+            )
+        };
+        if len < 0 {
+            None
+        } else {
+            let bytes: Vec<u8> = buf[..len as usize].iter().map(|&b| b as u8).collect();
+            String::from_utf8(bytes).ok()
+        }
+    }
+    #[napi]
+    pub fn play_animation(&self, instance_id: u32, anim_index: i32, looping: bool) -> bool {
+        goud_renderer3d_play_animation(self.context_id, instance_id, anim_index, looping)
+    }
+    #[napi]
+    pub fn stop_animation(&self, instance_id: u32) -> bool {
+        goud_renderer3d_stop_animation(self.context_id, instance_id)
+    }
+    #[napi]
+    pub fn set_animation_speed(&self, instance_id: u32, speed: f64) -> bool {
+        goud_renderer3d_set_animation_speed(self.context_id, instance_id, speed as f32)
+    }
+    #[napi]
+    pub fn blend_animations(
+        &self,
+        instance_id: u32,
+        anim_a: i32,
+        anim_b: i32,
+        blend_factor: f64,
+    ) -> bool {
+        goud_renderer3d_blend_animations(
+            self.context_id,
+            instance_id,
+            anim_a,
+            anim_b,
+            blend_factor as f32,
+        )
+    }
+    #[napi]
+    pub fn transition_animation(&self, instance_id: u32, target_anim: i32, duration: f64) -> bool {
+        goud_renderer3d_transition_animation(
+            self.context_id,
+            instance_id,
+            target_anim,
+            duration as f32,
+        )
+    }
+    #[napi]
+    pub fn is_animation_playing(&self, instance_id: u32) -> bool {
+        goud_renderer3d_is_animation_playing(self.context_id, instance_id)
+    }
+    #[napi]
+    pub fn get_animation_progress(&self, instance_id: u32) -> f64 {
+        goud_renderer3d_get_animation_progress(self.context_id, instance_id) as f64
+    }
+    #[napi]
+    pub fn update_animations(&self, delta_time: f64) -> bool {
+        goud_renderer3d_update_animations(self.context_id, delta_time as f32)
+    }
+
+    // =========================================================================
+    // 3D Scene Management
+    // =========================================================================
+
+    #[napi]
+    pub fn create_scene(&self, name: String) -> u32 {
+        let c_name = std::ffi::CString::new(name).unwrap_or_default();
+        // SAFETY: c_name is a valid null-terminated C string created above.
+        unsafe { goud_renderer3d_create_scene(self.context_id, c_name.as_ptr()) }
+    }
+    #[napi]
+    pub fn destroy_scene(&self, scene_id: u32) -> bool {
+        goud_renderer3d_destroy_scene(self.context_id, scene_id)
+    }
+    #[napi]
+    pub fn set_current_scene(&self, scene_id: u32) -> bool {
+        goud_renderer3d_set_current_scene(self.context_id, scene_id)
+    }
+    #[napi]
+    pub fn get_current_scene(&self) -> u32 {
+        goud_renderer3d_get_current_scene(self.context_id)
+    }
+    #[napi]
+    pub fn add_object_to_scene(&self, scene_id: u32, object_id: u32) -> bool {
+        goud_renderer3d_add_object_to_scene(self.context_id, scene_id, object_id)
+    }
+    #[napi]
+    pub fn remove_object_from_scene(&self, scene_id: u32, object_id: u32) -> bool {
+        goud_renderer3d_remove_object_from_scene(self.context_id, scene_id, object_id)
+    }
+    #[napi]
+    pub fn add_model_to_scene(&self, scene_id: u32, model_id: u32) -> bool {
+        goud_renderer3d_add_model_to_scene(self.context_id, scene_id, model_id)
+    }
+    #[napi]
+    pub fn remove_model_from_scene(&self, scene_id: u32, model_id: u32) -> bool {
+        goud_renderer3d_remove_model_from_scene(self.context_id, scene_id, model_id)
+    }
+    #[napi]
+    pub fn add_light_to_scene(&self, scene_id: u32, light_id: u32) -> bool {
+        goud_renderer3d_add_light_to_scene(self.context_id, scene_id, light_id)
+    }
+    #[napi]
+    pub fn remove_light_from_scene(&self, scene_id: u32, light_id: u32) -> bool {
+        goud_renderer3d_remove_light_from_scene(self.context_id, scene_id, light_id)
     }
 
     // =========================================================================

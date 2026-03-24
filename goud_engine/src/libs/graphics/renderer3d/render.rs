@@ -2,7 +2,6 @@
 use super::core::Renderer3D;
 use super::shadow::build_directional_shadow_map;
 use super::texture::TextureManagerTrait;
-use super::types::MAX_LIGHTS;
 use crate::libs::graphics::backend::{
     types::TextureHandle, BlendFactor, CullFace, DepthFunc, FrontFace, PrimitiveTopology,
     VertexBufferBinding,
@@ -12,6 +11,10 @@ use cgmath::{perspective, Deg, Matrix4};
 impl Renderer3D {
     /// Render the scene -- grid, objects, skinned meshes, and overlays --
     /// using the current camera and light state.
+    ///
+    /// When a current scene is set, only objects/models/lights belonging to that
+    /// scene are rendered and the scene's fog/skybox/grid configs are used.
+    /// When no scene is active all entities are rendered (backward-compatible).
     pub fn render(&mut self, texture_manager: Option<&dyn TextureManagerTrait>) {
         self.stats = Default::default();
         self.backend.set_viewport(
@@ -26,12 +29,31 @@ impl Renderer3D {
         self.backend.set_cull_face(CullFace::Back);
         self.backend.set_front_face(FrontFace::Ccw);
 
-        if self.skybox_config.enabled {
+        // Resolve effective environment configs from the active scene (or renderer defaults).
+        let (eff_fog, eff_skybox, eff_grid) = if let Some(scene_id) = self.current_scene {
+            if let Some(scene) = self.scenes.get(&scene_id) {
+                (scene.fog.clone(), scene.skybox.clone(), scene.grid.clone())
+            } else {
+                (
+                    self.fog_config.clone(),
+                    self.skybox_config.clone(),
+                    self.grid_config.clone(),
+                )
+            }
+        } else {
+            (
+                self.fog_config.clone(),
+                self.skybox_config.clone(),
+                self.grid_config.clone(),
+            )
+        };
+
+        if eff_skybox.enabled {
             self.backend.set_clear_color(
-                self.skybox_config.color.x,
-                self.skybox_config.color.y,
-                self.skybox_config.color.z,
-                self.skybox_config.color.w,
+                eff_skybox.color.x,
+                eff_skybox.color.y,
+                eff_skybox.color.z,
+                eff_skybox.color.w,
             );
         }
         self.backend.clear_depth();
@@ -51,7 +73,7 @@ impl Renderer3D {
             self.update_shadow_texture(&map.rgba8, map.size, map.size);
         }
 
-        if self.grid_config.enabled {
+        if eff_grid.enabled {
             let _ = self.backend.bind_shader(self.grid_shader_handle);
             self.backend
                 .set_uniform_mat4(self.grid_uniforms.view, &view_arr);
@@ -65,18 +87,16 @@ impl Renderer3D {
             );
             self.backend
                 .set_uniform_float(self.grid_uniforms.alpha, 0.4);
-            self.backend.set_uniform_int(
-                self.grid_uniforms.fog_enabled,
-                i32::from(self.fog_config.enabled),
-            );
+            self.backend
+                .set_uniform_int(self.grid_uniforms.fog_enabled, i32::from(eff_fog.enabled));
             self.backend.set_uniform_vec3(
                 self.grid_uniforms.fog_color,
-                self.fog_config.color.x,
-                self.fog_config.color.y,
-                self.fog_config.color.z,
+                eff_fog.color.x,
+                eff_fog.color.y,
+                eff_fog.color.z,
             );
             self.backend
-                .set_uniform_float(self.grid_uniforms.fog_density, self.fog_config.density);
+                .set_uniform_float(self.grid_uniforms.fog_density, eff_fog.density);
             self.backend.enable_blending();
             self.backend
                 .set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
@@ -104,6 +124,16 @@ impl Renderer3D {
             self.backend.unbind_shader();
         }
 
+        // Resolve the scene filter set for objects and lights.
+        let scene_obj_filter = self
+            .current_scene
+            .and_then(|sid| self.scenes.get(&sid))
+            .map(|s| &s.objects);
+        let scene_light_filter = self
+            .current_scene
+            .and_then(|sid| self.scenes.get(&sid))
+            .map(|s| &s.lights);
+
         // Material-aware object rendering: snapshot to avoid borrow conflicts.
         let obj_snapshots: Vec<(
             crate::libs::graphics::backend::BufferHandle,
@@ -116,6 +146,7 @@ impl Renderer3D {
         )> = self
             .objects
             .iter()
+            .filter(|(&id, _)| scene_obj_filter.is_none_or(|set| set.contains(&id)))
             .map(|(&id, obj)| {
                 if let Some(&mat_id) = self.object_materials.get(&id) {
                     if let Some(mat) = self.materials.get(&mat_id) {
@@ -148,6 +179,14 @@ impl Renderer3D {
             })
             .collect();
 
+        // Snapshot filtered lights for uniform upload.
+        let filtered_lights: Vec<super::types::Light> = self
+            .lights
+            .iter()
+            .filter(|(&id, _)| scene_light_filter.is_none_or(|set| set.contains(&id)))
+            .map(|(_, l)| l.clone())
+            .collect();
+
         let _ = self.backend.bind_shader(self.shader_handle);
         let uniforms = self.uniforms.clone();
         self.apply_main_uniforms(
@@ -156,6 +195,8 @@ impl Renderer3D {
             &shadow_matrix,
             shadow_map.is_some(),
             &uniforms,
+            &eff_fog,
+            &filtered_lights,
         );
 
         for (buffer, vc, pos, rot, scl, bc, tid) in &obj_snapshots {
@@ -184,14 +225,27 @@ impl Renderer3D {
             self.stats.draw_calls += 1;
         }
 
-        // Skinned mesh rendering pass.
+        // Skinned mesh rendering pass — uses dedicated skinned shader with bone uniforms.
         if !self.skinned_meshes.is_empty() {
+            let _ = self.backend.bind_shader(self.skinned_shader_handle);
+            let skinned_unis = self.skinned_uniforms.clone();
+            self.apply_main_uniforms(
+                &view_arr,
+                &proj_arr,
+                &shadow_matrix,
+                shadow_map.is_some(),
+                &skinned_unis.main,
+                &eff_fog,
+                &filtered_lights,
+            );
+
             let skinned_snaps: Vec<(
                 crate::libs::graphics::backend::BufferHandle,
                 i32,
                 cgmath::Vector3<f32>,
                 cgmath::Vector3<f32>,
                 cgmath::Vector3<f32>,
+                Vec<[f32; 16]>,
             )> = self
                 .skinned_meshes
                 .values()
@@ -202,25 +256,40 @@ impl Renderer3D {
                         sm.position,
                         sm.rotation,
                         sm.scale,
+                        sm.bone_matrices.clone(),
                     )
                 })
                 .collect();
 
-            for (buffer, vc, pos, rot, scl) in &skinned_snaps {
+            for (buffer, vc, pos, rot, scl, bone_mats) in &skinned_snaps {
                 let model = Self::create_model_matrix(*pos, *rot, *scl);
                 let model_arr = mat4_to_array(&model);
                 self.backend
-                    .set_uniform_mat4(self.uniforms.model, &model_arr);
-                self.backend.set_uniform_int(self.uniforms.use_texture, 0);
+                    .set_uniform_mat4(skinned_unis.main.model, &model_arr);
                 self.backend
-                    .set_uniform_vec4(self.uniforms.object_color, 0.8, 0.8, 0.8, 1.0);
+                    .set_uniform_int(skinned_unis.main.use_texture, 0);
+                self.backend
+                    .set_uniform_vec4(skinned_unis.main.object_color, 0.8, 0.8, 0.8, 1.0);
+
+                // Upload bone matrices as uniform array.
+                for (i, mat) in bone_mats.iter().enumerate() {
+                    if i < skinned_unis.bone_matrices.len() {
+                        self.backend
+                            .set_uniform_mat4(skinned_unis.bone_matrices[i], mat);
+                    }
+                }
+
                 let _ = self.backend.bind_buffer(*buffer);
-                self.backend.set_vertex_attributes(&self.object_layout);
+                self.backend.set_vertex_attributes(&self.skinned_layout);
                 let _ = self
                     .backend
                     .draw_arrays(PrimitiveTopology::Triangles, 0, *vc as u32);
                 self.stats.draw_calls += 1;
             }
+
+            self.backend.unbind_shader();
+            // Re-bind main shader for subsequent rendering.
+            let _ = self.backend.bind_shader(self.shader_handle);
         }
 
         self.backend.unbind_shader();
@@ -234,6 +303,8 @@ impl Renderer3D {
                 &shadow_matrix,
                 shadow_map.is_some(),
                 &instanced_uniforms,
+                &eff_fog,
+                &filtered_lights,
             );
             for mesh in self.instanced_meshes.values() {
                 if mesh.texture_id > 0 {
@@ -354,18 +425,16 @@ impl Renderer3D {
             );
             self.backend
                 .set_uniform_float(self.grid_uniforms.alpha, 1.0);
-            self.backend.set_uniform_int(
-                self.grid_uniforms.fog_enabled,
-                i32::from(self.fog_config.enabled),
-            );
+            self.backend
+                .set_uniform_int(self.grid_uniforms.fog_enabled, i32::from(eff_fog.enabled));
             self.backend.set_uniform_vec3(
                 self.grid_uniforms.fog_color,
-                self.fog_config.color.x,
-                self.fog_config.color.y,
-                self.fog_config.color.z,
+                eff_fog.color.x,
+                eff_fog.color.y,
+                eff_fog.color.z,
             );
             self.backend
-                .set_uniform_float(self.grid_uniforms.fog_density, self.fog_config.density);
+                .set_uniform_float(self.grid_uniforms.fog_density, eff_fog.density);
             self.backend.enable_blending();
             self.backend
                 .set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);
@@ -398,92 +467,6 @@ impl Renderer3D {
         let rotation_matrix = rot_z * rot_y * rot_x;
         let scale_matrix = Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z);
         translation * rotation_matrix * scale_matrix
-    }
-
-    fn apply_main_uniforms(
-        &mut self,
-        view_arr: &[f32; 16],
-        proj_arr: &[f32; 16],
-        shadow_matrix: &[f32; 16],
-        shadows_enabled: bool,
-        uniforms: &super::shaders::MainUniforms,
-    ) {
-        self.backend.set_uniform_mat4(uniforms.view, view_arr);
-        self.backend.set_uniform_mat4(uniforms.projection, proj_arr);
-        self.backend
-            .set_uniform_mat4(uniforms.light_space_matrix, shadow_matrix);
-        self.backend.set_uniform_vec3(
-            uniforms.view_pos,
-            self.camera.position.x,
-            self.camera.position.y,
-            self.camera.position.z,
-        );
-        self.backend
-            .set_uniform_int(uniforms.fog_enabled, i32::from(self.fog_config.enabled));
-        self.backend.set_uniform_vec3(
-            uniforms.fog_color,
-            self.fog_config.color.x,
-            self.fog_config.color.y,
-            self.fog_config.color.z,
-        );
-        self.backend
-            .set_uniform_float(uniforms.fog_density, self.fog_config.density);
-        let light_count = self.lights.len().min(MAX_LIGHTS) as i32;
-        self.backend
-            .set_uniform_int(uniforms.num_lights, light_count);
-        for (i, (_, light)) in self.lights.iter().enumerate().take(MAX_LIGHTS) {
-            let lu = &uniforms.lights[i];
-            self.backend
-                .set_uniform_int(lu.light_type, light.light_type as i32);
-            self.backend.set_uniform_vec3(
-                lu.position,
-                light.position.x,
-                light.position.y,
-                light.position.z,
-            );
-            self.backend.set_uniform_vec3(
-                lu.direction,
-                light.direction.x,
-                light.direction.y,
-                light.direction.z,
-            );
-            self.backend
-                .set_uniform_vec3(lu.color, light.color.x, light.color.y, light.color.z);
-            self.backend
-                .set_uniform_float(lu.intensity, light.intensity);
-            self.backend.set_uniform_float(lu.range, light.range);
-            self.backend
-                .set_uniform_float(lu.spot_angle, light.spot_angle);
-            self.backend
-                .set_uniform_int(lu.enabled, i32::from(light.enabled));
-        }
-        self.backend.set_uniform_int(uniforms.texture1, 0);
-        if let Some(texture) = self.shadow_texture {
-            let _ = self.backend.bind_texture(texture, 1);
-        }
-        self.backend.set_uniform_int(uniforms.shadow_map, 1);
-        self.backend
-            .set_uniform_int(uniforms.shadows_enabled, i32::from(shadows_enabled));
-        self.backend
-            .set_uniform_float(uniforms.shadow_bias, self.shadow_bias);
-
-        if let Some((_, l)) = self.lights.iter().find(|(_, l)| l.enabled) {
-            let d = if l.light_type == super::types::LightType::Directional {
-                (-l.direction.x, -l.direction.y, -l.direction.z)
-            } else {
-                (l.position.x, l.position.y, l.position.z) // approximate — full multi-light needs per-fragment position
-            };
-            self.backend
-                .set_uniform_vec3(uniforms.primary_light_dir, d.0, d.1, d.2);
-            self.backend.set_uniform_vec3(
-                uniforms.primary_light_color,
-                l.color.x,
-                l.color.y,
-                l.color.z,
-            );
-            self.backend
-                .set_uniform_float(uniforms.primary_light_intensity, l.intensity);
-        }
     }
 }
 

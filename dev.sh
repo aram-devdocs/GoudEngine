@@ -145,7 +145,7 @@ while [[ "$#" -gt 0 ]]; do
         echo "  -h, --help       Show this help message"
         echo ""
         echo "C Games:        flappy_bird (use --sdk c)"
-        echo "C# Games:       flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab, sandbox"
+        echo "C# Games:       flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab, sandbox, character_sandbox"
         echo "Python Demos:   python_demo, flappy_bird, sandbox (use --sdk python)"
         echo "Go Games:       flappy_bird, sandbox, feature_lab (use --sdk go)"
         echo "Kotlin Games:   flappy_bird, sandbox, feature_lab (use --sdk kotlin)"
@@ -210,12 +210,12 @@ esac
 case $SDK_TYPE in
 "csharp")
     case $GAME in
-    "flappy_goud" | "3d_cube" | "goud_jumper" | "isometric_rpg" | "hello_ecs" | "feature_lab" | "sandbox")
+    "flappy_goud" | "3d_cube" | "goud_jumper" | "isometric_rpg" | "hello_ecs" | "feature_lab" | "sandbox" | "character_sandbox")
         echo "Building and running C# game: $GAME..."
         ;;
     *)
         echo "Error: Invalid C# game selection."
-        echo "Choose from: flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab, sandbox"
+        echo "Choose from: flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs, feature_lab, sandbox, character_sandbox"
         exit 1
         ;;
     esac

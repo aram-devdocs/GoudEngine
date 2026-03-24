@@ -58,7 +58,10 @@ pub(crate) use physics3d::debug_shapes_for_context as physics3d_debug_shapes;
 pub use physics3d::{
     goud_physics3d_add_collider, goud_physics3d_add_rigid_body, goud_physics3d_add_rigid_body_ex,
     goud_physics3d_apply_force, goud_physics3d_apply_impulse, goud_physics3d_create,
-    goud_physics3d_create_joint, goud_physics3d_destroy, goud_physics3d_get_position,
+    goud_physics3d_create_character_controller, goud_physics3d_create_joint,
+    goud_physics3d_destroy, goud_physics3d_destroy_character_controller,
+    goud_physics3d_get_character_position, goud_physics3d_get_position,
+    goud_physics3d_is_character_grounded, goud_physics3d_move_character,
     goud_physics3d_remove_body, goud_physics3d_remove_joint, goud_physics3d_set_gravity,
     goud_physics3d_set_velocity, goud_physics3d_step,
 };

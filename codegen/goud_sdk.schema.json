@@ -3176,6 +3176,68 @@
           "doc": "Alpha (1.0 = fully opaque)"
         }
       ]
+    },
+    "BoundingBox3D": {
+      "kind": "value",
+      "doc": "Axis-aligned bounding box in 3D space",
+      "fields": [
+        {
+          "name": "minX",
+          "type": "f32",
+          "doc": "Minimum X coordinate"
+        },
+        {
+          "name": "minY",
+          "type": "f32",
+          "doc": "Minimum Y coordinate"
+        },
+        {
+          "name": "minZ",
+          "type": "f32",
+          "doc": "Minimum Z coordinate"
+        },
+        {
+          "name": "maxX",
+          "type": "f32",
+          "doc": "Maximum X coordinate"
+        },
+        {
+          "name": "maxY",
+          "type": "f32",
+          "doc": "Maximum Y coordinate"
+        },
+        {
+          "name": "maxZ",
+          "type": "f32",
+          "doc": "Maximum Z coordinate"
+        }
+      ]
+    },
+    "CharacterMoveResult": {
+      "kind": "value",
+      "doc": "Result of a character controller move operation",
+      "fields": [
+        {
+          "name": "x",
+          "type": "f32",
+          "doc": "Resulting X position"
+        },
+        {
+          "name": "y",
+          "type": "f32",
+          "doc": "Resulting Y position"
+        },
+        {
+          "name": "z",
+          "type": "f32",
+          "doc": "Resulting Z position"
+        },
+        {
+          "name": "grounded",
+          "type": "bool",
+          "doc": "Whether the character is on the ground"
+        }
+      ]
     }
   },
   "enums": {
@@ -5502,6 +5564,431 @@
           "doc": "Returns the number of post-processing passes",
           "params": [],
           "returns": "u32"
+        },
+        {
+          "name": "loadModel",
+          "doc": "Loads a 3D model from a file (glTF, OBJ, FBX) and returns a model handle",
+          "params": [
+            {
+              "name": "path",
+              "type": "string"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "destroyModel",
+          "doc": "Destroys a 3D model and frees its GPU resources",
+          "params": [
+            {
+              "name": "modelId",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "instantiateModel",
+          "doc": "Creates an independent instance of a source model",
+          "params": [
+            {
+              "name": "sourceModelId",
+              "type": "u32"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "setModelMaterial",
+          "doc": "Overrides the material on a specific sub-mesh of a model (-1 for all sub-meshes)",
+          "params": [
+            {
+              "name": "modelId",
+              "type": "u32"
+            },
+            {
+              "name": "meshIndex",
+              "type": "i32"
+            },
+            {
+              "name": "materialId",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "getModelMeshCount",
+          "doc": "Returns the number of sub-meshes in a model",
+          "params": [
+            {
+              "name": "modelId",
+              "type": "u32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getModelBoundingBox",
+          "doc": "Returns the axis-aligned bounding box of a model",
+          "params": [
+            {
+              "name": "modelId",
+              "type": "u32"
+            }
+          ],
+          "returns": "BoundingBox3D"
+        },
+        {
+          "name": "setModelPosition",
+          "doc": "Sets the position of a 3D model or instance",
+          "params": [
+            {
+              "name": "modelId",
+              "type": "u32"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setModelRotation",
+          "doc": "Sets the rotation of a 3D model or instance in degrees",
+          "params": [
+            {
+              "name": "modelId",
+              "type": "u32"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setModelScale",
+          "doc": "Sets the scale of a 3D model or instance",
+          "params": [
+            {
+              "name": "modelId",
+              "type": "u32"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "getAnimationCount",
+          "doc": "Returns the number of animations in a model",
+          "params": [
+            {
+              "name": "modelId",
+              "type": "u32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getAnimationName",
+          "doc": "Returns the name of an animation by index",
+          "params": [
+            {
+              "name": "modelId",
+              "type": "u32"
+            },
+            {
+              "name": "animIndex",
+              "type": "i32"
+            }
+          ],
+          "returns": "string",
+          "buffer_protocol": true
+        },
+        {
+          "name": "playAnimation",
+          "doc": "Starts playing an animation on a model instance",
+          "params": [
+            {
+              "name": "instanceId",
+              "type": "u32"
+            },
+            {
+              "name": "animIndex",
+              "type": "i32"
+            },
+            {
+              "name": "looping",
+              "type": "bool"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "stopAnimation",
+          "doc": "Stops animation playback on a model instance",
+          "params": [
+            {
+              "name": "instanceId",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setAnimationSpeed",
+          "doc": "Sets the playback speed for a model instance's animation",
+          "params": [
+            {
+              "name": "instanceId",
+              "type": "u32"
+            },
+            {
+              "name": "speed",
+              "type": "f32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "blendAnimations",
+          "doc": "Sets up blending between two animation clips",
+          "params": [
+            {
+              "name": "instanceId",
+              "type": "u32"
+            },
+            {
+              "name": "animA",
+              "type": "i32"
+            },
+            {
+              "name": "animB",
+              "type": "i32"
+            },
+            {
+              "name": "blendFactor",
+              "type": "f32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "transitionAnimation",
+          "doc": "Starts a timed transition to a target animation clip",
+          "params": [
+            {
+              "name": "instanceId",
+              "type": "u32"
+            },
+            {
+              "name": "targetAnim",
+              "type": "i32"
+            },
+            {
+              "name": "duration",
+              "type": "f32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "isAnimationPlaying",
+          "doc": "Returns whether an animation is currently playing on a model instance",
+          "params": [
+            {
+              "name": "instanceId",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "getAnimationProgress",
+          "doc": "Returns the playback progress (0.0 to 1.0) of the primary animation",
+          "params": [
+            {
+              "name": "instanceId",
+              "type": "u32"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
+          "name": "updateAnimations",
+          "doc": "Advances all animation players by delta_time seconds (call once per frame)",
+          "params": [
+            {
+              "name": "deltaTime",
+              "type": "f32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "createScene",
+          "doc": "Creates a new named 3D scene and returns its ID",
+          "params": [
+            {
+              "name": "name",
+              "type": "string"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
+          "name": "destroyScene",
+          "doc": "Destroys a 3D scene by ID",
+          "params": [
+            {
+              "name": "sceneId",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setCurrentScene",
+          "doc": "Sets the current active 3D scene",
+          "params": [
+            {
+              "name": "sceneId",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "getCurrentScene",
+          "doc": "Returns the current active 3D scene ID",
+          "params": [],
+          "returns": "u32"
+        },
+        {
+          "name": "clearCurrentScene",
+          "doc": "Clears the current active scene so all objects are rendered",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "addObjectToScene",
+          "doc": "Adds a 3D object to a scene",
+          "params": [
+            {
+              "name": "sceneId",
+              "type": "u32"
+            },
+            {
+              "name": "objectId",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "removeObjectFromScene",
+          "doc": "Removes a 3D object from a scene",
+          "params": [
+            {
+              "name": "sceneId",
+              "type": "u32"
+            },
+            {
+              "name": "objectId",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "addModelToScene",
+          "doc": "Adds a model to a 3D scene",
+          "params": [
+            {
+              "name": "sceneId",
+              "type": "u32"
+            },
+            {
+              "name": "modelId",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "removeModelFromScene",
+          "doc": "Removes a model from a 3D scene",
+          "params": [
+            {
+              "name": "sceneId",
+              "type": "u32"
+            },
+            {
+              "name": "modelId",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "addLightToScene",
+          "doc": "Adds a light to a 3D scene",
+          "params": [
+            {
+              "name": "sceneId",
+              "type": "u32"
+            },
+            {
+              "name": "lightId",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "removeLightFromScene",
+          "doc": "Removes a light from a 3D scene",
+          "params": [
+            {
+              "name": "sceneId",
+              "type": "u32"
+            },
+            {
+              "name": "lightId",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
         },
         {
           "name": "drawSpriteRect",
@@ -9611,6 +10098,101 @@
           "doc": "Get the current fixed physics timestep in seconds",
           "params": [],
           "returns": "f32"
+        },
+        {
+          "name": "createCharacterController",
+          "doc": "Creates a capsule-based 3D character controller",
+          "params": [
+            {
+              "name": "radius",
+              "type": "f32"
+            },
+            {
+              "name": "halfHeight",
+              "type": "f32"
+            },
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            },
+            {
+              "name": "maxSlopeAngle",
+              "type": "f32"
+            },
+            {
+              "name": "stepHeight",
+              "type": "f32"
+            }
+          ],
+          "returns": "i64"
+        },
+        {
+          "name": "moveCharacter",
+          "doc": "Moves a character controller by the given displacement",
+          "params": [
+            {
+              "name": "controllerId",
+              "type": "u64"
+            },
+            {
+              "name": "dx",
+              "type": "f32"
+            },
+            {
+              "name": "dy",
+              "type": "f32"
+            },
+            {
+              "name": "dz",
+              "type": "f32"
+            },
+            {
+              "name": "dt",
+              "type": "f32"
+            }
+          ],
+          "returns": "CharacterMoveResult"
+        },
+        {
+          "name": "getCharacterPosition",
+          "doc": "Gets the position of a 3D character controller",
+          "params": [
+            {
+              "name": "controllerId",
+              "type": "u64"
+            }
+          ],
+          "returns": "Vec3"
+        },
+        {
+          "name": "isCharacterGrounded",
+          "doc": "Checks if a 3D character controller is touching the ground",
+          "params": [
+            {
+              "name": "controllerId",
+              "type": "u64"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "destroyCharacterController",
+          "doc": "Destroys a 3D character controller",
+          "params": [
+            {
+              "name": "controllerId",
+              "type": "u64"
+            }
+          ],
+          "returns": "i32"
         }
       ]
     },
@@ -12388,6 +12970,130 @@
         },
         "setMaxFixedSteps": {
           "ffi": "goud_fixed_timestep_set_max_steps"
+        },
+        "loadModel": {
+          "ffi": "goud_renderer3d_load_model",
+          "string_params": [
+            "path"
+          ]
+        },
+        "destroyModel": {
+          "ffi": "goud_renderer3d_destroy_model"
+        },
+        "instantiateModel": {
+          "ffi": "goud_renderer3d_instantiate_model"
+        },
+        "setModelMaterial": {
+          "ffi": "goud_renderer3d_set_model_material"
+        },
+        "getModelMeshCount": {
+          "ffi": "goud_renderer3d_get_model_mesh_count"
+        },
+        "getModelBoundingBox": {
+          "ffi": "goud_renderer3d_get_model_bounding_box",
+          "out_params": [
+            {
+              "name": "minX",
+              "type": "f32"
+            },
+            {
+              "name": "minY",
+              "type": "f32"
+            },
+            {
+              "name": "minZ",
+              "type": "f32"
+            },
+            {
+              "name": "maxX",
+              "type": "f32"
+            },
+            {
+              "name": "maxY",
+              "type": "f32"
+            },
+            {
+              "name": "maxZ",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "BoundingBox3D"
+        },
+        "setModelPosition": {
+          "ffi": "goud_renderer3d_set_model_position"
+        },
+        "setModelRotation": {
+          "ffi": "goud_renderer3d_set_model_rotation"
+        },
+        "setModelScale": {
+          "ffi": "goud_renderer3d_set_model_scale"
+        },
+        "getAnimationCount": {
+          "ffi": "goud_renderer3d_get_animation_count"
+        },
+        "getAnimationName": {
+          "ffi": "goud_renderer3d_get_animation_name",
+          "buffer_protocol": true
+        },
+        "playAnimation": {
+          "ffi": "goud_renderer3d_play_animation"
+        },
+        "stopAnimation": {
+          "ffi": "goud_renderer3d_stop_animation"
+        },
+        "setAnimationSpeed": {
+          "ffi": "goud_renderer3d_set_animation_speed"
+        },
+        "blendAnimations": {
+          "ffi": "goud_renderer3d_blend_animations"
+        },
+        "transitionAnimation": {
+          "ffi": "goud_renderer3d_transition_animation"
+        },
+        "isAnimationPlaying": {
+          "ffi": "goud_renderer3d_is_animation_playing"
+        },
+        "getAnimationProgress": {
+          "ffi": "goud_renderer3d_get_animation_progress"
+        },
+        "updateAnimations": {
+          "ffi": "goud_renderer3d_update_animations"
+        },
+        "createScene": {
+          "ffi": "goud_renderer3d_create_scene",
+          "string_params": [
+            "name"
+          ]
+        },
+        "destroyScene": {
+          "ffi": "goud_renderer3d_destroy_scene"
+        },
+        "setCurrentScene": {
+          "ffi": "goud_renderer3d_set_current_scene"
+        },
+        "getCurrentScene": {
+          "ffi": "goud_renderer3d_get_current_scene"
+        },
+        "addObjectToScene": {
+          "ffi": "goud_renderer3d_add_object_to_scene"
+        },
+        "removeObjectFromScene": {
+          "ffi": "goud_renderer3d_remove_object_from_scene"
+        },
+        "addModelToScene": {
+          "ffi": "goud_renderer3d_add_model_to_scene"
+        },
+        "removeModelFromScene": {
+          "ffi": "goud_renderer3d_remove_model_from_scene"
+        },
+        "addLightToScene": {
+          "ffi": "goud_renderer3d_add_light_to_scene"
+        },
+        "removeLightFromScene": {
+          "ffi": "goud_renderer3d_remove_light_from_scene"
+        },
+        "clearCurrentScene": {
+          "ffi": "goud_renderer3d_clear_current_scene"
         }
       },
       "properties": {
@@ -13320,6 +14026,55 @@
             }
           ],
           "returns_scalar": "f32"
+        },
+        "createCharacterController": {
+          "ffi": "goud_physics3d_create_character_controller"
+        },
+        "moveCharacter": {
+          "ffi": "goud_physics3d_move_character",
+          "out_params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            },
+            {
+              "name": "grounded",
+              "type": "bool"
+            }
+          ],
+          "returns_struct": "CharacterMoveResult"
+        },
+        "getCharacterPosition": {
+          "ffi": "goud_physics3d_get_character_position",
+          "out_params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            },
+            {
+              "name": "z",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "Vec3"
+        },
+        "isCharacterGrounded": {
+          "ffi": "goud_physics3d_is_character_grounded"
+        },
+        "destroyCharacterController": {
+          "ffi": "goud_physics3d_destroy_character_controller"
         }
       }
     },

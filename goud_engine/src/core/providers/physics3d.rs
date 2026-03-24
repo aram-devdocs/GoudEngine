@@ -5,7 +5,8 @@
 
 use super::diagnostics::Physics3DDiagnosticsV1;
 use super::types::{
-    BodyDesc3D, BodyHandle, ColliderDesc3D, ColliderHandle, CollisionEvent, ContactPair3D,
+    BodyDesc3D, BodyHandle, CharacterControllerDesc3D, CharacterControllerHandle,
+    CharacterMoveResult3D, ColliderDesc3D, ColliderHandle, CollisionEvent, ContactPair3D,
     DebugShape3D, JointDesc3D, JointHandle, PhysicsCapabilities3D, RaycastHit3D,
 };
 use super::{Provider, ProviderLifecycle};
@@ -160,4 +161,57 @@ pub trait PhysicsProvider3D: Provider + ProviderLifecycle {
 
     /// Returns a snapshot of 3D physics diagnostics.
     fn physics3d_diagnostics(&self) -> Physics3DDiagnosticsV1;
+
+    // -------------------------------------------------------------------------
+    // Character Controller
+    // -------------------------------------------------------------------------
+
+    /// Create a capsule-based character controller.
+    ///
+    /// Returns a handle to the controller on success. The controller is backed
+    /// by a kinematic rigid body and capsule collider in the physics world.
+    fn create_character_controller(
+        &mut self,
+        _desc: &CharacterControllerDesc3D,
+    ) -> GoudResult<CharacterControllerHandle> {
+        Err(crate::core::error::GoudError::ProviderError {
+            subsystem: "physics3d",
+            message: "character controller not supported by this provider".to_string(),
+        })
+    }
+
+    /// Move the character controller by a desired translation, applying
+    /// gravity, slope limits, and step climbing.
+    ///
+    /// Returns the resulting position and grounded state.
+    fn move_character(
+        &mut self,
+        _handle: CharacterControllerHandle,
+        _displacement: [f32; 3],
+        _dt: f32,
+    ) -> GoudResult<CharacterMoveResult3D> {
+        Err(crate::core::error::GoudError::ProviderError {
+            subsystem: "physics3d",
+            message: "character controller not supported by this provider".to_string(),
+        })
+    }
+
+    /// Get the current position of a character controller.
+    fn character_position(&self, _handle: CharacterControllerHandle) -> GoudResult<[f32; 3]> {
+        Err(crate::core::error::GoudError::ProviderError {
+            subsystem: "physics3d",
+            message: "character controller not supported by this provider".to_string(),
+        })
+    }
+
+    /// Check if the character controller is on the ground.
+    fn is_character_grounded(&self, _handle: CharacterControllerHandle) -> GoudResult<bool> {
+        Err(crate::core::error::GoudError::ProviderError {
+            subsystem: "physics3d",
+            message: "character controller not supported by this provider".to_string(),
+        })
+    }
+
+    /// Destroy a character controller and its associated physics objects.
+    fn destroy_character_controller(&mut self, _handle: CharacterControllerHandle) {}
 }

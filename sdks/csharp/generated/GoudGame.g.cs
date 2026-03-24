@@ -816,6 +816,225 @@ namespace GoudEngine
             return NativeMethods.goud_renderer3d_postprocess_pass_count(_ctx);
         }
 
+        /// <summary>Loads a 3D model from a file (glTF, OBJ, FBX) and returns a model handle</summary>
+        public uint LoadModel(string path)
+        {
+            return NativeMethods.goud_renderer3d_load_model(_ctx, path);
+        }
+
+        /// <summary>Destroys a 3D model and frees its GPU resources</summary>
+        public bool DestroyModel(uint modelId)
+        {
+            return NativeMethods.goud_renderer3d_destroy_model(_ctx, modelId);
+        }
+
+        /// <summary>Creates an independent instance of a source model</summary>
+        public uint InstantiateModel(uint sourceModelId)
+        {
+            return NativeMethods.goud_renderer3d_instantiate_model(_ctx, sourceModelId);
+        }
+
+        /// <summary>Overrides the material on a specific sub-mesh of a model (-1 for all sub-meshes)</summary>
+        public bool SetModelMaterial(uint modelId, int meshIndex, uint materialId)
+        {
+            return NativeMethods.goud_renderer3d_set_model_material(_ctx, modelId, meshIndex, materialId);
+        }
+
+        /// <summary>Returns the number of sub-meshes in a model</summary>
+        public int GetModelMeshCount(uint modelId)
+        {
+            return NativeMethods.goud_renderer3d_get_model_mesh_count(_ctx, modelId);
+        }
+
+        /// <summary>Returns the axis-aligned bounding box of a model</summary>
+        public BoundingBox3D GetModelBoundingBox(uint modelId)
+        {
+            float _minX = 0.0f;
+            float _minY = 0.0f;
+            float _minZ = 0.0f;
+            float _maxX = 0.0f;
+            float _maxY = 0.0f;
+            float _maxZ = 0.0f;
+            NativeMethods.goud_renderer3d_get_model_bounding_box(_ctx, modelId, ref _minX, ref _minY, ref _minZ, ref _maxX, ref _maxY, ref _maxZ);
+            return new BoundingBox3D(_minX, _minY, _minZ, _maxX, _maxY, _maxZ);
+        }
+
+        /// <summary>Sets the position of a 3D model or instance</summary>
+        public bool SetModelPosition(uint modelId, float x, float y, float z)
+        {
+            return NativeMethods.goud_renderer3d_set_model_position(_ctx, modelId, x, y, z);
+        }
+
+        /// <summary>Sets the rotation of a 3D model or instance in degrees</summary>
+        public bool SetModelRotation(uint modelId, float x, float y, float z)
+        {
+            return NativeMethods.goud_renderer3d_set_model_rotation(_ctx, modelId, x, y, z);
+        }
+
+        /// <summary>Sets the scale of a 3D model or instance</summary>
+        public bool SetModelScale(uint modelId, float x, float y, float z)
+        {
+            return NativeMethods.goud_renderer3d_set_model_scale(_ctx, modelId, x, y, z);
+        }
+
+        /// <summary>Returns the number of animations in a model</summary>
+        public int GetAnimationCount(uint modelId)
+        {
+            return NativeMethods.goud_renderer3d_get_animation_count(_ctx, modelId);
+        }
+
+        /// <summary>Returns the name of an animation by index</summary>
+        public string GetAnimationName(uint modelId, int animIndex)
+        {
+            unsafe
+            {
+                int _required = NativeMethods.goud_renderer3d_get_animation_name(_ctx, modelId, animIndex, IntPtr.Zero, 0);
+                if (_required == -1)
+                {
+                    var _ex = GoudException.FromLastError();
+                    if (_ex != null) throw _ex;
+                    throw new InvalidOperationException("goud_renderer3d_get_animation_name failed.");
+                }
+                if (_required == 0) return string.Empty;
+                int _bufferSize = _required < 0 ? -_required : _required + 1;
+                while (true)
+                {
+                    var _buf = new byte[_bufferSize];
+                    fixed (byte* _ptr = _buf)
+                    {
+                        int _written = NativeMethods.goud_renderer3d_get_animation_name(_ctx, modelId, animIndex, (IntPtr)_ptr, _buf.Length);
+                        if (_written == -1)
+                        {
+                            var _ex = GoudException.FromLastError();
+                            if (_ex != null) throw _ex;
+                            throw new InvalidOperationException("goud_renderer3d_get_animation_name failed.");
+                        }
+                        if (_written < 0)
+                        {
+                            _bufferSize = -_written;
+                            continue;
+                        }
+                        if (_written == 0) return string.Empty;
+                        return System.Text.Encoding.UTF8.GetString(_buf, 0, _written);
+                    }
+                }
+            }
+        }
+
+        /// <summary>Starts playing an animation on a model instance</summary>
+        public bool PlayAnimation(uint instanceId, int animIndex, bool looping)
+        {
+            return NativeMethods.goud_renderer3d_play_animation(_ctx, instanceId, animIndex, looping);
+        }
+
+        /// <summary>Stops animation playback on a model instance</summary>
+        public bool StopAnimation(uint instanceId)
+        {
+            return NativeMethods.goud_renderer3d_stop_animation(_ctx, instanceId);
+        }
+
+        /// <summary>Sets the playback speed for a model instance's animation</summary>
+        public bool SetAnimationSpeed(uint instanceId, float speed)
+        {
+            return NativeMethods.goud_renderer3d_set_animation_speed(_ctx, instanceId, speed);
+        }
+
+        /// <summary>Sets up blending between two animation clips</summary>
+        public bool BlendAnimations(uint instanceId, int animA, int animB, float blendFactor)
+        {
+            return NativeMethods.goud_renderer3d_blend_animations(_ctx, instanceId, animA, animB, blendFactor);
+        }
+
+        /// <summary>Starts a timed transition to a target animation clip</summary>
+        public bool TransitionAnimation(uint instanceId, int targetAnim, float duration)
+        {
+            return NativeMethods.goud_renderer3d_transition_animation(_ctx, instanceId, targetAnim, duration);
+        }
+
+        /// <summary>Returns whether an animation is currently playing on a model instance</summary>
+        public bool IsAnimationPlaying(uint instanceId)
+        {
+            return NativeMethods.goud_renderer3d_is_animation_playing(_ctx, instanceId);
+        }
+
+        /// <summary>Returns the playback progress (0.0 to 1.0) of the primary animation</summary>
+        public float GetAnimationProgress(uint instanceId)
+        {
+            return NativeMethods.goud_renderer3d_get_animation_progress(_ctx, instanceId);
+        }
+
+        /// <summary>Advances all animation players by delta_time seconds (call once per frame)</summary>
+        public bool UpdateAnimations(float deltaTime)
+        {
+            return NativeMethods.goud_renderer3d_update_animations(_ctx, deltaTime);
+        }
+
+        /// <summary>Creates a new named 3D scene and returns its ID</summary>
+        public uint CreateScene(string name)
+        {
+            return NativeMethods.goud_renderer3d_create_scene(_ctx, name);
+        }
+
+        /// <summary>Destroys a 3D scene by ID</summary>
+        public bool DestroyScene(uint sceneId)
+        {
+            return NativeMethods.goud_renderer3d_destroy_scene(_ctx, sceneId);
+        }
+
+        /// <summary>Sets the current active 3D scene</summary>
+        public bool SetCurrentScene(uint sceneId)
+        {
+            return NativeMethods.goud_renderer3d_set_current_scene(_ctx, sceneId);
+        }
+
+        /// <summary>Returns the current active 3D scene ID</summary>
+        public uint GetCurrentScene()
+        {
+            return NativeMethods.goud_renderer3d_get_current_scene(_ctx);
+        }
+
+        /// <summary>Clears the current active scene so all objects are rendered</summary>
+        public bool ClearCurrentScene()
+        {
+            return NativeMethods.goud_renderer3d_clear_current_scene(_ctx);
+        }
+
+        /// <summary>Adds a 3D object to a scene</summary>
+        public bool AddObjectToScene(uint sceneId, uint objectId)
+        {
+            return NativeMethods.goud_renderer3d_add_object_to_scene(_ctx, sceneId, objectId);
+        }
+
+        /// <summary>Removes a 3D object from a scene</summary>
+        public bool RemoveObjectFromScene(uint sceneId, uint objectId)
+        {
+            return NativeMethods.goud_renderer3d_remove_object_from_scene(_ctx, sceneId, objectId);
+        }
+
+        /// <summary>Adds a model to a 3D scene</summary>
+        public bool AddModelToScene(uint sceneId, uint modelId)
+        {
+            return NativeMethods.goud_renderer3d_add_model_to_scene(_ctx, sceneId, modelId);
+        }
+
+        /// <summary>Removes a model from a 3D scene</summary>
+        public bool RemoveModelFromScene(uint sceneId, uint modelId)
+        {
+            return NativeMethods.goud_renderer3d_remove_model_from_scene(_ctx, sceneId, modelId);
+        }
+
+        /// <summary>Adds a light to a 3D scene</summary>
+        public bool AddLightToScene(uint sceneId, uint lightId)
+        {
+            return NativeMethods.goud_renderer3d_add_light_to_scene(_ctx, sceneId, lightId);
+        }
+
+        /// <summary>Removes a light from a 3D scene</summary>
+        public bool RemoveLightFromScene(uint sceneId, uint lightId)
+        {
+            return NativeMethods.goud_renderer3d_remove_light_from_scene(_ctx, sceneId, lightId);
+        }
+
         /// <summary>Draws a sprite with source rectangle for sprite sheets</summary>
         public bool DrawSpriteRect(ulong texture, float x, float y, float width, float height, float rotation, float srcX, float srcY, float srcW, float srcH, Color? color = null, uint srcMode = 1)
         {

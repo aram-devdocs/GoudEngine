@@ -275,3 +275,107 @@ fn test_postprocess_pipeline_processes_data() {
     // Exposure of 2.0 should brighten the pixels
     assert!(data[0] > 128);
 }
+
+// ============================================================================
+// Scene Management Tests
+// ============================================================================
+
+#[test]
+fn test_scene_create_and_destroy() {
+    let mut renderer = make_renderer();
+    let s1 = renderer.create_scene("level1");
+    let s2 = renderer.create_scene("level2");
+    assert_ne!(s1, s2);
+    assert!(renderer.destroy_scene(s1));
+    assert!(!renderer.destroy_scene(s1)); // already destroyed
+    assert!(renderer.destroy_scene(s2));
+}
+
+#[test]
+fn test_scene_set_and_get_current() {
+    let mut renderer = make_renderer();
+    assert_eq!(renderer.get_current_scene(), None);
+    let s = renderer.create_scene("main");
+    assert!(renderer.set_current_scene(s));
+    assert_eq!(renderer.get_current_scene(), Some(s));
+    renderer.clear_current_scene();
+    assert_eq!(renderer.get_current_scene(), None);
+}
+
+#[test]
+fn test_scene_destroy_clears_current() {
+    let mut renderer = make_renderer();
+    let s = renderer.create_scene("temp");
+    renderer.set_current_scene(s);
+    renderer.destroy_scene(s);
+    assert_eq!(renderer.get_current_scene(), None);
+}
+
+#[test]
+fn test_scene_add_object_validates_existence() {
+    let mut renderer = make_renderer();
+    let s = renderer.create_scene("s");
+    // Non-existent object should fail.
+    assert!(!renderer.add_object_to_scene(s, 9999));
+    // Create an object and add it.
+    let obj = renderer.create_primitive(PrimitiveCreateInfo {
+        primitive_type: PrimitiveType::Cube,
+        width: 1.0,
+        height: 1.0,
+        depth: 1.0,
+        segments: 1,
+        texture_id: 0,
+    });
+    assert!(renderer.add_object_to_scene(s, obj));
+    assert!(renderer.remove_object_from_scene(s, obj));
+    assert!(!renderer.remove_object_from_scene(s, obj));
+}
+
+#[test]
+fn test_scene_add_light_validates_existence() {
+    use super::types::Light;
+    let mut renderer = make_renderer();
+    let s = renderer.create_scene("s");
+    assert!(!renderer.add_light_to_scene(s, 9999));
+    let l = renderer.add_light(Light::default());
+    assert!(renderer.add_light_to_scene(s, l));
+    assert!(renderer.remove_light_from_scene(s, l));
+}
+
+#[test]
+fn test_scene_filtering_limits_rendered_objects() {
+    let mut renderer = make_renderer();
+    // Create two objects.
+    let a = renderer.create_primitive(PrimitiveCreateInfo {
+        primitive_type: PrimitiveType::Cube,
+        width: 1.0,
+        height: 1.0,
+        depth: 1.0,
+        segments: 1,
+        texture_id: 0,
+    });
+    let _b = renderer.create_primitive(PrimitiveCreateInfo {
+        primitive_type: PrimitiveType::Cube,
+        width: 1.0,
+        height: 1.0,
+        depth: 1.0,
+        segments: 1,
+        texture_id: 0,
+    });
+
+    // No scene: both objects rendered (2 draw calls).
+    renderer.render(None);
+    assert_eq!(renderer.stats().draw_calls, 2);
+
+    // Create scene with only object `a`.
+    let s = renderer.create_scene("filtered");
+    renderer.add_object_to_scene(s, a);
+    renderer.set_current_scene(s);
+    renderer.render(None);
+    assert_eq!(renderer.stats().draw_calls, 1);
+
+    // Clear scene: both objects rendered again.
+    renderer.clear_current_scene();
+    renderer.render(None);
+    assert_eq!(renderer.stats().draw_calls, 2);
+}

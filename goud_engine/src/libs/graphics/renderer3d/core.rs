@@ -2,25 +2,30 @@
 
 use std::collections::HashMap;
 
+use super::scene::Scene3D;
 use crate::core::providers::types::DebugShape3D;
 use crate::libs::graphics::backend::BufferHandle;
 use crate::libs::graphics::backend::BufferType;
 use crate::libs::graphics::backend::BufferUsage;
 use crate::libs::graphics::backend::{RenderBackend, ShaderLanguage, VertexLayout};
 
+use super::animation::AnimationPlayer;
 use super::debug_draw::build_debug_draw_vertices;
 use super::mesh::generate_plane_vertices;
 use super::mesh::{
     create_axis_mesh, create_grid_mesh, create_postprocess_quad, grid_vertex_layout,
-    instance_vertex_layout, object_vertex_layout, postprocess_vertex_layout, upload_buffer,
+    instance_vertex_layout, object_vertex_layout, postprocess_vertex_layout, skinned_vertex_layout,
+    upload_buffer,
 };
+use super::model::{Model3D, ModelInstance3D};
 use super::shaders::{
-    resolve_grid_uniforms, resolve_main_uniforms, GridUniforms, MainUniforms, FRAGMENT_SHADER_3D,
-    FRAGMENT_SHADER_3D_WGSL, GRID_FRAGMENT_SHADER, GRID_FRAGMENT_SHADER_WGSL, GRID_VERTEX_SHADER,
-    GRID_VERTEX_SHADER_WGSL, INSTANCED_FRAGMENT_SHADER_3D, INSTANCED_FRAGMENT_SHADER_3D_WGSL,
-    INSTANCED_VERTEX_SHADER_3D, INSTANCED_VERTEX_SHADER_3D_WGSL, POSTPROCESS_FRAGMENT_SHADER,
-    POSTPROCESS_FRAGMENT_SHADER_WGSL, POSTPROCESS_VERTEX_SHADER, POSTPROCESS_VERTEX_SHADER_WGSL,
-    VERTEX_SHADER_3D, VERTEX_SHADER_3D_WGSL,
+    resolve_grid_uniforms, resolve_main_uniforms, resolve_skinned_uniforms, GridUniforms,
+    MainUniforms, SkinnedUniforms, FRAGMENT_SHADER_3D, FRAGMENT_SHADER_3D_WGSL,
+    GRID_FRAGMENT_SHADER, GRID_FRAGMENT_SHADER_WGSL, GRID_VERTEX_SHADER, GRID_VERTEX_SHADER_WGSL,
+    INSTANCED_FRAGMENT_SHADER_3D, INSTANCED_FRAGMENT_SHADER_3D_WGSL, INSTANCED_VERTEX_SHADER_3D,
+    INSTANCED_VERTEX_SHADER_3D_WGSL, POSTPROCESS_FRAGMENT_SHADER, POSTPROCESS_FRAGMENT_SHADER_WGSL,
+    POSTPROCESS_VERTEX_SHADER, POSTPROCESS_VERTEX_SHADER_WGSL, SKINNED_VERTEX_SHADER,
+    SKINNED_VERTEX_SHADER_WGSL, VERTEX_SHADER_3D, VERTEX_SHADER_3D_WGSL,
 };
 use super::types::{
     AntiAliasingMode, Camera3D, FogConfig, GridConfig, InstancedMesh, Light, Material3D, Object3D,
@@ -86,10 +91,20 @@ pub struct Renderer3D {
     pub(super) next_material_id: u32,
     pub(super) skinned_meshes: HashMap<u32, SkinnedMesh3D>,
     pub(super) next_skinned_mesh_id: u32,
+    pub(super) skinned_shader_handle: ShaderHandle,
+    pub(super) skinned_uniforms: SkinnedUniforms,
+    pub(super) skinned_layout: VertexLayout,
+    pub(super) models: HashMap<u32, Model3D>,
+    pub(super) model_instances: HashMap<u32, ModelInstance3D>,
+    pub(super) next_model_id: u32,
+    pub(super) animation_players: HashMap<u32, AnimationPlayer>,
     pub(super) postprocess_pipeline: PostProcessPipeline,
     pub(super) stats: Renderer3DStats,
     pub(super) anti_aliasing_mode: AntiAliasingMode,
     pub(super) msaa_samples: u32,
+    pub(super) scenes: HashMap<u32, Scene3D>,
+    pub(super) next_scene_id: u32,
+    pub(super) current_scene: Option<u32>,
 }
 
 impl Renderer3D {
@@ -140,6 +155,16 @@ impl Renderer3D {
         let postprocess_shader_handle = backend
             .create_shader(postprocess_vertex_shader, postprocess_fragment_shader)
             .map_err(|e| format!("Postprocess shader: {e}"))?;
+
+        // Skinned mesh shader — uses the same fragment shader as the main 3D shader.
+        let (skinned_vertex_src, skinned_fragment_src) = match backend.shader_language() {
+            ShaderLanguage::Wgsl => (SKINNED_VERTEX_SHADER_WGSL, FRAGMENT_SHADER_3D_WGSL),
+            ShaderLanguage::Glsl => (SKINNED_VERTEX_SHADER, FRAGMENT_SHADER_3D),
+        };
+        let skinned_shader_handle = backend
+            .create_shader(skinned_vertex_src, skinned_fragment_src)
+            .map_err(|e| format!("Skinned 3D shader: {e}"))?;
+        let skinned_uniforms = resolve_skinned_uniforms(backend.as_ref(), skinned_shader_handle);
 
         let grid_layout = grid_vertex_layout();
         let instance_layout = instance_vertex_layout();
@@ -202,10 +227,20 @@ impl Renderer3D {
             next_material_id: 1,
             skinned_meshes: HashMap::new(),
             next_skinned_mesh_id: 1,
+            skinned_shader_handle,
+            skinned_uniforms,
+            skinned_layout: skinned_vertex_layout(),
+            models: HashMap::new(),
+            model_instances: HashMap::new(),
+            next_model_id: 1,
+            animation_players: HashMap::new(),
             postprocess_pipeline: PostProcessPipeline::new(),
             stats: Renderer3DStats::default(),
             anti_aliasing_mode: AntiAliasingMode::Off,
             msaa_samples: 1,
+            scenes: HashMap::new(),
+            next_scene_id: 1,
+            current_scene: None,
         })
     }
 
@@ -468,5 +503,6 @@ impl Drop for Renderer3D {
         self.backend.destroy_shader(self.instanced_shader_handle);
         self.backend.destroy_shader(self.grid_shader_handle);
         self.backend.destroy_shader(self.postprocess_shader_handle);
+        self.backend.destroy_shader(self.skinned_shader_handle);
     }
 }

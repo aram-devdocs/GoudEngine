@@ -55,6 +55,8 @@ IFACE_TYPES = {
     "NetworkSimulationConfig": "INetworkSimulationConfig",
     "NetworkConnectResult": "INetworkConnectResult",
     "NetworkPacket": "INetworkPacket",
+    "BoundingBox3D": "IBoundingBox3D",
+    "CharacterMoveResult": "ICharacterMoveResult",
     "UiStyle": "IUiStyle",
     "UiEvent": "IUiEvent",
     "UiManager": "IUiManager",

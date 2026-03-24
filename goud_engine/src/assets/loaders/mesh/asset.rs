@@ -243,6 +243,6 @@ impl Asset for MeshAsset {
     }
 
     fn extensions() -> &'static [&'static str] {
-        &["gltf", "glb", "obj"]
+        &["gltf", "glb", "obj", "fbx"]
     }
 }

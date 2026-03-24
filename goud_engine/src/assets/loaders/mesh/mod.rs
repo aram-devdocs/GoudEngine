@@ -1,7 +1,14 @@
 //! Mesh asset loader.
 //!
 //! This module provides asset types and loaders for 3D mesh files.
-//! Supports GLTF/GLB and OBJ formats (behind the `native` feature gate).
+//! Supports GLTF/GLB, OBJ, and FBX formats (behind the `native` feature gate).
+//!
+//! # Architecture
+//!
+//! Format-specific parsing is abstracted behind [`ModelProvider`].  Each
+//! provider converts raw file bytes into format-agnostic [`ModelData`].
+//! The [`ModelProviderRegistry`] dispatches by extension so callers never
+//! touch format-specific types.
 //!
 //! # Example
 //!
@@ -19,9 +26,15 @@ mod gltf_parser;
 mod loader;
 #[cfg(feature = "native")]
 mod obj_parser;
+mod provider;
+#[cfg(feature = "native")]
+mod providers;
 
 #[cfg(test)]
 mod tests;
 
 pub use asset::{MeshAsset, MeshBounds, MeshMaterial, MeshVertex, SubMesh};
 pub use loader::{MeshFormat, MeshLoader};
+pub use provider::{BoneData, ModelData, ModelProvider, ModelProviderRegistry, SkeletonData};
+#[cfg(feature = "native")]
+pub use providers::{default_registry, FbxProvider, GltfProvider, ObjProvider};

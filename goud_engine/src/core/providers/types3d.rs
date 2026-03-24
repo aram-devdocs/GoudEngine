@@ -81,6 +81,42 @@ pub struct JointDesc3D {
     pub motor: Option<JointMotor>,
 }
 
+/// Describes a 3D character controller to be created.
+#[derive(Debug, Clone)]
+pub struct CharacterControllerDesc3D {
+    /// Capsule radius.
+    pub radius: f32,
+    /// Capsule half-height (total height = half_height * 2 + radius * 2).
+    pub half_height: f32,
+    /// Initial position as [x, y, z].
+    pub position: [f32; 3],
+    /// Maximum slope angle (radians) the character can climb.
+    pub max_slope_angle: f32,
+    /// Step height for automatic stair climbing.
+    pub step_height: f32,
+}
+
+impl Default for CharacterControllerDesc3D {
+    fn default() -> Self {
+        Self {
+            radius: 0.3,
+            half_height: 0.5,
+            position: [0.0, 0.0, 0.0],
+            max_slope_angle: std::f32::consts::FRAC_PI_4, // 45 degrees
+            step_height: 0.25,
+        }
+    }
+}
+
+/// Result of a character controller movement.
+#[derive(Debug, Clone)]
+pub struct CharacterMoveResult3D {
+    /// Final position after movement as [x, y, z].
+    pub position: [f32; 3],
+    /// Whether the character is touching the ground.
+    pub grounded: bool,
+}
+
 /// Result of a 3D physics raycast query.
 #[derive(Debug, Clone)]
 pub struct RaycastHit3D {

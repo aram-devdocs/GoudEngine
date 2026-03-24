@@ -1770,3 +1770,27 @@ class TextCmd:
 
     def __repr__(self):
         return f"TextCmd(font_handle={self.font_handle}, x={self.x}, y={self.y}, font_size={self.font_size}, max_width={self.max_width}, line_spacing={self.line_spacing}, r={self.r}, g={self.g}, b={self.b}, a={self.a})"
+
+class BoundingBox3D:
+    """Axis-aligned bounding box in 3D space"""
+    def __init__(self, min_x: float = 0.0, min_y: float = 0.0, min_z: float = 0.0, max_x: float = 0.0, max_y: float = 0.0, max_z: float = 0.0):
+        self.min_x = min_x
+        self.min_y = min_y
+        self.min_z = min_z
+        self.max_x = max_x
+        self.max_y = max_y
+        self.max_z = max_z
+
+    def __repr__(self):
+        return f"BoundingBox3D(min_x={self.min_x}, min_y={self.min_y}, min_z={self.min_z}, max_x={self.max_x}, max_y={self.max_y}, max_z={self.max_z})"
+
+class CharacterMoveResult:
+    """Result of a character controller move operation"""
+    def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0, grounded: bool = False):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.grounded = grounded
+
+    def __repr__(self):
+        return f"CharacterMoveResult(x={self.x}, y={self.y}, z={self.z}, grounded={self.grounded})"
