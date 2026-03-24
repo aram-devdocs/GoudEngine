@@ -2,7 +2,7 @@
 
 use super::{
     BackendCapabilities, BackendInfo, BlendFactor, CullFace, DepthFunc, FrontFace, HashMap,
-    PrimitiveTopology, TextureOps, WgpuBackend,
+    PrimitiveTopology, ShaderLanguage, TextureOps, WgpuBackend,
 };
 use crate::core::{
     error::{GoudError, GoudResult},
@@ -99,6 +99,7 @@ impl WgpuBackend {
                 supports_anisotropic_filtering: true,
                 supports_bc_compression: false,
             },
+            shader_language: ShaderLanguage::Wgsl,
         };
 
         let uniform_bind_group_layout =

@@ -64,18 +64,38 @@ impl ShaderSource {
         self.source.is_empty()
     }
 
+    /// Returns `true` when the source appears to be WGSL rather than GLSL.
+    fn is_wgsl(&self) -> bool {
+        let trimmed = self.source.trim_start();
+        // WGSL sources never start with '#' (the pragma lines are stripped by
+        // the combined parser before reaching ShaderSource). GLSL always starts
+        // with `#version`.
+        !trimmed.starts_with('#')
+            && (trimmed.contains("@vertex")
+                || trimmed.contains("@fragment")
+                || trimmed.contains("@group"))
+    }
+
     /// Validates the source code for common errors.
     pub fn validate(&self) -> Result<(), String> {
         if self.source.is_empty() {
             return Err("Shader source is empty".to_string());
         }
 
-        // Check for version directive
+        if self.is_wgsl() {
+            // WGSL uses `fn main(` instead of `void main()` and has no
+            // `#version` directive.
+            if !self.source.contains("fn main(") {
+                return Err("Missing fn main() entry point in WGSL shader".to_string());
+            }
+            return Ok(());
+        }
+
+        // GLSL validation
         if !self.source.contains("#version") {
             return Err("Missing #version directive".to_string());
         }
 
-        // Check for main function
         if !self.source.contains("void main()") && !self.source.contains("void main(") {
             return Err("Missing main() function".to_string());
         }

@@ -7,7 +7,7 @@ use crate::core::error::GoudError;
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::window::with_window_state;
 use crate::libs::graphics::backend::types::{VertexAttribute, VertexAttributeType, VertexLayout};
-use crate::libs::graphics::backend::{BufferOps, ShaderOps};
+use crate::libs::graphics::backend::{BufferOps, RenderBackend, ShaderLanguage, ShaderOps};
 
 // ============================================================================
 // Coordinate Origin
@@ -268,10 +268,9 @@ pub(super) fn ensure_immediate_state(context_id: GoudContextId) -> Result<(), Go
             let backend = window_state.backend_mut();
 
             // Select shader sources based on backend type
-            let (vert_src, frag_src) = if backend.is_wgsl_backend() {
-                (WGSL_SPRITE_VERTEX_SHADER, WGSL_SPRITE_FRAGMENT_SHADER)
-            } else {
-                (SPRITE_VERTEX_SHADER, SPRITE_FRAGMENT_SHADER)
+            let (vert_src, frag_src) = match backend.shader_language() {
+                ShaderLanguage::Wgsl => (WGSL_SPRITE_VERTEX_SHADER, WGSL_SPRITE_FRAGMENT_SHADER),
+                ShaderLanguage::Glsl => (SPRITE_VERTEX_SHADER, SPRITE_FRAGMENT_SHADER),
             };
             let shader = backend.create_shader(vert_src, frag_src)?;
 

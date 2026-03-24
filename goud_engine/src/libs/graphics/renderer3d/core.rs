@@ -6,7 +6,7 @@ use crate::core::providers::types::DebugShape3D;
 use crate::libs::graphics::backend::BufferHandle;
 use crate::libs::graphics::backend::BufferType;
 use crate::libs::graphics::backend::BufferUsage;
-use crate::libs::graphics::backend::{RenderBackend, VertexLayout};
+use crate::libs::graphics::backend::{RenderBackend, ShaderLanguage, VertexLayout};
 
 use super::debug_draw::build_debug_draw_vertices;
 use super::mesh::generate_plane_vertices;
@@ -99,33 +99,29 @@ impl Renderer3D {
         window_width: u32,
         window_height: u32,
     ) -> Result<Self, String> {
-        let use_wgpu_shaders = backend.info().name == "wgpu";
-        let (vertex_shader, fragment_shader) = if use_wgpu_shaders {
-            (VERTEX_SHADER_3D_WGSL, FRAGMENT_SHADER_3D_WGSL)
-        } else {
-            (VERTEX_SHADER_3D, FRAGMENT_SHADER_3D)
+        let (vertex_shader, fragment_shader) = match backend.shader_language() {
+            ShaderLanguage::Wgsl => (VERTEX_SHADER_3D_WGSL, FRAGMENT_SHADER_3D_WGSL),
+            ShaderLanguage::Glsl => (VERTEX_SHADER_3D, FRAGMENT_SHADER_3D),
         };
-        let (instanced_vertex_shader, instanced_fragment_shader) = if use_wgpu_shaders {
-            (
+        let (instanced_vertex_shader, instanced_fragment_shader) = match backend.shader_language() {
+            ShaderLanguage::Wgsl => (
                 INSTANCED_VERTEX_SHADER_3D_WGSL,
                 INSTANCED_FRAGMENT_SHADER_3D_WGSL,
-            )
-        } else {
-            (INSTANCED_VERTEX_SHADER_3D, INSTANCED_FRAGMENT_SHADER_3D)
+            ),
+            ShaderLanguage::Glsl => (INSTANCED_VERTEX_SHADER_3D, INSTANCED_FRAGMENT_SHADER_3D),
         };
-        let (grid_vertex_shader, grid_fragment_shader) = if use_wgpu_shaders {
-            (GRID_VERTEX_SHADER_WGSL, GRID_FRAGMENT_SHADER_WGSL)
-        } else {
-            (GRID_VERTEX_SHADER, GRID_FRAGMENT_SHADER)
+        let (grid_vertex_shader, grid_fragment_shader) = match backend.shader_language() {
+            ShaderLanguage::Wgsl => (GRID_VERTEX_SHADER_WGSL, GRID_FRAGMENT_SHADER_WGSL),
+            ShaderLanguage::Glsl => (GRID_VERTEX_SHADER, GRID_FRAGMENT_SHADER),
         };
-        let (postprocess_vertex_shader, postprocess_fragment_shader) = if use_wgpu_shaders {
-            (
-                POSTPROCESS_VERTEX_SHADER_WGSL,
-                POSTPROCESS_FRAGMENT_SHADER_WGSL,
-            )
-        } else {
-            (POSTPROCESS_VERTEX_SHADER, POSTPROCESS_FRAGMENT_SHADER)
-        };
+        let (postprocess_vertex_shader, postprocess_fragment_shader) =
+            match backend.shader_language() {
+                ShaderLanguage::Wgsl => (
+                    POSTPROCESS_VERTEX_SHADER_WGSL,
+                    POSTPROCESS_FRAGMENT_SHADER_WGSL,
+                ),
+                ShaderLanguage::Glsl => (POSTPROCESS_VERTEX_SHADER, POSTPROCESS_FRAGMENT_SHADER),
+            };
 
         let shader_handle = backend
             .create_shader(vertex_shader, fragment_shader)
