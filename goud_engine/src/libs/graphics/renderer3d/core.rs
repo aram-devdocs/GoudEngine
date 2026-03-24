@@ -107,6 +107,7 @@ pub struct Renderer3D {
     pub(super) shadows_enabled: bool,
 }
 
+#[allow(missing_docs)]
 impl Renderer3D {
     #[rustfmt::skip]
     pub fn new(
@@ -421,7 +422,6 @@ impl Renderer3D {
 
         let vertex_bytes = bytemuck::cast_slice(vertices.as_slice());
         let required_bytes = vertex_bytes.len();
-
         let needs_new_buffer = !self.backend.is_buffer_valid(self.debug_draw_buffer)
             || self.debug_draw_buffer_capacity_bytes < required_bytes;
 
