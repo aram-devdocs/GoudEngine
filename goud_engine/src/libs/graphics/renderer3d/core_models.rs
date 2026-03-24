@@ -1,6 +1,6 @@
 //! Model loading and management methods for [`Renderer3D`].
 
-use super::animation::{AnimationPlayer, BonePropertyNames};
+use super::animation::{AnimationPlayer, BoneChannelMap, BonePropertyNames};
 use super::core::Renderer3D;
 use super::mesh::upload_buffer;
 use super::model::{Model3D, ModelInstance3D};
@@ -142,6 +142,7 @@ impl Renderer3D {
                     scale: Vector3::new(1.0, 1.0, 1.0),
                     texture_id: 0,
                     bounds,
+                    is_static: false,
                 },
             );
 
@@ -198,6 +199,19 @@ impl Renderer3D {
         let cached_bone_prop_names: Vec<BonePropertyNames> =
             (0..bone_count).map(BonePropertyNames::new).collect();
 
+        // Pre-compute channel index maps for each animation clip so that
+        // per-frame sampling uses direct array indexing instead of string
+        // HashMap lookups. One BoneChannelMap per animation.
+        let bone_channel_maps: Vec<BoneChannelMap> = if let Some(ref skel) = model_data.skeleton {
+            model_data
+                .animations
+                .iter()
+                .map(|anim| BoneChannelMap::build(skel, anim))
+                .collect()
+        } else {
+            Vec::new()
+        };
+
         self.models.insert(
             model_id,
             Model3D {
@@ -212,6 +226,7 @@ impl Renderer3D {
                 bind_pose_bone_indices,
                 bind_pose_bone_weights,
                 cached_bone_prop_names,
+                bone_channel_maps,
             },
         );
 
@@ -315,6 +330,7 @@ impl Renderer3D {
                     scale: Vector3::new(1.0, 1.0, 1.0),
                     texture_id,
                     bounds: src_bounds,
+                    is_static: false,
                 },
             );
 

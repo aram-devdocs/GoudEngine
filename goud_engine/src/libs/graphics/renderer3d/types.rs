@@ -173,6 +173,14 @@ pub struct Renderer3DStats {
     pub material_switches: u32,
     /// Number of texture bind operations this frame.
     pub texture_binds: u32,
+    /// Number of skinned mesh instances rendered this frame.
+    pub skinned_instances: u32,
+    /// Number of bone matrix uploads this frame.
+    pub bone_matrix_uploads: u32,
+    /// Number of animation evaluations this frame.
+    pub animation_evaluations: u32,
+    /// Number of animation evaluations saved (cache hits / LOD skips) this frame.
+    pub animation_evaluations_saved: u32,
 }
 
 /// Local-space bounding sphere for frustum culling.
@@ -246,6 +254,9 @@ pub(in crate::libs::graphics::renderer3d) struct Object3D {
     pub(in crate::libs::graphics::renderer3d) texture_id: u32,
     /// Local-space bounding sphere for frustum culling.
     pub(in crate::libs::graphics::renderer3d) bounds: BoundingSphere,
+    /// Whether this object is static (transform never changes). Used for future
+    /// static batching optimizations; material sorting already groups these.
+    pub(in crate::libs::graphics::renderer3d) is_static: bool,
 }
 
 #[derive(Debug)]

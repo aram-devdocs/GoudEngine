@@ -15,6 +15,7 @@ impl Renderer3D {
     /// scene are rendered and the scene's fog/skybox/grid configs are used.
     /// When no scene is active all entities are rendered (backward-compatible).
     pub fn render(&mut self, texture_manager: Option<&dyn TextureManagerTrait>) {
+        self.frame_counter = self.frame_counter.wrapping_add(1);
         self.stats = Default::default();
         self.backend.set_viewport(
             self.viewport.0,
@@ -62,7 +63,7 @@ impl Renderer3D {
         let view = self.camera.view_matrix();
         let view_arr = mat4_to_array(&view);
         let proj_arr = mat4_to_array(&projection);
-        let shadow_map = if self.shadows_enabled {
+        let shadow_map = if self.config.shadows.enabled && self.shadows_enabled {
             build_directional_shadow_map(&self.objects, &self.lights, self.shadow_map_size)
         } else {
             None
@@ -150,63 +151,44 @@ impl Renderer3D {
         // Track total object count before culling.
         self.stats.total_objects = self.objects.len() as u32;
 
-        // Snapshot visible objects for rendering (avoids borrow conflicts).
-        struct DrawCmd {
-            buffer: crate::libs::graphics::backend::BufferHandle,
-            vertex_count: i32,
-            position: cgmath::Vector3<f32>,
-            rotation: cgmath::Vector3<f32>,
-            scale: cgmath::Vector3<f32>,
-            color: [f32; 4],
-            texture_id: u32,
-            material_id: u32,
+        // Collect visible object IDs into the pre-allocated buffer (B3: avoids
+        // per-frame Vec<DrawCmd> allocation for large scenes).
+        self.visible_object_ids.clear();
+        for (&id, obj) in &self.objects {
+            if skinned_obj_ids.contains(&id) {
+                continue;
+            }
+            if let Some(filter) = scene_obj_filter {
+                if !filter.contains(&id) {
+                    continue;
+                }
+            }
+            if let Some(ref f) = frustum {
+                let world_center = obj.position + obj.bounds.center;
+                let max_scale = obj.scale.x.max(obj.scale.y).max(obj.scale.z);
+                let world_radius = obj.bounds.radius * max_scale;
+                if !f.intersects_sphere(world_center, world_radius) {
+                    continue;
+                }
+            }
+            self.visible_object_ids.push(id);
         }
-
-        let material_sorting = self.config.batching.material_sorting_enabled;
-        let mut obj_snapshots: Vec<DrawCmd> = self
-            .objects
-            .iter()
-            .filter(|(&id, _)| !skinned_obj_ids.contains(&id))
-            .filter(|(&id, _)| scene_obj_filter.is_none_or(|set| set.contains(&id)))
-            .filter(|(_, obj)| {
-                if let Some(ref f) = frustum {
-                    let world_center = obj.position + obj.bounds.center;
-                    let max_scale = obj.scale.x.max(obj.scale.y).max(obj.scale.z);
-                    let world_radius = obj.bounds.radius * max_scale;
-                    f.intersects_sphere(world_center, world_radius)
-                } else {
-                    true
-                }
-            })
-            .map(|(&id, obj)| {
-                let mat_id = self.object_materials.get(&id).copied().unwrap_or(0);
-                let color = if let Some(mat) = self.materials.get(&mat_id) {
-                    let c = &mat.color;
-                    [c.x, c.y, c.z, c.w]
-                } else if obj.texture_id > 0 {
-                    [1.0, 1.0, 1.0, 1.0]
-                } else {
-                    [0.8, 0.8, 0.8, 1.0]
-                };
-                DrawCmd {
-                    buffer: obj.buffer,
-                    vertex_count: obj.vertex_count,
-                    position: obj.position,
-                    rotation: obj.rotation,
-                    scale: obj.scale,
-                    color,
-                    texture_id: obj.texture_id,
-                    material_id: mat_id,
-                }
-            })
-            .collect();
 
         // Sort by material and texture to minimize GPU state changes.
+        let material_sorting = self.config.batching.material_sorting_enabled;
         if material_sorting {
-            obj_snapshots.sort_by_key(|cmd| (cmd.material_id, cmd.texture_id));
+            let objects = &self.objects;
+            let object_materials = &self.object_materials;
+            self.visible_object_ids.sort_by(|&a, &b| {
+                let mat_a = object_materials.get(&a).copied().unwrap_or(0);
+                let mat_b = object_materials.get(&b).copied().unwrap_or(0);
+                let tex_a = objects.get(&a).map_or(0, |o| o.texture_id);
+                let tex_b = objects.get(&b).map_or(0, |o| o.texture_id);
+                (mat_a, tex_a).cmp(&(mat_b, tex_b))
+            });
         }
 
-        self.stats.visible_objects = obj_snapshots.len() as u32;
+        self.stats.visible_objects = self.visible_object_ids.len() as u32;
         self.stats.culled_objects = self
             .stats
             .total_objects
@@ -233,20 +215,42 @@ impl Renderer3D {
         );
 
         let mut last_texture_id = u32::MAX;
-        for cmd in &obj_snapshots {
-            let model = Self::create_model_matrix(cmd.position, cmd.rotation, cmd.scale);
+        // Draw loop: look up object data inline from the pre-collected IDs.
+        for i in 0..self.visible_object_ids.len() {
+            let obj_id = self.visible_object_ids[i];
+            let obj = match self.objects.get(&obj_id) {
+                Some(o) => o,
+                None => continue,
+            };
+            let buffer = obj.buffer;
+            let vertex_count = obj.vertex_count;
+            let position = obj.position;
+            let rotation = obj.rotation;
+            let scale = obj.scale;
+            let texture_id = obj.texture_id;
+            let mat_id = self.object_materials.get(&obj_id).copied().unwrap_or(0);
+            let color = if let Some(mat) = self.materials.get(&mat_id) {
+                let c = &mat.color;
+                [c.x, c.y, c.z, c.w]
+            } else if texture_id > 0 {
+                [1.0, 1.0, 1.0, 1.0]
+            } else {
+                [0.8, 0.8, 0.8, 1.0]
+            };
+
+            let model = Self::create_model_matrix(position, rotation, scale);
             let model_arr = mat4_to_array(&model);
             self.backend
                 .set_uniform_mat4(self.uniforms.model, &model_arr);
-            if cmd.texture_id > 0 {
-                if cmd.texture_id != last_texture_id {
+            if texture_id > 0 {
+                if texture_id != last_texture_id {
                     if let Some(tm) = texture_manager {
-                        tm.bind_texture(cmd.texture_id, 0);
+                        tm.bind_texture(texture_id, 0);
                     } else {
-                        let texture_handle = TextureHandle::new(cmd.texture_id, 1);
+                        let texture_handle = TextureHandle::new(texture_id, 1);
                         let _ = self.backend.bind_texture(texture_handle, 0);
                     }
-                    last_texture_id = cmd.texture_id;
+                    last_texture_id = texture_id;
                     self.stats.texture_binds += 1;
                 }
                 self.backend.set_uniform_int(self.uniforms.use_texture, 1);
@@ -255,16 +259,16 @@ impl Renderer3D {
             }
             self.backend.set_uniform_vec4(
                 self.uniforms.object_color,
-                cmd.color[0],
-                cmd.color[1],
-                cmd.color[2],
-                cmd.color[3],
+                color[0],
+                color[1],
+                color[2],
+                color[3],
             );
-            let _ = self.backend.bind_buffer(cmd.buffer);
+            let _ = self.backend.bind_buffer(buffer);
             self.backend.set_vertex_attributes(&self.object_layout);
             let _ =
                 self.backend
-                    .draw_arrays(PrimitiveTopology::Triangles, 0, cmd.vertex_count as u32);
+                    .draw_arrays(PrimitiveTopology::Triangles, 0, vertex_count as u32);
             self.stats.draw_calls += 1;
         }
 

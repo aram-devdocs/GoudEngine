@@ -44,6 +44,7 @@ impl Renderer3D {
                 scale: Vector3::new(1.0, 1.0, 1.0),
                 texture_id: info.texture_id,
                 bounds,
+                is_static: false,
             },
         );
 

@@ -265,11 +265,126 @@ impl AnimationPlayer {
             }
         }
     }
+
+    /// Advance animation time and compute bone matrices using pre-built
+    /// [`BoneChannelMap`]s (zero per-frame string lookups or HashMap access).
+    ///
+    /// This is the fast path used when channel maps have been built at model
+    /// load time. Falls back to the `update_with_names` path for blending
+    /// secondary clips when needed.
+    pub fn update_with_channel_maps(
+        &mut self,
+        dt: f32,
+        skeleton: &SkeletonData,
+        animations: &[KeyframeAnimation],
+        channel_maps: &[BoneChannelMap],
+    ) {
+        // 1. Advance time on primary and secondary states.
+        advance_state(&mut self.primary, dt, animations);
+        advance_state(&mut self.secondary, dt, animations);
+
+        // 2. Handle transitions.
+        if let Some(ref mut tr) = self.transition {
+            tr.elapsed += dt;
+            if tr.elapsed >= tr.duration {
+                self.transition = None;
+                self.secondary = None;
+                self.blend_factor = 0.0;
+            } else {
+                self.blend_factor = 1.0 - (tr.elapsed / tr.duration);
+            }
+        }
+
+        let bone_count = skeleton.bones.len();
+        if bone_count == 0 {
+            return;
+        }
+
+        // Ensure scratch buffers are the right size.
+        if self.scratch_local.len() != bone_count {
+            self.scratch_local.resize(bone_count, IDENTITY_MAT4);
+            self.scratch_global.resize(bone_count, IDENTITY_MAT4);
+        }
+        if self.bone_matrices.len() != bone_count {
+            self.bone_matrices.resize(bone_count, IDENTITY_MAT4);
+        }
+
+        // 3. Sample primary bone poses using the fast channel-map path.
+        if let Some(ref state) = self.primary {
+            if let Some(anim) = animations.get(state.clip_index) {
+                if let Some(cm) = channel_maps.get(state.clip_index) {
+                    compute_bone_matrices_into_fast(
+                        skeleton,
+                        anim,
+                        state.time,
+                        cm,
+                        &mut self.scratch_local,
+                        &mut self.scratch_global,
+                        &mut self.bone_matrices,
+                    );
+                } else {
+                    // Fallback: no channel map for this clip (should not happen).
+                    let fallback: Vec<BonePropertyNames> =
+                        (0..bone_count).map(BonePropertyNames::new).collect();
+                    compute_bone_matrices_into(
+                        skeleton,
+                        anim,
+                        state.time,
+                        &fallback,
+                        &mut self.scratch_local,
+                        &mut self.scratch_global,
+                        &mut self.bone_matrices,
+                    );
+                }
+            } else {
+                for m in self.bone_matrices.iter_mut() {
+                    *m = IDENTITY_MAT4;
+                }
+            }
+        } else {
+            for m in self.bone_matrices.iter_mut() {
+                *m = IDENTITY_MAT4;
+            }
+        }
+
+        // 4. If blending, sample secondary and lerp in-place.
+        if self.blend_factor > f32::EPSILON {
+            if let Some(ref state) = self.secondary {
+                if let Some(anim) = animations.get(state.clip_index) {
+                    let secondary = if let Some(cm) = channel_maps.get(state.clip_index) {
+                        compute_bone_matrices_with_channel_map(skeleton, anim, state.time, cm)
+                    } else {
+                        let fallback: Vec<BonePropertyNames> =
+                            (0..bone_count).map(BonePropertyNames::new).collect();
+                        compute_bone_matrices_with_names(skeleton, anim, state.time, &fallback)
+                    };
+                    let t = self.blend_factor;
+                    let inv_t = 1.0 - t;
+                    for (primary, sec) in self.bone_matrices.iter_mut().zip(secondary.iter()) {
+                        for (p, &s) in primary.iter_mut().zip(sec.iter()) {
+                            *p = *p * inv_t + s * t;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 // ============================================================================
 // Internal helpers
 // ============================================================================
+
+/// Public wrapper for `advance_state` used by `core_model_animation` for
+/// shared evaluation (G5) — advances the animation clock without recomputing
+/// bone matrices.
+pub(in crate::libs::graphics::renderer3d) fn advance_state_pub(
+    state: &mut Option<AnimationState>,
+    dt: f32,
+    animations: &[KeyframeAnimation],
+) {
+    advance_state(state, dt, animations);
+}
 
 fn advance_state(state: &mut Option<AnimationState>, dt: f32, animations: &[KeyframeAnimation]) {
     if let Some(ref mut s) = state {
@@ -329,6 +444,51 @@ impl BonePropertyNames {
                 format!("node_{bone_idx}.scale.z"),
             ],
         }
+    }
+}
+
+/// Pre-computed channel index map for a (skeleton, animation) pair.
+///
+/// Eliminates per-frame string HashMap lookups by mapping each bone directly
+/// to the indices of its 10 animation channels (tx, ty, tz, rx, ry, rz, rw,
+/// sx, sy, sz). Built once at model load time.
+#[derive(Debug, Clone)]
+pub struct BoneChannelMap {
+    /// For each bone: `[tx, ty, tz, rx, ry, rz, rw, sx, sy, sz]` channel indices.
+    /// `None` means that channel does not exist in this animation.
+    pub channels: Vec<[Option<usize>; 10]>,
+}
+
+impl BoneChannelMap {
+    /// Build a channel map for the given skeleton and animation.
+    ///
+    /// For each bone, looks up the channel index for each of the 10 TRS
+    /// properties so that per-frame sampling uses direct indexing instead of
+    /// string-keyed HashMap lookups.
+    pub fn build(skeleton: &SkeletonData, anim: &KeyframeAnimation) -> Self {
+        let bone_count = skeleton.bones.len();
+        let mut channels = Vec::with_capacity(bone_count);
+        for bone_idx in 0..bone_count {
+            let find = |suffix: &str| -> Option<usize> {
+                let prop = format!("node_{bone_idx}.{suffix}");
+                anim.channels
+                    .iter()
+                    .position(|ch| ch.target_property == prop)
+            };
+            channels.push([
+                find("translation.x"),
+                find("translation.y"),
+                find("translation.z"),
+                find("rotation.x"),
+                find("rotation.y"),
+                find("rotation.z"),
+                find("rotation.w"),
+                find("scale.x"),
+                find("scale.y"),
+                find("scale.z"),
+            ]);
+        }
+        Self { channels }
     }
 }
 
@@ -425,6 +585,103 @@ fn compute_bone_matrices_into(
             &skeleton.bones[i].inverse_bind_matrix,
         );
     }
+}
+
+/// Compute bone matrices using pre-built [`BoneChannelMap`] (zero string lookups).
+///
+/// This is the fast path that replaces `compute_bone_matrices_into` when channel
+/// maps are available. Instead of string-keyed HashMap lookups per channel per
+/// bone per frame, it uses direct array indexing into the animation's channel
+/// list.
+fn compute_bone_matrices_into_fast(
+    skeleton: &SkeletonData,
+    anim: &KeyframeAnimation,
+    time: f32,
+    channel_map: &BoneChannelMap,
+    local_transforms: &mut [[f32; 16]],
+    global_transforms: &mut [[f32; 16]],
+    result: &mut [[f32; 16]],
+) {
+    let bone_count = skeleton.bones.len();
+
+    for (cm, local_out) in channel_map
+        .channels
+        .iter()
+        .zip(local_transforms.iter_mut())
+        .take(bone_count)
+    {
+        let sample = |idx: Option<usize>, default: f32| -> f32 {
+            match idx {
+                Some(ch_idx) => interpolate(&anim.channels[ch_idx].keyframes, time),
+                None => default,
+            }
+        };
+
+        let tx = sample(cm[0], 0.0);
+        let ty = sample(cm[1], 0.0);
+        let tz = sample(cm[2], 0.0);
+        let rx = sample(cm[3], 0.0);
+        let ry = sample(cm[4], 0.0);
+        let rz = sample(cm[5], 0.0);
+        let rw = sample(cm[6], 1.0);
+        let sx = sample(cm[7], 1.0);
+        let sy = sample(cm[8], 1.0);
+        let sz = sample(cm[9], 1.0);
+
+        // Normalize quaternion.
+        let len = (rx * rx + ry * ry + rz * rz + rw * rw).sqrt();
+        let (rx, ry, rz, rw) = if len > f32::EPSILON {
+            (rx / len, ry / len, rz / len, rw / len)
+        } else {
+            (0.0, 0.0, 0.0, 1.0)
+        };
+
+        *local_out = build_trs_matrix(tx, ty, tz, rx, ry, rz, rw, sx, sy, sz);
+    }
+
+    // Walk hierarchy: compute global transforms.
+    for i in 0..bone_count {
+        let parent = skeleton.bones[i].parent_index;
+        if parent >= 0 && (parent as usize) < bone_count {
+            global_transforms[i] =
+                mat4_mul(&global_transforms[parent as usize], &local_transforms[i]);
+        } else {
+            global_transforms[i] = local_transforms[i];
+        }
+    }
+
+    // Final: global * inverse_bind.
+    for i in 0..bone_count {
+        result[i] = mat4_mul(
+            &global_transforms[i],
+            &skeleton.bones[i].inverse_bind_matrix,
+        );
+    }
+}
+
+/// Compute bone matrices using channel maps (allocating path for blending).
+pub(in crate::libs::graphics::renderer3d) fn compute_bone_matrices_with_channel_map(
+    skeleton: &SkeletonData,
+    anim: &KeyframeAnimation,
+    time: f32,
+    channel_map: &BoneChannelMap,
+) -> Vec<[f32; 16]> {
+    let bone_count = skeleton.bones.len();
+    let mut local_transforms = vec![IDENTITY_MAT4; bone_count];
+    let mut global_transforms = vec![IDENTITY_MAT4; bone_count];
+    let mut result = vec![IDENTITY_MAT4; bone_count];
+
+    compute_bone_matrices_into_fast(
+        skeleton,
+        anim,
+        time,
+        channel_map,
+        &mut local_transforms,
+        &mut global_transforms,
+        &mut result,
+    );
+
+    result
 }
 
 fn sample_translation_indexed(

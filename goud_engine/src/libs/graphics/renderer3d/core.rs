@@ -129,10 +129,15 @@ pub struct Renderer3D {
     pub(super) config: Render3DConfig,
     /// Reusable scratch buffer for CPU skinning output (avoids per-submesh allocation).
     pub(super) skin_scratch_buffer: Vec<f32>,
+    /// Monotonically increasing frame counter, used for animation LOD (half-rate skipping).
+    pub(super) frame_counter: u64,
     /// Persistent GPU buffer for instanced skinned per-instance data (reused across frames).
     pub(super) instanced_skinned_instance_buffer: Option<BufferHandle>,
     /// Current allocated size in bytes of `instanced_skinned_instance_buffer`.
     pub(super) instanced_skinned_instance_buffer_size: usize,
+    /// Pre-allocated buffer of visible object IDs, reused across frames to avoid
+    /// per-frame Vec allocation during the render snapshot phase.
+    pub(super) visible_object_ids: Vec<u32>,
 }
 
 #[allow(missing_docs)]
@@ -300,8 +305,10 @@ impl Renderer3D {
             skinned_object_ids: std::collections::HashSet::new(),
             config: Render3DConfig::default(),
             skin_scratch_buffer: Vec::new(),
+            frame_counter: 0,
             instanced_skinned_instance_buffer: None,
             instanced_skinned_instance_buffer_size: 0,
+            visible_object_ids: Vec::with_capacity(1024),
         })
     }
     pub fn set_object_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
@@ -312,6 +319,14 @@ impl Renderer3D {
     }
     pub fn set_object_scale(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         self.mutate_object(id, |obj| obj.scale = Vector3::new(x, y, z))
+    }
+
+    /// Mark an object as static (transform never changes) or dynamic.
+    ///
+    /// Static objects are candidates for future static batching optimizations.
+    /// Material sorting already groups them, so the flag is forward-looking.
+    pub fn set_object_static(&mut self, id: u32, is_static: bool) -> bool {
+        self.mutate_object(id, |obj| obj.is_static = is_static)
     }
 
     fn mutate_object(&mut self, id: u32, f: impl FnOnce(&mut Object3D)) -> bool {

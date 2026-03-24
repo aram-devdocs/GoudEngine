@@ -36,6 +36,8 @@ pub(super) struct MainUniforms {
     pub(super) shadow_map: i32,
     pub(super) shadows_enabled: i32,
     pub(super) shadow_bias: i32,
+    #[allow(dead_code)] // Infrastructure for shadow softening (reserved uniform).
+    pub(super) shadow_texel_size: i32,
     pub(super) fog_enabled: i32,
     pub(super) fog_color: i32,
     pub(super) fog_density: i32,
@@ -103,6 +105,7 @@ pub(super) fn resolve_main_uniforms(
         shadow_map: loc("shadowMap"),
         shadows_enabled: loc("shadowsEnabled"),
         shadow_bias: loc("shadowBias"),
+        shadow_texel_size: loc("shadowTexelSize"),
         fog_enabled: loc("fogEnabled"),
         fog_color: loc("fogColor"),
         fog_density: loc("fogDensity"),
