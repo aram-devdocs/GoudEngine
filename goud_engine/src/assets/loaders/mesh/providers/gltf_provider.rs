@@ -9,6 +9,7 @@ use crate::assets::loaders::animation::KeyframeAnimation;
 use crate::assets::{AssetLoadError, LoadContext};
 
 use super::super::provider::{BoneData, ModelData, ModelProvider, SkeletonData};
+use super::gltf_helpers::{process_embedded_images, process_node};
 
 /// glTF 2.0 model provider (JSON and binary GLB variants).
 #[derive(Debug, Clone, Copy, Default)]
@@ -29,12 +30,15 @@ impl ModelProvider for GltfProvider {
 
         let buffers = load_gltf_buffers(&gltf, context)?;
 
-        // Read mesh data directly from the first mesh's primitives.
-        // This avoids the scene-node flattening path which can reorder vertices.
-        let gltf_mesh = gltf
-            .meshes()
-            .next()
-            .ok_or_else(|| AssetLoadError::decode_failed("GLTF contains no meshes"))?;
+        // Process embedded images first to map image indices to asset paths.
+        let image_paths = process_embedded_images(&gltf, &buffers, context)?;
+
+        // Iterate all meshes from scene nodes to flatten multiple nodes into a single mesh.
+        // This ensures multi-node scenes produce a merged vertex buffer.
+        let scenes: Vec<_> = gltf.scenes().collect();
+        if scenes.is_empty() {
+            return Err(AssetLoadError::decode_failed("GLTF contains no scenes"));
+        }
 
         let mut vertices: Vec<MeshVertex> = Vec::new();
         let mut indices: Vec<u32> = Vec::new();
@@ -46,88 +50,26 @@ impl ModelProvider for GltfProvider {
         let mut all_bone_indices: Vec<[u32; 4]> = Vec::new();
         let mut all_bone_weights: Vec<[f32; 4]> = Vec::new();
 
-        for primitive in gltf_mesh.primitives() {
-            let reader = primitive.reader(|buf| buffers.get(buf.index()).map(|b| b.as_slice()));
-
-            let positions: Vec<[f32; 3]> = reader
-                .read_positions()
-                .ok_or_else(|| AssetLoadError::decode_failed("GLTF primitive missing POSITION"))?
-                .collect();
-
-            let normals: Vec<[f32; 3]> = reader
-                .read_normals()
-                .map(|n| n.collect())
-                .unwrap_or_else(|| compute_face_normals(&positions));
-
-            let uvs: Vec<[f32; 2]> = reader
-                .read_tex_coords(0)
-                .map(|tc| tc.into_f32().collect())
-                .unwrap_or_else(|| vec![[0.0, 0.0]; positions.len()]);
-
-            // Read JOINTS_0 / WEIGHTS_0 from the same reader/primitive.
-            let joints: Option<Vec<[u16; 4]>> =
-                reader.read_joints(0).map(|j| j.into_u16().collect());
-            let weights: Option<Vec<[f32; 4]>> =
-                reader.read_weights(0).map(|w| w.into_f32().collect());
-
-            let base_vertex = vertices.len() as u32;
-            let start_index = indices.len() as u32;
-
-            for i in 0..positions.len() {
-                vertices.push(MeshVertex {
-                    position: positions[i],
-                    normal: if i < normals.len() {
-                        normals[i]
-                    } else {
-                        [0.0, 0.0, 1.0]
-                    },
-                    uv: if i < uvs.len() { uvs[i] } else { [0.0, 0.0] },
-                });
-
-                // Bone data for this vertex (defaults to zero if absent).
-                let bi = joints
-                    .as_ref()
-                    .and_then(|j| j.get(i))
-                    .map(|j| [j[0] as u32, j[1] as u32, j[2] as u32, j[3] as u32])
-                    .unwrap_or([0; 4]);
-                let bw = weights
-                    .as_ref()
-                    .and_then(|w| w.get(i))
-                    .copied()
-                    .unwrap_or([0.0; 4]);
-                all_bone_indices.push(bi);
-                all_bone_weights.push(bw);
+        let mut node_index = 0;
+        for scene in scenes {
+            for root_node in scene.nodes() {
+                process_node(
+                    &root_node,
+                    &gltf,
+                    &buffers,
+                    &image_paths,
+                    &mut vertices,
+                    &mut indices,
+                    &mut sub_meshes,
+                    &mut mesh_bounds,
+                    &mut has_bounds,
+                    &mut all_bone_indices,
+                    &mut all_bone_weights,
+                    &mut node_index,
+                );
             }
-
-            // Re-create reader for index access (positions reader was consumed).
-            let reader = primitive.reader(|buf| buffers.get(buf.index()).map(|b| b.as_slice()));
-            if let Some(idx_reader) = reader.read_indices() {
-                for idx in idx_reader.into_u32() {
-                    indices.push(base_vertex + idx);
-                }
-            } else {
-                // Unindexed: sequential vertex order.
-                for i in 0..positions.len() as u32 {
-                    indices.push(base_vertex + i);
-                }
-            }
-            let bounds = MeshBounds::from_positions(&positions);
-            if has_bounds {
-                mesh_bounds = mesh_bounds.union(bounds);
-            } else {
-                mesh_bounds = bounds;
-                has_bounds = true;
-            }
-            let index_count = indices.len() as u32 - start_index;
-            sub_meshes.push(SubMesh {
-                name: gltf_mesh.name().unwrap_or("primitive").to_string(),
-                start_index,
-                index_count,
-                material_index: primitive.material().index().map(|i| i as u32),
-                material: extract_primitive_material(&primitive),
-                bounds,
-            });
         }
+
         if vertices.is_empty() {
             return Err(AssetLoadError::decode_failed("GLTF mesh has no vertices"));
         }
@@ -148,54 +90,10 @@ impl ModelProvider for GltfProvider {
         })
     }
 }
-fn extract_primitive_material(
-    primitive: &gltf::Primitive,
-) -> Option<crate::core::types::MeshMaterial> {
-    use crate::core::types::MeshMaterial;
-    let mat = primitive.material();
-    let pbr = mat.pbr_metallic_roughness();
-    let bc = pbr.base_color_factor();
-    Some(MeshMaterial {
-        name: mat.name().map(|s| s.to_string()),
-        base_color_factor: bc,
-        base_color_texture_path: None,
-        normal_texture_path: None,
-        metallic_roughness_texture_path: None,
-        emissive_texture_path: None,
-        emissive_factor: [0.0, 0.0, 0.0],
-        metallic_factor: pbr.metallic_factor(),
-        roughness_factor: pbr.roughness_factor(),
-        alpha_cutoff: None,
-        double_sided: mat.double_sided(),
-    })
-}
-fn compute_face_normals(positions: &[[f32; 3]]) -> Vec<[f32; 3]> {
-    let mut normals = vec![[0.0f32, 0.0, 1.0]; positions.len()];
-    for tri in 0..(positions.len() / 3) {
-        let i0 = tri * 3;
-        let (v0, v1, v2) = (positions[i0], positions[i0 + 1], positions[i0 + 2]);
-        let e1 = [v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]];
-        let e2 = [v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]];
-        let nx = e1[1] * e2[2] - e1[2] * e2[1];
-        let ny = e1[2] * e2[0] - e1[0] * e2[2];
-        let nz = e1[0] * e2[1] - e1[1] * e2[0];
-        let len = (nx * nx + ny * ny + nz * nz).sqrt();
-        let n = if len > 1e-8 {
-            [nx / len, ny / len, nz / len]
-        } else {
-            [0.0, 0.0, 1.0]
-        };
-        normals[i0] = n;
-        normals[i0 + 1] = n;
-        normals[i0 + 2] = n;
-    }
-    normals
-}
-
 /// Load buffer data from glTF (embedded GLB, data URIs, and external file URIs).
 fn load_gltf_buffers(
     gltf: &gltf::Gltf,
-    context: &LoadContext,
+    context: &mut LoadContext,
 ) -> Result<Vec<Vec<u8>>, AssetLoadError> {
     use crate::assets::loaders::gltf_utils::decode_data_uri;
     let mut buffers = Vec::new();
@@ -210,19 +108,15 @@ fn load_gltf_buffers(
                 if uri.starts_with("data:") {
                     decode_data_uri(uri)?
                 } else {
-                    // External file URI — resolve relative to the asset path.
+                    // External file URI — resolve via LoadContext reader and track as dependency.
                     let base = context.path().directory().unwrap_or("");
                     let resolved = if base.is_empty() {
                         uri.to_string()
                     } else {
-                        format!("{}/{}", base, uri)
+                        format!("{base}/{uri}")
                     };
-                    std::fs::read(&resolved).map_err(|e| {
-                        AssetLoadError::decode_failed(format!(
-                            "Failed to read external buffer '{}': {e}",
-                            resolved
-                        ))
-                    })?
+                    context.add_dependency(&resolved);
+                    context.read_asset_bytes(&resolved)?
                 }
             }
         };
@@ -231,7 +125,7 @@ fn load_gltf_buffers(
     Ok(buffers)
 }
 
-/// Extract skeleton from the first glTF skin. Bone indices/weights come from the caller (read inline during
+/// Process embedded images in the glTF document and return a mapping of image index to asset path.
 fn extract_skeleton(
     gltf: &gltf::Gltf,
     buffers: &[Vec<u8>],
