@@ -3,6 +3,8 @@
 //! Wraps the `rapier3d` crate behind the `PhysicsProvider3D` trait, providing
 //! 3D rigid-body simulation, collision detection, raycasting, and joints.
 
+mod body_collider;
+mod character_controller;
 mod conversions;
 mod queries;
 #[cfg(test)]
@@ -11,7 +13,6 @@ mod tests;
 use std::collections::HashMap;
 
 use crossbeam_channel::Receiver;
-use rapier3d::na::{Quaternion, UnitQuaternion};
 use rapier3d::prelude::*;
 
 use crate::core::error::{GoudError, GoudResult};
@@ -28,28 +29,10 @@ use crate::core::providers::types::{
 use crate::core::providers::types::{BodyHandle, JointHandle};
 use crate::core::providers::{Provider, ProviderLifecycle};
 
-use rapier3d::control::{CharacterAutostep, CharacterLength, KinematicCharacterController};
 use rapier3d::prelude::ColliderHandle as RapierColliderHandle;
 
-use conversions::{body_type_from_u32, joint_from_desc, shape_from_desc};
-
-/// Internal data for a character controller instance.
-struct CharacterControllerData {
-    /// The Rapier kinematic character controller.
-    controller: KinematicCharacterController,
-    /// Handle to the kinematic rigid body.
-    body_handle: RigidBodyHandle,
-    /// Handle to the capsule collider.
-    collider_handle: RapierColliderHandle,
-    /// The capsule shape used for move_shape queries.
-    shape: SharedShape,
-    /// Whether the character is currently touching the ground.
-    grounded: bool,
-    /// Accumulated vertical velocity for gravity.
-    vertical_velocity: f32,
-    /// Gravity magnitude (m/s^2, positive = downward).
-    gravity: f32,
-}
+use character_controller::CharacterControllerData;
+use conversions::joint_from_desc;
 
 /// A 3D physics provider backed by Rapier3D.
 pub struct Rapier3DPhysicsProvider {
@@ -259,138 +242,43 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
     }
 
     fn create_body(&mut self, desc: &BodyDesc3D) -> GoudResult<BodyHandle> {
-        let rotation = UnitQuaternion::from_quaternion(Quaternion::new(
-            desc.rotation[3],
-            desc.rotation[0],
-            desc.rotation[1],
-            desc.rotation[2],
-        ));
-        let body_type = body_type_from_u32(desc.body_type);
-        let builder = match body_type {
-            RigidBodyType::Fixed => RigidBodyBuilder::fixed(),
-            RigidBodyType::Dynamic => RigidBodyBuilder::dynamic(),
-            _ => RigidBodyBuilder::kinematic_position_based(),
-        };
-        let body = builder
-            .translation(vector![
-                desc.position[0],
-                desc.position[1],
-                desc.position[2]
-            ])
-            .rotation(rotation.scaled_axis())
-            .linear_damping(desc.linear_damping)
-            .angular_damping(desc.angular_damping)
-            .gravity_scale(desc.gravity_scale)
-            .ccd_enabled(desc.ccd_enabled)
-            .locked_axes(if desc.fixed_rotation {
-                LockedAxes::ROTATION_LOCKED
-            } else {
-                LockedAxes::empty()
-            })
-            .build();
-
-        let rb_handle = self.rigid_body_set.insert(body);
-        let id = self.next_body_id;
-        self.next_body_id += 1;
-        self.body_map.insert(id, rb_handle);
-        self.body_reverse.insert(rb_handle, id);
-        Ok(BodyHandle(id))
+        self.create_body_impl(desc)
     }
 
     fn destroy_body(&mut self, handle: BodyHandle) {
-        if let Some(rb_handle) = self.body_map.remove(&handle.0) {
-            self.body_reverse.remove(&rb_handle);
-            self.rigid_body_set.remove(
-                rb_handle,
-                &mut self.island_manager,
-                &mut self.collider_set,
-                &mut self.impulse_joint_set,
-                &mut self.multibody_joint_set,
-                true,
-            );
-        }
+        self.destroy_body_impl(handle)
     }
 
     fn body_position(&self, handle: BodyHandle) -> GoudResult<[f32; 3]> {
-        let rb = self.resolve_body(handle)?;
-        let body = self
-            .rigid_body_set
-            .get(rb)
-            .ok_or(GoudError::InvalidHandle)?;
-        let t = body.translation();
-        Ok([t.x, t.y, t.z])
+        self.body_position_impl(handle)
     }
 
     fn set_body_position(&mut self, handle: BodyHandle, pos: [f32; 3]) -> GoudResult<()> {
-        let rb = self.resolve_body(handle)?;
-        let body = self
-            .rigid_body_set
-            .get_mut(rb)
-            .ok_or(GoudError::InvalidHandle)?;
-        body.set_translation(vector![pos[0], pos[1], pos[2]], true);
-        Ok(())
+        self.set_body_position_impl(handle, pos)
     }
 
     fn body_rotation(&self, handle: BodyHandle) -> GoudResult<[f32; 4]> {
-        let rb = self.resolve_body(handle)?;
-        let body = self
-            .rigid_body_set
-            .get(rb)
-            .ok_or(GoudError::InvalidHandle)?;
-        let q = body.rotation();
-        Ok([q.i, q.j, q.k, q.w])
+        self.body_rotation_impl(handle)
     }
 
     fn set_body_rotation(&mut self, handle: BodyHandle, rot: [f32; 4]) -> GoudResult<()> {
-        let rb = self.resolve_body(handle)?;
-        let body = self
-            .rigid_body_set
-            .get_mut(rb)
-            .ok_or(GoudError::InvalidHandle)?;
-        let rotation =
-            UnitQuaternion::from_quaternion(Quaternion::new(rot[3], rot[0], rot[1], rot[2]));
-        body.set_rotation(rotation, true);
-        Ok(())
+        self.set_body_rotation_impl(handle, rot)
     }
 
     fn body_velocity(&self, handle: BodyHandle) -> GoudResult<[f32; 3]> {
-        let rb = self.resolve_body(handle)?;
-        let body = self
-            .rigid_body_set
-            .get(rb)
-            .ok_or(GoudError::InvalidHandle)?;
-        let v = body.linvel();
-        Ok([v.x, v.y, v.z])
+        self.body_velocity_impl(handle)
     }
 
     fn set_body_velocity(&mut self, handle: BodyHandle, vel: [f32; 3]) -> GoudResult<()> {
-        let rb = self.resolve_body(handle)?;
-        let body = self
-            .rigid_body_set
-            .get_mut(rb)
-            .ok_or(GoudError::InvalidHandle)?;
-        body.set_linvel(vector![vel[0], vel[1], vel[2]], true);
-        Ok(())
+        self.set_body_velocity_impl(handle, vel)
     }
 
     fn apply_force(&mut self, handle: BodyHandle, force: [f32; 3]) -> GoudResult<()> {
-        let rb = self.resolve_body(handle)?;
-        let body = self
-            .rigid_body_set
-            .get_mut(rb)
-            .ok_or(GoudError::InvalidHandle)?;
-        body.add_force(vector![force[0], force[1], force[2]], true);
-        Ok(())
+        self.apply_force_impl(handle, force)
     }
 
     fn apply_impulse(&mut self, handle: BodyHandle, impulse: [f32; 3]) -> GoudResult<()> {
-        let rb = self.resolve_body(handle)?;
-        let body = self
-            .rigid_body_set
-            .get_mut(rb)
-            .ok_or(GoudError::InvalidHandle)?;
-        body.apply_impulse(vector![impulse[0], impulse[1], impulse[2]], true);
-        Ok(())
+        self.apply_impulse_impl(handle, impulse)
     }
 
     fn body_gravity_scale(&self, handle: BodyHandle) -> GoudResult<f32> {
@@ -406,36 +294,11 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
         body: BodyHandle,
         desc: &ColliderDesc3D,
     ) -> GoudResult<EngineColliderHandle> {
-        let rb = self.resolve_body(body)?;
-        let shape = shape_from_desc(desc);
-        let collider = ColliderBuilder::new(shape)
-            .friction(desc.friction)
-            .restitution(desc.restitution)
-            .sensor(desc.is_sensor)
-            .active_events(ActiveEvents::COLLISION_EVENTS)
-            .build();
-
-        let rapier_handle =
-            self.collider_set
-                .insert_with_parent(collider, rb, &mut self.rigid_body_set);
-
-        let id = self.next_collider_id;
-        self.next_collider_id += 1;
-        self.collider_map.insert(id, rapier_handle);
-        self.collider_to_body.insert(rapier_handle, rb);
-        Ok(EngineColliderHandle(id))
+        self.create_collider_impl(body, desc)
     }
 
     fn destroy_collider(&mut self, handle: EngineColliderHandle) {
-        if let Some(rapier_handle) = self.collider_map.remove(&handle.0) {
-            self.collider_to_body.remove(&rapier_handle);
-            self.collider_set.remove(
-                rapier_handle,
-                &mut self.island_manager,
-                &mut self.rigid_body_set,
-                true,
-            );
-        }
+        self.destroy_collider_impl(handle)
     }
 
     fn collider_friction(&self, handle: EngineColliderHandle) -> GoudResult<f32> {
@@ -524,57 +387,7 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
         &mut self,
         desc: &CharacterControllerDesc3D,
     ) -> GoudResult<CharacterControllerHandle> {
-        // Create a kinematic rigid body at the requested position.
-        let body = RigidBodyBuilder::kinematic_position_based()
-            .translation(vector![
-                desc.position[0],
-                desc.position[1],
-                desc.position[2]
-            ])
-            .locked_axes(LockedAxes::ROTATION_LOCKED)
-            .build();
-        let body_handle = self.rigid_body_set.insert(body);
-
-        // Create a capsule collider attached to the body.
-        let shape = SharedShape::capsule_y(desc.half_height, desc.radius);
-        let collider = ColliderBuilder::new(shape.clone())
-            .friction(0.0)
-            .restitution(0.0)
-            .build();
-        let collider_handle =
-            self.collider_set
-                .insert_with_parent(collider, body_handle, &mut self.rigid_body_set);
-
-        // Configure the Rapier kinematic character controller.
-        let controller = KinematicCharacterController {
-            max_slope_climb_angle: desc.max_slope_angle,
-            min_slope_slide_angle: desc.max_slope_angle,
-            autostep: Some(CharacterAutostep {
-                max_height: CharacterLength::Absolute(desc.step_height),
-                min_width: CharacterLength::Relative(0.5),
-                include_dynamic_bodies: true,
-            }),
-            snap_to_ground: Some(CharacterLength::Absolute(0.1)),
-            ..KinematicCharacterController::default()
-        };
-
-        let id = self.next_controller_id;
-        self.next_controller_id += 1;
-
-        self.controllers.insert(
-            id,
-            CharacterControllerData {
-                controller,
-                body_handle,
-                collider_handle,
-                shape,
-                grounded: false,
-                vertical_velocity: 0.0,
-                gravity: self.gravity.y.abs(),
-            },
-        );
-
-        Ok(CharacterControllerHandle(id))
+        self.create_character_controller_impl(desc)
     }
 
     fn move_character(
@@ -583,106 +396,18 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
         displacement: [f32; 3],
         dt: f32,
     ) -> GoudResult<CharacterMoveResult3D> {
-        let data = self
-            .controllers
-            .get_mut(&handle.0)
-            .ok_or(GoudError::InvalidHandle)?;
-
-        // Apply gravity when not grounded.
-        if !data.grounded {
-            data.vertical_velocity -= data.gravity * dt;
-        } else {
-            // Reset vertical velocity when grounded (allow small downward
-            // snap so ground detection stays stable).
-            data.vertical_velocity = -0.1;
-        }
-
-        let desired = vector![
-            displacement[0],
-            displacement[1] + data.vertical_velocity * dt,
-            displacement[2]
-        ];
-
-        // Get current body position for the character.
-        let body = self
-            .rigid_body_set
-            .get(data.body_handle)
-            .ok_or(GoudError::InvalidHandle)?;
-        let char_pos = *body.position();
-
-        // Exclude the character's own collider from queries.
-        let exclude_collider = data.collider_handle;
-        let filter = QueryFilter::default().exclude_collider(exclude_collider);
-
-        let result = data.controller.move_shape(
-            dt,
-            &self.rigid_body_set,
-            &self.collider_set,
-            &self.query_pipeline,
-            data.shape.as_ref(),
-            &char_pos,
-            desired,
-            filter,
-            |_| {},
-        );
-
-        data.grounded = result.grounded;
-        if result.grounded {
-            data.vertical_velocity = -0.1;
-        }
-
-        // Apply the corrected translation to the kinematic body.
-        let new_translation = char_pos.translation.vector + result.translation;
-        let body = self
-            .rigid_body_set
-            .get_mut(data.body_handle)
-            .ok_or(GoudError::InvalidHandle)?;
-        body.set_next_kinematic_translation(new_translation);
-
-        let pos = new_translation;
-        Ok(CharacterMoveResult3D {
-            position: [pos.x, pos.y, pos.z],
-            grounded: data.grounded,
-        })
+        self.move_character_impl(handle, displacement, dt)
     }
 
     fn character_position(&self, handle: CharacterControllerHandle) -> GoudResult<[f32; 3]> {
-        let data = self
-            .controllers
-            .get(&handle.0)
-            .ok_or(GoudError::InvalidHandle)?;
-        let body = self
-            .rigid_body_set
-            .get(data.body_handle)
-            .ok_or(GoudError::InvalidHandle)?;
-        let t = body.translation();
-        Ok([t.x, t.y, t.z])
+        self.character_position_impl(handle)
     }
 
     fn is_character_grounded(&self, handle: CharacterControllerHandle) -> GoudResult<bool> {
-        let data = self
-            .controllers
-            .get(&handle.0)
-            .ok_or(GoudError::InvalidHandle)?;
-        Ok(data.grounded)
+        self.is_character_grounded_impl(handle)
     }
 
     fn destroy_character_controller(&mut self, handle: CharacterControllerHandle) {
-        if let Some(data) = self.controllers.remove(&handle.0) {
-            self.collider_set.remove(
-                data.collider_handle,
-                &mut self.island_manager,
-                &mut self.rigid_body_set,
-                true,
-            );
-            self.rigid_body_set.remove(
-                data.body_handle,
-                &mut self.island_manager,
-                &mut self.collider_set,
-                &mut self.impulse_joint_set,
-                &mut self.multibody_joint_set,
-                true,
-            );
-        }
+        self.destroy_character_controller_impl(handle)
     }
 }

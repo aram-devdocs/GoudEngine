@@ -11,8 +11,11 @@
 //! enabling backend-agnostic rendering (OpenGL, wgpu, etc.).
 
 mod animation;
+#[cfg(test)]
+mod animation_tests;
 mod core;
 mod core_materials;
+mod core_model_animation;
 mod core_models;
 mod core_particles;
 mod core_primitives;
