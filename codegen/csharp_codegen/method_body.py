@@ -35,6 +35,32 @@ def _cs_sdk_value_expr(source_expr: str, schema_type: str) -> str:
     return f"new {schema_type}({', '.join(field_exprs)})"
 
 
+def _cs_build_struct_field_args(struct_name: str, out_params: list, out_locals: list) -> str:
+    """Build constructor arguments for a struct, with type conversions if needed."""
+    type_def = schema.get("types", {}).get(struct_name, {})
+    if type_def.get("kind") != "value":
+        return ", ".join(out_locals)
+
+    fields = type_def.get("fields", [])
+    field_args = []
+
+    for (out_param, out_local, field) in zip(out_params, out_locals, fields):
+        out_type = out_param["type"]
+        field_type = field["type"]
+
+        # If types match, use the local as-is
+        if out_type == field_type:
+            field_args.append(out_local)
+        # If out_param is i32 and field is bool, convert: local != 0
+        elif out_type == "i32" and field_type == "bool":
+            field_args.append(f"{out_local} != 0")
+        # Otherwise, use the local (may cause a compile error if truly incompatible)
+        else:
+            field_args.append(out_local)
+
+    return ", ".join(field_args)
+
+
 def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_windowed: bool):
     """Emit the body statements for one method into list L."""
     if mn == "Destroy":
@@ -259,7 +285,7 @@ def _gen_method_body(mn: str, mm: dict, params: list, ret: str, L: list, is_wind
             src = out_locals[0]
             L.append(f"            return {_cs_sdk_value_expr(src, struct_name)};")
         else:
-            field_args = ", ".join(out_locals)
+            field_args = _cs_build_struct_field_args(struct_name, out_params, out_locals)
             L.append(f"            return new {struct_name}({field_args});")
         return
     if "out_params" in mm and "returns_scalar" in mm:

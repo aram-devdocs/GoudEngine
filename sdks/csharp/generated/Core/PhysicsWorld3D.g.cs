@@ -193,15 +193,9 @@ namespace GoudEngine
             float _x = 0.0f;
             float _y = 0.0f;
             float _z = 0.0f;
-            var _groundedBuf = new byte[1];
-            unsafe
-            {
-                fixed (byte* _gPtr = _groundedBuf)
-                {
-                    NativeMethods.goud_physics3d_move_character(_ctx, controllerId, dx, dy, dz, dt, ref _x, ref _y, ref _z, (IntPtr)_gPtr);
-                }
-            }
-            return new CharacterMoveResult(_x, _y, _z, _groundedBuf[0] != 0);
+            int _grounded = 0;
+            NativeMethods.goud_physics3d_move_character(_ctx, controllerId, dx, dy, dz, dt, ref _x, ref _y, ref _z, ref _grounded);
+            return new CharacterMoveResult(_x, _y, _z, _grounded != 0);
         }
 
         /// <summary>Gets the position of a 3D character controller</summary>
