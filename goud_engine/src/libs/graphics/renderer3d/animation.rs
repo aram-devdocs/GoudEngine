@@ -100,6 +100,9 @@ impl AnimationPlayer {
     }
 
     /// Set up manual blending between two clips.
+    ///
+    /// Both animations loop by default. This is safe because the caller explicitly controls
+    /// the blend factor; when they're done blending, they can stop or transition to a new clip.
     pub fn blend(&mut self, clip_a: usize, clip_b: usize, factor: f32) {
         self.primary = Some(AnimationState {
             clip_index: clip_a,
