@@ -322,6 +322,8 @@ impl Renderer3D {
                 self.backend
                     .set_uniform_vec4(skinned_unis.main.object_color, 0.8, 0.8, 0.8, 1.0);
 
+                self.stats.skinned_instances += 1;
+
                 if gpu_skinning {
                     let bone_data: &[u8] = bytemuck::cast_slice(bone_mats);
                     self.ensure_bone_storage_buffer(bone_data.len());
@@ -334,6 +336,7 @@ impl Renderer3D {
                         }
                         let _ = self.backend.bind_storage_buffer(storage_handle, 0);
                     }
+                    self.stats.bone_matrix_uploads += 1;
                 } else {
                     for (i, mat) in bone_mats.iter().enumerate() {
                         if i < skinned_unis.bone_matrices.len() {
@@ -341,6 +344,7 @@ impl Renderer3D {
                                 .set_uniform_mat4(skinned_unis.bone_matrices[i], mat);
                         }
                     }
+                    self.stats.bone_matrix_uploads += 1;
                 }
 
                 let _ = self.backend.bind_buffer(*buffer);

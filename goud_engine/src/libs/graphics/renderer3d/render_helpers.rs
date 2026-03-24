@@ -216,6 +216,8 @@ impl Renderer3D {
             let mat_ids = unsafe { &*draw.mat_ids };
             let bone_mats = unsafe { &*draw.bone_mats };
 
+            self.stats.skinned_instances += 1;
+
             if gpu_skinning {
                 // Upload bone matrices to a storage buffer for the GPU skinning shader.
                 let bone_data: &[u8] = bytemuck::cast_slice(bone_mats);
@@ -229,6 +231,7 @@ impl Renderer3D {
                     }
                     let _ = self.backend.bind_storage_buffer(storage_handle, 0);
                 }
+                self.stats.bone_matrix_uploads += 1;
             } else {
                 // Upload bone matrices as individual uniforms (OpenGL/CPU path).
                 for (i, mat) in bone_mats.iter().enumerate() {
@@ -237,6 +240,7 @@ impl Renderer3D {
                             .set_uniform_mat4(skinned_unis.bone_matrices[i], mat);
                     }
                 }
+                self.stats.bone_matrix_uploads += 1;
             }
 
             for (sub_idx, &obj_id) in obj_ids.iter().enumerate() {

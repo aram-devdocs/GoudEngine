@@ -120,31 +120,30 @@ pub fn interpolate(keyframes: &[Keyframe], t: f32) -> f32 {
         return last.value;
     }
 
-    // Find the two surrounding keyframes
-    for window in keyframes.windows(2) {
-        let from = &window[0];
-        let to = &window[1];
-
-        if t >= from.time && t <= to.time {
-            let duration = to.time - from.time;
-            if duration <= f32::EPSILON {
-                return to.value;
-            }
-
-            let local_t = (t - from.time) / duration;
-
-            // Step easing jumps to `to.value` only at exactly `to.time`
-            if matches!(from.easing, EasingFunction::Step) {
-                return from.value;
-            }
-
-            let eased_t = apply_easing(&from.easing, local_t);
-            return from.value + (to.value - from.value) * eased_t;
-        }
+    // Binary search: find the first keyframe with time > t
+    let idx = keyframes.partition_point(|kf| kf.time <= t);
+    // idx is now the index of the first keyframe AFTER t
+    // So keyframes[idx-1] is before t, keyframes[idx] is after t
+    if idx == 0 || idx >= keyframes.len() {
+        return keyframes.last().map_or(0.0, |kf| kf.value);
     }
 
-    // Fallback (should not reach here with sorted keyframes)
-    last.value
+    let from = &keyframes[idx - 1];
+    let to = &keyframes[idx];
+    let duration = to.time - from.time;
+    if duration <= f32::EPSILON {
+        return to.value;
+    }
+
+    let local_t = (t - from.time) / duration;
+
+    // Step easing jumps to `to.value` only at exactly `to.time`
+    if matches!(from.easing, EasingFunction::Step) {
+        return from.value;
+    }
+
+    let eased_t = apply_easing(&from.easing, local_t);
+    from.value + (to.value - from.value) * eased_t
 }
 
 // =============================================================================

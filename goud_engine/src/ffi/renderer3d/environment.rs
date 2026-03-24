@@ -255,6 +255,150 @@ pub extern "C" fn goud_renderer3d_render_all(context_id: GoudContextId) -> bool 
     goud_renderer3d_render(context_id)
 }
 
+// ============================================================================
+// FFI: Render Config
+// ============================================================================
+
+/// Enables or disables frustum culling.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_frustum_culling_enabled(
+    context_id: GoudContextId,
+    enabled: bool,
+) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    with_renderer(context_id, |renderer| {
+        let mut config = renderer.render_config().clone();
+        config.frustum_culling.enabled = enabled;
+        renderer.set_render_config(config);
+        0
+    })
+    .unwrap_or(-1)
+}
+
+/// Sets the skinning mode (0 = CPU, 1 = GPU).
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_skinning_mode(
+    context_id: GoudContextId,
+    mode: u32,
+) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    with_renderer(context_id, |renderer| {
+        let mut config = renderer.render_config().clone();
+        config.skinning.mode = match mode {
+            0 => crate::libs::graphics::renderer3d::config::SkinningMode::Cpu,
+            _ => crate::libs::graphics::renderer3d::config::SkinningMode::Gpu,
+        };
+        renderer.set_render_config(config);
+        0
+    })
+    .unwrap_or(-1)
+}
+
+/// Enables or disables material sorting.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_material_sorting_enabled(
+    context_id: GoudContextId,
+    enabled: bool,
+) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    with_renderer(context_id, |renderer| {
+        let mut config = renderer.render_config().clone();
+        config.batching.material_sorting_enabled = enabled;
+        renderer.set_render_config(config);
+        0
+    })
+    .unwrap_or(-1)
+}
+
+/// Enables or disables animation LOD (distance-based update throttling).
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_animation_lod_enabled(
+    context_id: GoudContextId,
+    enabled: bool,
+) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    with_renderer(context_id, |renderer| {
+        let mut config = renderer.render_config().clone();
+        config.skinning.animation_lod_enabled = enabled;
+        renderer.set_render_config(config);
+        0
+    })
+    .unwrap_or(-1)
+}
+
+/// Enables or disables shared animation evaluation (cache identical poses).
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_shared_animation_eval(
+    context_id: GoudContextId,
+    enabled: bool,
+) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    with_renderer(context_id, |renderer| {
+        let mut config = renderer.render_config().clone();
+        config.skinning.shared_animation_eval = enabled;
+        renderer.set_render_config(config);
+        0
+    })
+    .unwrap_or(-1)
+}
+
+// ============================================================================
+// FFI: Stats
+// ============================================================================
+
+/// Returns the number of draw calls last frame, or -1 on error.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_get_draw_calls(context_id: GoudContextId) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    with_renderer(context_id, |renderer| renderer.stats().draw_calls as i32).unwrap_or(-1)
+}
+
+/// Returns the number of visible objects last frame, or -1 on error.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_get_visible_object_count(context_id: GoudContextId) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    with_renderer(context_id, |renderer| renderer.stats().visible_objects as i32).unwrap_or(-1)
+}
+
+/// Returns the number of culled objects last frame, or -1 on error.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_get_culled_object_count(context_id: GoudContextId) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    with_renderer(context_id, |renderer| renderer.stats().culled_objects as i32).unwrap_or(-1)
+}
+
 #[cfg(test)]
 mod tests {
     use super::resolved_runtime_debug_draw_shapes;

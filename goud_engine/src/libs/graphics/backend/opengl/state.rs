@@ -343,6 +343,12 @@ impl BufferOps for OpenGLBackend {
     fn unbind_buffer(&mut self, buffer_type: crate::libs::graphics::backend::types::BufferType) {
         super::buffer_ops::unbind_buffer(self, buffer_type)
     }
+
+    fn supports_storage_buffers(&self) -> bool {
+        // OpenGL 3.3 core does not support SSBOs (requires GL 4.3+).
+        // GPU skinning falls back to CPU skinning on this backend.
+        false
+    }
 }
 
 // ============================================================================

@@ -3193,12 +3193,28 @@
       "return_type": "f32",
       "is_unsafe": false
     },
+    "goud_renderer3d_get_culled_object_count": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_renderer3d_get_current_scene": {
       "source_file": "ffi/renderer3d/scene.rs",
       "params": [
         "context_id: GoudContextId"
       ],
       "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_get_draw_calls": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
       "is_unsafe": false
     },
     "goud_renderer3d_get_model_bounding_box": {
@@ -3232,6 +3248,14 @@
         "object_id: u32"
       ],
       "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_get_visible_object_count": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
       "is_unsafe": false
     },
     "goud_renderer3d_instantiate_model": {
@@ -3362,6 +3386,15 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_renderer3d_set_animation_lod_enabled": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "enabled: bool"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_renderer3d_set_animation_speed": {
       "source_file": "ffi/renderer3d/animation.rs",
       "params": [
@@ -3412,6 +3445,15 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_renderer3d_set_frustum_culling_enabled": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "enabled: bool"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_renderer3d_set_grid_enabled": {
       "source_file": "ffi/renderer3d/environment.rs",
       "params": [
@@ -3419,6 +3461,15 @@
         "enabled: bool"
       ],
       "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_material_sorting_enabled": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "enabled: bool"
+      ],
+      "return_type": "i32",
       "is_unsafe": false
     },
     "goud_renderer3d_set_model_material": {
@@ -3514,6 +3565,15 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_renderer3d_set_shared_animation_eval": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "enabled: bool"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_renderer3d_set_skinned_mesh_bones": {
       "source_file": "ffi/renderer3d/skinned.rs",
       "params": [
@@ -3559,6 +3619,15 @@
         "z: f32"
       ],
       "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_skinning_mode": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "mode: u32"
+      ],
+      "return_type": "i32",
       "is_unsafe": false
     },
     "goud_renderer3d_stop_animation": {
@@ -5769,5 +5838,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 579
+  "total_count": 587
 }

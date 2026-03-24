@@ -143,11 +143,13 @@ impl Renderer3D {
 
                     if dist > lod_skip_dist {
                         // Freeze: keep last pose, don't update at all.
+                        self.stats.animation_evaluations_saved += 1;
                         continue;
                     }
                     if dist > lod_dist {
                         // Half rate: skip every other frame using player_id parity.
                         if !frame_counter.wrapping_add(player_id as u64).is_multiple_of(2) {
+                            self.stats.animation_evaluations_saved += 1;
                             continue;
                         }
                     }
@@ -184,6 +186,7 @@ impl Renderer3D {
                                 let copy_len = cached.len().min(player.bone_matrices.len());
                                 player.bone_matrices[..copy_len]
                                     .copy_from_slice(&cached[..copy_len]);
+                                self.stats.animation_evaluations_saved += 1;
                                 continue;
                             }
                         }
@@ -198,6 +201,7 @@ impl Renderer3D {
                     // was loaded through load_model, but handle gracefully).
                     player.update(dt, skeleton, animations);
                 }
+                self.stats.animation_evaluations += 1;
 
                 // -- G5: Cache the result for shared eval --
                 if shared_eval && player.transition.is_none() && player.blend_factor <= f32::EPSILON
