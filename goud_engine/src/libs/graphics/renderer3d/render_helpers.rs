@@ -121,6 +121,171 @@ impl Renderer3D {
         self.backend.enable_depth_test();
     }
 
+    /// Collect object IDs belonging to skinned models and their instances.
+    pub(super) fn collect_skinned_object_ids(&self) -> std::collections::HashSet<u32> {
+        let mut ids = std::collections::HashSet::new();
+        for model in self.models.values() {
+            if model.is_skinned {
+                ids.extend(model.mesh_object_ids.iter().copied());
+            }
+        }
+        for inst in self.model_instances.values() {
+            if let Some(src) = self.models.get(&inst.source_model_id) {
+                if src.is_skinned {
+                    ids.extend(inst.mesh_object_ids.iter().copied());
+                }
+            }
+        }
+        ids
+    }
+
+    /// Render skinned Model3D and ModelInstance3D entries using the skinned shader.
+    ///
+    /// Iterates models and instances that have `is_skinned == true`, binds the
+    /// skinned shader, uploads bone matrices from the matching `AnimationPlayer`,
+    /// and draws each sub-mesh with the skinned vertex layout.
+    pub(super) fn render_skinned_models(
+        &mut self,
+        view_arr: &[f32; 16],
+        proj_arr: &[f32; 16],
+        shadow_matrix: &[f32; 16],
+        shadows_enabled: bool,
+        fog: &super::types::FogConfig,
+        lights: &[super::types::Light],
+        texture_manager: Option<&dyn super::texture::TextureManagerTrait>,
+    ) {
+        let scene_model_filter = self
+            .current_scene
+            .and_then(|sid| self.scenes.get(&sid))
+            .map(|s| &s.models);
+
+        // Collect draw data: (obj_ids, mat_ids, bone_matrices).
+        let mut draws: Vec<(Vec<u32>, Vec<u32>, Vec<[f32; 16]>)> = Vec::new();
+
+        for (&model_id, model) in &self.models {
+            if !model.is_skinned {
+                continue;
+            }
+            if let Some(filter) = scene_model_filter {
+                if !filter.contains(&model_id) {
+                    continue;
+                }
+            }
+            if let Some(player) = self.animation_players.get(&model_id) {
+                draws.push((
+                    model.mesh_object_ids.clone(),
+                    model.mesh_material_ids.clone(),
+                    player.bone_matrices.clone(),
+                ));
+            }
+        }
+
+        for (&inst_id, inst) in &self.model_instances {
+            let source = match self.models.get(&inst.source_model_id) {
+                Some(m) => m,
+                None => continue,
+            };
+            if !source.is_skinned {
+                continue;
+            }
+            if let Some(filter) = scene_model_filter {
+                if !filter.contains(&inst_id) {
+                    continue;
+                }
+            }
+            if let Some(player) = self.animation_players.get(&inst_id) {
+                draws.push((
+                    inst.mesh_object_ids.clone(),
+                    inst.mesh_material_ids.clone(),
+                    player.bone_matrices.clone(),
+                ));
+            }
+        }
+
+        if draws.is_empty() {
+            return;
+        }
+
+        let _ = self.backend.bind_shader(self.skinned_shader_handle);
+        let skinned_unis = self.skinned_uniforms.clone();
+        self.apply_main_uniforms(
+            view_arr,
+            proj_arr,
+            shadow_matrix,
+            shadows_enabled,
+            &skinned_unis.main,
+            fog,
+            lights,
+        );
+
+        for (obj_ids, mat_ids, bone_mats) in &draws {
+            for (i, mat) in bone_mats.iter().enumerate() {
+                if i < skinned_unis.bone_matrices.len() {
+                    self.backend
+                        .set_uniform_mat4(skinned_unis.bone_matrices[i], mat);
+                }
+            }
+
+            for (sub_idx, &obj_id) in obj_ids.iter().enumerate() {
+                let (buffer, vc, pos, rot, scl, color, tid) = match self.objects.get(&obj_id) {
+                    Some(obj) => {
+                        let c = mat_ids
+                            .get(sub_idx)
+                            .and_then(|mid| self.materials.get(mid))
+                            .map(|m| [m.color.x, m.color.y, m.color.z, m.color.w])
+                            .unwrap_or([0.8, 0.8, 0.8, 1.0]);
+                        (
+                            obj.buffer,
+                            obj.vertex_count,
+                            obj.position,
+                            obj.rotation,
+                            obj.scale,
+                            c,
+                            obj.texture_id,
+                        )
+                    }
+                    None => continue,
+                };
+
+                let model_mat = Self::create_model_matrix(pos, rot, scl);
+                let model_arr = super::render::mat4_to_array(&model_mat);
+                self.backend
+                    .set_uniform_mat4(skinned_unis.main.model, &model_arr);
+
+                if tid > 0 {
+                    if let Some(tm) = texture_manager {
+                        tm.bind_texture(tid, 0);
+                    } else {
+                        let texture_handle = TextureHandle::new(tid, 1);
+                        let _ = self.backend.bind_texture(texture_handle, 0);
+                    }
+                    self.backend
+                        .set_uniform_int(skinned_unis.main.use_texture, 1);
+                } else {
+                    self.backend
+                        .set_uniform_int(skinned_unis.main.use_texture, 0);
+                }
+
+                self.backend.set_uniform_vec4(
+                    skinned_unis.main.object_color,
+                    color[0],
+                    color[1],
+                    color[2],
+                    color[3],
+                );
+
+                let _ = self.backend.bind_buffer(buffer);
+                self.backend.set_vertex_attributes(&self.skinned_layout);
+                let _ = self
+                    .backend
+                    .draw_arrays(PrimitiveTopology::Triangles, 0, vc as u32);
+                self.stats.draw_calls += 1;
+            }
+        }
+
+        self.backend.unbind_shader();
+    }
+
     /// Upload view/projection/fog/light uniforms to the currently-bound shader.
     pub(super) fn apply_main_uniforms(
         &mut self,

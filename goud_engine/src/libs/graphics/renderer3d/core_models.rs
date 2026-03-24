@@ -26,7 +26,13 @@ impl Renderer3D {
             return 0;
         }
 
-        let all_interleaved = mesh.to_interleaved_floats();
+        let is_skinned = model_data.skeleton.is_some();
+        let floats_per_vertex: usize = if is_skinned { 16 } else { 8 };
+        let all_interleaved = if let Some(ref skeleton) = model_data.skeleton {
+            mesh.to_skinned_interleaved_floats(&skeleton.bone_indices, &skeleton.bone_weights)
+        } else {
+            mesh.to_interleaved_floats()
+        };
         let mut mesh_object_ids = Vec::new();
         let mut mesh_material_ids = Vec::new();
 
@@ -54,11 +60,11 @@ impl Renderer3D {
             let end = (start + count).min(mesh.indices.len());
             let sub_indices = &mesh.indices[start..end];
 
-            let mut vertices = Vec::with_capacity(count * 8);
+            let mut vertices = Vec::with_capacity(count * floats_per_vertex);
             for &idx in sub_indices {
-                let base = (idx as usize) * 8;
-                if base + 8 <= all_interleaved.len() {
-                    vertices.extend_from_slice(&all_interleaved[base..base + 8]);
+                let base = (idx as usize) * floats_per_vertex;
+                if base + floats_per_vertex <= all_interleaved.len() {
+                    vertices.extend_from_slice(&all_interleaved[base..base + floats_per_vertex]);
                 }
             }
 
@@ -80,7 +86,7 @@ impl Renderer3D {
                 object_id,
                 Object3D {
                     buffer,
-                    vertex_count: (vertices.len() / 8) as i32,
+                    vertex_count: (vertices.len() / floats_per_vertex) as i32,
                     vertices,
                     position: Vector3::new(0.0, 0.0, 0.0),
                     rotation: Vector3::new(0.0, 0.0, 0.0),
@@ -145,6 +151,7 @@ impl Renderer3D {
                 source_path: source_path.to_string(),
                 skeleton: model_data.skeleton,
                 animations: model_data.animations,
+                is_skinned,
             },
         );
 

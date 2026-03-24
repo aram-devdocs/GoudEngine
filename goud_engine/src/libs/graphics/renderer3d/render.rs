@@ -134,6 +134,9 @@ impl Renderer3D {
             .and_then(|sid| self.scenes.get(&sid))
             .map(|s| &s.lights);
 
+        // Object IDs belonging to skinned models — excluded from the standard pass.
+        let skinned_obj_ids = self.collect_skinned_object_ids();
+
         // Material-aware object rendering: snapshot to avoid borrow conflicts.
         let obj_snapshots: Vec<(
             crate::libs::graphics::backend::BufferHandle,
@@ -146,6 +149,7 @@ impl Renderer3D {
         )> = self
             .objects
             .iter()
+            .filter(|(&id, _)| !skinned_obj_ids.contains(&id))
             .filter(|(&id, _)| scene_obj_filter.is_none_or(|set| set.contains(&id)))
             .map(|(&id, obj)| {
                 if let Some(&mat_id) = self.object_materials.get(&id) {
@@ -291,6 +295,19 @@ impl Renderer3D {
             // Re-bind main shader for subsequent rendering.
             let _ = self.backend.bind_shader(self.shader_handle);
         }
+
+        // Skinned model rendering pass — draws Model3D/ModelInstance3D entries
+        // that have skeleton data, using the skinned shader with bone matrices
+        // from their AnimationPlayer.
+        self.render_skinned_models(
+            &view_arr,
+            &proj_arr,
+            &shadow_matrix,
+            shadow_map.is_some(),
+            &eff_fog,
+            &filtered_lights,
+            texture_manager,
+        );
 
         self.backend.unbind_shader();
 
