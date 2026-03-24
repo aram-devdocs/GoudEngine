@@ -256,13 +256,14 @@ fn extract_skeleton(
             .map(|pi| pi as i32)
             .unwrap_or(-1);
 
-        let ibm_row_major = inverse_bind_matrices
+        let ibm_col_major = inverse_bind_matrices
             .get(i)
             .copied()
             .unwrap_or(identity_ibm);
 
-        // Convert from row-major glTF format to column-major.
-        let ibm = row_major_to_column_major(&ibm_row_major);
+        // glTF inverse-bind matrices are already column-major (mat[col][row]).
+        // Flatten without transposing.
+        let ibm = flatten_mat4(&ibm_col_major);
 
         bones.push(BoneData {
             name: joint_node.name().unwrap_or("unnamed_bone").to_string(),
@@ -311,7 +312,25 @@ fn extract_skeleton(
 }
 
 /// Extract all animations from the glTF document.
+///
+/// Channel target properties are named using the **joint index** (0..N)
+/// rather than the glTF node index so that `compute_bone_matrices` can
+/// look them up by bone index directly.
 fn extract_all_animations(gltf: &gltf::Gltf, buffers: &[Vec<u8>]) -> Vec<KeyframeAnimation> {
+    // Build a mapping from glTF node index to skeleton joint index.
+    // This ensures animation channels reference the same indices used by
+    // `compute_bone_matrices` (which iterates 0..bone_count).
+    let joint_map: std::collections::HashMap<usize, usize> = gltf
+        .skins()
+        .next()
+        .map(|skin| {
+            skin.joints()
+                .enumerate()
+                .map(|(i, node)| (node.index(), i))
+                .collect()
+        })
+        .unwrap_or_default();
+
     let mut animations = Vec::new();
 
     for gltf_anim in gltf.animations() {
@@ -360,6 +379,12 @@ fn extract_all_animations(gltf: &gltf::Gltf, buffers: &[Vec<u8>]) -> Vec<Keyfram
                 values.len() / timestamps.len()
             };
 
+            // Skip channels that don't target a skeleton joint.
+            let joint_idx = match joint_map.get(&node_index) {
+                Some(&ji) => ji,
+                None => continue,
+            };
+
             for comp in 0..component_count {
                 let suffix = match component_count {
                     3 => ["x", "y", "z"][comp],
@@ -367,7 +392,7 @@ fn extract_all_animations(gltf: &gltf::Gltf, buffers: &[Vec<u8>]) -> Vec<Keyfram
                     _ => "value",
                 };
 
-                let target_property = format!("node_{node_index}.{property}.{suffix}");
+                let target_property = format!("node_{joint_idx}.{property}.{suffix}");
 
                 let keyframes: Vec<Keyframe> = timestamps
                     .iter()
@@ -421,12 +446,18 @@ fn build_node_parent_map(gltf: &gltf::Gltf) -> std::collections::HashMap<usize, 
     parent_map
 }
 
-/// Convert a 4x4 matrix from row-major `[[f32; 4]; 4]` to column-major `[f32; 16]`.
-fn row_major_to_column_major(m: &[[f32; 4]; 4]) -> [f32; 16] {
+/// Flatten a `[[f32; 4]; 4]` matrix (indexed as `mat[col][row]`) into a
+/// column-major `[f32; 16]`.
+///
+/// The glTF crate returns inverse-bind matrices in column-major
+/// array-of-arrays form where `mat[col][row]`.  Flattening without
+/// transposition yields the correct column-major layout:
+///   `[col0row0, col0row1, col0row2, col0row3, col1row0, ...]`.
+fn flatten_mat4(m: &[[f32; 4]; 4]) -> [f32; 16] {
     [
-        m[0][0], m[1][0], m[2][0], m[3][0], // column 0
-        m[0][1], m[1][1], m[2][1], m[3][1], // column 1
-        m[0][2], m[1][2], m[2][2], m[3][2], // column 2
-        m[0][3], m[1][3], m[2][3], m[3][3], // column 3
+        m[0][0], m[0][1], m[0][2], m[0][3], // column 0
+        m[1][0], m[1][1], m[1][2], m[1][3], // column 1
+        m[2][0], m[2][1], m[2][2], m[2][3], // column 2
+        m[3][0], m[3][1], m[3][2], m[3][3], // column 3
     ]
 }

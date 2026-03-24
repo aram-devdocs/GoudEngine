@@ -23,6 +23,20 @@ pub(in crate::libs::graphics::renderer3d) struct Model3D {
     pub animations: Vec<KeyframeAnimation>,
     /// Whether this model uses skinned vertex data (16 floats/vertex).
     pub is_skinned: bool,
+    /// Per-sub-mesh bind-pose vertex data for CPU skinning.
+    ///
+    /// Each inner `Vec` stores the *expanded* (de-indexed) vertices for one
+    /// sub-mesh in the standard 8-float layout: `[pos.x, pos.y, pos.z,
+    /// norm.x, norm.y, norm.z, uv.u, uv.v]`.  Parallel to the mesh index
+    /// buffer so that `bind_pose_vertices[sub][v*8..v*8+3]` is the position
+    /// of the v-th triangle vertex.
+    pub bind_pose_vertices: Vec<Vec<f32>>,
+    /// Per-sub-mesh, per-vertex bone indices (4 per vertex), parallel to
+    /// `bind_pose_vertices`.
+    pub bind_pose_bone_indices: Vec<Vec<[u32; 4]>>,
+    /// Per-sub-mesh, per-vertex bone weights (4 per vertex), parallel to
+    /// `bind_pose_vertices`.
+    pub bind_pose_bone_weights: Vec<Vec<[f32; 4]>>,
 }
 
 /// An instantiated copy of a [`Model3D`] with its own GPU resources.
