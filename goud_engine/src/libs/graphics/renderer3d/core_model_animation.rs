@@ -183,6 +183,12 @@ impl Renderer3D {
 // CPU skinning
 // ============================================================================
 
+/// Minimum individual bone weight to contribute to skinning.
+///
+/// Bones with weight below this threshold are skipped, saving unnecessary
+/// matrix multiplications for near-zero influences.
+const WEIGHT_EPSILON: f32 = 0.001;
+
 /// Minimum accumulated bone weight for a vertex to be skinned.
 ///
 /// Vertices with total weight below this threshold retain their original
@@ -232,7 +238,7 @@ fn cpu_skin_submesh(
 
         for i in 0..4 {
             let w = bw[i];
-            if w <= 0.0 {
+            if w < WEIGHT_EPSILON {
                 continue;
             }
             let idx = bi[i] as usize;
@@ -255,6 +261,17 @@ fn cpu_skin_submesh(
         // original bind-pose position and normal so it does not collapse to the origin.
         if total_weight < SKIN_WEIGHT_EPSILON {
             continue;
+        }
+
+        // Normalize the accumulated result when total weight is not 1.0.
+        if (total_weight - 1.0).abs() > SKIN_WEIGHT_EPSILON {
+            let inv_w = 1.0 / total_weight;
+            sp[0] *= inv_w;
+            sp[1] *= inv_w;
+            sp[2] *= inv_w;
+            sn[0] *= inv_w;
+            sn[1] *= inv_w;
+            sn[2] *= inv_w;
         }
 
         // Normalize the skinned normal.

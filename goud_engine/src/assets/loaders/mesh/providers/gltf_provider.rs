@@ -43,6 +43,10 @@ impl ModelProvider for GltfProvider {
         let mut sub_meshes: Vec<SubMesh> = Vec::new();
         let mut mesh_bounds = MeshBounds::default();
         let mut has_bounds = false;
+        // Accumulate per-vertex bone data inline with vertex extraction to
+        // guarantee alignment between the two arrays.
+        let mut all_bone_indices: Vec<[u32; 4]> = Vec::new();
+        let mut all_bone_weights: Vec<[f32; 4]> = Vec::new();
 
         for primitive in gltf_mesh.primitives() {
             let reader = primitive.reader(|buf| buffers.get(buf.index()).map(|b| b.as_slice()));
@@ -62,6 +66,12 @@ impl ModelProvider for GltfProvider {
                 .map(|tc| tc.into_f32().collect())
                 .unwrap_or_else(|| vec![[0.0, 0.0]; positions.len()]);
 
+            // Read JOINTS_0 / WEIGHTS_0 from the same reader/primitive.
+            let joints: Option<Vec<[u16; 4]>> =
+                reader.read_joints(0).map(|j| j.into_u16().collect());
+            let weights: Option<Vec<[f32; 4]>> =
+                reader.read_weights(0).map(|w| w.into_f32().collect());
+
             let base_vertex = vertices.len() as u32;
             let start_index = indices.len() as u32;
 
@@ -75,8 +85,24 @@ impl ModelProvider for GltfProvider {
                     },
                     uv: if i < uvs.len() { uvs[i] } else { [0.0, 0.0] },
                 });
+
+                // Bone data for this vertex (defaults to zero if absent).
+                let bi = joints
+                    .as_ref()
+                    .and_then(|j| j.get(i))
+                    .map(|j| [j[0] as u32, j[1] as u32, j[2] as u32, j[3] as u32])
+                    .unwrap_or([0; 4]);
+                let bw = weights
+                    .as_ref()
+                    .and_then(|w| w.get(i))
+                    .copied()
+                    .unwrap_or([0.0; 4]);
+                all_bone_indices.push(bi);
+                all_bone_weights.push(bw);
             }
 
+            // Re-create reader for index access (positions reader was consumed).
+            let reader = primitive.reader(|buf| buffers.get(buf.index()).map(|b| b.as_slice()));
             if let Some(idx_reader) = reader.read_indices() {
                 for idx in idx_reader.into_u32() {
                     indices.push(base_vertex + idx);
@@ -118,7 +144,7 @@ impl ModelProvider for GltfProvider {
             bounds: mesh_bounds,
         };
 
-        let skeleton = extract_skeleton(&gltf, &buffers, mesh.vertices.len());
+        let skeleton = extract_skeleton(&gltf, &buffers, all_bone_indices, all_bone_weights);
         let animations = extract_all_animations(&gltf, &buffers);
 
         Ok(ModelData {
@@ -129,7 +155,6 @@ impl ModelProvider for GltfProvider {
     }
 }
 
-/// Extract material properties from a glTF primitive's material.
 fn extract_primitive_material(
     primitive: &gltf::Primitive,
 ) -> Option<crate::core::types::MeshMaterial> {
@@ -152,7 +177,6 @@ fn extract_primitive_material(
     })
 }
 
-/// Compute per-face normals from triangle positions when NORMAL is absent.
 fn compute_face_normals(positions: &[[f32; 3]]) -> Vec<[f32; 3]> {
     let mut normals = vec![[0.0f32, 0.0, 1.0]; positions.len()];
     for tri in 0..(positions.len() / 3) {
@@ -203,14 +227,16 @@ fn load_gltf_buffers(gltf: &gltf::Gltf) -> Result<Vec<Vec<u8>>, AssetLoadError> 
     Ok(buffers)
 }
 
-/// Extract skeleton data from the first skin in the glTF document.
+/// Extract skeleton data from the first skin in the glTF document. Bone indices and weights are provided by the caller (read inline during
 fn extract_skeleton(
     gltf: &gltf::Gltf,
     buffers: &[Vec<u8>],
-    vertex_count: usize,
+    mut bone_indices: Vec<[u32; 4]>,
+    bone_weights: Vec<[f32; 4]>,
 ) -> Option<SkeletonData> {
     let skin = gltf.skins().next()?;
     let joints: Vec<gltf::Node> = skin.joints().collect();
+    let joint_count = joints.len();
 
     // Build a map from node index to joint index.
     let joint_index_map: std::collections::HashMap<usize, usize> = joints
@@ -220,7 +246,6 @@ fn extract_skeleton(
         .collect();
 
     // Build a parent map: node_index -> parent_node_index.
-    // The gltf crate does not expose parent directly, so we walk the tree.
     let node_parent_map = build_node_parent_map(gltf);
 
     // Read inverse bind matrices.
@@ -230,6 +255,14 @@ fn extract_skeleton(
         .map(|ibm| ibm.collect())
         .unwrap_or_default();
 
+    // Phase 4: validate inverse bind matrices are present for skinned meshes.
+    if inverse_bind_matrices.is_empty() {
+        log::warn!(
+            "glTF skin has {} joints but no inverse bind matrices; using identity",
+            joint_count
+        );
+    }
+
     let identity_ibm: [[f32; 4]; 4] = [
         [1.0, 0.0, 0.0, 0.0],
         [0.0, 1.0, 0.0, 0.0],
@@ -237,23 +270,29 @@ fn extract_skeleton(
         [0.0, 0.0, 0.0, 1.0],
     ];
 
-    let mut bones = Vec::with_capacity(joints.len());
+    // Phase 4: detect parent hierarchy cycles.
+    let mut visited = vec![false; joint_count];
+    let mut in_stack = vec![false; joint_count];
+
+    let mut bones = Vec::with_capacity(joint_count);
     for (i, joint_node) in joints.iter().enumerate() {
-        // Find the parent joint index by walking up the node tree.
-        let parent_index = node_parent_map
+        let mut parent_index = node_parent_map
             .get(&joint_node.index())
             .and_then(|&parent_node_idx| joint_index_map.get(&parent_node_idx).copied())
             .map(|pi| pi as i32)
             .unwrap_or(-1);
 
-        let ibm_col_major = inverse_bind_matrices
-            .get(i)
-            .copied()
-            .unwrap_or(identity_ibm);
+        // Ensure parent index is in range.
+        if parent_index >= joint_count as i32 {
+            log::warn!(
+                "Bone {} parent {} exceeds joint count; resetting to -1",
+                i,
+                parent_index
+            );
+            parent_index = -1;
+        }
 
-        // glTF inverse-bind matrices are already column-major (mat[col][row]).
-        // Flatten without transposing.
-        let ibm = flatten_mat4(&ibm_col_major);
+        let ibm = flatten_mat4(inverse_bind_matrices.get(i).unwrap_or(&identity_ibm));
 
         bones.push(BoneData {
             name: joint_node.name().unwrap_or("unnamed_bone").to_string(),
@@ -262,34 +301,50 @@ fn extract_skeleton(
         });
     }
 
-    // Extract per-vertex bone indices and weights from the first mesh primitive
-    // that has JOINTS_0 and WEIGHTS_0 attributes.
-    let mut bone_indices = vec![[0u32; 4]; vertex_count];
-    let mut bone_weights = vec![[0.0f32; 4]; vertex_count];
-
-    for mesh in gltf.meshes() {
-        for primitive in mesh.primitives() {
-            let reader = primitive.reader(|buf| buffers.get(buf.index()).map(|b| b.as_slice()));
-
-            if let (Some(joints_reader), Some(weights_reader)) =
-                (reader.read_joints(0), reader.read_weights(0))
-            {
-                let joints_data: Vec<[u16; 4]> = joints_reader.into_u16().collect();
-                let weights_data: Vec<[f32; 4]> = weights_reader.into_f32().collect();
-
-                let count = joints_data.len().min(vertex_count);
-                for i in 0..count {
-                    bone_indices[i] = [
-                        joints_data[i][0] as u32,
-                        joints_data[i][1] as u32,
-                        joints_data[i][2] as u32,
-                        joints_data[i][3] as u32,
-                    ];
-                    bone_weights[i] = weights_data[i];
-                }
-
-                // Use data from the first primitive that has skin attributes.
+    // Phase 4: detect cycles by DFS on the parent graph.
+    for start in 0..joint_count {
+        if visited[start] {
+            continue;
+        }
+        let mut path = vec![start];
+        in_stack[start] = true;
+        loop {
+            let current = *path.last().unwrap();
+            let pi = bones[current].parent_index;
+            if pi < 0 || (pi as usize) >= joint_count {
                 break;
+            }
+            let pu = pi as usize;
+            if in_stack[pu] {
+                log::error!(
+                    "Bone hierarchy cycle detected at bone {}; breaking cycle",
+                    pu
+                );
+                bones[current].parent_index = -1;
+                break;
+            }
+            if visited[pu] {
+                break;
+            }
+            in_stack[pu] = true;
+            path.push(pu);
+        }
+        for &node in &path {
+            visited[node] = true;
+            in_stack[node] = false;
+        }
+    }
+
+    // Phase 4: validate bone indices don't exceed joint count.
+    for bi in &mut bone_indices {
+        for idx in bi.iter_mut() {
+            if (*idx as usize) >= joint_count {
+                log::warn!(
+                    "Bone index {} exceeds joint count {}; clamping to 0",
+                    *idx,
+                    joint_count
+                );
+                *idx = 0;
             }
         }
     }
@@ -305,7 +360,6 @@ fn extract_skeleton(
 ///
 /// Channel target properties are named using the **joint index** (0..N)
 /// rather than the glTF node index so that `compute_bone_matrices` can
-/// look them up by bone index directly.
 fn extract_all_animations(gltf: &gltf::Gltf, buffers: &[Vec<u8>]) -> Vec<KeyframeAnimation> {
     // Build a mapping from glTF node index to skeleton joint index.
     // This ensures animation channels reference the same indices used by
@@ -416,7 +470,6 @@ fn extract_all_animations(gltf: &gltf::Gltf, buffers: &[Vec<u8>]) -> Vec<Keyfram
     animations
 }
 
-/// Build a map from child node index to parent node index by walking all scenes.
 fn build_node_parent_map(gltf: &gltf::Gltf) -> std::collections::HashMap<usize, usize> {
     let mut parent_map = std::collections::HashMap::new();
 
@@ -436,13 +489,7 @@ fn build_node_parent_map(gltf: &gltf::Gltf) -> std::collections::HashMap<usize, 
     parent_map
 }
 
-/// Flatten a `[[f32; 4]; 4]` matrix (indexed as `mat[col][row]`) into a
-/// column-major `[f32; 16]`.
-///
-/// The glTF crate returns inverse-bind matrices in column-major
-/// array-of-arrays form where `mat[col][row]`.  Flattening without
-/// transposition yields the correct column-major layout:
-///   `[col0row0, col0row1, col0row2, col0row3, col1row0, ...]`.
+/// Flatten `mat[col][row]` to column-major `[f32; 16]` without transposing.
 fn flatten_mat4(m: &[[f32; 4]; 4]) -> [f32; 16] {
     [
         m[0][0], m[0][1], m[0][2], m[0][3], // column 0

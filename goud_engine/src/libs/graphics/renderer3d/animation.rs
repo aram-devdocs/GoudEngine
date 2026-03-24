@@ -206,7 +206,7 @@ impl AnimationPlayer {
             if let Some(ref state) = self.secondary {
                 if let Some(anim) = animations.get(state.clip_index) {
                     let secondary_matrices = compute_bone_matrices(skeleton, anim, state.time);
-                    lerp_matrices(&primary_matrices, &secondary_matrices, self.blend_factor)
+                    slerp_bone_matrices(&primary_matrices, &secondary_matrices, self.blend_factor)
                 } else {
                     primary_matrices
                 }
@@ -450,20 +450,5 @@ pub(crate) fn mat4_mul(a: &[f32; 16], b: &[f32; 16]) -> [f32; 16] {
     out
 }
 
-/// Component-wise linear interpolation between two sets of matrices.
-fn lerp_matrices(a: &[[f32; 16]], b: &[[f32; 16]], t: f32) -> Vec<[f32; 16]> {
-    a.iter()
-        .zip(b.iter())
-        .map(|(ma, mb)| {
-            let mut result = [0.0f32; 16];
-            for i in 0..16 {
-                result[i] = ma[i] * (1.0 - t) + mb[i] * t;
-            }
-            result
-        })
-        .collect()
-}
-
-fn identity_matrices(count: usize) -> Vec<[f32; 16]> {
-    vec![IDENTITY_MAT4; count]
-}
+// Re-export from animation_math submodule.
+use super::animation_math::{identity_matrices, slerp_bone_matrices};
