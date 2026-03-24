@@ -249,13 +249,47 @@ fn advance_state(state: &mut Option<AnimationState>, dt: f32, animations: &[Keyf
     }
 }
 
+/// Pre-computed property name strings for a single bone (10 channels).
+///
+/// Avoids per-frame `format!()` allocations by building the strings once per
+/// `compute_bone_matrices` call.
+struct BonePropertyNames {
+    translation: [String; 3],
+    rotation: [String; 4],
+    scale: [String; 3],
+}
+
+impl BonePropertyNames {
+    fn new(bone_idx: usize) -> Self {
+        Self {
+            translation: [
+                format!("node_{bone_idx}.translation.x"),
+                format!("node_{bone_idx}.translation.y"),
+                format!("node_{bone_idx}.translation.z"),
+            ],
+            rotation: [
+                format!("node_{bone_idx}.rotation.x"),
+                format!("node_{bone_idx}.rotation.y"),
+                format!("node_{bone_idx}.rotation.z"),
+                format!("node_{bone_idx}.rotation.w"),
+            ],
+            scale: [
+                format!("node_{bone_idx}.scale.x"),
+                format!("node_{bone_idx}.scale.y"),
+                format!("node_{bone_idx}.scale.z"),
+            ],
+        }
+    }
+}
+
 /// Compute bone matrices for a skeleton at a given time in an animation clip.
 ///
 /// Steps:
-/// 1. For each bone, sample the animation channels for translation, rotation, scale.
-/// 2. Build a local transform matrix from the sampled T/R/S.
-/// 3. Walk the hierarchy to compute global transforms.
-/// 4. Multiply global transform by inverse bind matrix.
+/// 1. Pre-build property name strings once for all bones.
+/// 2. For each bone, sample the animation channels for translation, rotation, scale.
+/// 3. Build a local transform matrix from the sampled T/R/S.
+/// 4. Walk the hierarchy to compute global transforms.
+/// 5. Multiply global transform by inverse bind matrix.
 fn compute_bone_matrices(
     skeleton: &SkeletonData,
     anim: &KeyframeAnimation,
@@ -266,10 +300,14 @@ fn compute_bone_matrices(
     let mut global_transforms = vec![IDENTITY_MAT4; bone_count];
     let mut result = vec![IDENTITY_MAT4; bone_count];
 
-    for (bone_idx, _bone) in skeleton.bones.iter().enumerate() {
-        let (tx, ty, tz) = sample_translation(anim, bone_idx, time);
-        let (rx, ry, rz, rw) = sample_rotation(anim, bone_idx, time);
-        let (sx, sy, sz) = sample_scale(anim, bone_idx, time);
+    // Build property name strings once, not per-channel.
+    let prop_names: Vec<BonePropertyNames> =
+        (0..bone_count).map(BonePropertyNames::new).collect();
+
+    for names in &prop_names {
+        let (tx, ty, tz) = sample_translation_indexed(anim, names, time);
+        let (rx, ry, rz, rw) = sample_rotation_indexed(anim, names, time);
+        let (sx, sy, sz) = sample_scale_indexed(anim, names, time);
 
         let local = build_trs_matrix(tx, ty, tz, rx, ry, rz, rw, sx, sy, sz);
         local_transforms.push(local);
@@ -297,20 +335,26 @@ fn compute_bone_matrices(
     result
 }
 
-fn sample_translation(anim: &KeyframeAnimation, bone_idx: usize, time: f32) -> (f32, f32, f32) {
-    let prefix = format!("node_{bone_idx}.translation");
-    let x = sample_channel(anim, &format!("{prefix}.x"), time).unwrap_or(0.0);
-    let y = sample_channel(anim, &format!("{prefix}.y"), time).unwrap_or(0.0);
-    let z = sample_channel(anim, &format!("{prefix}.z"), time).unwrap_or(0.0);
+fn sample_translation_indexed(
+    anim: &KeyframeAnimation,
+    names: &BonePropertyNames,
+    time: f32,
+) -> (f32, f32, f32) {
+    let x = sample_channel(anim, &names.translation[0], time).unwrap_or(0.0);
+    let y = sample_channel(anim, &names.translation[1], time).unwrap_or(0.0);
+    let z = sample_channel(anim, &names.translation[2], time).unwrap_or(0.0);
     (x, y, z)
 }
 
-fn sample_rotation(anim: &KeyframeAnimation, bone_idx: usize, time: f32) -> (f32, f32, f32, f32) {
-    let prefix = format!("node_{bone_idx}.rotation");
-    let x = sample_channel(anim, &format!("{prefix}.x"), time).unwrap_or(0.0);
-    let y = sample_channel(anim, &format!("{prefix}.y"), time).unwrap_or(0.0);
-    let z = sample_channel(anim, &format!("{prefix}.z"), time).unwrap_or(0.0);
-    let w = sample_channel(anim, &format!("{prefix}.w"), time).unwrap_or(1.0);
+fn sample_rotation_indexed(
+    anim: &KeyframeAnimation,
+    names: &BonePropertyNames,
+    time: f32,
+) -> (f32, f32, f32, f32) {
+    let x = sample_channel(anim, &names.rotation[0], time).unwrap_or(0.0);
+    let y = sample_channel(anim, &names.rotation[1], time).unwrap_or(0.0);
+    let z = sample_channel(anim, &names.rotation[2], time).unwrap_or(0.0);
+    let w = sample_channel(anim, &names.rotation[3], time).unwrap_or(1.0);
     // Normalize quaternion.
     let len = (x * x + y * y + z * z + w * w).sqrt();
     if len > f32::EPSILON {
@@ -320,11 +364,14 @@ fn sample_rotation(anim: &KeyframeAnimation, bone_idx: usize, time: f32) -> (f32
     }
 }
 
-fn sample_scale(anim: &KeyframeAnimation, bone_idx: usize, time: f32) -> (f32, f32, f32) {
-    let prefix = format!("node_{bone_idx}.scale");
-    let x = sample_channel(anim, &format!("{prefix}.x"), time).unwrap_or(1.0);
-    let y = sample_channel(anim, &format!("{prefix}.y"), time).unwrap_or(1.0);
-    let z = sample_channel(anim, &format!("{prefix}.z"), time).unwrap_or(1.0);
+fn sample_scale_indexed(
+    anim: &KeyframeAnimation,
+    names: &BonePropertyNames,
+    time: f32,
+) -> (f32, f32, f32) {
+    let x = sample_channel(anim, &names.scale[0], time).unwrap_or(1.0);
+    let y = sample_channel(anim, &names.scale[1], time).unwrap_or(1.0);
+    let z = sample_channel(anim, &names.scale[2], time).unwrap_or(1.0);
     (x, y, z)
 }
 

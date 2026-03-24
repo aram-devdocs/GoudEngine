@@ -105,6 +105,8 @@ pub struct Renderer3D {
     pub(super) scenes: HashMap<u32, Scene3D>,
     pub(super) next_scene_id: u32,
     pub(super) current_scene: Option<u32>,
+    /// When `false`, the CPU software shadow map pass is skipped entirely.
+    pub(super) shadows_enabled: bool,
 }
 
 impl Renderer3D {
@@ -241,10 +243,10 @@ impl Renderer3D {
             scenes: HashMap::new(),
             next_scene_id: 1,
             current_scene: None,
+            shadows_enabled: true,
         })
     }
 
-    /// Set object position
     pub fn set_object_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         if let Some(obj) = self.objects.get_mut(&id) {
             obj.position = Vector3::new(x, y, z);
@@ -254,7 +256,6 @@ impl Renderer3D {
         }
     }
 
-    /// Set object rotation (in degrees)
     pub fn set_object_rotation(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         if let Some(obj) = self.objects.get_mut(&id) {
             obj.rotation = Vector3::new(x, y, z);
@@ -264,7 +265,6 @@ impl Renderer3D {
         }
     }
 
-    /// Set object scale
     pub fn set_object_scale(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         if let Some(obj) = self.objects.get_mut(&id) {
             obj.scale = Vector3::new(x, y, z);
@@ -284,7 +284,6 @@ impl Renderer3D {
         }
     }
 
-    // Lighting
 
     /// Add a light and return its ID.
     pub fn add_light(&mut self, light: Light) -> u32 {
@@ -310,7 +309,6 @@ impl Renderer3D {
         self.lights.remove(&id).is_some()
     }
 
-    // Camera
 
     /// Set camera position
     pub fn set_camera_position(&mut self, x: f32, y: f32, z: f32) {
@@ -373,7 +371,16 @@ impl Renderer3D {
         self.shadow_bias
     }
 
-    // Grid / Skybox / Fog configuration
+    /// Enable or disable CPU shadow mapping.
+    pub fn set_shadows_enabled(&mut self, enabled: bool) {
+        self.shadows_enabled = enabled;
+    }
+
+    /// Returns whether CPU shadow mapping is enabled.
+    pub fn shadows_enabled(&self) -> bool {
+        self.shadows_enabled
+    }
+
 
     /// Configure grid
     pub fn configure_grid(&mut self, config: GridConfig) {
@@ -389,7 +396,6 @@ impl Renderer3D {
         self.grid_config = config;
     }
 
-    /// Set grid enabled state
     pub fn set_grid_enabled(&mut self, enabled: bool) {
         self.grid_config.enabled = enabled;
     }
@@ -404,7 +410,6 @@ impl Renderer3D {
         self.fog_config = config;
     }
 
-    /// Set fog enabled state
     pub fn set_fog_enabled(&mut self, enabled: bool) {
         self.fog_config.enabled = enabled;
     }
