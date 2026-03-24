@@ -350,7 +350,8 @@ def gen_typescript_scaffolding() -> None:
     tsconfig_typedoc = {
         "extends": "./tsconfig.json",
         "compilerOptions": {
-            "module": "ES2020",
+            "module": "ESNext",
+            "moduleResolution": "Bundler",
             "lib": ["ES2020", "DOM", "DOM.Iterable"],
         },
         "include": ["src/**/*"],
