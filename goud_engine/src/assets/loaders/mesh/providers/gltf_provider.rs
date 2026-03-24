@@ -38,7 +38,8 @@ impl ModelProvider for GltfProvider {
                 let animations = extract_all_animations(&gltf, &buffers);
                 (skeleton, animations)
             }
-            Err(_) => {
+            Err(e) => {
+                log::warn!("Failed to load glTF buffers for skeleton/animation extraction: {e}");
                 // Buffer loading failed (external URIs, etc.) — skip skin/animation extraction.
                 (None, vec![])
             }

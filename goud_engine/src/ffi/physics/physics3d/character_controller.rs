@@ -38,6 +38,13 @@ pub extern "C" fn goud_physics3d_create_character_controller(
     max_slope_angle: f32,
     step_height: f32,
 ) -> i64 {
+    use crate::ffi::context::GOUD_INVALID_CONTEXT_ID;
+
+    if ctx == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(crate::core::error::GoudError::InvalidContext);
+        return INVALID_HANDLE;
+    }
+
     with_provider_mut(ctx, |p| {
         let desc = CharacterControllerDesc3D {
             radius,
@@ -199,6 +206,13 @@ pub extern "C" fn goud_physics3d_destroy_character_controller(
     ctx: GoudContextId,
     controller_id: u64,
 ) -> i32 {
+    use crate::ffi::context::GOUD_INVALID_CONTEXT_ID;
+
+    if ctx == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(crate::core::error::GoudError::InvalidContext);
+        return crate::core::error::GoudError::InvalidContext.error_code();
+    }
+
     with_provider_mut(ctx, |p| {
         let handle = CharacterControllerHandle(controller_id);
         p.destroy_character_controller(handle);
