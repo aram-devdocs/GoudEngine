@@ -16,42 +16,42 @@ FMT_PACKAGES=$(cargo metadata --no-deps --format-version 1 2>/dev/null \
   | python3 -c 'import sys,json;d=json.load(sys.stdin);print(" ".join("-p "+p["name"] for p in d["packages"] if p["name"] not in ["goud-engine-node"]))')
 
 echo ""
-echo "=== [1/14] Checking formatting ==="
+echo "=== [1/16] Checking formatting ==="
 cargo fmt ${FMT_PACKAGES} -- --check || exit 1
 
 # =============================================================================
 # Clippy (mirrors: ci.yml clippy --all-targets --all-features)
 # =============================================================================
 echo ""
-echo "=== [2/14] Running clippy ==="
+echo "=== [2/16] Running clippy ==="
 cargo clippy ${FMT_PACKAGES} --all-targets --all-features -- -D warnings || exit 1
 
 # =============================================================================
 # Build (mirrors: ci.yml cargo build --verbose)
 # =============================================================================
 echo ""
-echo "=== [3/14] Building ==="
+echo "=== [3/16] Building ==="
 cargo build ${FMT_PACKAGES} --verbose || exit 1
 
 # =============================================================================
 # Tests (mirrors: ci.yml cargo test --verbose)
 # =============================================================================
 echo ""
-echo "=== [4/14] Running tests ==="
+echo "=== [4/16] Running tests ==="
 cargo test ${FMT_PACKAGES} --verbose -- --nocapture || exit 1
 
 # =============================================================================
 # Rust SDK Tests (mirrors: ci.yml cargo test --lib sdk)
 # =============================================================================
 echo ""
-echo "=== [5/14] Running Rust SDK tests ==="
+echo "=== [5/16] Running Rust SDK tests ==="
 cargo test --lib sdk -- --nocapture || exit 1
 
 # =============================================================================
 # Cargo Deny (mirrors: ci.yml EmbarkStudios/cargo-deny-action)
 # =============================================================================
 echo ""
-echo "=== [6/14] Running cargo deny ==="
+echo "=== [6/16] Running cargo deny ==="
 if command -v cargo-deny >/dev/null 2>&1; then
     cargo deny --all-features check || exit 1
 else
@@ -62,7 +62,7 @@ fi
 # Python SDK Tests (mirrors: ci.yml python-sdk-check)
 # =============================================================================
 echo ""
-echo "=== [7/14] Running Python SDK tests ==="
+echo "=== [7/16] Running Python SDK tests ==="
 if [ ! -d "$REPO_ROOT/sdks/python/goud_engine/generated" ]; then
     echo "Warning: Python SDK generated files not found (run codegen first), skipping"
 elif command -v python3 >/dev/null 2>&1; then
@@ -110,7 +110,7 @@ fi
 # npm Audit (mirrors: security.yml npm-security)
 # =============================================================================
 echo ""
-echo "=== [8/14] Running npm audit (TypeScript SDK) ==="
+echo "=== [8/16] Running npm audit (TypeScript SDK) ==="
 if command -v npm >/dev/null 2>&1 && [ -f "$REPO_ROOT/sdks/typescript/package-lock.json" ]; then
     (cd "$REPO_ROOT/sdks/typescript" && npm audit --audit-level=moderate 2>/dev/null) || {
         echo "Warning: npm audit found issues (non-blocking)"
@@ -123,7 +123,7 @@ fi
 # .NET Vulnerability Check (mirrors: security.yml dotnet-security)
 # =============================================================================
 echo ""
-echo "=== [9/14] Running .NET vulnerability check (C# SDK) ==="
+echo "=== [9/16] Running .NET vulnerability check (C# SDK) ==="
 if command -v dotnet >/dev/null 2>&1; then
     (cd "$REPO_ROOT/sdks/csharp" && dotnet list package --vulnerable 2>/dev/null) || {
         echo "Warning: dotnet vulnerability check failed (non-blocking)"
@@ -136,7 +136,7 @@ fi
 # Markdown Lint (mirrors: pr-validation.yml markdownlint-cli2-action)
 # =============================================================================
 echo ""
-echo "=== [10/14] Linting markdown ==="
+echo "=== [10/16] Linting markdown ==="
 if command -v npx >/dev/null 2>&1; then
     npx markdownlint-cli2 "**/*.md" "!**/target/**" "!**/node_modules/**" || {
         echo "Warning: Markdown lint found issues (non-blocking)"
@@ -149,21 +149,21 @@ fi
 # Rust File Line Limit (mirrors: pr-validation.yml check-rs-line-limit)
 # =============================================================================
 echo ""
-echo "=== [11/14] Checking .rs file line limits ==="
+echo "=== [11/16] Checking .rs file line limits ==="
 "$REPO_ROOT/scripts/check-rs-line-limit.sh" --error || exit 1
 
 # =============================================================================
 # AI Config Validation (sync + model table consistency)
 # =============================================================================
 echo ""
-echo "=== [12/14] Validating AI config and generated wrappers ==="
+echo "=== [12/16] Validating AI config and generated wrappers ==="
 "$REPO_ROOT/scripts/validate-ai-config.sh" || exit 1
 
 # =============================================================================
 # Large File Check (mirrors: pr-validation.yml check-file-size)
 # =============================================================================
 echo ""
-echo "=== [13/14] Checking for large files ==="
+echo "=== [13/16] Checking for large files ==="
 LARGE_FILES=$(find . -type f -size +1M ! -path "./.git/*" ! -path "./target/*" ! -path "*/bin/*" ! -path "*/obj/*" ! -name "*.png" ! -name "*.jpg" ! -name "*.jpeg" ! -name "*.gif" 2>/dev/null)
 if [ -n "$LARGE_FILES" ]; then
     TRACKED_LARGE=$(echo "$LARGE_FILES" | while IFS= read -r f; do git check-ignore -q "$f" 2>/dev/null || echo "$f"; done)
@@ -179,7 +179,7 @@ fi
 # Codegen Drift Check (mirrors: ci.yml Codegen Drift Check)
 # =============================================================================
 echo ""
-echo "=== [14/14] Checking codegen drift ==="
+echo "=== [14/16] Checking codegen drift ==="
 if [ -x "$REPO_ROOT/codegen.sh" ] && [ -f "$REPO_ROOT/scripts/check-generated-artifacts.sh" ]; then
     "$REPO_ROOT/codegen.sh" > /dev/null 2>&1 || {
         echo "Warning: codegen.sh failed, skipping drift check"
@@ -217,6 +217,33 @@ if [ -x "$REPO_ROOT/codegen.sh" ] && [ -f "$REPO_ROOT/scripts/check-generated-ar
     echo "Codegen is up to date."
 else
     echo "Warning: codegen.sh or check script not found, skipping drift check"
+fi
+
+# =============================================================================
+# TypeScript SDK Typecheck (mirrors: ci.yml typescript-sdk-native)
+# =============================================================================
+echo ""
+echo "=== [15/16] TypeScript SDK typecheck ==="
+if command -v npm >/dev/null 2>&1 && [ -f "$REPO_ROOT/sdks/typescript/package.json" ]; then
+    (cd "$REPO_ROOT/sdks/typescript" && npm run build:ts 2>&1) || {
+        echo "Error: TypeScript SDK typecheck failed"
+        exit 1
+    }
+else
+    echo "Warning: npm not found or no TS SDK, skipping TypeScript typecheck"
+fi
+
+# =============================================================================
+# Kotlin SDK Build Check (mirrors: ci.yml kotlin-sdk-test)
+# =============================================================================
+echo ""
+echo "=== [16/16] Kotlin SDK build check ==="
+if [ -f "$REPO_ROOT/sdks/kotlin/gradlew" ]; then
+    (cd "$REPO_ROOT/sdks/kotlin" && ./gradlew sourcesJar --no-daemon 2>&1) || {
+        echo "Warning: Kotlin SDK build failed (non-blocking)"
+    }
+else
+    echo "Warning: Kotlin gradlew not found, skipping Kotlin build check"
 fi
 
 echo ""
