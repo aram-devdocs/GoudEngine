@@ -226,6 +226,41 @@ impl MeshAsset {
         out
     }
 
+    /// Flattens vertices into a packed `[f32]` array matching the skinned
+    /// vertex layout (pos3 + norm3 + uv2 + bone_ids4 + bone_weights4 = 16 floats
+    /// per vertex).
+    ///
+    /// `bone_indices` and `bone_weights` must be parallel to `self.vertices`.
+    /// If they are shorter than the vertex count, missing entries default to
+    /// zero indices and zero weights.
+    pub fn to_skinned_interleaved_floats(
+        &self,
+        bone_indices: &[[u32; 4]],
+        bone_weights: &[[f32; 4]],
+    ) -> Vec<f32> {
+        let mut out = Vec::with_capacity(self.vertices.len() * 16);
+        for (i, v) in self.vertices.iter().enumerate() {
+            out.extend_from_slice(&v.position);
+            out.extend_from_slice(&v.normal);
+            out.extend_from_slice(&v.uv);
+            // Bone indices stored as floats for the vertex attribute.
+            if let Some(bi) = bone_indices.get(i) {
+                out.push(bi[0] as f32);
+                out.push(bi[1] as f32);
+                out.push(bi[2] as f32);
+                out.push(bi[3] as f32);
+            } else {
+                out.extend_from_slice(&[0.0, 0.0, 0.0, 0.0]);
+            }
+            if let Some(bw) = bone_weights.get(i) {
+                out.extend_from_slice(bw);
+            } else {
+                out.extend_from_slice(&[0.0, 0.0, 0.0, 0.0]);
+            }
+        }
+        out
+    }
+
     /// Returns the object-space bounds.
     #[inline]
     pub fn local_bounds(&self) -> MeshBounds {

@@ -22,6 +22,8 @@ pub(in crate::libs::graphics::renderer3d) struct Model3D {
     pub skeleton: Option<SkeletonData>,
     /// Animations embedded in the model file.
     pub animations: Vec<KeyframeAnimation>,
+    /// Whether this model uses skinned vertex data (16 floats/vertex).
+    pub is_skinned: bool,
 }
 
 /// An instantiated copy of a [`Model3D`] with its own GPU resources.
