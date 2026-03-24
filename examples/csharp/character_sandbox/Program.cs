@@ -78,30 +78,30 @@ class Program
         game.SetCurrentScene(sceneId);
 
         // --- Skybox & fog ---
-        game.ConfigureSkybox(enabled: true, r: 0.53f, g: 0.81f, b: 0.92f, a: 1.0f);
-        game.ConfigureFog(enabled: true, r: 0.53f, g: 0.81f, b: 0.92f, density: 0.008f);
+        game.ConfigureSkybox(enabled: true, r: 0.1f, g: 0.1f, b: 0.15f, a: 1.0f);
+        game.ConfigureFog(enabled: true, r: 0.1f, g: 0.1f, b: 0.15f, density: 0.015f);
 
         // --- Grid (optional debug aid) ---
         game.ConfigureGrid(enabled: true, size: 40.0f, divisions: 40);
 
         // --- Lights ---
-        // Directional sun light from above-right
+        // Point light above the scene (sun-like)
         uint sunLight = game.AddLight(
             0,                          // type: point
-            10f, 20f, -10f,             // position
-            -0.5f, -1f, 0.5f,          // direction (not used for point, but set anyway)
+            0f, 15f, 0f,               // position: directly above center
+            0f, -1f, 0f,               // direction
             1.0f, 0.95f, 0.85f,        // warm white color
-            40f, 60f, 0f               // intensity, range, spotAngle
+            2.0f, 50f, 0f              // intensity, range, spotAngle
         );
         game.AddLightToScene(sceneId, sunLight);
 
         // Fill light on the opposite side
         uint fillLight = game.AddLight(
             0,
-            -8f, 10f, 8f,
+            -8f, 8f, 8f,
             0f, -1f, 0f,
-            0.4f, 0.5f, 0.7f,          // cool blue fill
-            15f, 40f, 0f
+            0.3f, 0.4f, 0.6f,          // cool blue fill
+            1.0f, 30f, 0f
         );
         game.AddLightToScene(sceneId, fillLight);
 
@@ -233,7 +233,7 @@ class Program
         {
             float dt = game.DeltaTime;
 
-            game.BeginFrame(0.53f, 0.81f, 0.92f, 1.0f);
+            game.BeginFrame(0.1f, 0.1f, 0.15f, 1.0f);
 
             // Exit
             if (game.IsKeyPressed(Keys.Escape))
