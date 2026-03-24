@@ -27,70 +27,49 @@ impl Renderer3D {
         }
 
         // TODO(#621): Skinned shader rendering needs debugging — force standard
-        // render path so models are visible.  Skeleton/animation data is still
-        // stored; only the GPU vertex layout and render-pass selection are affected.
+        // render path so models are visible.
         let is_skinned = false;
-        let floats_per_vertex: usize = if is_skinned { 16 } else { 8 };
-        let all_interleaved = if let Some(ref skeleton) = model_data.skeleton {
-            mesh.to_skinned_interleaved_floats(&skeleton.bone_indices, &skeleton.bone_weights)
-        } else {
-            mesh.to_interleaved_floats()
-        };
+        let floats_per_vertex: usize = 8; // pos3 + norm3 + uv2
         let mut mesh_object_ids = Vec::new();
         let mut mesh_material_ids = Vec::new();
 
-        // If there are no sub-meshes, treat the whole mesh as one object.
-        let sub_meshes = if mesh.sub_meshes.is_empty() {
-            vec![(0u32, mesh.indices.len() as u32, None, MeshBounds::default())]
+        // Process each sub-mesh as a separate Object3D.
+        // For each sub-mesh, gather triangle vertices by reading through
+        // the index buffer and copying vertex data in draw order.
+        let sub_mesh_ranges: Vec<_> = if mesh.sub_meshes.is_empty() {
+            vec![(0u32, mesh.indices.len() as u32)]
         } else {
             mesh.sub_meshes
                 .iter()
-                .map(|sm| {
-                    (
-                        sm.start_index,
-                        sm.index_count,
-                        sm.material.as_ref(),
-                        sm.bounds,
-                    )
-                })
+                .map(|sm| (sm.start_index, sm.index_count))
                 .collect()
         };
 
-        for (start_index, index_count, material_opt, _sub_bounds) in &sub_meshes {
-            // Gather vertices for this sub-mesh via the index buffer.
+        for (start_index, index_count) in &sub_mesh_ranges {
             let start = *start_index as usize;
             let count = *index_count as usize;
             let end = (start + count).min(mesh.indices.len());
             let sub_indices = &mesh.indices[start..end];
 
-            let num_verts = all_interleaved.len() / floats_per_vertex;
-            let mut vertices = Vec::with_capacity(count * floats_per_vertex);
-            let mut oob_count = 0u32;
+            // Build unindexed vertex buffer: for each index, copy the
+            // full vertex (pos + norm + uv = 8 floats) into the output.
+            let vert_count = mesh.vertices.len();
+            let mut verts = Vec::with_capacity(count * floats_per_vertex);
             for &idx in sub_indices {
-                let vidx = idx as usize;
-                if vidx < num_verts {
-                    let base = vidx * floats_per_vertex;
-                    vertices.extend_from_slice(&all_interleaved[base..base + floats_per_vertex]);
-                } else {
-                    oob_count += 1;
-                    // Pad with zeros for out-of-bounds indices
-                    vertices.resize(vertices.len() + floats_per_vertex, 0.0f32);
+                let vi = idx as usize;
+                if vi < vert_count {
+                    let v = &mesh.vertices[vi];
+                    verts.extend_from_slice(&v.position);
+                    verts.extend_from_slice(&v.normal);
+                    verts.extend_from_slice(&v.uv);
                 }
             }
-            if oob_count > 0 {
-                log::warn!(
-                    "sub-mesh has {} out-of-bounds indices (max vertex={}, total_verts={})",
-                    oob_count,
-                    sub_indices.iter().max().unwrap_or(&0),
-                    num_verts
-                );
-            }
 
-            if vertices.is_empty() {
+            if verts.is_empty() {
                 continue;
             }
 
-            let buffer = match upload_buffer(self.backend.as_mut(), &vertices) {
+            let buffer = match upload_buffer(self.backend.as_mut(), &verts) {
                 Ok(h) => h,
                 Err(e) => {
                     log::error!("Failed to upload model sub-mesh buffer: {e}");
@@ -100,12 +79,13 @@ impl Renderer3D {
 
             let object_id = self.next_object_id;
             self.next_object_id += 1;
+            let tri_vert_count = verts.len() / floats_per_vertex;
             self.objects.insert(
                 object_id,
                 Object3D {
                     buffer,
-                    vertex_count: (vertices.len() / floats_per_vertex) as i32,
-                    vertices,
+                    vertex_count: tri_vert_count as i32,
+                    vertices: verts,
                     position: Vector3::new(0.0, 0.0, 0.0),
                     rotation: Vector3::new(0.0, 0.0, 0.0),
                     scale: Vector3::new(1.0, 1.0, 1.0),
@@ -113,30 +93,7 @@ impl Renderer3D {
                 },
             );
 
-            // Create material from sub-mesh material metadata.
-            let material = if let Some(mesh_mat) = material_opt {
-                Material3D {
-                    material_type: MaterialType::Pbr,
-                    color: Vector4::new(
-                        mesh_mat.base_color_factor[0],
-                        mesh_mat.base_color_factor[1],
-                        mesh_mat.base_color_factor[2],
-                        mesh_mat.base_color_factor[3],
-                    ),
-                    shininess: 32.0,
-                    pbr: PbrProperties {
-                        metallic: mesh_mat.metallic_factor,
-                        roughness: mesh_mat.roughness_factor,
-                        ao: 1.0,
-                        albedo_map: 0,
-                        normal_map: 0,
-                        metallic_roughness_map: 0,
-                    },
-                }
-            } else {
-                Material3D::default()
-            };
-
+            let material = Material3D::default();
             let material_id = self.next_material_id;
             self.next_material_id += 1;
             self.materials.insert(material_id, material);

@@ -156,11 +156,12 @@ class Program
             Console.WriteLine($"  [{i}] {name}");
 
             string lower = name.ToLowerInvariant();
-            if (lower.Contains("idle") || lower.Contains("survey"))
+            // Match most specific first
+            if (lower == "idle_loop")
                 idleAnim = i;
-            else if (lower.Contains("walk"))
+            else if (lower == "walk_loop")
                 walkAnim = i;
-            else if (lower.Contains("run") || lower.Contains("gallop"))
+            else if (lower == "sprint_loop" || lower == "jog_fwd_loop")
                 runAnim = i;
         }
 
@@ -169,7 +170,7 @@ class Program
         // --- Player character ---
         // Use the base model as the player instance.
         game.SetModelPosition(baseModel, playerX, playerY, playerZ);
-        game.SetModelScale(baseModel, 0.05f, 0.05f, 0.05f); // Fox model is large, scale down
+        game.SetModelScale(baseModel, 1f, 1f, 1f);
         game.AddModelToScene(sceneId, baseModel);
 
         // Start with idle animation
@@ -197,7 +198,7 @@ class Program
 
             game.SetModelPosition(npcs[i], npcPositions[i, 0], npcPositions[i, 1], npcPositions[i, 2]);
             game.SetModelRotation(npcs[i], 0f, npcFacings[i], 0f);
-            game.SetModelScale(npcs[i], 0.05f, 0.05f, 0.05f);
+            game.SetModelScale(npcs[i], 1f, 1f, 1f);
             game.AddModelToScene(sceneId, npcs[i]);
 
             // Each NPC loops idle
