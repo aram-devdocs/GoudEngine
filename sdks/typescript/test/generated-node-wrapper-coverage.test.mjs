@@ -375,6 +375,42 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
     assert.equal(game.animationEventsCount(), 0);
     assert.equal(game.animationEventsRead(0), 0);
 
+    // 3D Model methods
+    assert.equal(game.loadModel('model.glb'), 0);
+    assert.equal(game.destroyModel(1), 0);
+    assert.equal(game.instantiateModel(1), 0);
+    assert.equal(game.setModelMaterial(1, 0, 5), 0);
+    assert.equal(game.getModelMeshCount(1), 0);
+    assert.equal(game.getModelBoundingBox(1), 0);
+    assert.equal(game.setModelPosition(1, 1.0, 2.0, 3.0), 0);
+    assert.equal(game.setModelRotation(1, 45.0, 90.0, 0.0), 0);
+    assert.equal(game.setModelScale(1, 2.0, 2.0, 2.0), 0);
+
+    // Animation methods
+    assert.equal(game.getAnimationCount(1), 0);
+    assert.equal(game.getAnimationName(1, 0), 0);
+    assert.equal(game.playAnimation(1, 0, true), 0);
+    assert.equal(game.stopAnimation(1), 0);
+    assert.equal(game.setAnimationSpeed(1, 1.5), 0);
+    assert.equal(game.blendAnimations(1, 0, 1, 0.5), 0);
+    assert.equal(game.transitionAnimation(1, 2, 0.5), 0);
+    assert.equal(game.isAnimationPlaying(1), 0);
+    assert.equal(game.getAnimationProgress(1), 0);
+    assert.equal(game.updateAnimations(0.016), 0);
+
+    // Scene methods
+    assert.equal(game.createScene('mainScene'), 0);
+    assert.equal(game.destroyScene(1), 0);
+    assert.equal(game.setCurrentScene(1), 0);
+    assert.equal(game.getCurrentScene(), 0);
+    assert.equal(game.clearCurrentScene(), 0);
+    assert.equal(game.addObjectToScene(1, 1), 0);
+    assert.equal(game.removeObjectFromScene(1, 1), 0);
+    assert.equal(game.addModelToScene(1, 1), 0);
+    assert.equal(game.removeModelFromScene(1, 1), 0);
+    assert.equal(game.addLightToScene(1, 1), 0);
+    assert.equal(game.removeLightFromScene(1, 1), 0);
+
     const sendCall = calls.find(([name]) => name === 'networkSend');
     assert.ok(sendCall);
     assert.ok(sendCall[1][2] instanceof Uint8Array);
