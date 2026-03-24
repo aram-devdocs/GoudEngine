@@ -26,7 +26,10 @@ impl Renderer3D {
             return 0;
         }
 
-        let is_skinned = model_data.skeleton.is_some();
+        // TODO(#621): Skinned shader rendering needs debugging — force standard
+        // render path so models are visible.  Skeleton/animation data is still
+        // stored; only the GPU vertex layout and render-pass selection are affected.
+        let is_skinned = false;
         let floats_per_vertex: usize = if is_skinned { 16 } else { 8 };
         let all_interleaved = if let Some(ref skeleton) = model_data.skeleton {
             mesh.to_skinned_interleaved_floats(&skeleton.bone_indices, &skeleton.bone_weights)
