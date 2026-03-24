@@ -121,24 +121,6 @@ impl Renderer3D {
         self.backend.enable_depth_test();
     }
 
-    /// Collect object IDs belonging to skinned models and their instances.
-    pub(super) fn collect_skinned_object_ids(&self) -> std::collections::HashSet<u32> {
-        let mut ids = std::collections::HashSet::new();
-        for model in self.models.values() {
-            if model.is_skinned {
-                ids.extend(model.mesh_object_ids.iter().copied());
-            }
-        }
-        for inst in self.model_instances.values() {
-            if let Some(src) = self.models.get(&inst.source_model_id) {
-                if src.is_skinned {
-                    ids.extend(inst.mesh_object_ids.iter().copied());
-                }
-            }
-        }
-        ids
-    }
-
     /// Render skinned Model3D and ModelInstance3D entries using the skinned shader.
     ///
     /// Iterates models and instances that have `is_skinned == true`, binds the

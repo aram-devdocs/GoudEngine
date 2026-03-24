@@ -6,25 +6,49 @@ use crate::libs::graphics::backend::types::{
     PrimitiveTopology, VertexBufferBinding, VertexLayout, VertexStepMode,
 };
 
-/// Sets up vertex attribute pointers for the currently bound vertex buffer.
-pub(super) fn set_vertex_attributes(layout: &VertexLayout) {
-    let mut max_vertex_attribs = 0i32;
-    // SAFETY: Querying OpenGL limits is read-only and valid with an active context.
-    unsafe {
-        gl::GetIntegerv(gl::MAX_VERTEX_ATTRIBS, &mut max_vertex_attribs);
+/// Compute a bitmask of attribute locations used by a layout.
+fn layout_attrib_mask(layout: &VertexLayout) -> u32 {
+    let mut mask = 0u32;
+    for attr in &layout.attributes {
+        if attr.location < 32 {
+            mask |= 1 << attr.location;
+        }
     }
-    let max_vertex_attribs = max_vertex_attribs.max(0) as u32;
-    let mut enabled_locations = vec![false; max_vertex_attribs as usize];
+    mask
+}
+
+/// Apply the difference between old and new attrib masks — only enable newly
+/// needed locations and disable locations no longer needed.
+///
+/// SAFETY: Caller must ensure an active GL context with a bound VAO.
+unsafe fn apply_attrib_mask_diff(old_mask: u32, new_mask: u32, max_attribs: u32) {
+    let changed = old_mask ^ new_mask;
+    let limit = max_attribs.min(32);
+    let mut bits = changed & ((1u32 << limit) - 1);
+    while bits != 0 {
+        let loc = bits.trailing_zeros();
+        if new_mask & (1 << loc) != 0 {
+            gl::EnableVertexAttribArray(loc);
+        } else {
+            gl::DisableVertexAttribArray(loc);
+        }
+        bits &= bits - 1; // clear lowest set bit
+    }
+}
+
+/// Sets up vertex attribute pointers for the currently bound vertex buffer.
+///
+/// Uses the backend's cached `enabled_attrib_mask` to only toggle changed
+/// attribute locations, avoiding redundant GL calls.
+pub(super) fn set_vertex_attributes_cached(backend: &mut OpenGLBackend, layout: &VertexLayout) {
+    let new_mask = layout_attrib_mask(layout);
 
     // SAFETY: Attribute location and type values come from validated VertexLayout;
     // a VAO/VBO must be bound by the caller before this is invoked.
     unsafe {
-        for attr in &layout.attributes {
-            gl::EnableVertexAttribArray(attr.location);
-            if (attr.location as usize) < enabled_locations.len() {
-                enabled_locations[attr.location as usize] = true;
-            }
+        apply_attrib_mask_diff(backend.enabled_attrib_mask, new_mask, backend.max_vertex_attribs);
 
+        for attr in &layout.attributes {
             let gl_type = conversions::attribute_type_to_gl_type(attr.attribute_type);
             let component_count = attr.attribute_type.component_count() as i32;
 
@@ -37,30 +61,21 @@ pub(super) fn set_vertex_attributes(layout: &VertexLayout) {
                 attr.offset as *const _,
             );
         }
-
-        // Ensure stale vertex-array state from prior pipelines does not leak into
-        // this draw layout on shared VAOs.
-        for location in 0..max_vertex_attribs {
-            if !enabled_locations[location as usize] {
-                gl::DisableVertexAttribArray(location);
-            }
-        }
     }
+
+    backend.enabled_attrib_mask = new_mask;
     gl_check_debug!("set_vertex_attributes");
 }
 
 /// Sets up vertex attributes across one or more vertex buffers.
-pub(super) fn set_vertex_bindings(
-    backend: &OpenGLBackend,
+///
+/// Uses the backend's cached `enabled_attrib_mask` to only toggle changed
+/// attribute locations.
+pub(super) fn set_vertex_bindings_cached(
+    backend: &mut OpenGLBackend,
     bindings: &[VertexBufferBinding],
 ) -> GoudResult<()> {
-    let mut max_vertex_attribs = 0i32;
-    // SAFETY: Querying OpenGL limits is read-only and valid with an active context.
-    unsafe {
-        gl::GetIntegerv(gl::MAX_VERTEX_ATTRIBS, &mut max_vertex_attribs);
-    }
-    let max_vertex_attribs = max_vertex_attribs.max(0) as u32;
-    let mut enabled_locations = vec![false; max_vertex_attribs as usize];
+    let mut new_mask = 0u32;
 
     for binding in bindings {
         let metadata = backend
@@ -79,6 +94,9 @@ pub(super) fn set_vertex_bindings(
         }
 
         for attr in &binding.layout.attributes {
+            if attr.location < 32 {
+                new_mask |= 1 << attr.location;
+            }
             // SAFETY: Attribute descriptions come from engine-owned validated layouts.
             unsafe {
                 gl::EnableVertexAttribArray(attr.location);
@@ -98,22 +116,23 @@ pub(super) fn set_vertex_bindings(
                     },
                 );
             }
-            if (attr.location as usize) < enabled_locations.len() {
-                enabled_locations[attr.location as usize] = true;
-            }
         }
     }
 
+    // Only disable locations that were previously enabled and are no longer needed.
+    let to_disable = backend.enabled_attrib_mask & !new_mask;
     // SAFETY: Disabling stale locations and resetting divisors is valid on the current VAO.
     unsafe {
-        for location in 0..max_vertex_attribs {
-            if !enabled_locations[location as usize] {
-                gl::DisableVertexAttribArray(location);
-                gl::VertexAttribDivisor(location, 0);
-            }
+        let mut bits = to_disable;
+        while bits != 0 {
+            let loc = bits.trailing_zeros();
+            gl::DisableVertexAttribArray(loc);
+            gl::VertexAttribDivisor(loc, 0);
+            bits &= bits - 1;
         }
     }
 
+    backend.enabled_attrib_mask = new_mask;
     gl_check_debug!("set_vertex_bindings");
     Ok(())
 }

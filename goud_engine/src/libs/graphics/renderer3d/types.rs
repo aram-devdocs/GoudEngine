@@ -163,6 +163,73 @@ pub struct Renderer3DStats {
     pub active_instances: u32,
     /// Number of live particles submitted this frame.
     pub active_particles: u32,
+    /// Total objects in the scene (before culling).
+    pub total_objects: u32,
+    /// Objects that passed frustum culling and were drawn.
+    pub visible_objects: u32,
+    /// Objects culled by frustum test.
+    pub culled_objects: u32,
+    /// Number of material/shader state switches this frame.
+    pub material_switches: u32,
+    /// Number of texture bind operations this frame.
+    pub texture_binds: u32,
+}
+
+/// Local-space bounding sphere for frustum culling.
+#[derive(Debug, Clone, Copy)]
+#[allow(dead_code)] // Fields used by frustum culling (Phase H)
+pub(in crate::libs::graphics::renderer3d) struct BoundingSphere {
+    /// Center in object-local space (typically the AABB center).
+    pub(in crate::libs::graphics::renderer3d) center: Vector3<f32>,
+    /// Radius from center to the farthest vertex.
+    pub(in crate::libs::graphics::renderer3d) radius: f32,
+}
+
+impl Default for BoundingSphere {
+    fn default() -> Self {
+        Self {
+            center: Vector3::new(0.0, 0.0, 0.0),
+            radius: 0.0,
+        }
+    }
+}
+
+/// Compute a bounding sphere from a flat vertex buffer (8 floats per vertex: pos+normal+uv).
+pub(in crate::libs::graphics::renderer3d) fn compute_bounding_sphere(vertices: &[f32]) -> BoundingSphere {
+    const FPV: usize = 8;
+    let vert_count = vertices.len() / FPV;
+    if vert_count == 0 {
+        return BoundingSphere::default();
+    }
+
+    // Compute AABB center.
+    let mut min = Vector3::new(f32::MAX, f32::MAX, f32::MAX);
+    let mut max = Vector3::new(f32::MIN, f32::MIN, f32::MIN);
+    for i in 0..vert_count {
+        let base = i * FPV;
+        let p = Vector3::new(vertices[base], vertices[base + 1], vertices[base + 2]);
+        min.x = min.x.min(p.x);
+        min.y = min.y.min(p.y);
+        min.z = min.z.min(p.z);
+        max.x = max.x.max(p.x);
+        max.y = max.y.max(p.y);
+        max.z = max.z.max(p.z);
+    }
+    let center = (min + max) * 0.5;
+
+    // Compute radius as max distance from center.
+    let mut radius_sq = 0.0f32;
+    for i in 0..vert_count {
+        let base = i * FPV;
+        let p = Vector3::new(vertices[base], vertices[base + 1], vertices[base + 2]);
+        let d = p - center;
+        radius_sq = radius_sq.max(d.x * d.x + d.y * d.y + d.z * d.z);
+    }
+
+    BoundingSphere {
+        center,
+        radius: radius_sq.sqrt(),
+    }
 }
 
 /// A 3D object in the scene
@@ -175,6 +242,8 @@ pub(in crate::libs::graphics::renderer3d) struct Object3D {
     pub(in crate::libs::graphics::renderer3d) rotation: Vector3<f32>,
     pub(in crate::libs::graphics::renderer3d) scale: Vector3<f32>,
     pub(in crate::libs::graphics::renderer3d) texture_id: u32,
+    /// Local-space bounding sphere for frustum culling.
+    pub(in crate::libs::graphics::renderer3d) bounds: BoundingSphere,
 }
 
 #[derive(Debug)]

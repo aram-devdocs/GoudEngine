@@ -118,63 +118,78 @@ impl StateOps for OpenGLBackend {
     }
 
     fn enable_depth_test(&mut self) {
-        // SAFETY: DEPTH_TEST is a valid capability enum for gl::Enable.
-        unsafe {
-            gl::Enable(gl::DEPTH_TEST);
+        if !self.depth_test_enabled {
+            self.depth_test_enabled = true;
+            // SAFETY: DEPTH_TEST is a valid capability enum for gl::Enable.
+            unsafe { gl::Enable(gl::DEPTH_TEST); }
+            gl_check_debug!("enable_depth_test");
         }
-        gl_check_debug!("enable_depth_test");
     }
 
     fn disable_depth_test(&mut self) {
-        // SAFETY: DEPTH_TEST is a valid capability enum for gl::Disable.
-        unsafe {
-            gl::Disable(gl::DEPTH_TEST);
+        if self.depth_test_enabled {
+            self.depth_test_enabled = false;
+            // SAFETY: DEPTH_TEST is a valid capability enum for gl::Disable.
+            unsafe { gl::Disable(gl::DEPTH_TEST); }
+            gl_check_debug!("disable_depth_test");
         }
-        gl_check_debug!("disable_depth_test");
     }
 
     fn enable_blending(&mut self) {
-        // SAFETY: BLEND is a valid capability enum; SRC_ALPHA and ONE_MINUS_SRC_ALPHA are valid blend factors.
-        unsafe {
-            gl::Enable(gl::BLEND);
-            // Set standard alpha blending function
-            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
+        if !self.blend_enabled {
+            self.blend_enabled = true;
+            // SAFETY: BLEND is a valid capability enum.
+            unsafe { gl::Enable(gl::BLEND); }
+        }
+        // Set standard alpha blending (may differ from cached values).
+        let src = gl::SRC_ALPHA;
+        let dst = gl::ONE_MINUS_SRC_ALPHA;
+        if self.cached_blend_src != src || self.cached_blend_dst != dst {
+            self.cached_blend_src = src;
+            self.cached_blend_dst = dst;
+            // SAFETY: SRC_ALPHA and ONE_MINUS_SRC_ALPHA are valid blend factors.
+            unsafe { gl::BlendFunc(src, dst); }
         }
         gl_check_debug!("enable_blending");
     }
 
     fn disable_blending(&mut self) {
-        // SAFETY: BLEND is a valid capability enum for gl::Disable.
-        unsafe {
-            gl::Disable(gl::BLEND);
+        if self.blend_enabled {
+            self.blend_enabled = false;
+            // SAFETY: BLEND is a valid capability enum for gl::Disable.
+            unsafe { gl::Disable(gl::BLEND); }
+            gl_check_debug!("disable_blending");
         }
-        gl_check_debug!("disable_blending");
     }
 
     fn set_blend_func(&mut self, src: BlendFactor, dst: BlendFactor) {
         let src_gl = conversions::blend_factor_to_gl(src);
         let dst_gl = conversions::blend_factor_to_gl(dst);
-        // SAFETY: src_gl and dst_gl are valid GL blend factor enums produced by blend_factor_to_gl.
-        unsafe {
-            gl::BlendFunc(src_gl, dst_gl);
+        if self.cached_blend_src != src_gl || self.cached_blend_dst != dst_gl {
+            self.cached_blend_src = src_gl;
+            self.cached_blend_dst = dst_gl;
+            // SAFETY: src_gl and dst_gl are valid GL blend factor enums.
+            unsafe { gl::BlendFunc(src_gl, dst_gl); }
+            gl_check_debug!("set_blend_func");
         }
-        gl_check_debug!("set_blend_func");
     }
 
     fn enable_culling(&mut self) {
-        // SAFETY: CULL_FACE is a valid capability enum for gl::Enable.
-        unsafe {
-            gl::Enable(gl::CULL_FACE);
+        if !self.cull_enabled {
+            self.cull_enabled = true;
+            // SAFETY: CULL_FACE is a valid capability enum for gl::Enable.
+            unsafe { gl::Enable(gl::CULL_FACE); }
+            gl_check_debug!("enable_culling");
         }
-        gl_check_debug!("enable_culling");
     }
 
     fn disable_culling(&mut self) {
-        // SAFETY: CULL_FACE is a valid capability enum for gl::Disable.
-        unsafe {
-            gl::Disable(gl::CULL_FACE);
+        if self.cull_enabled {
+            self.cull_enabled = false;
+            // SAFETY: CULL_FACE is a valid capability enum for gl::Disable.
+            unsafe { gl::Disable(gl::CULL_FACE); }
+            gl_check_debug!("disable_culling");
         }
-        gl_check_debug!("disable_culling");
     }
 
     fn set_cull_face(&mut self, face: CullFace) {
@@ -183,11 +198,12 @@ impl StateOps for OpenGLBackend {
             CullFace::Back => gl::BACK,
             CullFace::FrontAndBack => gl::FRONT_AND_BACK,
         };
-        // SAFETY: gl_face is a valid GL face enum produced by the match above.
-        unsafe {
-            gl::CullFace(gl_face);
+        if self.cached_cull_face != gl_face {
+            self.cached_cull_face = gl_face;
+            // SAFETY: gl_face is a valid GL face enum.
+            unsafe { gl::CullFace(gl_face); }
+            gl_check_debug!("set_cull_face");
         }
-        gl_check_debug!("set_cull_face");
     }
 
     fn set_depth_func(&mut self, func: DepthFunc) {
@@ -201,9 +217,10 @@ impl StateOps for OpenGLBackend {
             DepthFunc::Equal => gl::EQUAL,
             DepthFunc::NotEqual => gl::NOTEQUAL,
         };
-        // SAFETY: Valid GL enum passed to DepthFunc
-        unsafe {
-            gl::DepthFunc(gl_func);
+        if self.cached_depth_func != gl_func {
+            self.cached_depth_func = gl_func;
+            // SAFETY: Valid GL enum passed to DepthFunc.
+            unsafe { gl::DepthFunc(gl_func); }
         }
     }
 
@@ -212,16 +229,18 @@ impl StateOps for OpenGLBackend {
             FrontFace::Ccw => gl::CCW,
             FrontFace::Cw => gl::CW,
         };
-        // SAFETY: Valid GL enum passed to FrontFace
-        unsafe {
-            gl::FrontFace(gl_face);
+        if self.cached_front_face != gl_face {
+            self.cached_front_face = gl_face;
+            // SAFETY: Valid GL enum passed to FrontFace.
+            unsafe { gl::FrontFace(gl_face); }
         }
     }
 
     fn set_depth_mask(&mut self, enabled: bool) {
-        // SAFETY: Boolean mapped to GL_TRUE/GL_FALSE
-        unsafe {
-            gl::DepthMask(if enabled { gl::TRUE } else { gl::FALSE });
+        if self.depth_write_enabled != enabled {
+            self.depth_write_enabled = enabled;
+            // SAFETY: Boolean mapped to GL_TRUE/GL_FALSE.
+            unsafe { gl::DepthMask(if enabled { gl::TRUE } else { gl::FALSE }); }
         }
     }
 
@@ -241,10 +260,8 @@ impl StateOps for OpenGLBackend {
         let Some(width) = clamp_line_width(width, self.line_width_range) else {
             return;
         };
-        // SAFETY: Positive float passed to LineWidth
-        unsafe {
-            gl::LineWidth(width);
-        }
+        // SAFETY: Positive float passed to LineWidth.
+        unsafe { gl::LineWidth(width); }
         gl_check_debug!("set_line_width");
     }
 }
@@ -442,11 +459,11 @@ impl DrawOps for OpenGLBackend {
         &mut self,
         layout: &crate::libs::graphics::backend::types::VertexLayout,
     ) {
-        super::draw_calls::set_vertex_attributes(layout)
+        super::draw_calls::set_vertex_attributes_cached(self, layout)
     }
 
     fn set_vertex_bindings(&mut self, bindings: &[VertexBufferBinding]) -> GoudResult<()> {
-        super::draw_calls::set_vertex_bindings(self, bindings)
+        super::draw_calls::set_vertex_bindings_cached(self, bindings)
     }
 
     fn draw_arrays(

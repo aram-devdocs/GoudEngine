@@ -14,6 +14,7 @@ mod animation;
 mod animation_math;
 #[cfg(test)]
 mod animation_tests;
+pub mod config;
 mod core;
 mod core_materials;
 mod core_model_animation;
@@ -23,6 +24,7 @@ mod core_primitives;
 mod core_scenes;
 mod core_skinned;
 mod debug_draw;
+mod frustum;
 mod material;
 mod mesh;
 mod model;
@@ -42,6 +44,7 @@ mod tests;
 
 // Public API re-exports — the external interface is unchanged.
 pub use animation::{AnimationPlayer, AnimationState, AnimationTransition};
+pub use config::Render3DConfig;
 pub use core::Renderer3D;
 pub use scene::Scene3D;
 pub use texture::TextureManagerTrait;

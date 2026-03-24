@@ -8,6 +8,7 @@ use super::{
     BlendFactor, BufferHandle, BufferType, CullFace, DepthFunc, FrontFace, PrimitiveTopology,
     ShaderHandle, TextureHandle, VertexBufferBinding,
 };
+use smallvec::SmallVec;
 use std::collections::HashMap;
 
 // =============================================================================
@@ -22,10 +23,16 @@ pub(super) struct WgpuBufferMeta {
 
 pub(super) struct WgpuTextureMeta {
     pub(super) _texture: wgpu::Texture,
-    pub(super) view: wgpu::TextureView,
-    pub(super) sampler: wgpu::Sampler,
+    /// Kept alive so the bind group remains valid.
+    pub(super) _view: wgpu::TextureView,
+    /// Kept alive so the bind group remains valid.
+    pub(super) _sampler: wgpu::Sampler,
     pub(super) width: u32,
     pub(super) height: u32,
+    /// Cached bind group for this texture (view + sampler). Created once at
+    /// texture creation time and reused every frame instead of being recreated
+    /// per draw command.
+    pub(super) bind_group: wgpu::BindGroup,
 }
 
 pub(super) struct UniformSlot {
@@ -47,11 +54,14 @@ pub(super) struct WgpuShaderMeta {
 // =============================================================================
 
 /// A draw command recorded during the frame, replayed in `end_frame`.
+///
+/// Uses `SmallVec` for vertex bindings and textures to avoid heap allocation
+/// in the common case (1-2 vertex bindings, 0-2 bound textures).
 pub(super) struct DrawCommand {
     pub(super) shader: ShaderHandle,
     pub(super) index_buffer: Option<BufferHandle>,
-    pub(super) vertex_bindings: Vec<VertexBufferBinding>,
-    pub(super) bound_textures: Vec<(u32, TextureHandle)>,
+    pub(super) vertex_bindings: SmallVec<[VertexBufferBinding; 2]>,
+    pub(super) bound_textures: SmallVec<[(u32, TextureHandle); 2]>,
     pub(super) topology: PrimitiveTopology,
     pub(super) depth_test: bool,
     pub(super) depth_write: bool,
@@ -62,7 +72,10 @@ pub(super) struct DrawCommand {
     pub(super) cull_enabled: bool,
     pub(super) cull_face: CullFace,
     pub(super) front_face: FrontFace,
-    pub(super) uniform_snapshot: Vec<u8>,
+    /// Byte offset into `WgpuBackend::uniform_ring` for this command's uniform data.
+    pub(super) uniform_ring_offset: u32,
+    /// Number of bytes of uniform data stored in the ring buffer.
+    pub(super) uniform_ring_size: u32,
     pub(super) draw_type: DrawType,
 }
 
@@ -108,6 +121,11 @@ impl DrawType {
 // =============================================================================
 
 /// Pipeline cache key combining all state that affects pipeline creation.
+///
+/// The `vertex_layout_hash` field is a precomputed `u64` hash of the vertex
+/// buffer layouts (stride, step mode, attribute locations/types/offsets).
+/// This avoids allocating nested `Vec`s for every draw command just to build
+/// the cache key.
 #[derive(Hash, Eq, PartialEq, Clone)]
 pub(super) struct PipelineKey {
     pub(super) shader: ShaderHandle,
@@ -121,7 +139,7 @@ pub(super) struct PipelineKey {
     pub(super) cull_enabled: bool,
     pub(super) cull_face: u8,
     pub(super) front_face: u8,
-    pub(super) vertex_buffers: Vec<(u32, u8, Vec<(u32, u8, u32, bool)>)>,
+    pub(super) vertex_layout_hash: u64,
 }
 
 // =============================================================================

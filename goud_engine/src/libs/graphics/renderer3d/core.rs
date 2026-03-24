@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 
+use super::config::Render3DConfig;
 use super::scene::Scene3D;
 use crate::core::providers::types::DebugShape3D;
 use crate::libs::graphics::backend::BufferHandle;
@@ -105,6 +106,11 @@ pub struct Renderer3D {
     pub(super) current_scene: Option<u32>,
     /// When `false`, the CPU software shadow map pass is skipped entirely.
     pub(super) shadows_enabled: bool,
+    /// Object IDs belonging to skinned models/instances — maintained
+    /// incrementally to avoid per-frame recomputation.
+    pub(super) skinned_object_ids: std::collections::HashSet<u32>,
+    /// Game-developer-controlled configuration for the 3D renderer.
+    pub(super) config: Render3DConfig,
 }
 
 #[allow(missing_docs)]
@@ -250,6 +256,8 @@ impl Renderer3D {
             next_scene_id: 1,
             current_scene: None,
             shadows_enabled: true,
+            skinned_object_ids: std::collections::HashSet::new(),
+            config: Render3DConfig::default(),
         })
     }
     pub fn set_object_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
@@ -357,6 +365,14 @@ impl Renderer3D {
 
     pub fn shadows_enabled(&self) -> bool {
         self.shadows_enabled
+    }
+
+    pub fn render_config(&self) -> &Render3DConfig {
+        &self.config
+    }
+
+    pub fn set_render_config(&mut self, config: Render3DConfig) {
+        self.config = config;
     }
 
     pub fn configure_grid(&mut self, config: GridConfig) {

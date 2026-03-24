@@ -61,8 +61,8 @@ GoudEngine is working toward an alpha release. The full plan covers physics, aud
 - Flexible renderer selection: 2D or 3D at runtime
 - 2D rendering: sprites, 2D camera, Tiled map support
 - 3D rendering: primitives (cubes, spheres, planes, cylinders)
-- wgpu rendering backend (GPU) with OpenGL legacy fallback
-- winit windowing with GLFW legacy fallback
+- wgpu rendering backend (Vulkan/Metal/DX12/WebGPU) with OpenGL 3.3 legacy option
+- winit windowing with GLFW legacy option
 - Dynamic lighting: point, directional, and spot lights
 - Physics simulation: Rapier 2D/3D rigid bodies, colliders, raycasting, collision events
 - Audio playback: rodio-powered per-channel volume (Music, SFX, Ambience, UI, Voice) and spatial audio
@@ -115,7 +115,7 @@ See [Debugger Runtime Guide](docs/src/guides/debugger-runtime.md) for scope, det
 │                       Rust Engine Core                              │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐              │
 │  │ Graphics │ │   ECS    │ │ Platform │ │  Audio   │              │
-│  │(wgpu +   │ │ (World)  │ │(winit +  │ │ (rodio)  │              │
+│  │(wgpu ·   │ │ (World)  │ │(winit ·  │ │ (rodio)  │              │
 │  │ OpenGL)  │ │          │ │ GLFW)    │ │          │              │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────┘              │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐              │

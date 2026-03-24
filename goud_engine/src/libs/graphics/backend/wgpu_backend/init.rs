@@ -236,6 +236,7 @@ impl WgpuBackend {
             uniform_bind_group_layout,
             texture_bind_group_layout,
             fallback_tex_bind_group,
+            uniform_ring: Vec::with_capacity(UNIFORM_BUFFER_SIZE * 64),
         })
     }
 

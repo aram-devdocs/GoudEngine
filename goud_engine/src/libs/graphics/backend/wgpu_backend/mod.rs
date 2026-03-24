@@ -106,6 +106,11 @@ pub struct WgpuBackend {
 
     // Cached 1x1 white fallback texture bind group for draws without a bound texture.
     fallback_tex_bind_group: wgpu::BindGroup,
+
+    /// Per-frame ring buffer for uniform snapshots.  Draw commands store an
+    /// `(offset, size)` into this buffer instead of cloning the full 4KB
+    /// staging buffer per draw.  Cleared at `begin_frame`.
+    uniform_ring: Vec<u8>,
 }
 
 // SAFETY: wgpu Device and Queue are Send+Sync. Surface is Send.

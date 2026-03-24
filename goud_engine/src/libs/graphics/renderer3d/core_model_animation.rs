@@ -62,29 +62,37 @@ impl Renderer3D {
 
         // Phase 1: advance animation time and compute bone matrices.
         //
-        // We collect raw pointers to skeleton/animation data to avoid cloning.
+        // We collect raw pointers to skeleton/animation/bone-name data to avoid
+        // cloning.
         // SAFETY: the models HashMap is not mutated during this loop -- only
         // animation_players is mutated via get_mut.
-        let update_list: Vec<(u32, *const SkeletonData, *const Vec<KeyframeAnimation>)> =
-            player_ids
-                .iter()
-                .filter_map(|&id| {
-                    let model = self.resolve_source_model(id)?;
-                    let skel = model.skeleton.as_ref()?;
-                    Some((
-                        id,
-                        skel as *const SkeletonData,
-                        &model.animations as *const _,
-                    ))
-                })
-                .collect();
+        type UpdateItem = (
+            u32,
+            *const SkeletonData,
+            *const Vec<KeyframeAnimation>,
+            *const Vec<super::animation::BonePropertyNames>,
+        );
+        let update_list: Vec<UpdateItem> = player_ids
+            .iter()
+            .filter_map(|&id| {
+                let model = self.resolve_source_model(id)?;
+                let skel = model.skeleton.as_ref()?;
+                Some((
+                    id,
+                    skel as *const SkeletonData,
+                    &model.animations as *const _,
+                    &model.cached_bone_prop_names as *const _,
+                ))
+            })
+            .collect();
 
-        for &(player_id, skel_ptr, anims_ptr) in &update_list {
+        for &(player_id, skel_ptr, anims_ptr, names_ptr) in &update_list {
             if let Some(player) = self.animation_players.get_mut(&player_id) {
                 // SAFETY: models HashMap is not mutated during this loop.
                 let skeleton = unsafe { &*skel_ptr };
                 let animations = unsafe { &*anims_ptr };
-                player.update(dt, skeleton, animations);
+                let prop_names = unsafe { &*names_ptr };
+                player.update_with_names(dt, skeleton, animations, prop_names);
             }
         }
 

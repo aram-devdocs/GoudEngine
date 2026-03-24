@@ -1,6 +1,6 @@
 //! Model loading and management methods for [`Renderer3D`].
 
-use super::animation::AnimationPlayer;
+use super::animation::{AnimationPlayer, BonePropertyNames};
 use super::core::Renderer3D;
 use super::mesh::upload_buffer;
 use super::model::{Model3D, ModelInstance3D};
@@ -108,16 +108,23 @@ impl Renderer3D {
             let object_id = self.next_object_id;
             self.next_object_id += 1;
             let tri_vert_count = verts.len() / floats_per_vertex;
+            // Compute bounding sphere from the vertex data before discarding it.
+            let bounds = super::types::compute_bounding_sphere(&verts);
             self.objects.insert(
                 object_id,
                 Object3D {
                     buffer,
                     vertex_count: tri_vert_count as i32,
-                    vertices: verts,
+                    // Model sub-mesh vertices are NOT stored on Object3D to save
+                    // memory at scale.  Bind-pose data for CPU skinning is already
+                    // stored separately on Model3D::bind_pose_vertices.  The CPU
+                    // shadow rasterizer skips objects with empty vertices.
+                    vertices: Vec::new(),
                     position: Vector3::new(0.0, 0.0, 0.0),
                     rotation: Vector3::new(0.0, 0.0, 0.0),
                     scale: Vector3::new(1.0, 1.0, 1.0),
                     texture_id: 0,
+                    bounds,
                 },
             );
 
@@ -168,6 +175,15 @@ impl Renderer3D {
             self.animation_players.insert(model_id, player);
         }
 
+        // Pre-compute bone property name strings once at load time to avoid
+        // per-frame format!() allocations during animation sampling.
+        let bone_count = model_data
+            .skeleton
+            .as_ref()
+            .map_or(0, |s| s.bones.len());
+        let cached_bone_prop_names: Vec<BonePropertyNames> =
+            (0..bone_count).map(BonePropertyNames::new).collect();
+
         self.models.insert(
             model_id,
             Model3D {
@@ -181,8 +197,17 @@ impl Renderer3D {
                 bind_pose_vertices,
                 bind_pose_bone_indices,
                 bind_pose_bone_weights,
+                cached_bone_prop_names,
             },
         );
+
+        // Update the persistent skinned object ID set.
+        if is_skinned {
+            if let Some(m) = self.models.get(&model_id) {
+                self.skinned_object_ids
+                    .extend(m.mesh_object_ids.iter().copied());
+            }
+        }
 
         model_id
     }
@@ -197,6 +222,7 @@ impl Renderer3D {
         };
 
         for &obj_id in &model.mesh_object_ids {
+            self.skinned_object_ids.remove(&obj_id);
             if let Some(obj) = self.objects.remove(&obj_id) {
                 self.backend.destroy_buffer(obj.buffer);
             }
@@ -233,10 +259,11 @@ impl Renderer3D {
         let mut instance_material_ids = Vec::with_capacity(source.mesh_material_ids.len());
 
         for (i, &src_obj_id) in source.mesh_object_ids.iter().enumerate() {
-            let (src_buffer, vertex_count, texture_id) = match self.objects.get(&src_obj_id) {
-                Some(o) => (o.buffer, o.vertex_count, o.texture_id),
-                None => continue,
-            };
+            let (src_buffer, vertex_count, texture_id, src_bounds) =
+                match self.objects.get(&src_obj_id) {
+                    Some(o) => (o.buffer, o.vertex_count, o.texture_id, o.bounds),
+                    None => continue,
+                };
 
             // Skinned instances need their own dynamic buffer for CPU skinning.
             let buffer = if has_skeleton {
@@ -272,6 +299,7 @@ impl Renderer3D {
                     rotation: Vector3::new(0.0, 0.0, 0.0),
                     scale: Vector3::new(1.0, 1.0, 1.0),
                     texture_id,
+                    bounds: src_bounds,
                 },
             );
 
@@ -315,6 +343,12 @@ impl Renderer3D {
                 mesh_material_ids: instance_material_ids,
             },
         );
+
+        // Update skinned object ID set if the source model is skinned.
+        if source.is_skinned {
+            self.skinned_object_ids
+                .extend(instance_object_ids.iter().copied());
+        }
 
         // If the source model is in a scene, add the new instance's objects to that scene too.
         if let Some(scene_id) = self.current_scene {

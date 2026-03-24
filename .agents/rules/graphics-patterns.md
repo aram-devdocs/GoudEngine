@@ -14,18 +14,18 @@ globs:
 - **SpriteBatch** batches draw calls to minimize GPU state changes
 - Renderer type selected at `GoudGame` initialization time
 
-## OpenGL Isolation
+## GPU Backend Isolation
 
-All raw OpenGL calls (`gl::` namespace) MUST live in `libs/graphics/backend/`. No other module may call OpenGL directly. This ensures:
+All raw GPU calls (`gl::` for OpenGL, `wgpu::` for wgpu) MUST live in `libs/graphics/backend/`. No other module may call GPU APIs directly. This ensures:
 
-- Backend can be swapped (Vulkan, Metal) without touching higher layers
-- GL state management stays centralized
-- Easier to test non-GL logic in isolation
+- Backend can be swapped (wgpu/OpenGL) without touching higher layers
+- GPU state management stays centralized
+- Easier to test non-GPU logic in isolation
 
 ## Shader Programs
 
 - Compile vertex + fragment shaders, then link into a program
-- Always validate after linking (check `GL_LINK_STATUS`)
+- Always validate after linking (check link status via backend API)
 - Shader source loaded via asset system, not hardcoded strings
 
 ## Camera System
