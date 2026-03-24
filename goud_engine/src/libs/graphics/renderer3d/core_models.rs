@@ -26,7 +26,8 @@ impl Renderer3D {
             return 0;
         }
 
-        let is_skinned = model_data.skeleton.is_some();
+        // Force standard render path — skinned shader causes instances to disappear
+        let is_skinned = false;
         let floats_per_vertex: usize = if is_skinned { 16 } else { 8 };
         let mut mesh_object_ids = Vec::new();
         let mut mesh_material_ids = Vec::new();
