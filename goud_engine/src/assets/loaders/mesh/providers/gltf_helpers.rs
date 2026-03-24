@@ -97,7 +97,6 @@ pub(super) fn process_embedded_images(
 #[allow(clippy::too_many_arguments)]
 pub(super) fn process_node(
     node: &gltf::Node,
-    gltf: &gltf::Gltf,
     buffers: &[Vec<u8>],
     image_paths: &std::collections::HashMap<usize, String>,
     vertices: &mut Vec<crate::core::types::MeshVertex>,
@@ -240,7 +239,6 @@ pub(super) fn process_node(
     for child in node.children() {
         process_node(
             &child,
-            gltf,
             buffers,
             image_paths,
             vertices,

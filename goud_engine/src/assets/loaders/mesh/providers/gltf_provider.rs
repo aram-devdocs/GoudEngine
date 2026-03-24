@@ -54,7 +54,6 @@ impl ModelProvider for GltfProvider {
             for root_node in scene.nodes() {
                 process_node(
                     &root_node,
-                    &gltf,
                     &buffers,
                     &image_paths,
                     &mut vertices,
