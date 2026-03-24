@@ -26,33 +26,39 @@ impl Renderer3D {
             return 0;
         }
 
-        // TODO(#621): Skinned shader rendering needs debugging — force standard
-        // render path so models are visible.
-        let is_skinned = false;
-        let floats_per_vertex: usize = 8; // pos3 + norm3 + uv2
+        let is_skinned = model_data.skeleton.is_some();
+        let floats_per_vertex: usize = if is_skinned { 16 } else { 8 };
         let mut mesh_object_ids = Vec::new();
         let mut mesh_material_ids = Vec::new();
 
+        // Skeleton bone data (parallel to mesh.vertices) for skinned models.
+        let bone_indices = model_data
+            .skeleton
+            .as_ref()
+            .map(|s| &s.bone_indices[..])
+            .unwrap_or(&[]);
+        let bone_weights = model_data
+            .skeleton
+            .as_ref()
+            .map(|s| &s.bone_weights[..])
+            .unwrap_or(&[]);
+
         // Process each sub-mesh as a separate Object3D.
-        // For each sub-mesh, gather triangle vertices by reading through
-        // the index buffer and copying vertex data in draw order.
-        let sub_mesh_ranges: Vec<_> = if mesh.sub_meshes.is_empty() {
-            vec![(0u32, mesh.indices.len() as u32)]
+        let sub_mesh_list: Vec<_> = if mesh.sub_meshes.is_empty() {
+            vec![(0u32, mesh.indices.len() as u32, None)]
         } else {
             mesh.sub_meshes
                 .iter()
-                .map(|sm| (sm.start_index, sm.index_count))
+                .map(|sm| (sm.start_index, sm.index_count, sm.material.as_ref()))
                 .collect()
         };
 
-        for (start_index, index_count) in &sub_mesh_ranges {
+        for (start_index, index_count, material_opt) in &sub_mesh_list {
             let start = *start_index as usize;
             let count = *index_count as usize;
             let end = (start + count).min(mesh.indices.len());
             let sub_indices = &mesh.indices[start..end];
 
-            // Build unindexed vertex buffer: for each index, copy the
-            // full vertex (pos + norm + uv = 8 floats) into the output.
             let vert_count = mesh.vertices.len();
             let mut verts = Vec::with_capacity(count * floats_per_vertex);
             for &idx in sub_indices {
@@ -62,6 +68,12 @@ impl Renderer3D {
                     verts.extend_from_slice(&v.position);
                     verts.extend_from_slice(&v.normal);
                     verts.extend_from_slice(&v.uv);
+                    if is_skinned {
+                        let bi = bone_indices.get(vi).copied().unwrap_or([0; 4]);
+                        let bw = bone_weights.get(vi).copied().unwrap_or([0.0; 4]);
+                        verts.extend_from_slice(&[bi[0] as f32, bi[1] as f32, bi[2] as f32, bi[3] as f32]);
+                        verts.extend_from_slice(&bw);
+                    }
                 }
             }
 
@@ -93,7 +105,30 @@ impl Renderer3D {
                 },
             );
 
-            let material = Material3D::default();
+            // Create material from glTF material metadata.
+            let material = if let Some(mesh_mat) = material_opt {
+                Material3D {
+                    material_type: MaterialType::Pbr,
+                    color: Vector4::new(
+                        mesh_mat.base_color_factor[0],
+                        mesh_mat.base_color_factor[1],
+                        mesh_mat.base_color_factor[2],
+                        mesh_mat.base_color_factor[3],
+                    ),
+                    shininess: 32.0,
+                    pbr: PbrProperties {
+                        metallic: mesh_mat.metallic_factor,
+                        roughness: mesh_mat.roughness_factor,
+                        ao: 1.0,
+                        albedo_map: 0,
+                        normal_map: 0,
+                        metallic_roughness_map: 0,
+                    },
+                }
+            } else {
+                Material3D::default()
+            };
+
             let material_id = self.next_material_id;
             self.next_material_id += 1;
             self.materials.insert(material_id, material);
@@ -157,8 +192,10 @@ impl Renderer3D {
         true
     }
 
-    /// Create an independent copy of a model with its own GPU resources.
+    /// Create a lightweight instance that shares the source model's GPU buffers.
     ///
+    /// Each instance gets its own Object3D entries (for independent transforms)
+    /// but reuses the source model's vertex buffer handles — no GPU duplication.
     /// Returns the instance handle, or `None` if the source model does not exist.
     pub fn instantiate_model(&mut self, source_id: u32) -> Option<u32> {
         let source = self.models.get(&source_id)?;
@@ -167,36 +204,28 @@ impl Renderer3D {
         let mut instance_material_ids = Vec::with_capacity(source.mesh_material_ids.len());
 
         for (i, &src_obj_id) in source.mesh_object_ids.iter().enumerate() {
-            let src_obj = match self.objects.get(&src_obj_id) {
-                Some(o) => o,
+            let (buffer, vertex_count, texture_id) = match self.objects.get(&src_obj_id) {
+                Some(o) => (o.buffer, o.vertex_count, o.texture_id),
                 None => continue,
             };
 
-            // Duplicate the GPU buffer.
-            let buffer = match upload_buffer(self.backend.as_mut(), &src_obj.vertices) {
-                Ok(h) => h,
-                Err(e) => {
-                    log::error!("Failed to duplicate buffer for model instance: {e}");
-                    continue;
-                }
-            };
-
+            // Reuse the source model's GPU buffer — no upload, no clone.
             let new_obj_id = self.next_object_id;
             self.next_object_id += 1;
             self.objects.insert(
                 new_obj_id,
                 Object3D {
-                    buffer,
-                    vertex_count: src_obj.vertex_count,
-                    vertices: src_obj.vertices.clone(),
-                    position: src_obj.position,
-                    rotation: src_obj.rotation,
-                    scale: src_obj.scale,
-                    texture_id: src_obj.texture_id,
+                    buffer, // shared GPU buffer handle
+                    vertex_count,
+                    vertices: Vec::new(), // no CPU copy needed
+                    position: Vector3::new(0.0, 0.0, 0.0),
+                    rotation: Vector3::new(0.0, 0.0, 0.0),
+                    scale: Vector3::new(1.0, 1.0, 1.0),
+                    texture_id,
                 },
             );
 
-            // Clone the material.
+            // Clone the material (cheap — just a few floats).
             let src_mat_id = source
                 .mesh_material_ids
                 .get(i)
