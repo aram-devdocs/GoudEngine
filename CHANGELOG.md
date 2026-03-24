@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.836](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.835...v0.0.836) (2026-03-24)
+
+
+### Bug Fixes
+
+* add WGSL shader variants for batch, UI, and sprite batch render paths ([3eb650d](https://github.com/aram-devdocs/GoudEngine/commit/3eb650d0b65dd928b478e62d5d5291ce0388fe28))
+* address CI failures — split batch.rs and fix benchmark BackendInfo ([908459e](https://github.com/aram-devdocs/GoudEngine/commit/908459e1ba33736df1aa7417bb4c9f780cfdb2f0))
+* address Claude review warnings — update ShaderSource docs and version ([9fc23fd](https://github.com/aram-devdocs/GoudEngine/commit/9fc23fd00e82d395969df2080f255003c159265a))
+
 ## [0.0.835](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.834...v0.0.835) (2026-03-23)
 
 

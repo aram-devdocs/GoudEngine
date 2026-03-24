@@ -15,7 +15,7 @@ use crate::libs::graphics::backend::types::{
     VertexAttribute, VertexAttributeType, VertexLayout,
 };
 use crate::libs::graphics::backend::{
-    BlendFactor, BufferOps, DrawOps, RenderBackend, ShaderOps, StateOps, TextureOps,
+    BlendFactor, BufferOps, DrawOps, RenderBackend, ShaderLanguage, ShaderOps, StateOps, TextureOps,
 };
 
 use super::super::immediate::get_coordinate_origin;
@@ -108,47 +108,10 @@ fn batch_vertex_layout() -> VertexLayout {
         ))
 }
 
-// ============================================================================
-// Batch shader sources
-// ============================================================================
-
-const BATCH_VERTEX_SHADER: &str = r#"
-#version 330 core
-
-layout(location = 0) in vec2 a_position;
-layout(location = 1) in vec2 a_texcoord;
-layout(location = 2) in vec4 a_color;
-
-uniform vec2 u_viewport;
-
-out vec2 v_texcoord;
-out vec4 v_color;
-
-void main() {
-    vec2 safe_viewport = max(u_viewport, vec2(1.0, 1.0));
-    vec2 ndc;
-    ndc.x = (a_position.x / safe_viewport.x) * 2.0 - 1.0;
-    ndc.y = 1.0 - (a_position.y / safe_viewport.y) * 2.0;
-    gl_Position = vec4(ndc, 0.0, 1.0);
-    v_texcoord = a_texcoord;
-    v_color = a_color;
-}
-"#;
-
-const BATCH_FRAGMENT_SHADER: &str = r#"
-#version 330 core
-
-in vec2 v_texcoord;
-in vec4 v_color;
-
-uniform sampler2D u_texture;
-
-out vec4 FragColor;
-
-void main() {
-    FragColor = texture(u_texture, v_texcoord) * v_color;
-}
-"#;
+use super::batch_shaders::{
+    BATCH_FRAGMENT_SHADER, BATCH_FRAGMENT_SHADER_WGSL, BATCH_VERTEX_SHADER,
+    BATCH_VERTEX_SHADER_WGSL,
+};
 
 // ============================================================================
 // Thread-local batch GPU state (one per context, lazily initialized)
@@ -311,7 +274,11 @@ pub unsafe extern "C" fn goud_renderer_draw_sprite_batch(
         let needs_init = BATCH_STATE.with(|cell| !cell.borrow().contains_key(&context_key));
 
         if needs_init {
-            let shader = backend.create_shader(BATCH_VERTEX_SHADER, BATCH_FRAGMENT_SHADER)?;
+            let (vert_src, frag_src) = match backend.shader_language() {
+                ShaderLanguage::Wgsl => (BATCH_VERTEX_SHADER_WGSL, BATCH_FRAGMENT_SHADER_WGSL),
+                ShaderLanguage::Glsl => (BATCH_VERTEX_SHADER, BATCH_FRAGMENT_SHADER),
+            };
+            let shader = backend.create_shader(vert_src, frag_src)?;
             let u_viewport = backend
                 .get_uniform_location(shader, "u_viewport")
                 .unwrap_or(-1);

@@ -308,7 +308,7 @@ impl<B: RenderBackend> SpriteBatch<B> {
         let shader_handle = if self.config.shader_asset.is_valid() {
             self.config.shader_asset
         } else {
-            ensure_default_sprite_shader_loaded(asset_server)
+            ensure_default_sprite_shader_loaded(asset_server, self.backend.shader_language())
         };
         Ok((shader_handle, None))
     }

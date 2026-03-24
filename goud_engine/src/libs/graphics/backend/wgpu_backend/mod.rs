@@ -18,7 +18,7 @@ use super::{
         VertexLayout,
     },
     BackendCapabilities, BackendInfo, BlendFactor, BufferOps, ClearOps, CullFace, DrawOps,
-    FrameOps, RenderBackend, ShaderOps, StateOps, TextureOps,
+    FrameOps, RenderBackend, ShaderLanguage, ShaderOps, StateOps, TextureOps,
 };
 use crate::core::handle::HandleAllocator;
 use std::collections::HashMap;

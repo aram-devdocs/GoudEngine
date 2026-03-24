@@ -1,6 +1,6 @@
 use super::*;
 use crate::libs::graphics::backend::null::NullBackend;
-use crate::libs::graphics::backend::TextureOps;
+use crate::libs::graphics::backend::{ShaderLanguage, TextureOps};
 use crate::rendering::sprite_batch::config::SpriteBatchConfig;
 use image::{ImageBuffer, ImageFormat, Rgba};
 
@@ -22,10 +22,22 @@ fn create_test_png(width: u32, height: u32) -> Vec<u8> {
 #[test]
 fn test_default_sprite_shader_loads_through_asset_server() {
     let mut asset_server = AssetServer::new();
-    let handle = ensure_default_sprite_shader_loaded(&mut asset_server);
+    let handle = ensure_default_sprite_shader_loaded(&mut asset_server, ShaderLanguage::Glsl);
     let shader = asset_server
         .get(&handle)
         .expect("default sprite shader should be loaded");
+
+    assert!(shader.get_stage(ShaderStage::Vertex).is_some());
+    assert!(shader.get_stage(ShaderStage::Fragment).is_some());
+}
+
+#[test]
+fn test_default_sprite_shader_loads_wgsl_through_asset_server() {
+    let mut asset_server = AssetServer::new();
+    let handle = ensure_default_sprite_shader_loaded(&mut asset_server, ShaderLanguage::Wgsl);
+    let shader = asset_server
+        .get(&handle)
+        .expect("default WGSL sprite shader should be loaded");
 
     assert!(shader.get_stage(ShaderStage::Vertex).is_some());
     assert!(shader.get_stage(ShaderStage::Fragment).is_some());

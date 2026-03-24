@@ -1,8 +1,8 @@
 //! OpenGL backend struct definition, constructor, and cleanup.
 
 use super::{
-    super::BackendCapabilities, super::BackendInfo, gl_check_debug, BufferMetadata,
-    RenderTargetMetadata, ShaderMetadata, TextureMetadata,
+    super::BackendCapabilities, super::BackendInfo, super::ShaderLanguage, gl_check_debug,
+    BufferMetadata, RenderTargetMetadata, ShaderMetadata, TextureMetadata,
 };
 use crate::core::handle::HandleAllocator;
 use crate::libs::error::{GoudError, GoudResult};
@@ -158,6 +158,7 @@ impl OpenGLBackend {
             vendor: vendor_str,
             renderer: renderer_str,
             capabilities,
+            shader_language: ShaderLanguage::Glsl,
         };
 
         // Create a default VAO that stays bound for the lifetime of the backend.

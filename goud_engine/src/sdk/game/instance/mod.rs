@@ -44,6 +44,7 @@ use lua_runtime::LuaRuntime;
 use crate::ecs::InputManager;
 #[cfg(feature = "native")]
 use crate::libs::graphics::backend::native_backend::SharedNativeRenderBackend;
+use crate::libs::graphics::backend::RenderBackend;
 #[cfg(feature = "native")]
 use crate::libs::graphics::renderer3d::Renderer3D;
 #[cfg(feature = "native")]
@@ -333,7 +334,10 @@ impl GoudGame {
         let mut asset_server = AssetServer::with_root(".");
         ensure_sprite_asset_loaders(&mut asset_server);
         ensure_3d_asset_loaders(&mut asset_server);
-        let sprite_shader = ensure_default_sprite_shader_loaded(&mut asset_server);
+        let sprite_shader = ensure_default_sprite_shader_loaded(
+            &mut asset_server,
+            render_backend.shader_language(),
+        );
         let sprite_batch = SpriteBatch::new(
             render_backend.clone(),
             SpriteBatchConfig {

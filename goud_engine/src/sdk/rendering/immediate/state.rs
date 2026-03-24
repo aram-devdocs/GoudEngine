@@ -1,6 +1,6 @@
 use crate::core::error::GoudResult;
 use crate::libs::graphics::backend::types::{VertexAttribute, VertexAttributeType, VertexLayout};
-use crate::libs::graphics::backend::RenderBackend;
+use crate::libs::graphics::backend::{RenderBackend, ShaderLanguage};
 
 /// GPU resources for immediate-mode sprite and quad rendering.
 ///
@@ -42,11 +42,9 @@ pub(crate) fn create_immediate_render_state(
 ) -> GoudResult<ImmediateRenderState> {
     use crate::libs::graphics::backend::types::{BufferType, BufferUsage};
 
-    let use_wgpu_shaders = backend.info().name == "wgpu";
-    let (vertex_shader, fragment_shader) = if use_wgpu_shaders {
-        (SPRITE_VERTEX_SHADER_WGSL, SPRITE_FRAGMENT_SHADER_WGSL)
-    } else {
-        (SPRITE_VERTEX_SHADER, SPRITE_FRAGMENT_SHADER)
+    let (vertex_shader, fragment_shader) = match backend.shader_language() {
+        ShaderLanguage::Wgsl => (SPRITE_VERTEX_SHADER_WGSL, SPRITE_FRAGMENT_SHADER_WGSL),
+        ShaderLanguage::Glsl => (SPRITE_VERTEX_SHADER, SPRITE_FRAGMENT_SHADER),
     };
 
     let shader = backend.create_shader(vertex_shader, fragment_shader)?;

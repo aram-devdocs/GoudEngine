@@ -3,7 +3,9 @@
 //! Shared between benchmark files via `#[path]` module include.
 
 use goud_engine::core::error::GoudResult;
-use goud_engine::libs::graphics::backend::capabilities::{BackendCapabilities, BackendInfo};
+use goud_engine::libs::graphics::backend::capabilities::{
+    BackendCapabilities, BackendInfo, ShaderLanguage,
+};
 use goud_engine::libs::graphics::backend::types::{
     BufferHandle, BufferType, BufferUsage, PrimitiveTopology, RenderTargetDesc, RenderTargetHandle,
     ShaderHandle, TextureFilter, TextureFormat, TextureHandle, TextureWrap, VertexLayout,
@@ -29,6 +31,7 @@ impl NullBackend {
                 vendor: String::new(),
                 renderer: String::new(),
                 capabilities: BackendCapabilities::default(),
+                shader_language: ShaderLanguage::Glsl,
             },
         }
     }

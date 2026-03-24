@@ -3,7 +3,9 @@
 use std::collections::HashMap;
 
 use crate::core::handle::HandleAllocator;
-use crate::libs::graphics::backend::capabilities::{BackendCapabilities, BackendInfo};
+use crate::libs::graphics::backend::capabilities::{
+    BackendCapabilities, BackendInfo, ShaderLanguage,
+};
 use crate::libs::graphics::backend::types::{
     BufferHandle, BufferMarker, BufferType, RenderTargetHandle, RenderTargetMarker, ShaderMarker,
     TextureHandle, TextureMarker,
@@ -101,6 +103,7 @@ impl NullBackend {
             vendor: "Software".to_string(),
             renderer: "NullBackend".to_string(),
             capabilities,
+            shader_language: ShaderLanguage::Glsl,
         };
 
         Self {

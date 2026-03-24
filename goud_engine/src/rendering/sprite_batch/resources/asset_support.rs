@@ -3,6 +3,7 @@ use crate::assets::loaders::{
     TextureAsset, TextureLoader, UniformValue,
 };
 use crate::assets::{AssetHandle, AssetServer};
+use crate::libs::graphics::backend::ShaderLanguage;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
@@ -44,6 +45,54 @@ void main() {
 }
 "#;
 
+const DEFAULT_SPRITE_SHADER_ASSET_PATH_WGSL: &str = "engine/shaders/sprite_batch_wgsl.shader";
+const DEFAULT_SPRITE_SHADER_ASSET_BYTES_WGSL: &[u8] = br#"#pragma stage vertex
+struct Uniforms {
+    u_viewport: vec2<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
+struct VertexInput {
+    @location(0) a_position: vec2<f32>,
+    @location(1) a_texcoord: vec2<f32>,
+    @location(2) a_color: vec4<f32>,
+}
+
+struct VertexOutput {
+    @builtin(position) position: vec4<f32>,
+    @location(0) v_texcoord: vec2<f32>,
+    @location(1) v_color: vec4<f32>,
+}
+
+@vertex
+fn main(in: VertexInput) -> VertexOutput {
+    let safe_viewport = max(uniforms.u_viewport, vec2<f32>(1.0, 1.0));
+    let ndc_x = (in.a_position.x / safe_viewport.x) * 2.0 - 1.0;
+    let ndc_y = 1.0 - (in.a_position.y / safe_viewport.y) * 2.0;
+
+    var out: VertexOutput;
+    out.position = vec4<f32>(ndc_x, ndc_y, 0.0, 1.0);
+    out.v_texcoord = in.a_texcoord;
+    out.v_color = in.a_color;
+    return out;
+}
+
+#pragma stage fragment
+struct Uniforms {
+    u_viewport: vec2<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+@group(1) @binding(0) var u_texture: texture_2d<f32>;
+@group(1) @binding(1) var u_sampler: sampler;
+
+@fragment
+fn main(@location(0) v_texcoord: vec2<f32>, @location(1) v_color: vec4<f32>) -> @location(0) vec4<f32> {
+    return textureSample(u_texture, u_sampler, v_texcoord) * v_color;
+}
+"#;
+
 pub(crate) fn ensure_sprite_asset_loaders(asset_server: &mut AssetServer) {
     if !asset_server.has_loader_for_type::<TextureAsset>() {
         asset_server.register_loader(TextureLoader);
@@ -61,12 +110,20 @@ pub(crate) fn ensure_sprite_asset_loaders(asset_server: &mut AssetServer) {
 
 pub(crate) fn ensure_default_sprite_shader_loaded(
     asset_server: &mut AssetServer,
+    language: ShaderLanguage,
 ) -> AssetHandle<ShaderAsset> {
     ensure_sprite_asset_loaders(asset_server);
-    asset_server.load_from_bytes::<ShaderAsset>(
-        DEFAULT_SPRITE_SHADER_ASSET_PATH,
-        DEFAULT_SPRITE_SHADER_ASSET_BYTES,
-    )
+    let (path, bytes) = match language {
+        ShaderLanguage::Wgsl => (
+            DEFAULT_SPRITE_SHADER_ASSET_PATH_WGSL,
+            DEFAULT_SPRITE_SHADER_ASSET_BYTES_WGSL,
+        ),
+        ShaderLanguage::Glsl => (
+            DEFAULT_SPRITE_SHADER_ASSET_PATH,
+            DEFAULT_SPRITE_SHADER_ASSET_BYTES,
+        ),
+    };
+    asset_server.load_from_bytes::<ShaderAsset>(path, bytes)
 }
 
 pub(super) fn shader_signature(
