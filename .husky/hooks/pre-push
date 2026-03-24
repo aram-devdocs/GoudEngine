@@ -177,6 +177,7 @@ fi
 
 # =============================================================================
 # Codegen Drift Check (mirrors: ci.yml Codegen Drift Check)
+# Uses the same check-generated-artifacts.sh that CI uses to avoid path drift.
 # =============================================================================
 echo ""
 echo "=== [14/16] Checking codegen drift ==="
@@ -184,37 +185,10 @@ if [ -x "$REPO_ROOT/codegen.sh" ] && [ -f "$REPO_ROOT/scripts/check-generated-ar
     "$REPO_ROOT/codegen.sh" > /dev/null 2>&1 || {
         echo "Warning: codegen.sh failed, skipping drift check"
     }
-    if ! git diff --quiet -- \
-        codegen/ffi_manifest.json \
-        codegen/generated \
-        sdks/csharp/generated \
-        sdks/python/goud_engine/generated \
-        sdks/typescript/src/generated \
-        sdks/typescript/native/src \
-        sdks/swift/Sources/GoudEngine/generated \
-        sdks/kotlin/src \
-        sdks/go/goud \
-        goud_engine/src/jni/generated.rs \
-        goud_engine/src/jni/generated.g.rs; then
-        echo "Error: Codegen drift detected — generated files don't match source."
-        echo "Run ./codegen.sh and commit the updated generated files."
-        echo ""
-        echo "Drifted files:"
-        git diff --name-only -- \
-            codegen/ffi_manifest.json \
-            codegen/generated \
-            sdks/csharp/generated \
-            sdks/python/goud_engine/generated \
-            sdks/typescript/src/generated \
-            sdks/typescript/native/src \
-            sdks/swift/Sources/GoudEngine/generated \
-            sdks/kotlin/src \
-            sdks/go/goud \
-            goud_engine/src/jni/generated.rs \
-            goud_engine/src/jni/generated.g.rs
+    bash "$REPO_ROOT/scripts/check-generated-artifacts.sh" || {
+        echo "Error: Codegen drift detected — run ./codegen.sh and commit the updated generated files."
         exit 1
-    fi
-    echo "Codegen is up to date."
+    }
 else
     echo "Warning: codegen.sh or check script not found, skipping drift check"
 fi
