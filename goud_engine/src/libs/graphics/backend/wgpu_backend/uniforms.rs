@@ -5,10 +5,14 @@ use super::{
 };
 use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::graphics::backend::{VertexBufferBinding, VertexStepMode};
+use smallvec::SmallVec;
 
 impl WgpuBackend {
     /// Snapshots currently bound textures as `(unit, handle)` pairs.
-    pub(super) fn snapshot_textures(&self) -> Vec<(u32, TextureHandle)> {
+    ///
+    /// Returns a `SmallVec` that avoids heap allocation for the common case
+    /// of 0-2 bound textures.
+    pub(super) fn snapshot_textures(&self) -> SmallVec<[(u32, TextureHandle); 2]> {
         self.bound_textures
             .iter()
             .enumerate()
@@ -17,7 +21,23 @@ impl WgpuBackend {
     }
 
     /// Builds the pipeline cache key for a given draw command.
+    ///
+    /// The vertex layout is hashed into a single `u64` to avoid allocating
+    /// nested `Vec`s per draw command.
     pub(super) fn make_pipeline_key(&self, cmd: &DrawCommand) -> PipelineKey {
+        use std::hash::{Hash, Hasher};
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        for binding in &cmd.vertex_bindings {
+            binding.layout.stride.hash(&mut hasher);
+            (binding.step_mode as u8).hash(&mut hasher);
+            for a in &binding.layout.attributes {
+                a.location.hash(&mut hasher);
+                (a.attribute_type as u8).hash(&mut hasher);
+                a.offset.hash(&mut hasher);
+                a.normalized.hash(&mut hasher);
+            }
+        }
+
         PipelineKey {
             shader: cmd.shader,
             topology: cmd.topology as u8,
@@ -30,22 +50,7 @@ impl WgpuBackend {
             cull_enabled: cmd.cull_enabled,
             cull_face: cmd.cull_face as u8,
             front_face: cmd.front_face as u8,
-            vertex_buffers: cmd
-                .vertex_bindings
-                .iter()
-                .map(|binding| {
-                    (
-                        binding.layout.stride,
-                        binding.step_mode as u8,
-                        binding
-                            .layout
-                            .attributes
-                            .iter()
-                            .map(|a| (a.location, a.attribute_type as u8, a.offset, a.normalized))
-                            .collect(),
-                    )
-                })
-                .collect(),
+            vertex_layout_hash: hasher.finish(),
         }
     }
 
@@ -54,26 +59,35 @@ impl WgpuBackend {
         let shader = self
             .bound_shader
             .ok_or(GoudError::InvalidState("No shader bound".into()))?;
-        let vertex_bindings = if !self.current_vertex_bindings.is_empty() {
-            self.current_vertex_bindings.clone()
-        } else {
-            vec![VertexBufferBinding {
-                buffer: self
-                    .bound_vertex_buffer
-                    .ok_or(GoudError::InvalidState("No vertex buffer bound".into()))?,
-                layout: self
-                    .current_layout
-                    .clone()
-                    .ok_or(GoudError::InvalidState("No vertex layout set".into()))?,
-                step_mode: VertexStepMode::Vertex,
-            }]
-        };
+        let vertex_bindings: SmallVec<[VertexBufferBinding; 2]> =
+            if !self.current_vertex_bindings.is_empty() {
+                self.current_vertex_bindings.iter().cloned().collect()
+            } else {
+                let mut sv = SmallVec::new();
+                sv.push(VertexBufferBinding {
+                    buffer: self
+                        .bound_vertex_buffer
+                        .ok_or(GoudError::InvalidState("No vertex buffer bound".into()))?,
+                    layout: self
+                        .current_layout
+                        .clone()
+                        .ok_or(GoudError::InvalidState("No vertex layout set".into()))?,
+                    step_mode: VertexStepMode::Vertex,
+                });
+                sv
+            };
 
-        let uniform_snapshot = self
-            .shaders
-            .get(&shader)
-            .map(|s| s.uniform_staging.clone())
-            .unwrap_or_default();
+        // Append uniform staging data to the per-frame ring buffer instead
+        // of cloning the full 4KB staging buffer per draw command.
+        let (uniform_ring_offset, uniform_ring_size) =
+            if let Some(staging) = self.shaders.get(&shader).map(|s| &s.uniform_staging) {
+                let offset = self.uniform_ring.len() as u32;
+                let size = staging.len() as u32;
+                self.uniform_ring.extend_from_slice(staging);
+                (offset, size)
+            } else {
+                (0, 0)
+            };
 
         self.draw_commands.push(DrawCommand {
             shader,
@@ -90,7 +104,8 @@ impl WgpuBackend {
             cull_enabled: self.cull_enabled,
             cull_face: self.cull_face,
             front_face: self.front_face_state,
-            uniform_snapshot,
+            uniform_ring_offset,
+            uniform_ring_size,
             draw_type,
         });
         Ok(())
@@ -98,13 +113,17 @@ impl WgpuBackend {
 
     /// Uploads per-draw-command uniform data into aligned slots and returns
     /// the byte offset for each command.  Grows the GPU buffer if needed.
+    ///
+    /// Uniform data is read from `self.uniform_ring` using each command's
+    /// `(uniform_ring_offset, uniform_ring_size)` instead of per-command
+    /// `Vec<u8>` clones.
     pub(super) fn upload_per_draw_uniforms(&mut self) -> Vec<u32> {
         let align = self.device.limits().min_uniform_buffer_offset_alignment as usize;
         let slot_size = {
             let snap = self
                 .draw_commands
                 .iter()
-                .map(|c| c.uniform_snapshot.len())
+                .map(|c| c.uniform_ring_size as usize)
                 .max()
                 .unwrap_or(256);
             (snap + align - 1) & !(align - 1)
@@ -143,12 +162,19 @@ impl WgpuBackend {
             }
         }
 
-        // Write all uniform snapshots into the (now correctly-sized) buffer.
+        // Write all uniform data from the ring buffer into the GPU buffer.
         for (i, cmd) in self.draw_commands.iter().enumerate() {
-            let offset = cmd_offsets[i] as u64;
-            if let Some(meta) = self.shaders.get(&cmd.shader) {
-                self.queue
-                    .write_buffer(&meta.uniform_buffer, offset, &cmd.uniform_snapshot);
+            let gpu_offset = cmd_offsets[i] as u64;
+            let ring_start = cmd.uniform_ring_offset as usize;
+            let ring_end = ring_start + cmd.uniform_ring_size as usize;
+            if ring_end <= self.uniform_ring.len() {
+                if let Some(meta) = self.shaders.get(&cmd.shader) {
+                    self.queue.write_buffer(
+                        &meta.uniform_buffer,
+                        gpu_offset,
+                        &self.uniform_ring[ring_start..ring_end],
+                    );
+                }
             }
         }
 

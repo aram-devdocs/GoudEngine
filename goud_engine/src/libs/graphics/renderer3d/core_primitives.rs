@@ -4,8 +4,8 @@ use super::mesh::{
     generate_sphere_vertices, update_instance_buffer, upload_buffer, upload_instance_buffer,
 };
 use super::types::{
-    InstanceTransform, InstancedMesh, Object3D, ParticleEmitter, ParticleEmitterConfig,
-    PrimitiveCreateInfo, PrimitiveType,
+    compute_bounding_sphere, InstanceTransform, InstancedMesh, Object3D, ParticleEmitter,
+    ParticleEmitterConfig, PrimitiveCreateInfo, PrimitiveType,
 };
 use cgmath::Vector3;
 
@@ -32,6 +32,7 @@ impl Renderer3D {
         let id = self.next_object_id;
         self.next_object_id += 1;
 
+        let bounds = compute_bounding_sphere(&vertices);
         self.objects.insert(
             id,
             Object3D {
@@ -42,6 +43,7 @@ impl Renderer3D {
                 rotation: Vector3::new(0.0, 0.0, 0.0),
                 scale: Vector3::new(1.0, 1.0, 1.0),
                 texture_id: info.texture_id,
+                bounds,
             },
         );
 

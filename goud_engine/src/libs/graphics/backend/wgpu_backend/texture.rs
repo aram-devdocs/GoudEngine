@@ -114,15 +114,33 @@ impl WgpuBackend {
             ..Default::default()
         });
 
+        // Cache the bind group at creation time so we never recreate it per
+        // draw command.  The layout matches @group(1) (texture + sampler).
+        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: None,
+            layout: &self.texture_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&sampler),
+                },
+            ],
+        });
+
         let handle = self.texture_allocator.allocate();
         self.textures.insert(
             handle,
             WgpuTextureMeta {
                 _texture: texture,
-                view,
-                sampler,
+                _view: view,
+                _sampler: sampler,
                 width,
                 height,
+                bind_group,
             },
         );
         Ok(handle)

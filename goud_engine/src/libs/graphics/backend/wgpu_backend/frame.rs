@@ -21,6 +21,7 @@ impl FrameOps for WgpuBackend {
             surface_view,
         });
         self.draw_commands.clear();
+        self.uniform_ring.clear();
         // Always clear each frame to match OpenGL's glClear() behavior and avoid
         // uninitialized surface data showing through as garbage artifacts.
         self.needs_clear = true;
@@ -105,21 +106,7 @@ impl FrameOps for WgpuBackend {
 
                 if let Some((_unit, tex_handle)) = cmd.bound_textures.first() {
                     if let Some(tex_meta) = self.textures.get(tex_handle) {
-                        let bg = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                            label: None,
-                            layout: &self.texture_bind_group_layout,
-                            entries: &[
-                                wgpu::BindGroupEntry {
-                                    binding: 0,
-                                    resource: wgpu::BindingResource::TextureView(&tex_meta.view),
-                                },
-                                wgpu::BindGroupEntry {
-                                    binding: 1,
-                                    resource: wgpu::BindingResource::Sampler(&tex_meta.sampler),
-                                },
-                            ],
-                        });
-                        pass.set_bind_group(1, &bg, &[]);
+                        pass.set_bind_group(1, &tex_meta.bind_group, &[]);
                     }
                 } else {
                     pass.set_bind_group(1, &self.fallback_tex_bind_group, &[]);

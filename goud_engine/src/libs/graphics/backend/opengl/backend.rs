@@ -57,6 +57,23 @@ pub struct OpenGLBackend {
 
     // Default VAO kept bound for backends that require vertex array state (OpenGL 3.3 core)
     pub(super) default_vao: u32,
+
+    // Cached render state to skip redundant GL calls.
+    pub(super) depth_test_enabled: bool,
+    pub(super) blend_enabled: bool,
+    pub(super) cull_enabled: bool,
+    pub(super) depth_write_enabled: bool,
+    pub(super) cached_blend_src: u32,
+    pub(super) cached_blend_dst: u32,
+    pub(super) cached_cull_face: u32,
+    pub(super) cached_depth_func: u32,
+    pub(super) cached_front_face: u32,
+
+    /// Bitmask tracking which vertex attribute locations are currently enabled.
+    /// Used to avoid redundant `glEnableVertexAttribArray` / `glDisableVertexAttribArray` calls.
+    pub(super) enabled_attrib_mask: u32,
+    /// Cached max vertex attribs so we don't query GL every draw call.
+    pub(super) max_vertex_attribs: u32,
 }
 
 impl OpenGLBackend {
@@ -191,6 +208,17 @@ impl OpenGLBackend {
             shaders: HashMap::new(),
             bound_shader: None,
             default_vao,
+            depth_test_enabled: false,
+            blend_enabled: false,
+            cull_enabled: false,
+            depth_write_enabled: true,
+            cached_blend_src: gl::ONE,
+            cached_blend_dst: gl::ZERO,
+            cached_cull_face: gl::BACK,
+            cached_depth_func: gl::LESS,
+            cached_front_face: gl::CCW,
+            enabled_attrib_mask: 0,
+            max_vertex_attribs: max_vertex_attribs.max(8) as u32,
         })
     }
 

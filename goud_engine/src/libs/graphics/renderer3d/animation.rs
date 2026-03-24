@@ -167,6 +167,21 @@ impl AnimationPlayer {
 
     /// Advance animation time and compute bone matrices.
     pub fn update(&mut self, dt: f32, skeleton: &SkeletonData, animations: &[KeyframeAnimation]) {
+        // Fallback: build property names per call when no cached names available.
+        let fallback: Vec<BonePropertyNames> =
+            (0..skeleton.bones.len()).map(BonePropertyNames::new).collect();
+        self.update_with_names(dt, skeleton, animations, &fallback);
+    }
+
+    /// Advance animation time and compute bone matrices using pre-cached
+    /// property names (zero per-frame string allocations).
+    pub fn update_with_names(
+        &mut self,
+        dt: f32,
+        skeleton: &SkeletonData,
+        animations: &[KeyframeAnimation],
+        prop_names: &[BonePropertyNames],
+    ) {
         // 1. Advance time on primary and secondary states.
         advance_state(&mut self.primary, dt, animations);
         advance_state(&mut self.secondary, dt, animations);
@@ -193,7 +208,7 @@ impl AnimationPlayer {
         // 3. Sample primary bone poses.
         let primary_matrices = if let Some(ref state) = self.primary {
             if let Some(anim) = animations.get(state.clip_index) {
-                compute_bone_matrices(skeleton, anim, state.time)
+                compute_bone_matrices_with_names(skeleton, anim, state.time, prop_names)
             } else {
                 identity_matrices(bone_count)
             }
@@ -205,7 +220,8 @@ impl AnimationPlayer {
         let final_matrices = if self.blend_factor > f32::EPSILON {
             if let Some(ref state) = self.secondary {
                 if let Some(anim) = animations.get(state.clip_index) {
-                    let secondary_matrices = compute_bone_matrices(skeleton, anim, state.time);
+                    let secondary_matrices =
+                        compute_bone_matrices_with_names(skeleton, anim, state.time, prop_names);
                     slerp_bone_matrices(&primary_matrices, &secondary_matrices, self.blend_factor)
                 } else {
                     primary_matrices
@@ -254,16 +270,18 @@ fn advance_state(state: &mut Option<AnimationState>, dt: f32, animations: &[Keyf
 
 /// Pre-computed property name strings for a single bone (10 channels).
 ///
-/// Avoids per-frame `format!()` allocations by building the strings once per
-/// `compute_bone_matrices` call.
-struct BonePropertyNames {
-    translation: [String; 3],
-    rotation: [String; 4],
-    scale: [String; 3],
+/// Built once per skeleton at model load time and cached on [`Model3D`] so
+/// that `compute_bone_matrices` never allocates per-frame `format!()` strings.
+#[derive(Debug, Clone)]
+#[allow(missing_docs)]
+pub struct BonePropertyNames {
+    pub(in crate::libs::graphics::renderer3d) translation: [String; 3],
+    pub(in crate::libs::graphics::renderer3d) rotation: [String; 4],
+    pub(in crate::libs::graphics::renderer3d) scale: [String; 3],
 }
 
 impl BonePropertyNames {
-    fn new(bone_idx: usize) -> Self {
+    pub fn new(bone_idx: usize) -> Self {
         Self {
             translation: [
                 format!("node_{bone_idx}.translation.x"),
@@ -287,26 +305,26 @@ impl BonePropertyNames {
 
 /// Compute bone matrices for a skeleton at a given time in an animation clip.
 ///
+/// Compute bone matrices using pre-cached property names (zero per-frame allocation).
+///
 /// Steps:
-/// 1. Pre-build property name strings once for all bones.
+/// 1. Use pre-cached property name strings (built at model load time).
 /// 2. For each bone, sample the animation channels for translation, rotation, scale.
 /// 3. Build a local transform matrix from the sampled T/R/S.
 /// 4. Walk the hierarchy to compute global transforms.
 /// 5. Multiply global transform by inverse bind matrix.
-fn compute_bone_matrices(
+pub(in crate::libs::graphics::renderer3d) fn compute_bone_matrices_with_names(
     skeleton: &SkeletonData,
     anim: &KeyframeAnimation,
     time: f32,
+    prop_names: &[BonePropertyNames],
 ) -> Vec<[f32; 16]> {
     let bone_count = skeleton.bones.len();
     let mut local_transforms = Vec::with_capacity(bone_count);
     let mut global_transforms = vec![IDENTITY_MAT4; bone_count];
     let mut result = vec![IDENTITY_MAT4; bone_count];
 
-    // Build property name strings once, not per-channel.
-    let prop_names: Vec<BonePropertyNames> = (0..bone_count).map(BonePropertyNames::new).collect();
-
-    for names in &prop_names {
+    for names in prop_names.iter().take(bone_count) {
         let (tx, ty, tz) = sample_translation_indexed(anim, names, time);
         let (rx, ry, rz, rw) = sample_rotation_indexed(anim, names, time);
         let (sx, sy, sz) = sample_scale_indexed(anim, names, time);
