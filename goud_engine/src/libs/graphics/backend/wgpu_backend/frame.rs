@@ -58,25 +58,25 @@ impl FrameOps for WgpuBackend {
 
         self.build_missing_pipelines(&cmd_keys);
 
-        // Build per-command storage buffer bind groups for GPU skinning.
-        let storage_bind_groups: Vec<Option<wgpu::BindGroup>> = self
-            .draw_commands
-            .iter()
-            .map(|cmd| {
-                cmd.storage_buffer.and_then(|buf_handle| {
-                    self.buffers.get(&buf_handle).map(|meta| {
-                        self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                            label: Some("skinning-storage-bg"),
-                            layout: &self.storage_bind_group_layout,
-                            entries: &[wgpu::BindGroupEntry {
-                                binding: 0,
-                                resource: meta.buffer.as_entire_binding(),
-                            }],
-                        })
-                    })
-                })
-            })
-            .collect();
+        // Ensure cached storage buffer bind groups exist for each draw command.
+        for cmd in &self.draw_commands {
+            if let Some(buf_handle) = cmd.storage_buffer {
+                if !self.storage_bind_group_cache.contains_key(&buf_handle) {
+                    if let Some(meta) = self.buffers.get(&buf_handle) {
+                        let bg =
+                            self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                                label: Some("skinning-storage-bg"),
+                                layout: &self.storage_bind_group_layout,
+                                entries: &[wgpu::BindGroupEntry {
+                                    binding: 0,
+                                    resource: meta.buffer.as_entire_binding(),
+                                }],
+                            });
+                        self.storage_bind_group_cache.insert(buf_handle, bg);
+                    }
+                }
+            }
+        }
 
         let readback = self
             .surface_supports_copy_src
@@ -133,12 +133,13 @@ impl FrameOps for WgpuBackend {
                 }
 
                 // Set storage buffer bind group at group(2) for GPU skinning.
-                if cmd.storage_buffer.is_some() {
-                    if let Some(ref bg) = storage_bind_groups[i] {
-                        pass.set_bind_group(2, bg, &[]);
-                    } else {
-                        pass.set_bind_group(2, &self.fallback_storage_bind_group, &[]);
-                    }
+                if let Some(bg) = cmd
+                    .storage_buffer
+                    .and_then(|h| self.storage_bind_group_cache.get(&h))
+                {
+                    pass.set_bind_group(2, bg, &[]);
+                } else if cmd.storage_buffer.is_some() {
+                    pass.set_bind_group(2, &self.fallback_storage_bind_group, &[]);
                 }
 
                 if let Some(ib_handle) = cmd.index_buffer {

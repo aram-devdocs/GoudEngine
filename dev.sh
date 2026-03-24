@@ -348,7 +348,7 @@ if [ "$SKIP_BUILD" = false ]; then
 
         if [ "$FAST_LOCAL_CSHARP_PATH" = true ]; then
             echo "Using fast local C# path for project-reference example: $GAME"
-            bash "$SCRIPT_DIR/build.sh" --local --core-only --host-runtime-only --skip-csharp-sdk-build
+            bash "$SCRIPT_DIR/build.sh" --release --local --core-only --host-runtime-only --skip-csharp-sdk-build
         elif [ "$LOCAL" = false ]; then
             bash "$SCRIPT_DIR/package.sh" --prod
         else

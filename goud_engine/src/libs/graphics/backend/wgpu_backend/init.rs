@@ -272,6 +272,7 @@ impl WgpuBackend {
             fallback_tex_bind_group,
             fallback_storage_bind_group,
             bound_storage_buffer: None,
+            storage_bind_group_cache: HashMap::new(),
             uniform_ring: Vec::with_capacity(UNIFORM_BUFFER_SIZE * 64),
         })
     }

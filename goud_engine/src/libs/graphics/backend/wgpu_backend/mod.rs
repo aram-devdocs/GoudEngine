@@ -114,6 +114,10 @@ pub struct WgpuBackend {
     /// Currently bound storage buffer for the next draw command.
     bound_storage_buffer: Option<BufferHandle>,
 
+    /// Cached storage buffer bind groups, keyed by buffer handle.
+    /// Avoids recreating bind groups every frame for the same buffer.
+    storage_bind_group_cache: HashMap<BufferHandle, wgpu::BindGroup>,
+
     /// Per-frame ring buffer for uniform snapshots.  Draw commands store an
     /// `(offset, size)` into this buffer instead of cloning the full 4KB
     /// staging buffer per draw.  Cleared at `begin_frame`.

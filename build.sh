@@ -19,9 +19,9 @@ while [[ "$#" -gt 0 ]]; do
             CARGO_MODE_ARGS=(--release)
             ;;
         --local)
-            BUILD_MODE="debug"
-            TARGET_DIR="target/debug"
-            CARGO_MODE_ARGS=()
+            # --local only controls the NuGet vs ProjectReference path.
+            # It no longer forces debug mode — use the current BUILD_MODE
+            # (default: debug, override with --release).
             ;;
         --core-only)
             BUILD_SCOPE="core"

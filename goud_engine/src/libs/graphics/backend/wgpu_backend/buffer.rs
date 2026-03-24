@@ -6,6 +6,7 @@ use crate::libs::error::{GoudError, GoudResult};
 impl WgpuBackend {
     fn destroy_buffer_now(&mut self, handle: BufferHandle) -> bool {
         if self.buffers.remove(&handle).is_some() {
+            self.storage_bind_group_cache.remove(&handle);
             self.buffer_allocator.deallocate(handle);
             true
         } else {

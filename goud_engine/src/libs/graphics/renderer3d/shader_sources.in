@@ -66,9 +66,9 @@ vec3 calculatePointLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir) {
     float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = diff * light.color;
 
-    vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-    vec3 specular = spec * light.color * 0.5;
+    vec3 halfDir = normalize(lightDir + viewDir);
+    float spec = pow(max(dot(normal, halfDir), 0.0), 64.0);
+    vec3 specular = spec * light.color * 0.3;
 
     float rangeAttenuation = 1.0 - smoothstep(0.0, light.range, distance);
 
@@ -81,9 +81,9 @@ vec3 calculateDirectionalLight(Light light, vec3 normal, vec3 viewDir) {
     float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = diff * light.color;
 
-    vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-    vec3 specular = spec * light.color * 0.5;
+    vec3 halfDir = normalize(lightDir + viewDir);
+    float spec = pow(max(dot(normal, halfDir), 0.0), 64.0);
+    vec3 specular = spec * light.color * 0.3;
 
     return (diffuse + specular) * light.intensity;
 }
@@ -254,9 +254,9 @@ vec3 calculatePointLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir) {
     float attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * distance * distance);
     float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = diff * light.color;
-    vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-    vec3 specular = spec * light.color * 0.5;
+    vec3 halfDir = normalize(lightDir + viewDir);
+    float spec = pow(max(dot(normal, halfDir), 0.0), 64.0);
+    vec3 specular = spec * light.color * 0.3;
     float rangeAttenuation = 1.0 - smoothstep(0.0, light.range, distance);
     return (diffuse + specular) * attenuation * rangeAttenuation * light.intensity;
 }
@@ -265,9 +265,9 @@ vec3 calculateDirectionalLight(Light light, vec3 normal, vec3 viewDir) {
     vec3 lightDir = normalize(-light.direction);
     float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = diff * light.color;
-    vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-    vec3 specular = spec * light.color * 0.5;
+    vec3 halfDir = normalize(lightDir + viewDir);
+    float spec = pow(max(dot(normal, halfDir), 0.0), 64.0);
+    vec3 specular = spec * light.color * 0.3;
     return (diffuse + specular) * light.intensity;
 }
 
@@ -501,8 +501,8 @@ fn main(
     }
 
     let diff = max(dot(norm, light_dir), 0.0);
-    let reflect_dir = reflect(-light_dir, norm);
-    let spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32.0) * 0.5;
+    let half_dir = normalize(light_dir + view_dir);
+    let spec = pow(max(dot(norm, half_dir), 0.0), 64.0) * 0.3;
     let lighting = vec3<f32>(0.1) + (diff + spec) * light_color * light_intensity;
 
     var base_color: vec4<f32>;
@@ -626,8 +626,8 @@ fn main(
     }
 
     let diff = max(dot(norm, light_dir), 0.0);
-    let reflect_dir = reflect(-light_dir, norm);
-    let spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32.0) * 0.5;
+    let half_dir = normalize(light_dir + view_dir);
+    let spec = pow(max(dot(norm, half_dir), 0.0), 64.0) * 0.3;
     let lighting = vec3<f32>(0.1) + (diff + spec) * light_color * light_intensity;
 
     var base_color: vec4<f32>;
