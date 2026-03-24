@@ -26,14 +26,11 @@ impl Renderer3D {
             return 0;
         }
 
-        // Use CPU skinning via the standard shader — the GPU skinned shader
-        // has projection issues. Vertex buffers are re-uploaded each frame
-        // with bone-deformed positions by update_animations().
+        // Force standard render path — skinned shader causes instances to disappear
         let is_skinned = false;
         let floats_per_vertex: usize = if is_skinned { 16 } else { 8 };
         let mut mesh_object_ids = Vec::new();
         let mut mesh_material_ids = Vec::new();
-        let mut all_bind_pose: Vec<Vec<([f32; 3], [f32; 3], [f32; 2], [u32; 4], [f32; 4])>> = Vec::new();
 
         // Skeleton bone data (parallel to mesh.vertices) for skinned models.
         let bone_indices = model_data
@@ -64,10 +61,7 @@ impl Renderer3D {
             let sub_indices = &mesh.indices[start..end];
 
             let vert_count = mesh.vertices.len();
-            let has_skeleton = model_data.skeleton.is_some();
             let mut verts = Vec::with_capacity(count * floats_per_vertex);
-            let mut bind_verts: Vec<([f32; 3], [f32; 3], [f32; 2], [u32; 4], [f32; 4])> =
-                if has_skeleton { Vec::with_capacity(count) } else { Vec::new() };
             for &idx in sub_indices {
                 let vi = idx as usize;
                 if vi < vert_count {
@@ -75,10 +69,11 @@ impl Renderer3D {
                     verts.extend_from_slice(&v.position);
                     verts.extend_from_slice(&v.normal);
                     verts.extend_from_slice(&v.uv);
-                    if has_skeleton {
+                    if is_skinned {
                         let bi = bone_indices.get(vi).copied().unwrap_or([0; 4]);
                         let bw = bone_weights.get(vi).copied().unwrap_or([0.0; 4]);
-                        bind_verts.push((v.position, v.normal, v.uv, bi, bw));
+                        verts.extend_from_slice(&[bi[0] as f32, bi[1] as f32, bi[2] as f32, bi[3] as f32]);
+                        verts.extend_from_slice(&bw);
                     }
                 }
             }
@@ -142,7 +137,6 @@ impl Renderer3D {
 
             mesh_object_ids.push(object_id);
             mesh_material_ids.push(material_id);
-            all_bind_pose.push(bind_verts);
         }
 
         if mesh_object_ids.is_empty() {
@@ -169,7 +163,6 @@ impl Renderer3D {
                 skeleton: model_data.skeleton,
                 animations: model_data.animations,
                 is_skinned,
-                bind_pose_vertices: all_bind_pose,
             },
         );
 
