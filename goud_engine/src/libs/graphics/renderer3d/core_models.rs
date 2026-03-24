@@ -10,14 +10,6 @@ use cgmath::{Vector3, Vector4};
 
 impl Renderer3D {
     /// Load a model from parsed [`ModelData`] and return its handle.
-    ///
-    /// For each sub-mesh:
-    /// 1. Extracts and packs vertices into the interleaved float layout.
-    /// 2. Uploads a GPU buffer via the backend.
-    /// 3. Creates an `Object3D` entry.
-    /// 4. Creates a `Material3D` from the sub-mesh material properties.
-    /// 5. Binds the material to the object.
-    ///
     /// Returns `0` on failure (e.g. empty mesh or GPU upload error).
     pub fn load_model(&mut self, model_data: ModelData, source_path: &str) -> u32 {
         let mesh = &model_data.mesh;
@@ -26,11 +18,16 @@ impl Renderer3D {
             return 0;
         }
 
-        // Force standard render path — skinned shader causes instances to disappear
+        // Force standard render path — skinned shader causes instances to disappear.
+        // CPU skinning deforms vertex positions on the CPU and re-uploads each frame.
         let is_skinned = false;
-        let floats_per_vertex: usize = if is_skinned { 16 } else { 8 };
+        let floats_per_vertex: usize = 8; // pos(3) + normal(3) + uv(2)
+        let has_skeleton = model_data.skeleton.is_some();
         let mut mesh_object_ids = Vec::new();
         let mut mesh_material_ids = Vec::new();
+        let mut bind_pose_vertices: Vec<Vec<f32>> = Vec::new();
+        let mut bind_pose_bone_indices: Vec<Vec<[u32; 4]>> = Vec::new();
+        let mut bind_pose_bone_weights: Vec<Vec<[f32; 4]>> = Vec::new();
 
         // Skeleton bone data (parallel to mesh.vertices) for skinned models.
         let bone_indices = model_data
@@ -62,6 +59,8 @@ impl Renderer3D {
 
             let vert_count = mesh.vertices.len();
             let mut verts = Vec::with_capacity(count * floats_per_vertex);
+            let mut sub_bi: Vec<[u32; 4]> = Vec::with_capacity(count);
+            let mut sub_bw: Vec<[f32; 4]> = Vec::with_capacity(count);
             for &idx in sub_indices {
                 let vi = idx as usize;
                 if vi < vert_count {
@@ -69,11 +68,9 @@ impl Renderer3D {
                     verts.extend_from_slice(&v.position);
                     verts.extend_from_slice(&v.normal);
                     verts.extend_from_slice(&v.uv);
-                    if is_skinned {
-                        let bi = bone_indices.get(vi).copied().unwrap_or([0; 4]);
-                        let bw = bone_weights.get(vi).copied().unwrap_or([0.0; 4]);
-                        verts.extend_from_slice(&[bi[0] as f32, bi[1] as f32, bi[2] as f32, bi[3] as f32]);
-                        verts.extend_from_slice(&bw);
+                    if has_skeleton {
+                        sub_bi.push(bone_indices.get(vi).copied().unwrap_or([0; 4]));
+                        sub_bw.push(bone_weights.get(vi).copied().unwrap_or([0.0; 4]));
                     }
                 }
             }
@@ -82,13 +79,31 @@ impl Renderer3D {
                 continue;
             }
 
-            let buffer = match upload_buffer(self.backend.as_mut(), &verts) {
+            // Use Dynamic usage for skinned models so we can update_buffer each frame.
+            let buffer = if has_skeleton {
+                use crate::libs::graphics::backend::{BufferType, BufferUsage};
+                self.backend
+                    .create_buffer(
+                        BufferType::Vertex,
+                        BufferUsage::Dynamic,
+                        bytemuck::cast_slice(&verts),
+                    )
+                    .map_err(|e| format!("Buffer creation failed: {e}"))
+            } else {
+                upload_buffer(self.backend.as_mut(), &verts)
+            };
+            let buffer = match buffer {
                 Ok(h) => h,
                 Err(e) => {
                     log::error!("Failed to upload model sub-mesh buffer: {e}");
                     continue;
                 }
             };
+
+            // Store bind-pose data for CPU skinning.
+            bind_pose_vertices.push(verts.clone());
+            bind_pose_bone_indices.push(sub_bi);
+            bind_pose_bone_weights.push(sub_bw);
 
             let object_id = self.next_object_id;
             self.next_object_id += 1;
@@ -163,6 +178,9 @@ impl Renderer3D {
                 skeleton: model_data.skeleton,
                 animations: model_data.animations,
                 is_skinned,
+                bind_pose_vertices,
+                bind_pose_bone_indices,
+                bind_pose_bone_weights,
             },
         );
 
@@ -193,32 +211,63 @@ impl Renderer3D {
         true
     }
 
-    /// Create a lightweight instance that shares the source model's GPU buffers.
+    /// Create an instance of a model with its own GPU resources.
     ///
-    /// Each instance gets its own Object3D entries (for independent transforms)
-    /// but reuses the source model's vertex buffer handles — no GPU duplication.
+    /// For skinned models each instance gets its own dynamic vertex buffer so
+    /// that CPU skinning can deform vertices independently per instance.
+    /// Non-skinned models still share the source buffer handle.
+    ///
     /// Returns the instance handle, or `None` if the source model does not exist.
     pub fn instantiate_model(&mut self, source_id: u32) -> Option<u32> {
         let source = self.models.get(&source_id)?;
+        let has_skeleton = source.skeleton.is_some();
+
+        // Pre-collect bind-pose data we may need for creating instance buffers.
+        let bind_poses: Vec<Vec<f32>> = if has_skeleton {
+            source.bind_pose_vertices.clone()
+        } else {
+            Vec::new()
+        };
 
         let mut instance_object_ids = Vec::with_capacity(source.mesh_object_ids.len());
         let mut instance_material_ids = Vec::with_capacity(source.mesh_material_ids.len());
 
         for (i, &src_obj_id) in source.mesh_object_ids.iter().enumerate() {
-            let (buffer, vertex_count, texture_id) = match self.objects.get(&src_obj_id) {
+            let (src_buffer, vertex_count, texture_id) = match self.objects.get(&src_obj_id) {
                 Some(o) => (o.buffer, o.vertex_count, o.texture_id),
                 None => continue,
             };
 
-            // Reuse the source model's GPU buffer — no upload, no clone.
+            // Skinned instances need their own dynamic buffer for CPU skinning.
+            let buffer = if has_skeleton {
+                if let Some(bp) = bind_poses.get(i) {
+                    use crate::libs::graphics::backend::{BufferType, BufferUsage};
+                    match self.backend.create_buffer(
+                        BufferType::Vertex,
+                        BufferUsage::Dynamic,
+                        bytemuck::cast_slice(bp),
+                    ) {
+                        Ok(h) => h,
+                        Err(e) => {
+                            log::error!("Failed to create instance buffer: {e}");
+                            src_buffer
+                        }
+                    }
+                } else {
+                    src_buffer
+                }
+            } else {
+                src_buffer
+            };
+
             let new_obj_id = self.next_object_id;
             self.next_object_id += 1;
             self.objects.insert(
                 new_obj_id,
                 Object3D {
-                    buffer, // shared GPU buffer handle
+                    buffer,
                     vertex_count,
-                    vertices: Vec::new(), // no CPU copy needed
+                    vertices: Vec::new(),
                     position: Vector3::new(0.0, 0.0, 0.0),
                     rotation: Vector3::new(0.0, 0.0, 0.0),
                     scale: Vector3::new(1.0, 1.0, 1.0),
@@ -401,83 +450,49 @@ impl Renderer3D {
     }
 
     /// Set the PBR albedo map texture on a model's material.
-    pub fn set_model_material_albedo_map(
-        &mut self,
-        model_id: u32,
-        mesh_index: usize,
-        texture_id: u32,
-    ) -> bool {
-        let mat_ids = self.collect_model_material_ids(model_id);
-        if mesh_index >= mat_ids.len() {
-            return false;
-        }
-        if let Some(mat) = self.materials.get_mut(&mat_ids[mesh_index]) {
-            mat.pbr.albedo_map = texture_id;
-            true
-        } else {
-            false
-        }
+    pub fn set_model_material_albedo_map(&mut self, id: u32, idx: usize, tex: u32) -> bool {
+        self.set_pbr_map(id, idx, |mat| mat.pbr.albedo_map = tex)
     }
 
     /// Set the PBR normal map texture on a model's material.
-    pub fn set_model_material_normal_map(
-        &mut self,
-        model_id: u32,
-        mesh_index: usize,
-        texture_id: u32,
-    ) -> bool {
-        let mat_ids = self.collect_model_material_ids(model_id);
-        if mesh_index >= mat_ids.len() {
-            return false;
-        }
-        if let Some(mat) = self.materials.get_mut(&mat_ids[mesh_index]) {
-            mat.pbr.normal_map = texture_id;
-            true
-        } else {
-            false
-        }
+    pub fn set_model_material_normal_map(&mut self, id: u32, idx: usize, tex: u32) -> bool {
+        self.set_pbr_map(id, idx, |mat| mat.pbr.normal_map = tex)
     }
 
     /// Set the PBR metallic-roughness map texture on a model's material.
     pub fn set_model_material_metallic_roughness_map(
-        &mut self,
-        model_id: u32,
-        mesh_index: usize,
-        texture_id: u32,
+        &mut self, id: u32, idx: usize, tex: u32,
     ) -> bool {
+        self.set_pbr_map(id, idx, |mat| mat.pbr.metallic_roughness_map = tex)
+    }
+
+    // -- Internal helpers --
+
+    /// Apply a mutation to a specific sub-mesh material's PBR properties.
+    fn set_pbr_map(&mut self, model_id: u32, mesh_index: usize, f: impl FnOnce(&mut Material3D)) -> bool {
         let mat_ids = self.collect_model_material_ids(model_id);
         if mesh_index >= mat_ids.len() {
             return false;
         }
         if let Some(mat) = self.materials.get_mut(&mat_ids[mesh_index]) {
-            mat.pbr.metallic_roughness_map = texture_id;
+            f(mat);
             true
         } else {
             false
         }
     }
 
-    // -- Internal helpers --
-
     /// Collect object IDs for a model or model instance.
     fn collect_model_object_ids(&self, id: u32) -> Vec<u32> {
-        if let Some(m) = self.models.get(&id) {
-            m.mesh_object_ids.clone()
-        } else if let Some(inst) = self.model_instances.get(&id) {
-            inst.mesh_object_ids.clone()
-        } else {
-            Vec::new()
-        }
+        self.models.get(&id).map(|m| &m.mesh_object_ids)
+            .or_else(|| self.model_instances.get(&id).map(|i| &i.mesh_object_ids))
+            .cloned().unwrap_or_default()
     }
 
     /// Collect material IDs for a model or model instance.
     fn collect_model_material_ids(&self, id: u32) -> Vec<u32> {
-        if let Some(m) = self.models.get(&id) {
-            m.mesh_material_ids.clone()
-        } else if let Some(inst) = self.model_instances.get(&id) {
-            inst.mesh_material_ids.clone()
-        } else {
-            Vec::new()
-        }
+        self.models.get(&id).map(|m| &m.mesh_material_ids)
+            .or_else(|| self.model_instances.get(&id).map(|i| &i.mesh_material_ids))
+            .cloned().unwrap_or_default()
     }
 }
