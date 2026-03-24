@@ -66,6 +66,11 @@ class Program
         Console.WriteLine("  Arrows     Camera yaw & pitch");
         Console.WriteLine("  G          Toggle grid");
         Console.WriteLine("  F          Toggle fog");
+        Console.WriteLine("  0-9        Play animation  0- 9");
+        Console.WriteLine("  Shift+0-9  Play animation 10-19");
+        Console.WriteLine("  Ctrl+0-9   Play animation 20-29");
+        Console.WriteLine("  Alt+0-9    Play animation 30-39");
+        Console.WriteLine("  Tab+0-9    Play animation 40-44");
         Console.WriteLine("  ESC        Quit");
         Console.WriteLine("========================================");
         Console.WriteLine();
@@ -255,6 +260,50 @@ class Program
                 fogEnabled = !fogEnabled;
                 game.SetFogEnabled(fogEnabled);
                 Console.WriteLine($"Fog {(fogEnabled ? "enabled" : "disabled")}");
+            }
+
+            // --- Direct animation playback (number keys) ---
+            {
+                // Determine the offset based on held modifier key.
+                int animOffset = -1;
+                bool shift = game.IsKeyPressed(Keys.LeftShift) || game.IsKeyPressed(Keys.RightShift);
+                bool ctrl  = game.IsKeyPressed(Keys.LeftControl) || game.IsKeyPressed(Keys.RightControl);
+                bool alt   = game.IsKeyPressed(Keys.LeftAlt) || game.IsKeyPressed(Keys.RightAlt);
+                bool tab   = game.IsKeyPressed(Keys.Tab);
+
+                if (tab)       animOffset = 40;
+                else if (alt)  animOffset = 30;
+                else if (ctrl) animOffset = 20;
+                else if (shift) animOffset = 10;
+
+                // Only check digit keys when a modifier is held (plain digits
+                // without a modifier are left for future use / no conflict with
+                // WASD movement).  For the base 0-9 range we also listen when
+                // NO modifier is held.
+                if (animOffset < 0) animOffset = 0;
+
+                Keys[] digitKeys = {
+                    Keys.Digit0, Keys.Digit1, Keys.Digit2, Keys.Digit3, Keys.Digit4,
+                    Keys.Digit5, Keys.Digit6, Keys.Digit7, Keys.Digit8, Keys.Digit9,
+                };
+                for (int d = 0; d < digitKeys.Length; d++)
+                {
+                    if (game.IsKeyJustPressed(digitKeys[d]))
+                    {
+                        int idx = animOffset + d;
+                        if (idx < animCount)
+                        {
+                            string name = game.GetAnimationName(baseModel, idx);
+                            Console.WriteLine($"Playing animation [{idx}] {name}");
+                            game.TransitionAnimation(baseModel, idx, animTransitionTime);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Animation index {idx} out of range (max {animCount - 1})");
+                        }
+                        break;
+                    }
+                }
             }
 
             // --- Camera rotation (arrow keys) ---

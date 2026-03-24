@@ -245,6 +245,9 @@ fn advance_state(state: &mut Option<AnimationState>, dt: f32, animations: &[Keyf
                     s.playing = false;
                 }
             }
+            // Clamp to valid range to prevent floating-point drift from
+            // producing an out-of-bounds sample time after wrapping.
+            s.time = s.time.clamp(0.0, anim.duration);
         }
     }
 }

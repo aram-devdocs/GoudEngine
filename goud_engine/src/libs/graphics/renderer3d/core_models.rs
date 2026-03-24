@@ -333,44 +333,17 @@ impl Renderer3D {
 
     /// Set position on all sub-mesh objects of a model or instance.
     pub fn set_model_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
-        let obj_ids = self.collect_model_object_ids(id);
-        if obj_ids.is_empty() {
-            return false;
-        }
-        for obj_id in obj_ids {
-            if let Some(obj) = self.objects.get_mut(&obj_id) {
-                obj.position = Vector3::new(x, y, z);
-            }
-        }
-        true
+        self.set_model_transform(id, |obj| obj.position = Vector3::new(x, y, z))
     }
 
     /// Set rotation (degrees) on all sub-mesh objects of a model or instance.
     pub fn set_model_rotation(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
-        let obj_ids = self.collect_model_object_ids(id);
-        if obj_ids.is_empty() {
-            return false;
-        }
-        for obj_id in obj_ids {
-            if let Some(obj) = self.objects.get_mut(&obj_id) {
-                obj.rotation = Vector3::new(x, y, z);
-            }
-        }
-        true
+        self.set_model_transform(id, |obj| obj.rotation = Vector3::new(x, y, z))
     }
 
     /// Set scale on all sub-mesh objects of a model or instance.
     pub fn set_model_scale(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
-        let obj_ids = self.collect_model_object_ids(id);
-        if obj_ids.is_empty() {
-            return false;
-        }
-        for obj_id in obj_ids {
-            if let Some(obj) = self.objects.get_mut(&obj_id) {
-                obj.scale = Vector3::new(x, y, z);
-            }
-        }
-        true
+        self.set_model_transform(id, |obj| obj.scale = Vector3::new(x, y, z))
     }
 
     /// Override the material on a specific sub-mesh of a model or instance.
@@ -494,5 +467,19 @@ impl Renderer3D {
         self.models.get(&id).map(|m| &m.mesh_material_ids)
             .or_else(|| self.model_instances.get(&id).map(|i| &i.mesh_material_ids))
             .cloned().unwrap_or_default()
+    }
+
+    /// Apply a mutation to all Object3D sub-meshes of a model or instance.
+    fn set_model_transform(&mut self, id: u32, f: impl Fn(&mut Object3D)) -> bool {
+        let obj_ids = self.collect_model_object_ids(id);
+        if obj_ids.is_empty() {
+            return false;
+        }
+        for obj_id in obj_ids {
+            if let Some(obj) = self.objects.get_mut(&obj_id) {
+                f(obj);
+            }
+        }
+        true
     }
 }
