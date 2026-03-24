@@ -17,9 +17,9 @@ use super::stage::ShaderStage;
 pub struct ShaderSource {
     /// The shader stage this source is for.
     pub stage: ShaderStage,
-    /// The GLSL source code.
+    /// The shader source code (GLSL or WGSL).
     pub source: String,
-    /// The GLSL version (e.g., "330 core").
+    /// The shader version string (e.g., "330 core" for GLSL, "wgsl" for WGSL).
     pub version: String,
 }
 
@@ -34,7 +34,10 @@ impl ShaderSource {
         }
     }
 
-    /// Extracts the GLSL version from source code.
+    /// Extracts the shader version from source code.
+    ///
+    /// Returns the GLSL version string (e.g. "330 core") when a `#version`
+    /// directive is present, or `"wgsl"` for WGSL sources.
     fn extract_version(source: &str) -> String {
         for line in source.lines() {
             let trimmed = line.trim();
@@ -45,6 +48,15 @@ impl ShaderSource {
                     .trim()
                     .to_string();
             }
+        }
+        // WGSL sources have no #version directive.
+        let trimmed = source.trim_start();
+        if !trimmed.starts_with('#')
+            && (trimmed.contains("@vertex")
+                || trimmed.contains("@fragment")
+                || trimmed.contains("@group"))
+        {
+            return "wgsl".to_string();
         }
         "330 core".to_string() // Default to GLSL 330
     }
