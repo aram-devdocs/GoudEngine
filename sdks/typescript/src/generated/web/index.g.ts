@@ -1019,6 +1019,31 @@ export class GoudGame implements IGoudGame {
   addColorGradePass(_exposure: number, _contrast: number, _saturation: number): number { return 0; }
   removePostprocessPass(_index: number): boolean { return false; }
   postprocessPassCount(): number { return 0; }
+  loadModel(_path: string): number { return 0; }
+  destroyModel(_modelId: number): boolean { return false; }
+  instantiateModel(_sourceModelId: number): number { return 0; }
+  setModelMaterial(_modelId: number, _meshIndex: number, _materialId: number): boolean { return false; }
+  getModelMeshCount(_modelId: number): number { return 0; }
+  getModelBoundingBox(_modelId: number): { minX: number; minY: number; minZ: number; maxX: number; maxY: number; maxZ: number } { return { minX: 0, minY: 0, minZ: 0, maxX: 0, maxY: 0, maxZ: 0 }; }
+  setModelPosition(_modelId: number, _x: number, _y: number, _z: number): boolean { return false; }
+  setModelRotation(_modelId: number, _x: number, _y: number, _z: number): boolean { return false; }
+  setModelScale(_modelId: number, _x: number, _y: number, _z: number): boolean { return false; }
+  getAnimationCount(_modelId: number): number { return 0; }
+  getAnimationName(_modelId: number, _animIndex: number): string { return ''; }
+  playAnimation(_instanceId: number, _animIndex: number, _looping: boolean): boolean { return false; }
+  stopAnimation(_instanceId: number): boolean { return false; }
+  updateAnimations(_deltaTime: number): boolean { return false; }
+  createScene(_name: string): number { return 0; }
+  destroyScene(_sceneId: number): boolean { return false; }
+  setCurrentScene(_sceneId: number): boolean { return false; }
+  getCurrentScene(): number { return 0; }
+  clearCurrentScene(): boolean { return false; }
+  addObjectToScene(_sceneId: number, _objectId: number): boolean { return false; }
+  removeObjectFromScene(_sceneId: number, _objectId: number): boolean { return false; }
+  addModelToScene(_sceneId: number, _modelId: number): boolean { return false; }
+  removeModelFromScene(_sceneId: number, _modelId: number): boolean { return false; }
+  addLightToScene(_sceneId: number, _lightId: number): boolean { return false; }
+  removeLightFromScene(_sceneId: number, _lightId: number): boolean { return false; }
 
   setViewport(_x: number, _y: number, _width: number, _height: number): void {}
   enableDepthTest(): void {}
