@@ -17,18 +17,39 @@ use rapier3d::prelude::*;
 use crate::core::error::{GoudError, GoudResult};
 use crate::core::providers::diagnostics::Physics3DDiagnosticsV1;
 use crate::core::providers::physics3d::PhysicsProvider3D;
+use crate::core::providers::types::CharacterControllerHandle;
 use crate::core::providers::types::ColliderHandle as EngineColliderHandle;
 use crate::core::providers::types::CollisionEvent as EngineCollisionEvent;
 use crate::core::providers::types::{
-    BodyDesc3D, ColliderDesc3D, CollisionEventKind, ContactPair3D, DebugShape3D, JointDesc3D,
-    PhysicsCapabilities3D, RaycastHit3D,
+    BodyDesc3D, CharacterControllerDesc3D, CharacterMoveResult3D, ColliderDesc3D,
+    CollisionEventKind, ContactPair3D, DebugShape3D, JointDesc3D, PhysicsCapabilities3D,
+    RaycastHit3D,
 };
 use crate::core::providers::types::{BodyHandle, JointHandle};
 use crate::core::providers::{Provider, ProviderLifecycle};
 
+use rapier3d::control::{CharacterAutostep, CharacterLength, KinematicCharacterController};
 use rapier3d::prelude::ColliderHandle as RapierColliderHandle;
 
 use conversions::{body_type_from_u32, joint_from_desc, shape_from_desc};
+
+/// Internal data for a character controller instance.
+struct CharacterControllerData {
+    /// The Rapier kinematic character controller.
+    controller: KinematicCharacterController,
+    /// Handle to the kinematic rigid body.
+    body_handle: RigidBodyHandle,
+    /// Handle to the capsule collider.
+    collider_handle: RapierColliderHandle,
+    /// The capsule shape used for move_shape queries.
+    shape: SharedShape,
+    /// Whether the character is currently touching the ground.
+    grounded: bool,
+    /// Accumulated vertical velocity for gravity.
+    vertical_velocity: f32,
+    /// Gravity magnitude (m/s^2, positive = downward).
+    gravity: f32,
+}
 
 /// A 3D physics provider backed by Rapier3D.
 pub struct Rapier3DPhysicsProvider {
@@ -55,6 +76,10 @@ pub struct Rapier3DPhysicsProvider {
     collider_map: HashMap<u64, RapierColliderHandle>,
     collider_to_body: HashMap<RapierColliderHandle, RigidBodyHandle>,
     joint_map: HashMap<u64, ImpulseJointHandle>,
+
+    // Character controllers
+    next_controller_id: u64,
+    controllers: HashMap<u64, CharacterControllerData>,
 
     // Collision event handling
     collision_events: Vec<EngineCollisionEvent>,
@@ -99,6 +124,9 @@ impl Rapier3DPhysicsProvider {
             collider_map: HashMap::new(),
             collider_to_body: HashMap::new(),
             joint_map: HashMap::new(),
+
+            next_controller_id: 1,
+            controllers: HashMap::new(),
 
             collision_events: Vec::new(),
             collision_recv,
@@ -489,6 +517,172 @@ impl PhysicsProvider3D for Rapier3DPhysicsProvider {
             contact_pair_count: 0,
             gravity: [self.gravity.x, self.gravity.y, self.gravity.z],
             timestep: self.integration_params.dt,
+        }
+    }
+
+    fn create_character_controller(
+        &mut self,
+        desc: &CharacterControllerDesc3D,
+    ) -> GoudResult<CharacterControllerHandle> {
+        // Create a kinematic rigid body at the requested position.
+        let body = RigidBodyBuilder::kinematic_position_based()
+            .translation(vector![
+                desc.position[0],
+                desc.position[1],
+                desc.position[2]
+            ])
+            .locked_axes(LockedAxes::ROTATION_LOCKED)
+            .build();
+        let body_handle = self.rigid_body_set.insert(body);
+
+        // Create a capsule collider attached to the body.
+        let shape = SharedShape::capsule_y(desc.half_height, desc.radius);
+        let collider = ColliderBuilder::new(shape.clone())
+            .friction(0.0)
+            .restitution(0.0)
+            .build();
+        let collider_handle =
+            self.collider_set
+                .insert_with_parent(collider, body_handle, &mut self.rigid_body_set);
+
+        // Configure the Rapier kinematic character controller.
+        let controller = KinematicCharacterController {
+            max_slope_climb_angle: desc.max_slope_angle,
+            min_slope_slide_angle: desc.max_slope_angle,
+            autostep: Some(CharacterAutostep {
+                max_height: CharacterLength::Absolute(desc.step_height),
+                min_width: CharacterLength::Relative(0.5),
+                include_dynamic_bodies: true,
+            }),
+            snap_to_ground: Some(CharacterLength::Absolute(0.1)),
+            ..KinematicCharacterController::default()
+        };
+
+        let id = self.next_controller_id;
+        self.next_controller_id += 1;
+
+        self.controllers.insert(
+            id,
+            CharacterControllerData {
+                controller,
+                body_handle,
+                collider_handle,
+                shape,
+                grounded: false,
+                vertical_velocity: 0.0,
+                gravity: self.gravity.y.abs(),
+            },
+        );
+
+        Ok(CharacterControllerHandle(id))
+    }
+
+    fn move_character(
+        &mut self,
+        handle: CharacterControllerHandle,
+        displacement: [f32; 3],
+        dt: f32,
+    ) -> GoudResult<CharacterMoveResult3D> {
+        let data = self
+            .controllers
+            .get_mut(&handle.0)
+            .ok_or(GoudError::InvalidHandle)?;
+
+        // Apply gravity when not grounded.
+        if !data.grounded {
+            data.vertical_velocity -= data.gravity * dt;
+        } else {
+            // Reset vertical velocity when grounded (allow small downward
+            // snap so ground detection stays stable).
+            data.vertical_velocity = -0.1;
+        }
+
+        let desired = vector![
+            displacement[0],
+            displacement[1] + data.vertical_velocity * dt,
+            displacement[2]
+        ];
+
+        // Get current body position for the character.
+        let body = self
+            .rigid_body_set
+            .get(data.body_handle)
+            .ok_or(GoudError::InvalidHandle)?;
+        let char_pos = *body.position();
+
+        // Exclude the character's own collider from queries.
+        let exclude_collider = data.collider_handle;
+        let filter = QueryFilter::default().exclude_collider(exclude_collider);
+
+        let result = data.controller.move_shape(
+            dt,
+            &self.rigid_body_set,
+            &self.collider_set,
+            &self.query_pipeline,
+            data.shape.as_ref(),
+            &char_pos,
+            desired,
+            filter,
+            |_| {},
+        );
+
+        data.grounded = result.grounded;
+        if result.grounded {
+            data.vertical_velocity = -0.1;
+        }
+
+        // Apply the corrected translation to the kinematic body.
+        let new_translation = char_pos.translation.vector + result.translation;
+        let body = self
+            .rigid_body_set
+            .get_mut(data.body_handle)
+            .ok_or(GoudError::InvalidHandle)?;
+        body.set_next_kinematic_translation(new_translation);
+
+        let pos = new_translation;
+        Ok(CharacterMoveResult3D {
+            position: [pos.x, pos.y, pos.z],
+            grounded: data.grounded,
+        })
+    }
+
+    fn character_position(&self, handle: CharacterControllerHandle) -> GoudResult<[f32; 3]> {
+        let data = self
+            .controllers
+            .get(&handle.0)
+            .ok_or(GoudError::InvalidHandle)?;
+        let body = self
+            .rigid_body_set
+            .get(data.body_handle)
+            .ok_or(GoudError::InvalidHandle)?;
+        let t = body.translation();
+        Ok([t.x, t.y, t.z])
+    }
+
+    fn is_character_grounded(&self, handle: CharacterControllerHandle) -> GoudResult<bool> {
+        let data = self
+            .controllers
+            .get(&handle.0)
+            .ok_or(GoudError::InvalidHandle)?;
+        Ok(data.grounded)
+    }
+
+    fn destroy_character_controller(&mut self, handle: CharacterControllerHandle) {
+        if let Some(data) = self.controllers.remove(&handle.0) {
+            self.collider_set.remove(
+                data.collider_handle,
+                &mut self.island_manager,
+                &mut self.rigid_body_set,
+                true,
+            );
+            self.rigid_body_set.remove(
+                data.body_handle,
+                &mut self.island_manager,
+                &mut self.collider_set,
+                &mut self.impulse_joint_set,
+                &mut self.multibody_joint_set,
+                true,
+            );
         }
     }
 }

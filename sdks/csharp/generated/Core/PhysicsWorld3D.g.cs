@@ -181,6 +181,51 @@ namespace GoudEngine
             return _dt;
         }
 
+        /// <summary>Creates a capsule-based 3D character controller</summary>
+        public long CreateCharacterController(float radius, float halfHeight, float x, float y, float z, float maxSlopeAngle, float stepHeight)
+        {
+            return NativeMethods.goud_physics3d_create_character_controller(_ctx, radius, halfHeight, x, y, z, maxSlopeAngle, stepHeight);
+        }
+
+        /// <summary>Moves a character controller by the given displacement</summary>
+        public CharacterMoveResult MoveCharacter(ulong controllerId, float dx, float dy, float dz, float dt)
+        {
+            float _x = 0.0f;
+            float _y = 0.0f;
+            float _z = 0.0f;
+            var _groundedBuf = new byte[1];
+            unsafe
+            {
+                fixed (byte* _gPtr = _groundedBuf)
+                {
+                    NativeMethods.goud_physics3d_move_character(_ctx, controllerId, dx, dy, dz, dt, ref _x, ref _y, ref _z, (IntPtr)_gPtr);
+                }
+            }
+            return new CharacterMoveResult(_x, _y, _z, _groundedBuf[0] != 0);
+        }
+
+        /// <summary>Gets the position of a 3D character controller</summary>
+        public Vec3 GetCharacterPosition(ulong controllerId)
+        {
+            float _x = 0.0f;
+            float _y = 0.0f;
+            float _z = 0.0f;
+            NativeMethods.goud_physics3d_get_character_position(_ctx, controllerId, ref _x, ref _y, ref _z);
+            return new Vec3(_x, _y, _z);
+        }
+
+        /// <summary>Checks if a 3D character controller is touching the ground</summary>
+        public bool IsCharacterGrounded(ulong controllerId)
+        {
+            return NativeMethods.goud_physics3d_is_character_grounded(_ctx, controllerId);
+        }
+
+        /// <summary>Destroys a 3D character controller</summary>
+        public int DestroyCharacterController(ulong controllerId)
+        {
+            return NativeMethods.goud_physics3d_destroy_character_controller(_ctx, controllerId);
+        }
+
         public void Dispose()
         {
             if (!_disposed) Destroy();

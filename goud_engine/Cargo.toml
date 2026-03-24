@@ -12,7 +12,7 @@ categories = ["game-engines", "graphics", "rendering"]
 
 [features]
 default = ["native"]
-native = ["wgpu-backend", "dep:rodio", "dep:notify", "dep:cc", "dep:bindgen", "dep:cbindgen", "dep:tiled", "dep:rayon", "dep:env_logger", "dep:toml", "dep:gltf", "dep:tobj", "dep:jni", "net-udp", "net-tcp", "net-ws", "rapier2d", "rapier3d"]
+native = ["wgpu-backend", "dep:rodio", "dep:notify", "dep:cc", "dep:bindgen", "dep:cbindgen", "dep:tiled", "dep:rayon", "dep:env_logger", "dep:toml", "dep:gltf", "dep:tobj", "dep:fbxcel", "dep:jni", "net-udp", "net-tcp", "net-ws", "rapier2d", "rapier3d"]
 legacy-glfw-opengl = ["dep:gl", "dep:glfw"]
 lua = ["dep:mlua"]
 net-udp = []
@@ -57,6 +57,7 @@ serde_json = "1"
 toml = { version = "0.8", optional = true }
 gltf = { version = "1.4", optional = true }
 tobj = { version = "4.0", optional = true, features = ["ahash"] }
+fbxcel = { version = "0.9", optional = true, features = ["tree"] }
 bytemuck = "1.14"
 goud_engine_macros = { version = "=0.0.836", path = "../goud_engine_macros" } # x-release-please-version
 wgpu = { version = "28", optional = true }

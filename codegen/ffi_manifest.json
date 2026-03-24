@@ -2182,6 +2182,21 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_physics3d_create_character_controller": {
+      "source_file": "ffi/physics/physics3d/character_controller.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "radius: f32",
+        "half_height: f32",
+        "x: f32",
+        "y: f32",
+        "z: f32",
+        "max_slope_angle: f32",
+        "step_height: f32"
+      ],
+      "return_type": "i64",
+      "is_unsafe": false
+    },
     "goud_physics3d_create_joint": {
       "source_file": "ffi/physics/physics3d/bodies.rs",
       "params": [
@@ -2216,12 +2231,33 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_physics3d_destroy_character_controller": {
+      "source_file": "ffi/physics/physics3d/character_controller.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "controller_id: u64"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_physics3d_get_body_gravity_scale": {
       "source_file": "ffi/physics/physics3d_material.rs",
       "params": [
         "ctx: GoudContextId",
         "handle: u64",
         "out_scale: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics3d_get_character_position": {
+      "source_file": "ffi/physics/physics3d/character_controller.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "controller_id: u64",
+        "out_x: *mut f32",
+        "out_y: *mut f32",
+        "out_z: *mut f32"
       ],
       "return_type": "i32",
       "is_unsafe": true
@@ -2274,6 +2310,32 @@
       "params": [
         "ctx: GoudContextId",
         "out_dt: *mut f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_physics3d_is_character_grounded": {
+      "source_file": "ffi/physics/physics3d/character_controller.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "controller_id: u64"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_physics3d_move_character": {
+      "source_file": "ffi/physics/physics3d/character_controller.rs",
+      "params": [
+        "ctx: GoudContextId",
+        "controller_id: u64",
+        "dx: f32",
+        "dy: f32",
+        "dz: f32",
+        "dt: f32",
+        "out_x: *mut f32",
+        "out_y: *mut f32",
+        "out_z: *mut f32",
+        "out_grounded: *mut bool"
       ],
       "return_type": "i32",
       "is_unsafe": true
@@ -2905,6 +2967,56 @@
       "return_type": "u32",
       "is_unsafe": false
     },
+    "goud_renderer3d_add_light_to_scene": {
+      "source_file": "ffi/renderer3d/scene.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "scene_id: u32",
+        "light_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_add_model_to_scene": {
+      "source_file": "ffi/renderer3d/scene.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "scene_id: u32",
+        "model_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_add_object_to_scene": {
+      "source_file": "ffi/renderer3d/scene.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "scene_id: u32",
+        "object_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_blend_animations": {
+      "source_file": "ffi/renderer3d/animation.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "instance_id: u32",
+        "anim_a: i32",
+        "anim_b: i32",
+        "blend_factor: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_clear_current_scene": {
+      "source_file": "ffi/renderer3d/scene.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
     "goud_renderer3d_configure_fog": {
       "source_file": "ffi/renderer3d/environment.rs",
       "params": [
@@ -2994,6 +3106,15 @@
       "return_type": "u32",
       "is_unsafe": false
     },
+    "goud_renderer3d_create_scene": {
+      "source_file": "ffi/renderer3d/scene.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "name_ptr: *const c_char"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
     "goud_renderer3d_create_skinned_mesh": {
       "source_file": "ffi/renderer3d/skinned.rs",
       "params": [
@@ -3015,6 +3136,15 @@
       "return_type": "u32",
       "is_unsafe": false
     },
+    "goud_renderer3d_destroy_model": {
+      "source_file": "ffi/renderer3d/model.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "model_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
     "goud_renderer3d_destroy_object": {
       "source_file": "ffi/renderer3d/primitives.rs",
       "params": [
@@ -3024,6 +3154,77 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_renderer3d_destroy_scene": {
+      "source_file": "ffi/renderer3d/scene.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "scene_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_get_animation_count": {
+      "source_file": "ffi/renderer3d/animation.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "model_id: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_get_animation_name": {
+      "source_file": "ffi/renderer3d/animation.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "model_id: u32",
+        "anim_index: i32",
+        "out_buf: *mut c_char",
+        "buf_len: i32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
+    "goud_renderer3d_get_animation_progress": {
+      "source_file": "ffi/renderer3d/animation.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "instance_id: u32"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_get_current_scene": {
+      "source_file": "ffi/renderer3d/scene.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_get_model_bounding_box": {
+      "source_file": "ffi/renderer3d/model.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "model_id: u32",
+        "out_min_x: *mut f32",
+        "out_min_y: *mut f32",
+        "out_min_z: *mut f32",
+        "out_max_x: *mut f32",
+        "out_max_y: *mut f32",
+        "out_max_z: *mut f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_renderer3d_get_model_mesh_count": {
+      "source_file": "ffi/renderer3d/model.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "model_id: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_renderer3d_get_object_material": {
       "source_file": "ffi/renderer3d/materials.rs",
       "params": [
@@ -3031,6 +3232,44 @@
         "object_id: u32"
       ],
       "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_instantiate_model": {
+      "source_file": "ffi/renderer3d/model.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "source_model_id: u32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_is_animation_playing": {
+      "source_file": "ffi/renderer3d/animation.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "instance_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_load_model": {
+      "source_file": "ffi/renderer3d/model.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "path_ptr: *const c_char"
+      ],
+      "return_type": "u32",
+      "is_unsafe": true
+    },
+    "goud_renderer3d_play_animation": {
+      "source_file": "ffi/renderer3d/animation.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "instance_id: u32",
+        "anim_index: i32",
+        "looping: bool"
+      ],
+      "return_type": "bool",
       "is_unsafe": false
     },
     "goud_renderer3d_postprocess_pass_count": {
@@ -3050,11 +3289,41 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_renderer3d_remove_light_from_scene": {
+      "source_file": "ffi/renderer3d/scene.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "scene_id: u32",
+        "light_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
     "goud_renderer3d_remove_material": {
       "source_file": "ffi/renderer3d/materials.rs",
       "params": [
         "context_id: GoudContextId",
         "material_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_remove_model_from_scene": {
+      "source_file": "ffi/renderer3d/scene.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "scene_id: u32",
+        "model_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_remove_object_from_scene": {
+      "source_file": "ffi/renderer3d/scene.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "scene_id: u32",
+        "object_id: u32"
       ],
       "return_type": "bool",
       "is_unsafe": false
@@ -3093,6 +3362,16 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_renderer3d_set_animation_speed": {
+      "source_file": "ffi/renderer3d/animation.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "instance_id: u32",
+        "speed: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
     "goud_renderer3d_set_camera_position": {
       "source_file": "ffi/renderer3d/camera.rs",
       "params": [
@@ -3115,6 +3394,15 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_renderer3d_set_current_scene": {
+      "source_file": "ffi/renderer3d/scene.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "scene_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
     "goud_renderer3d_set_fog_enabled": {
       "source_file": "ffi/renderer3d/environment.rs",
       "params": [
@@ -3129,6 +3417,53 @@
       "params": [
         "context_id: GoudContextId",
         "enabled: bool"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_model_material": {
+      "source_file": "ffi/renderer3d/model.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "model_id: u32",
+        "mesh_index: i32",
+        "material_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_model_position": {
+      "source_file": "ffi/renderer3d/model.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "model_id: u32",
+        "x: f32",
+        "y: f32",
+        "z: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_model_rotation": {
+      "source_file": "ffi/renderer3d/model.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "model_id: u32",
+        "x: f32",
+        "y: f32",
+        "z: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_model_scale": {
+      "source_file": "ffi/renderer3d/model.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "model_id: u32",
+        "x: f32",
+        "y: f32",
+        "z: f32"
       ],
       "return_type": "bool",
       "is_unsafe": false
@@ -3222,6 +3557,35 @@
         "x: f32",
         "y: f32",
         "z: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_stop_animation": {
+      "source_file": "ffi/renderer3d/animation.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "instance_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_transition_animation": {
+      "source_file": "ffi/renderer3d/animation.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "instance_id: u32",
+        "target_anim: i32",
+        "duration: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_update_animations": {
+      "source_file": "ffi/renderer3d/animation.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "delta_time: f32"
       ],
       "return_type": "bool",
       "is_unsafe": false
@@ -5405,5 +5769,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 544
+  "total_count": 579
 }

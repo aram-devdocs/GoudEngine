@@ -401,6 +401,26 @@
         "bytes_capacity",
         "reset_count"
       ]
+    },
+    "BoundingBox3D": {
+      "ffi_name": null,
+      "fields": [
+        "minX",
+        "minY",
+        "minZ",
+        "maxX",
+        "maxY",
+        "maxZ"
+      ]
+    },
+    "CharacterMoveResult": {
+      "ffi_name": null,
+      "fields": [
+        "x",
+        "y",
+        "z",
+        "grounded"
+      ]
     }
   },
   "ffi_handles": {
@@ -635,7 +655,37 @@
       "goud_renderer3d_add_blur_pass": {},
       "goud_renderer3d_add_color_grade_pass": {},
       "goud_renderer3d_remove_postprocess_pass": {},
-      "goud_renderer3d_postprocess_pass_count": {}
+      "goud_renderer3d_postprocess_pass_count": {},
+      "goud_renderer3d_load_model": {},
+      "goud_renderer3d_destroy_model": {},
+      "goud_renderer3d_instantiate_model": {},
+      "goud_renderer3d_set_model_material": {},
+      "goud_renderer3d_get_model_mesh_count": {},
+      "goud_renderer3d_get_model_bounding_box": {},
+      "goud_renderer3d_set_model_position": {},
+      "goud_renderer3d_set_model_rotation": {},
+      "goud_renderer3d_set_model_scale": {},
+      "goud_renderer3d_get_animation_count": {},
+      "goud_renderer3d_get_animation_name": {},
+      "goud_renderer3d_play_animation": {},
+      "goud_renderer3d_stop_animation": {},
+      "goud_renderer3d_set_animation_speed": {},
+      "goud_renderer3d_blend_animations": {},
+      "goud_renderer3d_transition_animation": {},
+      "goud_renderer3d_is_animation_playing": {},
+      "goud_renderer3d_get_animation_progress": {},
+      "goud_renderer3d_update_animations": {},
+      "goud_renderer3d_create_scene": {},
+      "goud_renderer3d_destroy_scene": {},
+      "goud_renderer3d_set_current_scene": {},
+      "goud_renderer3d_get_current_scene": {},
+      "goud_renderer3d_add_object_to_scene": {},
+      "goud_renderer3d_remove_object_from_scene": {},
+      "goud_renderer3d_add_model_to_scene": {},
+      "goud_renderer3d_remove_model_from_scene": {},
+      "goud_renderer3d_add_light_to_scene": {},
+      "goud_renderer3d_remove_light_from_scene": {},
+      "goud_renderer3d_clear_current_scene": {}
     },
     "input": {
       "goud_input_key_pressed": {},
@@ -909,7 +959,12 @@
       "goud_physics3d_set_collider_restitution": {},
       "goud_physics3d_get_collider_restitution": {},
       "goud_physics3d_set_timestep": {},
-      "goud_physics3d_get_timestep": {}
+      "goud_physics3d_get_timestep": {},
+      "goud_physics3d_create_character_controller": {},
+      "goud_physics3d_move_character": {},
+      "goud_physics3d_get_character_position": {},
+      "goud_physics3d_is_character_grounded": {},
+      "goud_physics3d_destroy_character_controller": {}
     },
     "animation_controller": {
       "goud_animation_controller_create": {},

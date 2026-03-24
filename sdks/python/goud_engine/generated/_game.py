@@ -518,6 +518,135 @@ class GoudGame:
         """Returns the number of post-processing passes"""
         return self._lib.goud_renderer3d_postprocess_pass_count(self._ctx)
 
+    def load_model(self, path):
+        """Loads a 3D model from a file (glTF, OBJ, FBX) and returns a model handle"""
+        return self._lib.goud_renderer3d_load_model(self._ctx, path)
+
+    def destroy_model(self, model_id):
+        """Destroys a 3D model and frees its GPU resources"""
+        return self._lib.goud_renderer3d_destroy_model(self._ctx, model_id)
+
+    def instantiate_model(self, source_model_id):
+        """Creates an independent instance of a source model"""
+        return self._lib.goud_renderer3d_instantiate_model(self._ctx, source_model_id)
+
+    def set_model_material(self, model_id, mesh_index, material_id):
+        """Overrides the material on a specific sub-mesh of a model (-1 for all sub-meshes)"""
+        return self._lib.goud_renderer3d_set_model_material(self._ctx, model_id, mesh_index, material_id)
+
+    def get_model_mesh_count(self, model_id):
+        """Returns the number of sub-meshes in a model"""
+        return self._lib.goud_renderer3d_get_model_mesh_count(self._ctx, model_id)
+
+    def get_model_bounding_box(self, model_id):
+        """Returns the axis-aligned bounding box of a model"""
+        _min_x = ctypes.c_float()
+        _min_y = ctypes.c_float()
+        _min_z = ctypes.c_float()
+        _max_x = ctypes.c_float()
+        _max_y = ctypes.c_float()
+        _max_z = ctypes.c_float()
+        self._lib.goud_renderer3d_get_model_bounding_box(self._ctx, model_id, ctypes.byref(_min_x), ctypes.byref(_min_y), ctypes.byref(_min_z), ctypes.byref(_max_x), ctypes.byref(_max_y), ctypes.byref(_max_z))
+        return BoundingBox3D(_min_x.value, _min_y.value, _min_z.value, _max_x.value, _max_y.value, _max_z.value)
+
+    def set_model_position(self, model_id, x, y, z):
+        """Sets the position of a 3D model or instance"""
+        return self._lib.goud_renderer3d_set_model_position(self._ctx, model_id, x, y, z)
+
+    def set_model_rotation(self, model_id, x, y, z):
+        """Sets the rotation of a 3D model or instance in degrees"""
+        return self._lib.goud_renderer3d_set_model_rotation(self._ctx, model_id, x, y, z)
+
+    def set_model_scale(self, model_id, x, y, z):
+        """Sets the scale of a 3D model or instance"""
+        return self._lib.goud_renderer3d_set_model_scale(self._ctx, model_id, x, y, z)
+
+    def get_animation_count(self, model_id):
+        """Returns the number of animations in a model"""
+        return self._lib.goud_renderer3d_get_animation_count(self._ctx, model_id)
+
+    def get_animation_name(self, model_id, anim_index):
+        """Returns the name of an animation by index"""
+        return _read_string_buffer(
+            lambda _buf, _buf_len: self._lib.goud_renderer3d_get_animation_name(self._ctx, model_id, anim_index, _buf, _buf_len)
+        )
+
+    def play_animation(self, instance_id, anim_index, looping):
+        """Starts playing an animation on a model instance"""
+        return self._lib.goud_renderer3d_play_animation(self._ctx, instance_id, anim_index, looping)
+
+    def stop_animation(self, instance_id):
+        """Stops animation playback on a model instance"""
+        return self._lib.goud_renderer3d_stop_animation(self._ctx, instance_id)
+
+    def set_animation_speed(self, instance_id, speed):
+        """Sets the playback speed for a model instance's animation"""
+        return self._lib.goud_renderer3d_set_animation_speed(self._ctx, instance_id, speed)
+
+    def blend_animations(self, instance_id, anim_a, anim_b, blend_factor):
+        """Sets up blending between two animation clips"""
+        return self._lib.goud_renderer3d_blend_animations(self._ctx, instance_id, anim_a, anim_b, blend_factor)
+
+    def transition_animation(self, instance_id, target_anim, duration):
+        """Starts a timed transition to a target animation clip"""
+        return self._lib.goud_renderer3d_transition_animation(self._ctx, instance_id, target_anim, duration)
+
+    def is_animation_playing(self, instance_id):
+        """Returns whether an animation is currently playing on a model instance"""
+        return self._lib.goud_renderer3d_is_animation_playing(self._ctx, instance_id)
+
+    def get_animation_progress(self, instance_id):
+        """Returns the playback progress (0.0 to 1.0) of the primary animation"""
+        return self._lib.goud_renderer3d_get_animation_progress(self._ctx, instance_id)
+
+    def update_animations(self, delta_time):
+        """Advances all animation players by delta_time seconds (call once per frame)"""
+        return self._lib.goud_renderer3d_update_animations(self._ctx, delta_time)
+
+    def create_scene(self, name):
+        """Creates a new named 3D scene and returns its ID"""
+        return self._lib.goud_renderer3d_create_scene(self._ctx, name)
+
+    def destroy_scene(self, scene_id):
+        """Destroys a 3D scene by ID"""
+        return self._lib.goud_renderer3d_destroy_scene(self._ctx, scene_id)
+
+    def set_current_scene(self, scene_id):
+        """Sets the current active 3D scene"""
+        return self._lib.goud_renderer3d_set_current_scene(self._ctx, scene_id)
+
+    def get_current_scene(self):
+        """Returns the current active 3D scene ID"""
+        return self._lib.goud_renderer3d_get_current_scene(self._ctx)
+
+    def clear_current_scene(self):
+        """Clears the current active scene so all objects are rendered"""
+        return self._lib.goud_renderer3d_clear_current_scene(self._ctx)
+
+    def add_object_to_scene(self, scene_id, object_id):
+        """Adds a 3D object to a scene"""
+        return self._lib.goud_renderer3d_add_object_to_scene(self._ctx, scene_id, object_id)
+
+    def remove_object_from_scene(self, scene_id, object_id):
+        """Removes a 3D object from a scene"""
+        return self._lib.goud_renderer3d_remove_object_from_scene(self._ctx, scene_id, object_id)
+
+    def add_model_to_scene(self, scene_id, model_id):
+        """Adds a model to a 3D scene"""
+        return self._lib.goud_renderer3d_add_model_to_scene(self._ctx, scene_id, model_id)
+
+    def remove_model_from_scene(self, scene_id, model_id):
+        """Removes a model from a 3D scene"""
+        return self._lib.goud_renderer3d_remove_model_from_scene(self._ctx, scene_id, model_id)
+
+    def add_light_to_scene(self, scene_id, light_id):
+        """Adds a light to a 3D scene"""
+        return self._lib.goud_renderer3d_add_light_to_scene(self._ctx, scene_id, light_id)
+
+    def remove_light_from_scene(self, scene_id, light_id):
+        """Removes a light from a 3D scene"""
+        return self._lib.goud_renderer3d_remove_light_from_scene(self._ctx, scene_id, light_id)
+
     def draw_sprite_rect(self, texture, x, y, width, height, rotation, src_x, src_y, src_w, src_h, color = None, src_mode = 1):
         """Draws a sprite with source rectangle for sprite sheets"""
         _color_ffi = _ffi_module.FfiColor()
@@ -2034,6 +2163,35 @@ class PhysicsWorld3D:
         _dt = ctypes.c_float()
         self._lib.goud_physics3d_get_timestep(self._ctx, ctypes.byref(_dt))
         return _dt.value
+
+    def create_character_controller(self, radius, half_height, x, y, z, max_slope_angle, step_height):
+        """Creates a capsule-based 3D character controller"""
+        return self._lib.goud_physics3d_create_character_controller(self._ctx, radius, half_height, x, y, z, max_slope_angle, step_height)
+
+    def move_character(self, controller_id, dx, dy, dz, dt):
+        """Moves a character controller by the given displacement"""
+        _x = ctypes.c_float()
+        _y = ctypes.c_float()
+        _z = ctypes.c_float()
+        _grounded = ctypes.c_bool()
+        self._lib.goud_physics3d_move_character(self._ctx, controller_id, dx, dy, dz, dt, ctypes.byref(_x), ctypes.byref(_y), ctypes.byref(_z), ctypes.byref(_grounded))
+        return CharacterMoveResult(_x.value, _y.value, _z.value, _grounded.value)
+
+    def get_character_position(self, controller_id):
+        """Gets the position of a 3D character controller"""
+        _x = ctypes.c_float()
+        _y = ctypes.c_float()
+        _z = ctypes.c_float()
+        self._lib.goud_physics3d_get_character_position(self._ctx, controller_id, ctypes.byref(_x), ctypes.byref(_y), ctypes.byref(_z))
+        return Vec3(_x.value, _y.value, _z.value)
+
+    def is_character_grounded(self, controller_id):
+        """Checks if a 3D character controller is touching the ground"""
+        return self._lib.goud_physics3d_is_character_grounded(self._ctx, controller_id)
+
+    def destroy_character_controller(self, controller_id):
+        """Destroys a 3D character controller"""
+        return self._lib.goud_physics3d_destroy_character_controller(self._ctx, controller_id)
 
 
 class EngineConfig:

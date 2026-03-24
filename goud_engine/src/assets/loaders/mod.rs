@@ -46,7 +46,12 @@ pub use material::{MaterialAsset, MaterialLoader, UniformValue};
 
 pub use animation::{AnimationLoader, KeyframeAnimation};
 
-pub use mesh::{MeshAsset, MeshLoader, MeshVertex, SubMesh};
+#[cfg(feature = "native")]
+pub use mesh::{default_registry, FbxProvider, GltfProvider, ObjProvider};
+pub use mesh::{
+    BoneData, MeshAsset, MeshLoader, MeshVertex, ModelData, ModelProvider, ModelProviderRegistry,
+    SkeletonData, SubMesh,
+};
 
 pub use tiled_map::{
     visible_tile_range, MapObject, ObjectLayer, TileLayer, TiledMapAsset, TiledMapLoader,

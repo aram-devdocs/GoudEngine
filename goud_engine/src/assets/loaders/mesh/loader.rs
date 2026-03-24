@@ -1,4 +1,4 @@
-//! [`MeshLoader`] -- dispatches to format-specific parsers.
+//! [`MeshLoader`] -- dispatches to format-specific parsers via [`ModelProviderRegistry`].
 
 use crate::assets::{Asset, AssetLoadError, AssetLoader, LoadContext};
 
@@ -13,6 +13,8 @@ pub enum MeshFormat {
     Glb,
     /// Wavefront OBJ.
     Obj,
+    /// Autodesk FBX.
+    Fbx,
 }
 
 impl MeshFormat {
@@ -22,6 +24,7 @@ impl MeshFormat {
             "gltf" => Some(Self::Gltf),
             "glb" => Some(Self::Glb),
             "obj" => Some(Self::Obj),
+            "fbx" => Some(Self::Fbx),
             _ => None,
         }
     }
@@ -29,8 +32,11 @@ impl MeshFormat {
 
 /// Asset loader for 3D mesh files.
 ///
-/// Supports GLTF/GLB and OBJ formats when the `native` feature is
-/// enabled. Without `native`, all formats return `UnsupportedFormat`.
+/// Supports GLTF/GLB, OBJ, and FBX formats when the `native` feature is
+/// enabled.  Internally dispatches through a [`ModelProviderRegistry`] so
+/// the loader never touches format-specific types directly.
+///
+/// Without `native`, all formats return `UnsupportedFormat`.
 ///
 /// # Example
 ///
@@ -67,26 +73,24 @@ impl AssetLoader for MeshLoader {
         context: &'a mut LoadContext,
     ) -> Result<Self::Asset, AssetLoadError> {
         #[cfg(not(feature = "native"))]
-        let _ = bytes;
+        {
+            let _ = bytes;
+            let ext = context.extension().unwrap_or("unknown");
+            return Err(AssetLoadError::unsupported_format(ext));
+        }
 
-        let format = context.extension().and_then(MeshFormat::from_extension);
+        #[cfg(feature = "native")]
+        {
+            let ext = context.extension().unwrap_or("unknown").to_string();
 
-        match format {
-            #[cfg(feature = "native")]
-            Some(MeshFormat::Gltf | MeshFormat::Glb) => {
-                super::gltf_parser::parse_gltf(bytes, context)
+            // Validate the extension is a known format before dispatching.
+            if MeshFormat::from_extension(&ext).is_none() {
+                return Err(AssetLoadError::unsupported_format(&ext));
             }
-            #[cfg(feature = "native")]
-            Some(MeshFormat::Obj) => super::obj_parser::parse_obj(bytes),
-            #[cfg(not(feature = "native"))]
-            Some(_) => {
-                let ext = context.extension().unwrap_or("unknown");
-                Err(AssetLoadError::unsupported_format(ext))
-            }
-            None => {
-                let ext = context.extension().unwrap_or("unknown").to_string();
-                Err(AssetLoadError::unsupported_format(ext))
-            }
+
+            let registry = super::providers::default_registry();
+            let model_data = registry.load(&ext, bytes, context)?;
+            Ok(model_data.mesh)
         }
     }
 }

@@ -71,6 +71,11 @@ extern "C" {
 #define GOUD_MATERIAL_TYPE_UNLIT 2
 
 /**
+ * Invalid model handle constant.
+ */
+#define GOUD_INVALID_MODEL UINT32_MAX
+
+/**
  * Invalid object handle constant.
  */
 #define GOUD_INVALID_OBJECT UINT32_MAX
@@ -114,6 +119,11 @@ extern "C" {
  * Cylinder primitive type
  */
 #define GOUD_PRIMITIVE_CYLINDER 3
+
+/**
+ * Sentinel value returned when no scene is active or an operation fails.
+ */
+#define GOUD_INVALID_SCENE UINT32_MAX
 
 /**
  * Invalid skinned mesh handle constant.
@@ -2054,6 +2064,56 @@ GOUD_DEPRECATED_MSG("Use goud_renderer_draw_text instead.") bool goud_draw_text(
 uint32_t goud_renderer_draw_text_batch(struct GoudContextId context_id, const struct FfiTextCmd *cmds, uint32_t count);
 
 /**
+ * Returns the number of animations in a model, or -1 if invalid.
+ */
+int32_t goud_renderer3d_get_animation_count(struct GoudContextId context_id, uint32_t model_id);
+
+/**
+ * Copies the animation name to the output buffer.
+ */
+int32_t goud_renderer3d_get_animation_name(struct GoudContextId context_id, uint32_t model_id, int32_t anim_index, char *out_buf, int32_t buf_len);
+
+/**
+ * Starts playing an animation on a model instance.
+ */
+bool goud_renderer3d_play_animation(struct GoudContextId context_id, uint32_t instance_id, int32_t anim_index, bool looping);
+
+/**
+ * Stops animation playback on a model instance.
+ */
+bool goud_renderer3d_stop_animation(struct GoudContextId context_id, uint32_t instance_id);
+
+/**
+ * Sets the playback speed for a model instance's animation.
+ */
+bool goud_renderer3d_set_animation_speed(struct GoudContextId context_id, uint32_t instance_id, float speed);
+
+/**
+ * Sets up blending between two animation clips.
+ */
+bool goud_renderer3d_blend_animations(struct GoudContextId context_id, uint32_t instance_id, int32_t anim_a, int32_t anim_b, float blend_factor);
+
+/**
+ * Starts a timed transition from the current animation to a target clip.
+ */
+bool goud_renderer3d_transition_animation(struct GoudContextId context_id, uint32_t instance_id, int32_t target_anim, float duration);
+
+/**
+ * Returns whether an animation is currently playing on a model instance.
+ */
+bool goud_renderer3d_is_animation_playing(struct GoudContextId context_id, uint32_t instance_id);
+
+/**
+ * Returns the playback progress (0.0 to 1.0) of the primary animation.
+ */
+float goud_renderer3d_get_animation_progress(struct GoudContextId context_id, uint32_t instance_id);
+
+/**
+ * Advances all animation players by `delta_time` seconds.
+ */
+bool goud_renderer3d_update_animations(struct GoudContextId context_id, float delta_time);
+
+/**
  * Sets the 3D camera position.
  */
 bool goud_renderer3d_set_camera_position(struct GoudContextId context_id, float x, float y, float z);
@@ -2139,6 +2199,51 @@ bool goud_renderer3d_set_object_material(struct GoudContextId context_id, uint32
 uint32_t goud_renderer3d_get_object_material(struct GoudContextId context_id, uint32_t object_id);
 
 /**
+ * Loads a 3D model file from disk and returns a model handle.
+ */
+uint32_t goud_renderer3d_load_model(struct GoudContextId context_id, const char *path_ptr);
+
+/**
+ * Destroys a 3D model and all its owned GPU resources.
+ */
+bool goud_renderer3d_destroy_model(struct GoudContextId context_id, uint32_t model_id);
+
+/**
+ * Creates an independent instance of a source model.
+ */
+uint32_t goud_renderer3d_instantiate_model(struct GoudContextId context_id, uint32_t source_model_id);
+
+/**
+ * Overrides the material on a specific sub-mesh of a model or instance.
+ */
+bool goud_renderer3d_set_model_material(struct GoudContextId context_id, uint32_t model_id, int32_t mesh_index, uint32_t material_id);
+
+/**
+ * Returns the number of sub-meshes in a model or instance.
+ */
+int32_t goud_renderer3d_get_model_mesh_count(struct GoudContextId context_id, uint32_t model_id);
+
+/**
+ * Returns the AABB bounding box of a model.
+ */
+bool goud_renderer3d_get_model_bounding_box(struct GoudContextId context_id, uint32_t model_id, float *out_min_x, float *out_min_y, float *out_min_z, float *out_max_x, float *out_max_y, float *out_max_z);
+
+/**
+ * Sets the position of a 3D model or instance.
+ */
+bool goud_renderer3d_set_model_position(struct GoudContextId context_id, uint32_t model_id, float x, float y, float z);
+
+/**
+ * Sets the rotation of a 3D model or instance (in degrees).
+ */
+bool goud_renderer3d_set_model_rotation(struct GoudContextId context_id, uint32_t model_id, float x, float y, float z);
+
+/**
+ * Sets the scale of a 3D model or instance.
+ */
+bool goud_renderer3d_set_model_scale(struct GoudContextId context_id, uint32_t model_id, float x, float y, float z);
+
+/**
  * Adds a bloom pass to the post-processing pipeline. Returns the pass index.
  */
 int32_t goud_renderer3d_add_bloom_pass(struct GoudContextId context_id, float threshold, float intensity);
@@ -2202,6 +2307,61 @@ bool goud_renderer3d_set_object_scale(struct GoudContextId context_id, uint32_t 
  * Destroys a 3D object.
  */
 bool goud_renderer3d_destroy_object(struct GoudContextId context_id, uint32_t object_id);
+
+/**
+ * Creates a new named 3D scene and returns its ID.
+ */
+uint32_t goud_renderer3d_create_scene(struct GoudContextId context_id, const char *name_ptr);
+
+/**
+ * Destroys a scene by ID. Returns `true` if the scene existed.
+ */
+bool goud_renderer3d_destroy_scene(struct GoudContextId context_id, uint32_t scene_id);
+
+/**
+ * Sets the current active scene. Returns `true` if the scene exists.
+ */
+bool goud_renderer3d_set_current_scene(struct GoudContextId context_id, uint32_t scene_id);
+
+/**
+ * Returns the current scene ID, or [`GOUD_INVALID_SCENE`] if none is active.
+ */
+uint32_t goud_renderer3d_get_current_scene(struct GoudContextId context_id);
+
+/**
+ * Clears the current scene so that all objects are rendered.
+ */
+bool goud_renderer3d_clear_current_scene(struct GoudContextId context_id);
+
+/**
+ * Adds an object to a scene. Returns `true` on success.
+ */
+bool goud_renderer3d_add_object_to_scene(struct GoudContextId context_id, uint32_t scene_id, uint32_t object_id);
+
+/**
+ * Removes an object from a scene. Returns `true` if the scene contained it.
+ */
+bool goud_renderer3d_remove_object_from_scene(struct GoudContextId context_id, uint32_t scene_id, uint32_t object_id);
+
+/**
+ * Adds a model to a scene. Returns `true` on success.
+ */
+bool goud_renderer3d_add_model_to_scene(struct GoudContextId context_id, uint32_t scene_id, uint32_t model_id);
+
+/**
+ * Removes a model from a scene. Returns `true` if the scene contained it.
+ */
+bool goud_renderer3d_remove_model_from_scene(struct GoudContextId context_id, uint32_t scene_id, uint32_t model_id);
+
+/**
+ * Adds a light to a scene. Returns `true` on success.
+ */
+bool goud_renderer3d_add_light_to_scene(struct GoudContextId context_id, uint32_t scene_id, uint32_t light_id);
+
+/**
+ * Removes a light from a scene. Returns `true` if the scene contained it.
+ */
+bool goud_renderer3d_remove_light_from_scene(struct GoudContextId context_id, uint32_t scene_id, uint32_t light_id);
 
 /**
  * Creates a skinned mesh from raw vertex data.
@@ -3553,6 +3713,31 @@ int32_t goud_physics3d_remove_joint(struct GoudContextId ctx, uint64_t handle);
  * Attaches a collider to a rigid body in 3D.
  */
 int64_t goud_physics3d_add_collider(struct GoudContextId ctx, uint64_t body_handle, uint32_t shape_type, float hx, float hy, float hz, float radius, float friction, float restitution);
+
+/**
+ * Creates a capsule-based 3D character controller.
+ */
+int64_t goud_physics3d_create_character_controller(struct GoudContextId ctx, float radius, float half_height, float x, float y, float z, float max_slope_angle, float step_height);
+
+/**
+ * Moves a 3D character controller by the given displacement.
+ */
+int32_t goud_physics3d_move_character(struct GoudContextId ctx, uint64_t controller_id, float dx, float dy, float dz, float dt, float *out_x, float *out_y, float *out_z, bool *out_grounded);
+
+/**
+ * Gets the current position of a 3D character controller.
+ */
+int32_t goud_physics3d_get_character_position(struct GoudContextId ctx, uint64_t controller_id, float *out_x, float *out_y, float *out_z);
+
+/**
+ * Checks if a 3D character controller is touching the ground.
+ */
+bool goud_physics3d_is_character_grounded(struct GoudContextId ctx, uint64_t controller_id);
+
+/**
+ * Destroys a 3D character controller and its associated physics objects.
+ */
+int32_t goud_physics3d_destroy_character_controller(struct GoudContextId ctx, uint64_t controller_id);
 
 /**
  * Creates a 3D physics provider for the given context with initial gravity.

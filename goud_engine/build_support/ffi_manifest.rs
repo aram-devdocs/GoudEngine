@@ -80,6 +80,9 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/renderer3d/postprocess.rs",
     "src/ffi/renderer3d/primitives.rs",
     "src/ffi/renderer3d/skinned.rs",
+    "src/ffi/renderer3d/model.rs",
+    "src/ffi/renderer3d/animation.rs",
+    "src/ffi/renderer3d/scene.rs",
     // input module
     "src/ffi/input/keyboard.rs",
     "src/ffi/input/mouse.rs",
@@ -112,6 +115,7 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/physics/physics3d/simulation.rs",
     "src/ffi/physics/physics3d/bodies.rs",
     "src/ffi/physics/physics3d/access.rs",
+    "src/ffi/physics/physics3d/character_controller.rs",
     "src/ffi/physics/physics3d_material.rs",
     // animation module
     "src/ffi/animation/control.rs",

@@ -109,6 +109,18 @@ def gen_interface():
     if schema["types"]["NetworkPacket"].get("doc"):
         lines.append(f"/** {schema['types']['NetworkPacket']['doc']} */")
     lines.append("export interface INetworkPacket { peerId: number; data: Uint8Array; }")
+    if schema["types"].get("BoundingBox3D", {}).get("doc"):
+        lines.append(f"/** {schema['types']['BoundingBox3D']['doc']} */")
+    bb_fields = schema["types"]["BoundingBox3D"]["fields"]
+    bb_str = "; ".join(f"{to_camel(f['name'])}: number" for f in bb_fields)
+    lines.append(f"export interface IBoundingBox3D {{ {bb_str}; }}")
+    if schema["types"].get("CharacterMoveResult", {}).get("doc"):
+        lines.append(f"/** {schema['types']['CharacterMoveResult']['doc']} */")
+    cmr_parts = []
+    for f in schema["types"]["CharacterMoveResult"]["fields"]:
+        ts_ft = "boolean" if f["type"] == "bool" else "number"
+        cmr_parts.append(f"{to_camel(f['name'])}: {ts_ft}")
+    lines.append(f"export interface ICharacterMoveResult {{ {'; '.join(cmr_parts)}; }}")
     p2p_fields = schema["types"]["P2pMeshConfig"]["fields"]
     p2p_parts = []
     for f in p2p_fields:

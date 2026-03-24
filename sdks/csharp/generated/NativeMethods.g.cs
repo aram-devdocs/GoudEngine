@@ -859,6 +859,118 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern uint goud_renderer3d_postprocess_pass_count(GoudContextId context_id);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_renderer3d_load_model(GoudContextId context_id, string path_ptr);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_destroy_model(GoudContextId context_id, uint model_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_renderer3d_instantiate_model(GoudContextId context_id, uint source_model_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_set_model_material(GoudContextId context_id, uint model_id, int mesh_index, uint material_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_get_model_mesh_count(GoudContextId context_id, uint model_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_get_model_bounding_box(GoudContextId context_id, uint model_id, ref float out_min_x, ref float out_min_y, ref float out_min_z, ref float out_max_x, ref float out_max_y, ref float out_max_z);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_set_model_position(GoudContextId context_id, uint model_id, float x, float y, float z);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_set_model_rotation(GoudContextId context_id, uint model_id, float x, float y, float z);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_set_model_scale(GoudContextId context_id, uint model_id, float x, float y, float z);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_get_animation_count(GoudContextId context_id, uint model_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_get_animation_name(GoudContextId context_id, uint model_id, int anim_index, IntPtr out_buf, int buf_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_play_animation(GoudContextId context_id, uint instance_id, int anim_index, [MarshalAs(UnmanagedType.U1)] bool looping);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_stop_animation(GoudContextId context_id, uint instance_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_set_animation_speed(GoudContextId context_id, uint instance_id, float speed);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_blend_animations(GoudContextId context_id, uint instance_id, int anim_a, int anim_b, float blend_factor);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_transition_animation(GoudContextId context_id, uint instance_id, int target_anim, float duration);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_is_animation_playing(GoudContextId context_id, uint instance_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_renderer3d_get_animation_progress(GoudContextId context_id, uint instance_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_update_animations(GoudContextId context_id, float delta_time);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_renderer3d_create_scene(GoudContextId context_id, string name_ptr);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_destroy_scene(GoudContextId context_id, uint scene_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_set_current_scene(GoudContextId context_id, uint scene_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_renderer3d_get_current_scene(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_add_object_to_scene(GoudContextId context_id, uint scene_id, uint object_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_remove_object_from_scene(GoudContextId context_id, uint scene_id, uint object_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_add_model_to_scene(GoudContextId context_id, uint scene_id, uint model_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_remove_model_from_scene(GoudContextId context_id, uint scene_id, uint model_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_add_light_to_scene(GoudContextId context_id, uint scene_id, uint light_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_remove_light_from_scene(GoudContextId context_id, uint scene_id, uint light_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_clear_current_scene(GoudContextId context_id);
+
         // input
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
@@ -1638,6 +1750,22 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics3d_get_timestep(GoudContextId ctx, ref float out_dt);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long goud_physics3d_create_character_controller(GoudContextId ctx, float radius, float half_height, float x, float y, float z, float max_slope_angle, float step_height);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_move_character(GoudContextId ctx, ulong controller_id, float dx, float dy, float dz, float dt, ref float out_x, ref float out_y, ref float out_z, IntPtr out_grounded);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_get_character_position(GoudContextId ctx, ulong controller_id, ref float out_x, ref float out_y, ref float out_z);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_physics3d_is_character_grounded(GoudContextId ctx, ulong controller_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_physics3d_destroy_character_controller(GoudContextId ctx, ulong controller_id);
 
         // animation_controller
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

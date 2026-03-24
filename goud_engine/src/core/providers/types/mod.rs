@@ -13,8 +13,8 @@ mod render;
 pub use audio::{AudioChannel, PlayConfig};
 pub use capabilities::{AudioCapabilities, PhysicsCapabilities, RenderCapabilities};
 pub use handles::{
-    BodyHandle, BufferHandle, ColliderHandle, FrameContext, JointHandle, PipelineHandle,
-    PlaybackId, RenderTargetHandle, ShaderHandle, SoundHandle, TextureHandle,
+    BodyHandle, BufferHandle, CharacterControllerHandle, ColliderHandle, FrameContext, JointHandle,
+    PipelineHandle, PlaybackId, RenderTargetHandle, ShaderHandle, SoundHandle, TextureHandle,
 };
 pub use physics::{
     BodyDesc, ColliderDesc, CollisionEvent, CollisionEventKind, ContactPair, DebugShape, JointDesc,
@@ -30,8 +30,8 @@ pub use render::{
 // =============================================================================
 
 pub use super::types3d::{
-    BodyDesc3D, ColliderDesc3D, ContactPair3D, DebugShape3D, JointDesc3D, PhysicsCapabilities3D,
-    RaycastHit3D,
+    BodyDesc3D, CharacterControllerDesc3D, CharacterMoveResult3D, ColliderDesc3D, ContactPair3D,
+    DebugShape3D, JointDesc3D, PhysicsCapabilities3D, RaycastHit3D,
 };
 
 // =============================================================================

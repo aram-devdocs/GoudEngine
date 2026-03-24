@@ -10,18 +10,23 @@
 //! All GPU operations go through the [`crate::libs::graphics::backend::RenderBackend`] trait,
 //! enabling backend-agnostic rendering (OpenGL, wgpu, etc.).
 
+mod animation;
 mod core;
 mod core_materials;
+mod core_models;
 mod core_particles;
 mod core_primitives;
+mod core_scenes;
 mod core_skinned;
 mod debug_draw;
 mod material;
 mod mesh;
+mod model;
 mod postprocess;
 mod render;
 mod render_helpers;
 mod render_pass;
+pub mod scene;
 mod shaders;
 mod shadow;
 mod skinned_mesh;
@@ -32,7 +37,9 @@ mod types;
 mod tests;
 
 // Public API re-exports — the external interface is unchanged.
+pub use animation::{AnimationPlayer, AnimationState, AnimationTransition};
 pub use core::Renderer3D;
+pub use scene::Scene3D;
 pub use texture::TextureManagerTrait;
 pub use types::{
     AntiAliasingMode, BloomPass, Bone3D, Camera3D, ColorGradePass, FogConfig, GaussianBlurPass,

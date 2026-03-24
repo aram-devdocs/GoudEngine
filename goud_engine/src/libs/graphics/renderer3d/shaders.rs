@@ -113,6 +113,33 @@ pub(super) fn resolve_main_uniforms(
     }
 }
 
+/// Cached uniform locations for the skinned mesh shader.
+#[derive(Clone)]
+pub(super) struct SkinnedUniforms {
+    /// Standard scene uniforms (model, view, projection, lights, etc.).
+    pub(super) main: MainUniforms,
+    /// Uniform locations for `boneMatrices[i]` (one per bone slot).
+    pub(super) bone_matrices: Vec<i32>,
+}
+
+pub(super) fn resolve_skinned_uniforms(
+    backend: &dyn RenderBackend,
+    shader: ShaderHandle,
+) -> SkinnedUniforms {
+    let main = resolve_main_uniforms(backend, shader);
+    let loc = |name: &str| -> i32 { uniform_location_or_inactive(backend, shader, name) };
+
+    let mut bone_matrices = Vec::with_capacity(super::skinned_mesh::MAX_BONES);
+    for i in 0..super::skinned_mesh::MAX_BONES {
+        bone_matrices.push(loc(&format!("boneMatrices[{i}]")));
+    }
+
+    SkinnedUniforms {
+        main,
+        bone_matrices,
+    }
+}
+
 pub(super) fn resolve_grid_uniforms(
     backend: &dyn RenderBackend,
     shader: ShaderHandle,
