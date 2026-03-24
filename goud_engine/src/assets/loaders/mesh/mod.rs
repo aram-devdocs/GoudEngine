@@ -21,8 +21,6 @@
 //! let handle = server.load::<MeshAsset>("models/scene.glb");
 //! ```
 mod asset;
-#[cfg(feature = "native")]
-mod gltf_parser;
 mod loader;
 #[cfg(feature = "native")]
 mod obj_parser;
