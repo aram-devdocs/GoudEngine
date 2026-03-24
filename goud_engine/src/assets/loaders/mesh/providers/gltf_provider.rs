@@ -50,7 +50,6 @@ impl ModelProvider for GltfProvider {
         let mut all_bone_indices: Vec<[u32; 4]> = Vec::new();
         let mut all_bone_weights: Vec<[f32; 4]> = Vec::new();
 
-        let mut node_index = 0;
         for scene in scenes {
             for root_node in scene.nodes() {
                 process_node(
@@ -65,7 +64,6 @@ impl ModelProvider for GltfProvider {
                     &mut has_bounds,
                     &mut all_bone_indices,
                     &mut all_bone_weights,
-                    &mut node_index,
                 );
             }
         }

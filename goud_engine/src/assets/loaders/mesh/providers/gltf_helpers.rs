@@ -107,14 +107,13 @@ pub(super) fn process_node(
     has_bounds: &mut bool,
     all_bone_indices: &mut Vec<[u32; 4]>,
     all_bone_weights: &mut Vec<[f32; 4]>,
-    node_index: &mut usize,
 ) {
     use crate::core::types::{MeshBounds, MeshVertex, SubMesh};
 
     // If this node has a mesh, process it.
     if let Some(mesh) = node.mesh() {
         let node_name = if let Some(name) = node.name() {
-            format!("{}", name)
+            name.to_string()
         } else {
             format!("node_{}", node.index())
         };
@@ -208,7 +207,7 @@ pub(super) fn process_node(
             let mesh_name = mesh.name().unwrap_or("mesh");
             let primitive_idx = primitive.index();
 
-            // Construct submesh name: node_index.mesh_name.primitive_index
+            // Construct submesh name: node_name.mesh_name.primitive_index
             let submesh_name = format!("{}.{}.primitive_{}", node_name, mesh_name, primitive_idx);
 
             let mut material = extract_primitive_material(&primitive);
@@ -238,7 +237,6 @@ pub(super) fn process_node(
     }
 
     // Process children recursively.
-    *node_index += 1;
     for child in node.children() {
         process_node(
             &child,
@@ -252,7 +250,6 @@ pub(super) fn process_node(
             has_bounds,
             all_bone_indices,
             all_bone_weights,
-            node_index,
         );
     }
 }
