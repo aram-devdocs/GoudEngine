@@ -60,12 +60,27 @@ impl Renderer3D {
             let end = (start + count).min(mesh.indices.len());
             let sub_indices = &mesh.indices[start..end];
 
+            let num_verts = all_interleaved.len() / floats_per_vertex;
             let mut vertices = Vec::with_capacity(count * floats_per_vertex);
+            let mut oob_count = 0u32;
             for &idx in sub_indices {
-                let base = (idx as usize) * floats_per_vertex;
-                if base + floats_per_vertex <= all_interleaved.len() {
+                let vidx = idx as usize;
+                if vidx < num_verts {
+                    let base = vidx * floats_per_vertex;
                     vertices.extend_from_slice(&all_interleaved[base..base + floats_per_vertex]);
+                } else {
+                    oob_count += 1;
+                    // Pad with zeros for out-of-bounds indices
+                    vertices.resize(vertices.len() + floats_per_vertex, 0.0f32);
                 }
+            }
+            if oob_count > 0 {
+                log::warn!(
+                    "sub-mesh has {} out-of-bounds indices (max vertex={}, total_verts={})",
+                    oob_count,
+                    sub_indices.iter().max().unwrap_or(&0),
+                    num_verts
+                );
             }
 
             if vertices.is_empty() {

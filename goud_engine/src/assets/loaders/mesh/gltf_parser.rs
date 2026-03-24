@@ -183,7 +183,6 @@ fn append_mesh_primitives(
             .map(|position| transform_position(transform, position))
             .collect();
 
-        let default_normal = transform_normal(transform, [0.0, 0.0, 1.0]);
         let normals: Vec<[f32; 3]> = reader
             .read_normals()
             .map(|normals| {
@@ -191,7 +190,15 @@ fn append_mesh_primitives(
                     .map(|normal| transform_normal(transform, normal))
                     .collect()
             })
-            .unwrap_or_else(|| vec![default_normal; positions.len()]);
+            .unwrap_or_else(|| {
+                // Compute per-face normals from triangle geometry when normals are missing
+                let face_normals = compute_face_normals(&positions);
+                // Apply transform to each normal
+                face_normals
+                    .into_iter()
+                    .map(|normal| transform_normal(transform, normal))
+                    .collect()
+            });
 
         let uvs: Vec<[f32; 2]> = reader
             .read_tex_coords(0)
@@ -236,4 +243,47 @@ fn append_mesh_primitives(
     }
 
     Ok(())
+}
+
+#[cfg(feature = "native")]
+/// Compute per-face (flat-shaded) normals from triangle vertex positions.
+///
+/// For each triangle (3 consecutive vertices), computes the face normal from the
+/// cross product of two edge vectors and assigns it to all 3 vertices of that triangle.
+/// Falls back to a default upward normal for degenerate triangles.
+fn compute_face_normals(positions: &[[f32; 3]]) -> Vec<[f32; 3]> {
+    let mut normals = vec![[0.0, 0.0, 1.0]; positions.len()];
+
+    for tri in 0..(positions.len() / 3) {
+        let i0 = tri * 3;
+        let i1 = tri * 3 + 1;
+        let i2 = tri * 3 + 2;
+
+        let v0 = positions[i0];
+        let v1 = positions[i1];
+        let v2 = positions[i2];
+
+        // Edge vectors
+        let e1 = [v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]];
+        let e2 = [v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]];
+
+        // Cross product: e1 × e2
+        let nx = e1[1] * e2[2] - e1[2] * e2[1];
+        let ny = e1[2] * e2[0] - e1[0] * e2[2];
+        let nz = e1[0] * e2[1] - e1[1] * e2[0];
+
+        // Normalize
+        let len = (nx * nx + ny * ny + nz * nz).sqrt();
+        let normal = if len > 1e-8 {
+            [nx / len, ny / len, nz / len]
+        } else {
+            [0.0, 0.0, 1.0] // Degenerate triangle: use default normal
+        };
+
+        normals[i0] = normal;
+        normals[i1] = normal;
+        normals[i2] = normal;
+    }
+
+    normals
 }
