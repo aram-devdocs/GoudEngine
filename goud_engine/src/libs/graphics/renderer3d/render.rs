@@ -207,7 +207,10 @@ impl Renderer3D {
         }
 
         self.stats.visible_objects = obj_snapshots.len() as u32;
-        self.stats.culled_objects = self.stats.total_objects.saturating_sub(self.stats.visible_objects);
+        self.stats.culled_objects = self
+            .stats
+            .total_objects
+            .saturating_sub(self.stats.visible_objects);
 
         // Snapshot filtered lights for uniform upload.
         let filtered_lights: Vec<super::types::Light> = self
@@ -250,22 +253,26 @@ impl Renderer3D {
             } else {
                 self.backend.set_uniform_int(self.uniforms.use_texture, 0);
             }
-            self.backend
-                .set_uniform_vec4(self.uniforms.object_color, cmd.color[0], cmd.color[1], cmd.color[2], cmd.color[3]);
+            self.backend.set_uniform_vec4(
+                self.uniforms.object_color,
+                cmd.color[0],
+                cmd.color[1],
+                cmd.color[2],
+                cmd.color[3],
+            );
             let _ = self.backend.bind_buffer(cmd.buffer);
             self.backend.set_vertex_attributes(&self.object_layout);
-            let _ = self
-                .backend
-                .draw_arrays(PrimitiveTopology::Triangles, 0, cmd.vertex_count as u32);
+            let _ =
+                self.backend
+                    .draw_arrays(PrimitiveTopology::Triangles, 0, cmd.vertex_count as u32);
             self.stats.draw_calls += 1;
         }
 
         // Skinned mesh rendering pass — uses dedicated skinned shader with bone uniforms.
         if !self.skinned_meshes.is_empty() {
-            let gpu_skinning = matches!(
-                self.config.skinning.mode,
-                super::config::SkinningMode::Gpu
-            ) && self.backend.supports_storage_buffers();
+            let gpu_skinning =
+                matches!(self.config.skinning.mode, super::config::SkinningMode::Gpu)
+                    && self.backend.supports_storage_buffers();
 
             let _ = self.backend.bind_shader(self.skinned_shader_handle);
             let skinned_unis = self.skinned_uniforms.clone();
@@ -349,7 +356,7 @@ impl Renderer3D {
             let _ = self.backend.bind_shader(self.shader_handle);
         }
 
-        // Skinned model rendering pass (single-instance).
+        // Single-instance skinned model rendering pass.
         self.render_skinned_models(
             &view_arr,
             &proj_arr,
@@ -360,8 +367,8 @@ impl Renderer3D {
             texture_manager,
         );
 
-        // Instanced skinned rendering pass: groups instances by source model and
-        // draws all instances of the same model in a single draw call.
+        // Instanced skinned rendering: groups skinned instances by source model
+        // and draws with one instanced draw call per unique model.
         self.render_instanced_skinned_models(
             &view_arr,
             &proj_arr,

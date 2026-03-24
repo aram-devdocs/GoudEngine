@@ -46,7 +46,11 @@ pub(super) fn set_vertex_attributes_cached(backend: &mut OpenGLBackend, layout: 
     // SAFETY: Attribute location and type values come from validated VertexLayout;
     // a VAO/VBO must be bound by the caller before this is invoked.
     unsafe {
-        apply_attrib_mask_diff(backend.enabled_attrib_mask, new_mask, backend.max_vertex_attribs);
+        apply_attrib_mask_diff(
+            backend.enabled_attrib_mask,
+            new_mask,
+            backend.max_vertex_attribs,
+        );
 
         for attr in &layout.attributes {
             let gl_type = conversions::attribute_type_to_gl_type(attr.attribute_type);

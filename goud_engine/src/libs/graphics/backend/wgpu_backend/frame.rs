@@ -65,15 +65,14 @@ impl FrameOps for WgpuBackend {
             .map(|cmd| {
                 cmd.storage_buffer.and_then(|buf_handle| {
                     self.buffers.get(&buf_handle).map(|meta| {
-                        self.device
-                            .create_bind_group(&wgpu::BindGroupDescriptor {
-                                label: Some("skinning-storage-bg"),
-                                layout: &self.storage_bind_group_layout,
-                                entries: &[wgpu::BindGroupEntry {
-                                    binding: 0,
-                                    resource: meta.buffer.as_entire_binding(),
-                                }],
-                            })
+                        self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                            label: Some("skinning-storage-bg"),
+                            layout: &self.storage_bind_group_layout,
+                            entries: &[wgpu::BindGroupEntry {
+                                binding: 0,
+                                resource: meta.buffer.as_entire_binding(),
+                            }],
+                        })
                     })
                 })
             })

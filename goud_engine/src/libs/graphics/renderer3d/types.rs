@@ -195,7 +195,9 @@ impl Default for BoundingSphere {
 }
 
 /// Compute a bounding sphere from a flat vertex buffer (8 floats per vertex: pos+normal+uv).
-pub(in crate::libs::graphics::renderer3d) fn compute_bounding_sphere(vertices: &[f32]) -> BoundingSphere {
+pub(in crate::libs::graphics::renderer3d) fn compute_bounding_sphere(
+    vertices: &[f32],
+) -> BoundingSphere {
     const FPV: usize = 8;
     let vert_count = vertices.len() / FPV;
     if vert_count == 0 {

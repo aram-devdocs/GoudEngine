@@ -24,11 +24,11 @@ use super::shaders::{
     resolve_skinned_uniforms, GridUniforms, InstancedSkinnedUniforms, MainUniforms,
     SkinnedUniforms, FRAGMENT_SHADER_3D, FRAGMENT_SHADER_3D_WGSL, GRID_FRAGMENT_SHADER,
     GRID_FRAGMENT_SHADER_WGSL, GRID_VERTEX_SHADER, GRID_VERTEX_SHADER_WGSL,
-    INSTANCED_FRAGMENT_SHADER_3D, INSTANCED_FRAGMENT_SHADER_3D_WGSL, INSTANCED_SKINNED_VERTEX_SHADER,
-    INSTANCED_SKINNED_VERTEX_SHADER_WGSL, INSTANCED_VERTEX_SHADER_3D,
-    INSTANCED_VERTEX_SHADER_3D_WGSL, POSTPROCESS_FRAGMENT_SHADER, POSTPROCESS_FRAGMENT_SHADER_WGSL,
-    POSTPROCESS_VERTEX_SHADER, POSTPROCESS_VERTEX_SHADER_WGSL, SKINNED_VERTEX_SHADER,
-    SKINNED_VERTEX_SHADER_WGSL, VERTEX_SHADER_3D, VERTEX_SHADER_3D_WGSL,
+    INSTANCED_FRAGMENT_SHADER_3D, INSTANCED_FRAGMENT_SHADER_3D_WGSL,
+    INSTANCED_SKINNED_VERTEX_SHADER, INSTANCED_SKINNED_VERTEX_SHADER_WGSL,
+    INSTANCED_VERTEX_SHADER_3D, INSTANCED_VERTEX_SHADER_3D_WGSL, POSTPROCESS_FRAGMENT_SHADER,
+    POSTPROCESS_FRAGMENT_SHADER_WGSL, POSTPROCESS_VERTEX_SHADER, POSTPROCESS_VERTEX_SHADER_WGSL,
+    SKINNED_VERTEX_SHADER, SKINNED_VERTEX_SHADER_WGSL, VERTEX_SHADER_3D, VERTEX_SHADER_3D_WGSL,
 };
 use super::types::{
     AntiAliasingMode, Camera3D, FogConfig, GridConfig, InstancedMesh, Light, Material3D, Object3D,
@@ -127,6 +127,12 @@ pub struct Renderer3D {
     pub(super) skinned_object_ids: std::collections::HashSet<u32>,
     /// Game-developer-controlled configuration for the 3D renderer.
     pub(super) config: Render3DConfig,
+    /// Reusable scratch buffer for CPU skinning output (avoids per-submesh allocation).
+    pub(super) skin_scratch_buffer: Vec<f32>,
+    /// Persistent GPU buffer for instanced skinned per-instance data (reused across frames).
+    pub(super) instanced_skinned_instance_buffer: Option<BufferHandle>,
+    /// Current allocated size in bytes of `instanced_skinned_instance_buffer`.
+    pub(super) instanced_skinned_instance_buffer_size: usize,
 }
 
 #[allow(missing_docs)]
@@ -293,6 +299,9 @@ impl Renderer3D {
             shadows_enabled: true,
             skinned_object_ids: std::collections::HashSet::new(),
             config: Render3DConfig::default(),
+            skin_scratch_buffer: Vec::new(),
+            instanced_skinned_instance_buffer: None,
+            instanced_skinned_instance_buffer_size: 0,
         })
     }
     pub fn set_object_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
@@ -539,6 +548,9 @@ impl Drop for Renderer3D {
             self.backend.destroy_buffer(self.debug_draw_buffer);
         }
         if let Some(buf) = self.bone_storage_buffer {
+            self.backend.destroy_buffer(buf);
+        }
+        if let Some(buf) = self.instanced_skinned_instance_buffer {
             self.backend.destroy_buffer(buf);
         }
         for &sh in &[

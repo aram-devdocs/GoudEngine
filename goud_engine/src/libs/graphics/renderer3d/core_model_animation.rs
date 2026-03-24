@@ -101,10 +101,8 @@ impl Renderer3D {
         //
         // Skipped when GPU skinning is active (bone matrices are uploaded to a
         // storage buffer instead, and the vertex shader performs the deformation).
-        let gpu_skinning = matches!(
-            self.config.skinning.mode,
-            super::config::SkinningMode::Gpu
-        ) && self.backend.supports_storage_buffers();
+        let gpu_skinning = matches!(self.config.skinning.mode, super::config::SkinningMode::Gpu)
+            && self.backend.supports_storage_buffers();
 
         if !gpu_skinning {
             struct SkinWork {
@@ -152,8 +150,8 @@ impl Renderer3D {
                     let bw = unsafe { &*upload.bone_weights };
                     let bone_mats = unsafe { &*bone_matrices };
 
-                    let deformed = cpu_skin_submesh(bind_verts, bi, bw, bone_mats);
-                    let data: &[u8] = bytemuck::cast_slice(&deformed);
+                    cpu_skin_submesh(bind_verts, bi, bw, bone_mats, &mut self.skin_scratch_buffer);
+                    let data: &[u8] = bytemuck::cast_slice(&self.skin_scratch_buffer);
                     if let Err(e) = self.backend.update_buffer(upload.buffer_handle, 0, data) {
                         log::error!("CPU skinning buffer upload failed: {e}");
                     }
@@ -215,17 +213,20 @@ const SKIN_WEIGHT_EPSILON: f32 = 1e-6;
 /// The bind-pose buffer uses the standard 8-float layout per vertex:
 /// `[pos.x, pos.y, pos.z, norm.x, norm.y, norm.z, uv.u, uv.v]`.
 ///
-/// Returns a new buffer with deformed positions and normals, ready for
-/// GPU upload via `update_buffer`.
+/// Writes deformed positions and normals into `out`, which is resized and
+/// populated from `bind_verts` as needed. Reusing a caller-owned scratch
+/// buffer across frames avoids per-call allocation.
 fn cpu_skin_submesh(
     bind_verts: &[f32],
     bone_indices: &[[u32; 4]],
     bone_weights: &[[f32; 4]],
     bone_matrices: &[[f32; 16]],
-) -> Vec<f32> {
+    out: &mut Vec<f32>,
+) {
     const FPV: usize = 8; // floats per vertex
     let vert_count = bind_verts.len() / FPV;
-    let mut out = bind_verts.to_vec();
+    out.resize(bind_verts.len(), 0.0);
+    out.copy_from_slice(bind_verts);
 
     for v in 0..vert_count {
         let base = v * FPV;
@@ -305,6 +306,4 @@ fn cpu_skin_submesh(
         out[base + 5] = sn[2];
         // UV (base+6, base+7) unchanged.
     }
-
-    out
 }
