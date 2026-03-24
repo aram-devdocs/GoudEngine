@@ -25,11 +25,11 @@ fn gather_skin_uploads(
 ) -> Vec<SkinUpload> {
     let sub_count = model.bind_pose_vertices.len().min(obj_ids.len());
     let mut uploads = Vec::with_capacity(sub_count);
-    for i in 0..sub_count {
+    for (i, &obj_id) in obj_ids.iter().enumerate().take(sub_count) {
         if model.bind_pose_bone_indices[i].is_empty() {
             continue;
         }
-        if let Some(obj) = objects.get(&obj_ids[i]) {
+        if let Some(obj) = objects.get(&obj_id) {
             uploads.push(SkinUpload {
                 buffer_handle: obj.buffer,
                 bind_verts: &model.bind_pose_vertices[i] as *const _,
@@ -42,6 +42,18 @@ fn gather_skin_uploads(
 }
 
 impl Renderer3D {
+    /// Resolve the source [`Model3D`] for a model or instance ID.
+    ///
+    /// For a model ID this returns the model itself. For an instance ID it
+    /// follows `source_model_id` to return the owning model.
+    fn resolve_source_model(&self, id: u32) -> Option<&Model3D> {
+        self.models.get(&id).or_else(|| {
+            self.model_instances
+                .get(&id)
+                .and_then(|inst| self.models.get(&inst.source_model_id))
+        })
+    }
+
     /// Advance all animation players by `dt` seconds, compute bone matrices,
     /// and apply CPU skinning to deform vertex buffers.
     pub fn update_animations(&mut self, dt: f32) {
@@ -57,13 +69,7 @@ impl Renderer3D {
             player_ids
                 .iter()
                 .filter_map(|&id| {
-                    let model = if self.models.contains_key(&id) {
-                        self.models.get(&id)
-                    } else {
-                        self.model_instances
-                            .get(&id)
-                            .and_then(|inst| self.models.get(&inst.source_model_id))
-                    }?;
+                    let model = self.resolve_source_model(id)?;
                     let skel = model.skeleton.as_ref()?;
                     Some((id, skel as *const SkeletonData, &model.animations as *const _))
                 })
@@ -91,15 +97,7 @@ impl Renderer3D {
         let mut work_items: Vec<SkinWork> = Vec::new();
 
         for &id in &player_ids {
-            // Resolve the model that owns the bind-pose data.
-            let model = if self.models.contains_key(&id) {
-                self.models.get(&id)
-            } else {
-                self.model_instances
-                    .get(&id)
-                    .and_then(|inst| self.models.get(&inst.source_model_id))
-            };
-            let model = match model {
+            let model = match self.resolve_source_model(id) {
                 Some(m) if !m.bind_pose_bone_indices.is_empty() => m,
                 _ => continue,
             };
@@ -147,32 +145,14 @@ impl Renderer3D {
 
     /// Returns the number of animations in a model.
     pub fn get_animation_count(&self, model_id: u32) -> Option<usize> {
-        if let Some(m) = self.models.get(&model_id) {
-            Some(m.animations.len())
-        } else if let Some(inst) = self.model_instances.get(&model_id) {
-            self.models
-                .get(&inst.source_model_id)
-                .map(|m| m.animations.len())
-        } else {
-            None
-        }
+        self.resolve_source_model(model_id)
+            .map(|m| m.animations.len())
     }
 
     /// Returns the name of an animation by index.
     pub fn get_animation_name(&self, model_id: u32, anim_index: usize) -> Option<String> {
-        let animations = if let Some(m) = self.models.get(&model_id) {
-            &m.animations
-        } else if let Some(inst) = self.model_instances.get(&model_id) {
-            if let Some(m) = self.models.get(&inst.source_model_id) {
-                &m.animations
-            } else {
-                return None;
-            }
-        } else {
-            return None;
-        };
-
-        animations.get(anim_index).map(|a| a.name.clone())
+        self.resolve_source_model(model_id)
+            .and_then(|m| m.animations.get(anim_index).map(|a| a.name.clone()))
     }
 
     /// Returns a reference to the animation player for a model/instance, if any.
@@ -190,21 +170,20 @@ impl Renderer3D {
         &self,
         id: u32,
     ) -> Option<&[crate::assets::loaders::animation::KeyframeAnimation]> {
-        if let Some(m) = self.models.get(&id) {
-            Some(&m.animations)
-        } else if let Some(inst) = self.model_instances.get(&id) {
-            self.models
-                .get(&inst.source_model_id)
-                .map(|m| m.animations.as_slice())
-        } else {
-            None
-        }
+        self.resolve_source_model(id)
+            .map(|m| m.animations.as_slice())
     }
 }
 
 // ============================================================================
 // CPU skinning
 // ============================================================================
+
+/// Minimum accumulated bone weight for a vertex to be skinned.
+///
+/// Vertices with total weight below this threshold retain their original
+/// bind-pose position and normal instead of collapsing to the origin.
+const SKIN_WEIGHT_EPSILON: f32 = 1e-6;
 
 /// Apply skeletal deformation to a bind-pose sub-mesh on the CPU.
 ///
@@ -241,6 +220,7 @@ fn cpu_skin_submesh(
 
         let mut sp = [0.0f32; 3];
         let mut sn = [0.0f32; 3];
+        let mut total_weight = 0.0f32;
 
         for i in 0..4 {
             let w = bw[i];
@@ -251,6 +231,7 @@ fn cpu_skin_submesh(
             if idx >= bone_matrices.len() {
                 continue;
             }
+            total_weight += w;
             let m = &bone_matrices[idx]; // column-major [f32; 16]
             // Transform position: M * [pos, 1]
             sp[0] += w * (m[0] * pos[0] + m[4] * pos[1] + m[8] * pos[2] + m[12]);
@@ -262,9 +243,15 @@ fn cpu_skin_submesh(
             sn[2] += w * (m[2] * nrm[0] + m[6] * nrm[1] + m[10] * nrm[2]);
         }
 
+        // When total weight is zero the vertex has no bone influence -- keep the
+        // original bind-pose position and normal so it does not collapse to the origin.
+        if total_weight < SKIN_WEIGHT_EPSILON {
+            continue;
+        }
+
         // Normalize the skinned normal.
         let len = (sn[0] * sn[0] + sn[1] * sn[1] + sn[2] * sn[2]).sqrt();
-        if len > 1e-8 {
+        if len > SKIN_WEIGHT_EPSILON {
             sn[0] /= len;
             sn[1] /= len;
             sn[2] /= len;

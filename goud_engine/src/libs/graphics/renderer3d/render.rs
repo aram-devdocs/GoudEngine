@@ -468,7 +468,6 @@ impl Renderer3D {
             self.backend.disable_blending();
             self.backend.unbind_shader();
         }
-
         self.backend.disable_culling();
     }
 

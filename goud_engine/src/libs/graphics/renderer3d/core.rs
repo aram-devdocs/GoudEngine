@@ -116,69 +116,52 @@ impl Renderer3D {
         window_width: u32,
         window_height: u32,
     ) -> Result<Self, String> {
-        let (vertex_shader, fragment_shader) = match backend.shader_language() {
-            ShaderLanguage::Wgsl => (VERTEX_SHADER_3D_WGSL, FRAGMENT_SHADER_3D_WGSL),
-            ShaderLanguage::Glsl => (VERTEX_SHADER_3D, FRAGMENT_SHADER_3D),
-        };
-        let (instanced_vertex_shader, instanced_fragment_shader) = match backend.shader_language() {
-            ShaderLanguage::Wgsl => (
-                INSTANCED_VERTEX_SHADER_3D_WGSL,
-                INSTANCED_FRAGMENT_SHADER_3D_WGSL,
-            ),
-            ShaderLanguage::Glsl => (INSTANCED_VERTEX_SHADER_3D, INSTANCED_FRAGMENT_SHADER_3D),
-        };
-        let (grid_vertex_shader, grid_fragment_shader) = match backend.shader_language() {
-            ShaderLanguage::Wgsl => (GRID_VERTEX_SHADER_WGSL, GRID_FRAGMENT_SHADER_WGSL),
-            ShaderLanguage::Glsl => (GRID_VERTEX_SHADER, GRID_FRAGMENT_SHADER),
-        };
-        let (postprocess_vertex_shader, postprocess_fragment_shader) =
-            match backend.shader_language() {
-                ShaderLanguage::Wgsl => (
-                    POSTPROCESS_VERTEX_SHADER_WGSL,
-                    POSTPROCESS_FRAGMENT_SHADER_WGSL,
-                ),
-                ShaderLanguage::Glsl => (POSTPROCESS_VERTEX_SHADER, POSTPROCESS_FRAGMENT_SHADER),
-            };
+        // Pick GLSL vs WGSL shader pair for the backend's shader language.
+        let wgsl = matches!(backend.shader_language(), ShaderLanguage::Wgsl);
+        macro_rules! shaders { ($gl:expr, $wg:expr) => { if wgsl { $wg } else { $gl } }; }
 
-        let shader_handle = backend
-            .create_shader(vertex_shader, fragment_shader)
-            .map_err(|e| format!("Main 3D shader: {e}"))?;
+        let (vs, fs) = shaders!(
+            (VERTEX_SHADER_3D, FRAGMENT_SHADER_3D),
+            (VERTEX_SHADER_3D_WGSL, FRAGMENT_SHADER_3D_WGSL)
+        );
+        let shader_handle = backend.create_shader(vs, fs).map_err(|e| format!("Main 3D shader: {e}"))?;
         let uniforms = resolve_main_uniforms(backend.as_ref(), shader_handle);
 
-        let instanced_shader_handle = backend
-            .create_shader(instanced_vertex_shader, instanced_fragment_shader)
-            .map_err(|e| format!("Instanced 3D shader: {e}"))?;
+        let (vs, fs) = shaders!(
+            (INSTANCED_VERTEX_SHADER_3D, INSTANCED_FRAGMENT_SHADER_3D),
+            (INSTANCED_VERTEX_SHADER_3D_WGSL, INSTANCED_FRAGMENT_SHADER_3D_WGSL)
+        );
+        let instanced_shader_handle = backend.create_shader(vs, fs).map_err(|e| format!("Instanced 3D shader: {e}"))?;
         let instanced_uniforms = resolve_main_uniforms(backend.as_ref(), instanced_shader_handle);
 
-        let grid_shader_handle = backend
-            .create_shader(grid_vertex_shader, grid_fragment_shader)
-            .map_err(|e| format!("Grid shader: {e}"))?;
+        let (vs, fs) = shaders!(
+            (GRID_VERTEX_SHADER, GRID_FRAGMENT_SHADER),
+            (GRID_VERTEX_SHADER_WGSL, GRID_FRAGMENT_SHADER_WGSL)
+        );
+        let grid_shader_handle = backend.create_shader(vs, fs).map_err(|e| format!("Grid shader: {e}"))?;
         let grid_uniforms = resolve_grid_uniforms(backend.as_ref(), grid_shader_handle);
-        let postprocess_shader_handle = backend
-            .create_shader(postprocess_vertex_shader, postprocess_fragment_shader)
-            .map_err(|e| format!("Postprocess shader: {e}"))?;
 
-        // Skinned mesh shader — uses the same fragment shader as the main 3D shader.
-        let (skinned_vertex_src, skinned_fragment_src) = match backend.shader_language() {
-            ShaderLanguage::Wgsl => (SKINNED_VERTEX_SHADER_WGSL, FRAGMENT_SHADER_3D_WGSL),
-            ShaderLanguage::Glsl => (SKINNED_VERTEX_SHADER, FRAGMENT_SHADER_3D),
-        };
-        let skinned_shader_handle = backend
-            .create_shader(skinned_vertex_src, skinned_fragment_src)
-            .map_err(|e| format!("Skinned 3D shader: {e}"))?;
+        let (vs, fs) = shaders!(
+            (POSTPROCESS_VERTEX_SHADER, POSTPROCESS_FRAGMENT_SHADER),
+            (POSTPROCESS_VERTEX_SHADER_WGSL, POSTPROCESS_FRAGMENT_SHADER_WGSL)
+        );
+        let postprocess_shader_handle = backend.create_shader(vs, fs).map_err(|e| format!("Postprocess shader: {e}"))?;
+
+        // Skinned mesh shader uses the same fragment shader as the main 3D shader.
+        let (vs, fs) = shaders!(
+            (SKINNED_VERTEX_SHADER, FRAGMENT_SHADER_3D),
+            (SKINNED_VERTEX_SHADER_WGSL, FRAGMENT_SHADER_3D_WGSL)
+        );
+        let skinned_shader_handle = backend.create_shader(vs, fs).map_err(|e| format!("Skinned 3D shader: {e}"))?;
         let skinned_uniforms = resolve_skinned_uniforms(backend.as_ref(), skinned_shader_handle);
 
-        let grid_layout = grid_vertex_layout();
-        let instance_layout = instance_vertex_layout();
-        let postprocess_layout = postprocess_vertex_layout();
         let (grid_buffer, grid_vertex_count) = create_grid_mesh(backend.as_mut(), 20.0, 20)?;
         let (axis_buffer, axis_vertex_count) = create_axis_mesh(backend.as_mut(), 5.0)?;
-        let particle_vertices = generate_plane_vertices(1.0, 1.0);
-        let particle_quad_vertex_count = (particle_vertices.len() / 8) as u32;
-        let particle_quad_buffer = upload_buffer(backend.as_mut(), &particle_vertices)
+        let particle_verts = generate_plane_vertices(1.0, 1.0);
+        let particle_quad_vertex_count = (particle_verts.len() / 8) as u32;
+        let particle_quad_buffer = upload_buffer(backend.as_mut(), &particle_verts)
             .map_err(|e| format!("Particle quad buffer: {e}"))?;
-        let postprocess_quad = create_postprocess_quad();
-        let postprocess_quad_buffer = upload_buffer(backend.as_mut(), &postprocess_quad)
+        let postprocess_quad_buffer = upload_buffer(backend.as_mut(), &create_postprocess_quad())
             .map_err(|e| format!("Postprocess quad buffer: {e}"))?;
 
         Ok(Self {
@@ -213,12 +196,12 @@ impl Renderer3D {
             instanced_uniforms,
             grid_uniforms,
             object_layout: object_vertex_layout(),
-            instance_layout,
-            grid_layout,
+            instance_layout: instance_vertex_layout(),
+            grid_layout: grid_vertex_layout(),
             particle_quad_buffer,
             particle_quad_vertex_count,
             postprocess_quad_buffer,
-            postprocess_layout,
+            postprocess_layout: postprocess_vertex_layout(),
             postprocess_texture: None,
             postprocess_texture_size: (0, 0),
             shadow_texture: None,
@@ -247,27 +230,25 @@ impl Renderer3D {
         })
     }
 
+    /// Set position on a single [`Object3D`] by ID.
     pub fn set_object_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
-        if let Some(obj) = self.objects.get_mut(&id) {
-            obj.position = Vector3::new(x, y, z);
-            true
-        } else {
-            false
-        }
+        self.mutate_object(id, |obj| obj.position = Vector3::new(x, y, z))
     }
 
+    /// Set rotation (degrees) on a single [`Object3D`] by ID.
     pub fn set_object_rotation(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
-        if let Some(obj) = self.objects.get_mut(&id) {
-            obj.rotation = Vector3::new(x, y, z);
-            true
-        } else {
-            false
-        }
+        self.mutate_object(id, |obj| obj.rotation = Vector3::new(x, y, z))
     }
 
+    /// Set scale on a single [`Object3D`] by ID.
     pub fn set_object_scale(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
+        self.mutate_object(id, |obj| obj.scale = Vector3::new(x, y, z))
+    }
+
+    /// Apply a mutation to a single [`Object3D`]. Returns `false` if the ID does not exist.
+    fn mutate_object(&mut self, id: u32, f: impl FnOnce(&mut Object3D)) -> bool {
         if let Some(obj) = self.objects.get_mut(&id) {
-            obj.scale = Vector3::new(x, y, z);
+            f(obj);
             true
         } else {
             false
@@ -283,7 +264,6 @@ impl Renderer3D {
             false
         }
     }
-
 
     /// Add a light and return its ID.
     pub fn add_light(&mut self, light: Light) -> u32 {
@@ -308,7 +288,6 @@ impl Renderer3D {
     pub fn remove_light(&mut self, id: u32) -> bool {
         self.lights.remove(&id).is_some()
     }
-
 
     /// Set camera position
     pub fn set_camera_position(&mut self, x: f32, y: f32, z: f32) {
@@ -381,7 +360,6 @@ impl Renderer3D {
         self.shadows_enabled
     }
 
-
     /// Configure grid
     pub fn configure_grid(&mut self, config: GridConfig) {
         if config.size != self.grid_config.size || config.divisions != self.grid_config.divisions {
@@ -393,25 +371,52 @@ impl Renderer3D {
                 self.grid_vertex_count = count;
             }
         }
-        self.grid_config = config;
+        self.grid_config = config.clone();
+        if let Some(scene_id) = self.current_scene {
+            if let Some(scene) = self.scenes.get_mut(&scene_id) {
+                scene.grid = config;
+            }
+        }
     }
 
+    /// Enable or disable the debug grid. Also updates the active scene if one is set.
     pub fn set_grid_enabled(&mut self, enabled: bool) {
         self.grid_config.enabled = enabled;
+        if let Some(scene_id) = self.current_scene {
+            if let Some(scene) = self.scenes.get_mut(&scene_id) {
+                scene.grid.enabled = enabled;
+            }
+        }
     }
 
     /// Configure skybox
     pub fn configure_skybox(&mut self, config: SkyboxConfig) {
-        self.skybox_config = config;
+        self.skybox_config = config.clone();
+        if let Some(scene_id) = self.current_scene {
+            if let Some(scene) = self.scenes.get_mut(&scene_id) {
+                scene.skybox = config;
+            }
+        }
     }
 
     /// Configure fog
     pub fn configure_fog(&mut self, config: FogConfig) {
-        self.fog_config = config;
+        self.fog_config = config.clone();
+        if let Some(scene_id) = self.current_scene {
+            if let Some(scene) = self.scenes.get_mut(&scene_id) {
+                scene.fog = config;
+            }
+        }
     }
 
+    /// Enable or disable fog. Also updates the active scene if one is set.
     pub fn set_fog_enabled(&mut self, enabled: bool) {
         self.fog_config.enabled = enabled;
+        if let Some(scene_id) = self.current_scene {
+            if let Some(scene) = self.scenes.get_mut(&scene_id) {
+                scene.fog.enabled = enabled;
+            }
+        }
     }
 
     /// Upload debug draw shapes as line vertices (position + color) for rendering.
@@ -464,36 +469,28 @@ impl Renderer3D {
 
 impl Drop for Renderer3D {
     fn drop(&mut self) {
-        for obj in self.objects.values() {
-            self.backend.destroy_buffer(obj.buffer);
-        }
+        for obj in self.objects.values() { self.backend.destroy_buffer(obj.buffer); }
         for mesh in self.instanced_meshes.values() {
             self.backend.destroy_buffer(mesh.mesh_buffer);
             self.backend.destroy_buffer(mesh.instance_buffer);
         }
-        for emitter in self.particle_emitters.values() {
-            self.backend.destroy_buffer(emitter.instance_buffer);
-        }
-        for mesh in self.skinned_meshes.values() {
-            self.backend.destroy_buffer(mesh.buffer);
-        }
+        for e in self.particle_emitters.values() { self.backend.destroy_buffer(e.instance_buffer); }
+        for m in self.skinned_meshes.values() { self.backend.destroy_buffer(m.buffer); }
         self.backend.destroy_buffer(self.grid_buffer);
         self.backend.destroy_buffer(self.axis_buffer);
         self.backend.destroy_buffer(self.particle_quad_buffer);
         self.backend.destroy_buffer(self.postprocess_quad_buffer);
-        if let Some(texture) = self.postprocess_texture.take() {
-            self.backend.destroy_texture(texture);
-        }
-        if let Some(texture) = self.shadow_texture.take() {
-            self.backend.destroy_texture(texture);
+        for tex in [self.postprocess_texture.take(), self.shadow_texture.take()].into_iter().flatten() {
+            self.backend.destroy_texture(tex);
         }
         if self.backend.is_buffer_valid(self.debug_draw_buffer) {
             self.backend.destroy_buffer(self.debug_draw_buffer);
         }
-        self.backend.destroy_shader(self.shader_handle);
-        self.backend.destroy_shader(self.instanced_shader_handle);
-        self.backend.destroy_shader(self.grid_shader_handle);
-        self.backend.destroy_shader(self.postprocess_shader_handle);
-        self.backend.destroy_shader(self.skinned_shader_handle);
+        for &sh in &[
+            self.shader_handle, self.instanced_shader_handle, self.grid_shader_handle,
+            self.postprocess_shader_handle, self.skinned_shader_handle,
+        ] {
+            self.backend.destroy_shader(sh);
+        }
     }
 }
