@@ -254,6 +254,18 @@
             "path": "docs/src/generated/showcase/hello-ecs-csharp-desktop.png",
             "alt": "Hello ECS C# desktop preview"
           }
+        },
+        {
+          "name": "Character Sandbox",
+          "sdk": "C#",
+          "target": "Desktop",
+          "path": "examples/csharp/character_sandbox",
+          "run": "./dev.sh --game character_sandbox",
+          "description": "3D character sandbox with model loading, skeletal animation, scene management.",
+          "media": {
+            "path": "docs/src/generated/showcase/character-sandbox-csharp-desktop.png",
+            "alt": "Character Sandbox C# desktop preview"
+          }
         }
       ]
     },
