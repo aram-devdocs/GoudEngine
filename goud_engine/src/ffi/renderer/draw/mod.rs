@@ -4,6 +4,7 @@
 //! Also provides `goud_renderer_draw_sprite_batch` for batched GPU rendering.
 
 mod batch;
+mod batch_shaders;
 mod debug;
 mod ffi;
 mod helpers;
