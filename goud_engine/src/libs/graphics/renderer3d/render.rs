@@ -296,9 +296,7 @@ impl Renderer3D {
             let _ = self.backend.bind_shader(self.shader_handle);
         }
 
-        // Skinned model rendering pass — draws Model3D/ModelInstance3D entries
-        // that have skeleton data, using the skinned shader with bone matrices
-        // from their AnimationPlayer.
+        // Skinned model rendering pass
         self.render_skinned_models(
             &view_arr,
             &proj_arr,
