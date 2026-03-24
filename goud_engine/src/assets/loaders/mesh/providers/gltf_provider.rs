@@ -18,18 +18,16 @@ impl ModelProvider for GltfProvider {
     fn name(&self) -> &str {
         "glTF"
     }
-
     fn extensions(&self) -> &[&str] {
         &["gltf", "glb"]
     }
-
-    fn load(&self, bytes: &[u8], _context: &mut LoadContext) -> Result<ModelData, AssetLoadError> {
+    fn load(&self, bytes: &[u8], context: &mut LoadContext) -> Result<ModelData, AssetLoadError> {
         use crate::core::types::{MeshAsset, MeshBounds, MeshVertex, SubMesh};
 
         let gltf = gltf::Gltf::from_slice(bytes)
             .map_err(|e| AssetLoadError::decode_failed(format!("GLTF parse error: {e}")))?;
 
-        let buffers = load_gltf_buffers(&gltf)?;
+        let buffers = load_gltf_buffers(&gltf, context)?;
 
         // Read mesh data directly from the first mesh's primitives.
         // This avoids the scene-node flattening path which can reorder vertices.
@@ -113,7 +111,6 @@ impl ModelProvider for GltfProvider {
                     indices.push(base_vertex + i);
                 }
             }
-
             let bounds = MeshBounds::from_positions(&positions);
             if has_bounds {
                 mesh_bounds = mesh_bounds.union(bounds);
@@ -121,7 +118,6 @@ impl ModelProvider for GltfProvider {
                 mesh_bounds = bounds;
                 has_bounds = true;
             }
-
             let index_count = indices.len() as u32 - start_index;
             sub_meshes.push(SubMesh {
                 name: gltf_mesh.name().unwrap_or("primitive").to_string(),
@@ -132,11 +128,9 @@ impl ModelProvider for GltfProvider {
                 bounds,
             });
         }
-
         if vertices.is_empty() {
             return Err(AssetLoadError::decode_failed("GLTF mesh has no vertices"));
         }
-
         let mesh = MeshAsset {
             vertices,
             indices,
@@ -154,7 +148,6 @@ impl ModelProvider for GltfProvider {
         })
     }
 }
-
 fn extract_primitive_material(
     primitive: &gltf::Primitive,
 ) -> Option<crate::core::types::MeshMaterial> {
@@ -176,7 +169,6 @@ fn extract_primitive_material(
         double_sided: mat.double_sided(),
     })
 }
-
 fn compute_face_normals(positions: &[[f32; 3]]) -> Vec<[f32; 3]> {
     let mut normals = vec![[0.0f32, 0.0, 1.0]; positions.len()];
     for tri in 0..(positions.len() / 3) {
@@ -200,10 +192,12 @@ fn compute_face_normals(positions: &[[f32; 3]]) -> Vec<[f32; 3]> {
     normals
 }
 
-/// Load buffer data from glTF (supports embedded GLB and data URIs).
-fn load_gltf_buffers(gltf: &gltf::Gltf) -> Result<Vec<Vec<u8>>, AssetLoadError> {
+/// Load buffer data from glTF (embedded GLB, data URIs, and external file URIs).
+fn load_gltf_buffers(
+    gltf: &gltf::Gltf,
+    context: &LoadContext,
+) -> Result<Vec<Vec<u8>>, AssetLoadError> {
     use crate::assets::loaders::gltf_utils::decode_data_uri;
-
     let mut buffers = Vec::new();
     for buffer in gltf.buffers() {
         let data = match buffer.source() {
@@ -216,9 +210,19 @@ fn load_gltf_buffers(gltf: &gltf::Gltf) -> Result<Vec<Vec<u8>>, AssetLoadError> 
                 if uri.starts_with("data:") {
                     decode_data_uri(uri)?
                 } else {
-                    return Err(AssetLoadError::decode_failed(format!(
-                        "External buffer URI not supported in model provider: {uri}"
-                    )));
+                    // External file URI — resolve relative to the asset path.
+                    let base = context.path().directory().unwrap_or("");
+                    let resolved = if base.is_empty() {
+                        uri.to_string()
+                    } else {
+                        format!("{}/{}", base, uri)
+                    };
+                    std::fs::read(&resolved).map_err(|e| {
+                        AssetLoadError::decode_failed(format!(
+                            "Failed to read external buffer '{}': {e}",
+                            resolved
+                        ))
+                    })?
                 }
             }
         };
@@ -227,7 +231,7 @@ fn load_gltf_buffers(gltf: &gltf::Gltf) -> Result<Vec<Vec<u8>>, AssetLoadError> 
     Ok(buffers)
 }
 
-/// Extract skeleton data from the first skin in the glTF document. Bone indices and weights are provided by the caller (read inline during
+/// Extract skeleton from the first glTF skin. Bone indices/weights come from the caller (read inline during
 fn extract_skeleton(
     gltf: &gltf::Gltf,
     buffers: &[Vec<u8>],
@@ -262,7 +266,6 @@ fn extract_skeleton(
             joint_count
         );
     }
-
     let identity_ibm: [[f32; 4]; 4] = [
         [1.0, 0.0, 0.0, 0.0],
         [0.0, 1.0, 0.0, 0.0],
@@ -291,7 +294,6 @@ fn extract_skeleton(
             );
             parent_index = -1;
         }
-
         let ibm = flatten_mat4(inverse_bind_matrices.get(i).unwrap_or(&identity_ibm));
 
         bones.push(BoneData {
@@ -356,10 +358,7 @@ fn extract_skeleton(
     })
 }
 
-/// Extract all animations from the glTF document.
-///
-/// Channel target properties are named using the **joint index** (0..N)
-/// rather than the glTF node index so that `compute_bone_matrices` can
+/// Extract all animations, mapping glTF node indices to joint indices so `compute_bone_matrices` can
 fn extract_all_animations(gltf: &gltf::Gltf, buffers: &[Vec<u8>]) -> Vec<KeyframeAnimation> {
     // Build a mapping from glTF node index to skeleton joint index.
     // This ensures animation channels reference the same indices used by
@@ -469,7 +468,6 @@ fn extract_all_animations(gltf: &gltf::Gltf, buffers: &[Vec<u8>]) -> Vec<Keyfram
 
     animations
 }
-
 fn build_node_parent_map(gltf: &gltf::Gltf) -> std::collections::HashMap<usize, usize> {
     let mut parent_map = std::collections::HashMap::new();
 
@@ -479,7 +477,6 @@ fn build_node_parent_map(gltf: &gltf::Gltf) -> std::collections::HashMap<usize, 
             walk_node(child, parent_map);
         }
     }
-
     for scene in gltf.scenes() {
         for node in scene.nodes() {
             walk_node(node, &mut parent_map);
