@@ -14047,7 +14047,7 @@
             },
             {
               "name": "grounded",
-              "type": "bool"
+              "type": "i32"
             }
           ],
           "returns_struct": "CharacterMoveResult"

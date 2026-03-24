@@ -3722,7 +3722,7 @@ int64_t goud_physics3d_create_character_controller(struct GoudContextId ctx, flo
 /**
  * Moves a 3D character controller by the given displacement.
  */
-int32_t goud_physics3d_move_character(struct GoudContextId ctx, uint64_t controller_id, float dx, float dy, float dz, float dt, float *out_x, float *out_y, float *out_z, bool *out_grounded);
+int32_t goud_physics3d_move_character(struct GoudContextId ctx, uint64_t controller_id, float dx, float dy, float dz, float dt, float *out_x, float *out_y, float *out_z, int32_t *out_grounded);
 
 /**
  * Gets the current position of a 3D character controller.

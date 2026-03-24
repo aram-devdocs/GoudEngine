@@ -2173,7 +2173,7 @@ class PhysicsWorld3D:
         _x = ctypes.c_float()
         _y = ctypes.c_float()
         _z = ctypes.c_float()
-        _grounded = ctypes.c_bool()
+        _grounded = ctypes.c_int32()
         self._lib.goud_physics3d_move_character(self._ctx, controller_id, dx, dy, dz, dt, ctypes.byref(_x), ctypes.byref(_y), ctypes.byref(_z), ctypes.byref(_grounded))
         return CharacterMoveResult(_x.value, _y.value, _z.value, _grounded.value)
 

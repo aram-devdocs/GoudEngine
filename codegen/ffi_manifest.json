@@ -2335,7 +2335,7 @@
         "out_x: *mut f32",
         "out_y: *mut f32",
         "out_z: *mut f32",
-        "out_grounded: *mut bool"
+        "out_grounded: *mut i32"
       ],
       "return_type": "i32",
       "is_unsafe": true

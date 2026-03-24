@@ -75,7 +75,7 @@ pub extern "C" fn goud_physics3d_create_character_controller(
 /// * `dx`, `dy`, `dz` - Desired displacement (not velocity)
 /// * `dt` - Delta time in seconds
 /// * `out_x`, `out_y`, `out_z` - Output pointers for the resulting position
-/// * `out_grounded` - Output pointer for whether the character is on the ground
+/// * `out_grounded` - Output pointer for whether the character is on the ground (1 = grounded, 0 = not grounded)
 ///
 /// # Safety
 ///
@@ -95,7 +95,7 @@ pub unsafe extern "C" fn goud_physics3d_move_character(
     out_x: *mut f32,
     out_y: *mut f32,
     out_z: *mut f32,
-    out_grounded: *mut bool,
+    out_grounded: *mut i32,
 ) -> i32 {
     if out_x.is_null() || out_y.is_null() || out_z.is_null() || out_grounded.is_null() {
         set_last_error(crate::core::error::GoudError::InvalidState(
@@ -112,7 +112,7 @@ pub unsafe extern "C" fn goud_physics3d_move_character(
                 *out_x = result.position[0];
                 *out_y = result.position[1];
                 *out_z = result.position[2];
-                *out_grounded = result.grounded;
+                *out_grounded = if result.grounded { 1 } else { 0 };
                 0
             }
             Err(e) => {

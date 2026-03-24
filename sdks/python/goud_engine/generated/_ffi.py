@@ -1305,7 +1305,7 @@ def _setup():
         _lib.goud_physics3d_get_timestep.restype = ctypes.c_int32
         _lib.goud_physics3d_create_character_controller.argtypes = [GoudContextId, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
         _lib.goud_physics3d_create_character_controller.restype = ctypes.c_int64
-        _lib.goud_physics3d_move_character.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_bool)]
+        _lib.goud_physics3d_move_character.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_int32)]
         _lib.goud_physics3d_move_character.restype = ctypes.c_int32
         _lib.goud_physics3d_get_character_position.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
         _lib.goud_physics3d_get_character_position.restype = ctypes.c_int32

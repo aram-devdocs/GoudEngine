@@ -1755,7 +1755,7 @@ namespace GoudEngine
         public static extern long goud_physics3d_create_character_controller(GoudContextId ctx, float radius, float half_height, float x, float y, float z, float max_slope_angle, float step_height);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int goud_physics3d_move_character(GoudContextId ctx, ulong controller_id, float dx, float dy, float dz, float dt, ref float out_x, ref float out_y, ref float out_z, IntPtr out_grounded);
+        public static extern int goud_physics3d_move_character(GoudContextId ctx, ulong controller_id, float dx, float dy, float dz, float dt, ref float out_x, ref float out_y, ref float out_z, ref int out_grounded);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_physics3d_get_character_position(GoudContextId ctx, ulong controller_id, ref float out_x, ref float out_y, ref float out_z);
