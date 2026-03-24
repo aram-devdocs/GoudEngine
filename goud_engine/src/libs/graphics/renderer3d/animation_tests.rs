@@ -3,11 +3,10 @@
 #[cfg(test)]
 mod tests {
     use super::super::animation::*;
-    use crate::assets::loaders::animation::keyframe::{AnimationChannel, EasingFunction, Keyframe};
-    use crate::assets::loaders::mesh::BoneData;
+    use crate::core::types::{AnimationChannel, BoneData, EasingFunction, Keyframe, SkeletonData};
 
-    fn simple_skeleton() -> crate::assets::loaders::mesh::SkeletonData {
-        crate::assets::loaders::mesh::SkeletonData {
+    fn simple_skeleton() -> SkeletonData {
+        SkeletonData {
             bones: vec![
                 BoneData {
                     name: "root".to_string(),
@@ -25,8 +24,8 @@ mod tests {
         }
     }
 
-    fn simple_animation() -> crate::assets::loaders::animation::KeyframeAnimation {
-        crate::assets::loaders::animation::KeyframeAnimation::new(
+    fn simple_animation() -> crate::core::types::KeyframeAnimation {
+        crate::core::types::KeyframeAnimation::new(
             "test".to_string(),
             1.0,
             vec![

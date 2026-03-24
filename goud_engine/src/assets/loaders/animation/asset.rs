@@ -1,92 +1,13 @@
 //! [`KeyframeAnimation`] asset definition.
+//!
+//! The struct definition now lives in `core::types::keyframe_types`.  This
+//! module re-exports it for backward compatibility and provides the [`Asset`]
+//! trait implementation.
 
 use crate::assets::{Asset, AssetType};
-use serde::{Deserialize, Serialize};
 
-use super::keyframe::AnimationChannel;
-
-/// A keyframe-based property animation asset.
-///
-/// Unlike sprite-sheet based [`AnimationClip`](crate::ecs::components::sprite_animator),
-/// this type drives arbitrary numeric properties over time using keyframes
-/// with easing functions.
-///
-/// # Example
-/// ```
-/// use goud_engine::assets::loaders::animation::{
-///     KeyframeAnimation,
-///     keyframe::{AnimationChannel, Keyframe, EasingFunction},
-/// };
-///
-/// let anim = KeyframeAnimation::new(
-///     "bounce".to_string(),
-///     1.0,
-///     vec![AnimationChannel {
-///         target_property: "transform.position.y".to_string(),
-///         keyframes: vec![
-///             Keyframe { time: 0.0, value: 0.0, easing: EasingFunction::EaseOut },
-///             Keyframe { time: 1.0, value: 100.0, easing: EasingFunction::Linear },
-///         ],
-///     }],
-/// );
-/// assert_eq!(anim.name(), "bounce");
-/// assert_eq!(anim.channel_count(), 1);
-/// ```
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyframeAnimation {
-    /// Human-readable name for this animation.
-    pub name: String,
-    /// Total duration in seconds.
-    pub duration: f32,
-    /// Property channels with keyframes.
-    pub channels: Vec<AnimationChannel>,
-}
-
-impl KeyframeAnimation {
-    /// Creates a new keyframe animation.
-    pub fn new(name: String, duration: f32, channels: Vec<AnimationChannel>) -> Self {
-        Self {
-            name,
-            duration,
-            channels,
-        }
-    }
-
-    /// Returns the animation name.
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-
-    /// Returns the total duration in seconds.
-    pub fn duration(&self) -> f32 {
-        self.duration
-    }
-
-    /// Returns a slice of all animation channels.
-    pub fn channels(&self) -> &[AnimationChannel] {
-        &self.channels
-    }
-
-    /// Returns the number of channels.
-    pub fn channel_count(&self) -> usize {
-        self.channels.len()
-    }
-
-    /// Returns true if this animation has no channels.
-    pub fn is_empty(&self) -> bool {
-        self.channels.is_empty()
-    }
-
-    /// Finds a channel by target property name.
-    pub fn channel_by_property(&self, property: &str) -> Option<&AnimationChannel> {
-        self.channels.iter().find(|c| c.target_property == property)
-    }
-
-    /// Returns the total number of keyframes across all channels.
-    pub fn total_keyframe_count(&self) -> usize {
-        self.channels.iter().map(|c| c.keyframes.len()).sum()
-    }
-}
+// Re-export from the canonical core location.
+pub use crate::core::types::keyframe_types::KeyframeAnimation;
 
 impl Asset for KeyframeAnimation {
     fn asset_type_name() -> &'static str {
@@ -105,7 +26,7 @@ impl Asset for KeyframeAnimation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::assets::loaders::animation::keyframe::{EasingFunction, Keyframe};
+    use crate::core::types::keyframe_types::{AnimationChannel, EasingFunction, Keyframe};
 
     fn sample_animation() -> KeyframeAnimation {
         KeyframeAnimation::new(

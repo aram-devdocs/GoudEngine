@@ -1,8 +1,6 @@
 //! Skeletal animation playback, blending, and transitions for the 3D renderer.
 
-use crate::assets::loaders::animation::keyframe::interpolate;
-use crate::assets::loaders::animation::KeyframeAnimation;
-use crate::assets::loaders::mesh::SkeletonData;
+use crate::core::types::{interpolate, KeyframeAnimation, SkeletonData};
 
 // ============================================================================
 // Animation state types
