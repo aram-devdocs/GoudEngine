@@ -14,7 +14,6 @@ impl Renderer3D {
     /// scene are rendered and the scene's fog/skybox/grid configs are used.
     /// When no scene is active all entities are rendered (backward-compatible).
     pub fn render(&mut self, texture_manager: Option<&dyn TextureManagerTrait>) {
-
         self.stats = Default::default();
         self.backend.set_viewport(
             self.viewport.0,
@@ -297,7 +296,6 @@ impl Renderer3D {
             // Re-bind main shader for subsequent rendering.
             let _ = self.backend.bind_shader(self.shader_handle);
         }
-
 
         // Skinned model rendering pass
         self.render_skinned_models(

@@ -116,7 +116,7 @@ jobs:
     - name: Check for large files
       run: |
         # Find files larger than 1MB
-        LARGE_FILES=$(find . -type f -size +1M ! -path "./.git/*" ! -path "./target/*" ! -path "*/bin/*" ! -path "*/obj/*" ! -name "*.png" ! -name "*.jpg" ! -name "*.jpeg" ! -name "*.gif")
+        LARGE_FILES=$(find . -type f -size +1M ! -path "./.git/*" ! -path "./target/*" ! -path "*/bin/*" ! -path "*/obj/*" ! -name "*.png" ! -name "*.jpg" ! -name "*.jpeg" ! -name "*.gif" ! -name "*.glb" ! -name "*.gltf" ! -name "*.fbx" ! -name "*.obj")
 
         if [ -n "$LARGE_FILES" ]; then
           echo "## ⚠️ Large files detected (>1MB):" >> $GITHUB_STEP_SUMMARY

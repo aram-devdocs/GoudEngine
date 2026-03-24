@@ -434,7 +434,10 @@ impl Renderer3D {
 
     /// Set the PBR metallic-roughness map texture on a model's material.
     pub fn set_model_material_metallic_roughness_map(
-        &mut self, id: u32, idx: usize, tex: u32,
+        &mut self,
+        id: u32,
+        idx: usize,
+        tex: u32,
     ) -> bool {
         self.set_pbr_map(id, idx, |mat| mat.pbr.metallic_roughness_map = tex)
     }
@@ -442,7 +445,12 @@ impl Renderer3D {
     // -- Internal helpers --
 
     /// Apply a mutation to a specific sub-mesh material's PBR properties.
-    fn set_pbr_map(&mut self, model_id: u32, mesh_index: usize, f: impl FnOnce(&mut Material3D)) -> bool {
+    fn set_pbr_map(
+        &mut self,
+        model_id: u32,
+        mesh_index: usize,
+        f: impl FnOnce(&mut Material3D),
+    ) -> bool {
         let mat_ids = self.collect_model_material_ids(model_id);
         if mesh_index >= mat_ids.len() {
             return false;
@@ -457,16 +465,22 @@ impl Renderer3D {
 
     /// Collect object IDs for a model or model instance.
     fn collect_model_object_ids(&self, id: u32) -> Vec<u32> {
-        self.models.get(&id).map(|m| &m.mesh_object_ids)
+        self.models
+            .get(&id)
+            .map(|m| &m.mesh_object_ids)
             .or_else(|| self.model_instances.get(&id).map(|i| &i.mesh_object_ids))
-            .cloned().unwrap_or_default()
+            .cloned()
+            .unwrap_or_default()
     }
 
     /// Collect material IDs for a model or model instance.
     fn collect_model_material_ids(&self, id: u32) -> Vec<u32> {
-        self.models.get(&id).map(|m| &m.mesh_material_ids)
+        self.models
+            .get(&id)
+            .map(|m| &m.mesh_material_ids)
             .or_else(|| self.model_instances.get(&id).map(|i| &i.mesh_material_ids))
-            .cloned().unwrap_or_default()
+            .cloned()
+            .unwrap_or_default()
     }
 
     /// Apply a mutation to all Object3D sub-meshes of a model or instance.

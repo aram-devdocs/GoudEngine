@@ -45,14 +45,11 @@ impl ModelProvider for GltfProvider {
         let mut has_bounds = false;
 
         for primitive in gltf_mesh.primitives() {
-            let reader =
-                primitive.reader(|buf| buffers.get(buf.index()).map(|b| b.as_slice()));
+            let reader = primitive.reader(|buf| buffers.get(buf.index()).map(|b| b.as_slice()));
 
             let positions: Vec<[f32; 3]> = reader
                 .read_positions()
-                .ok_or_else(|| {
-                    AssetLoadError::decode_failed("GLTF primitive missing POSITION")
-                })?
+                .ok_or_else(|| AssetLoadError::decode_failed("GLTF primitive missing POSITION"))?
                 .collect();
 
             let normals: Vec<[f32; 3]> = reader
@@ -76,11 +73,7 @@ impl ModelProvider for GltfProvider {
                     } else {
                         [0.0, 0.0, 1.0]
                     },
-                    uv: if i < uvs.len() {
-                        uvs[i]
-                    } else {
-                        [0.0, 0.0]
-                    },
+                    uv: if i < uvs.len() { uvs[i] } else { [0.0, 0.0] },
                 });
             }
 
@@ -105,10 +98,7 @@ impl ModelProvider for GltfProvider {
 
             let index_count = indices.len() as u32 - start_index;
             sub_meshes.push(SubMesh {
-                name: gltf_mesh
-                    .name()
-                    .unwrap_or("primitive")
-                    .to_string(),
+                name: gltf_mesh.name().unwrap_or("primitive").to_string(),
                 start_index,
                 index_count,
                 material_index: primitive.material().index().map(|i| i as u32),

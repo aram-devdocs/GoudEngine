@@ -39,9 +39,7 @@ use cgmath::Vector3;
 // Renderer3D
 // ============================================================================
 
-/// The main 3D renderer.
 ///
-/// Owns a [`RenderBackend`] and manages all GPU resources (shaders, buffers)
 /// through it. No direct graphics API calls are made outside the backend.
 pub struct Renderer3D {
     pub(super) backend: Box<dyn RenderBackend>,
@@ -110,7 +108,7 @@ pub struct Renderer3D {
 }
 
 impl Renderer3D {
-    /// Create a new 3D renderer with the given backend.
+    #[rustfmt::skip]
     pub fn new(
         mut backend: Box<dyn RenderBackend>,
         window_width: u32,
@@ -118,41 +116,65 @@ impl Renderer3D {
     ) -> Result<Self, String> {
         // Pick GLSL vs WGSL shader pair for the backend's shader language.
         let wgsl = matches!(backend.shader_language(), ShaderLanguage::Wgsl);
-        macro_rules! shaders { ($gl:expr, $wg:expr) => { if wgsl { $wg } else { $gl } }; }
+        macro_rules! shaders {
+            ($gl:expr, $wg:expr) => {
+                if wgsl {
+                    $wg
+                } else {
+                    $gl
+                }
+            };
+        }
 
         let (vs, fs) = shaders!(
             (VERTEX_SHADER_3D, FRAGMENT_SHADER_3D),
             (VERTEX_SHADER_3D_WGSL, FRAGMENT_SHADER_3D_WGSL)
         );
-        let shader_handle = backend.create_shader(vs, fs).map_err(|e| format!("Main 3D shader: {e}"))?;
+        let shader_handle = backend
+            .create_shader(vs, fs)
+            .map_err(|e| format!("Main 3D shader: {e}"))?;
         let uniforms = resolve_main_uniforms(backend.as_ref(), shader_handle);
 
         let (vs, fs) = shaders!(
             (INSTANCED_VERTEX_SHADER_3D, INSTANCED_FRAGMENT_SHADER_3D),
-            (INSTANCED_VERTEX_SHADER_3D_WGSL, INSTANCED_FRAGMENT_SHADER_3D_WGSL)
+            (
+                INSTANCED_VERTEX_SHADER_3D_WGSL,
+                INSTANCED_FRAGMENT_SHADER_3D_WGSL
+            )
         );
-        let instanced_shader_handle = backend.create_shader(vs, fs).map_err(|e| format!("Instanced 3D shader: {e}"))?;
+        let instanced_shader_handle = backend
+            .create_shader(vs, fs)
+            .map_err(|e| format!("Instanced 3D shader: {e}"))?;
         let instanced_uniforms = resolve_main_uniforms(backend.as_ref(), instanced_shader_handle);
 
         let (vs, fs) = shaders!(
             (GRID_VERTEX_SHADER, GRID_FRAGMENT_SHADER),
             (GRID_VERTEX_SHADER_WGSL, GRID_FRAGMENT_SHADER_WGSL)
         );
-        let grid_shader_handle = backend.create_shader(vs, fs).map_err(|e| format!("Grid shader: {e}"))?;
+        let grid_shader_handle = backend
+            .create_shader(vs, fs)
+            .map_err(|e| format!("Grid shader: {e}"))?;
         let grid_uniforms = resolve_grid_uniforms(backend.as_ref(), grid_shader_handle);
 
         let (vs, fs) = shaders!(
             (POSTPROCESS_VERTEX_SHADER, POSTPROCESS_FRAGMENT_SHADER),
-            (POSTPROCESS_VERTEX_SHADER_WGSL, POSTPROCESS_FRAGMENT_SHADER_WGSL)
+            (
+                POSTPROCESS_VERTEX_SHADER_WGSL,
+                POSTPROCESS_FRAGMENT_SHADER_WGSL
+            )
         );
-        let postprocess_shader_handle = backend.create_shader(vs, fs).map_err(|e| format!("Postprocess shader: {e}"))?;
+        let postprocess_shader_handle = backend
+            .create_shader(vs, fs)
+            .map_err(|e| format!("Postprocess shader: {e}"))?;
 
         // Skinned mesh shader uses the same fragment shader as the main 3D shader.
         let (vs, fs) = shaders!(
             (SKINNED_VERTEX_SHADER, FRAGMENT_SHADER_3D),
             (SKINNED_VERTEX_SHADER_WGSL, FRAGMENT_SHADER_3D_WGSL)
         );
-        let skinned_shader_handle = backend.create_shader(vs, fs).map_err(|e| format!("Skinned 3D shader: {e}"))?;
+        let skinned_shader_handle = backend
+            .create_shader(vs, fs)
+            .map_err(|e| format!("Skinned 3D shader: {e}"))?;
         let skinned_uniforms = resolve_skinned_uniforms(backend.as_ref(), skinned_shader_handle);
 
         let (grid_buffer, grid_vertex_count) = create_grid_mesh(backend.as_mut(), 20.0, 20)?;
@@ -229,23 +251,16 @@ impl Renderer3D {
             shadows_enabled: true,
         })
     }
-
-    /// Set position on a single [`Object3D`] by ID.
     pub fn set_object_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         self.mutate_object(id, |obj| obj.position = Vector3::new(x, y, z))
     }
-
-    /// Set rotation (degrees) on a single [`Object3D`] by ID.
     pub fn set_object_rotation(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         self.mutate_object(id, |obj| obj.rotation = Vector3::new(x, y, z))
     }
-
-    /// Set scale on a single [`Object3D`] by ID.
     pub fn set_object_scale(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         self.mutate_object(id, |obj| obj.scale = Vector3::new(x, y, z))
     }
 
-    /// Apply a mutation to a single [`Object3D`]. Returns `false` if the ID does not exist.
     fn mutate_object(&mut self, id: u32, f: impl FnOnce(&mut Object3D)) -> bool {
         if let Some(obj) = self.objects.get_mut(&id) {
             f(obj);
@@ -255,7 +270,6 @@ impl Renderer3D {
         }
     }
 
-    /// Remove an object
     pub fn remove_object(&mut self, id: u32) -> bool {
         if let Some(obj) = self.objects.remove(&id) {
             self.backend.destroy_buffer(obj.buffer);
@@ -265,7 +279,6 @@ impl Renderer3D {
         }
     }
 
-    /// Add a light and return its ID.
     pub fn add_light(&mut self, light: Light) -> u32 {
         let id = self.next_light_id;
         self.next_light_id += 1;
@@ -273,7 +286,6 @@ impl Renderer3D {
         id
     }
 
-    /// Update a light by ID. Returns `true` if the light existed.
     pub fn update_light(&mut self, id: u32, light: Light) -> bool {
         use std::collections::hash_map::Entry;
         if let Entry::Occupied(mut e) = self.lights.entry(id) {
@@ -284,55 +296,45 @@ impl Renderer3D {
         }
     }
 
-    /// Remove a light by ID. Returns `true` if the light existed.
     pub fn remove_light(&mut self, id: u32) -> bool {
         self.lights.remove(&id).is_some()
     }
 
-    /// Set camera position
     pub fn set_camera_position(&mut self, x: f32, y: f32, z: f32) {
         self.camera.position = Vector3::new(x, y, z);
     }
 
-    /// Updates the framebuffer dimensions used for projection.
     pub fn resize(&mut self, width: u32, height: u32) {
         self.window_width = width.max(1);
         self.window_height = height.max(1);
     }
 
-    /// Sets the active viewport rectangle for rendering.
     pub fn set_viewport(&mut self, x: i32, y: i32, width: u32, height: u32) {
         self.viewport = (x, y, width.max(1), height.max(1));
     }
 
-    /// Set camera rotation (pitch, yaw, roll in degrees)
     pub fn set_camera_rotation(&mut self, pitch: f32, yaw: f32, roll: f32) {
         self.camera.rotation = Vector3::new(pitch, yaw, roll);
     }
 
-    /// Returns the last frame's renderer stats.
     pub fn stats(&self) -> Renderer3DStats {
         self.stats
     }
 
-    /// Returns the active anti-aliasing mode.
     pub fn anti_aliasing_mode(&self) -> AntiAliasingMode {
         self.anti_aliasing_mode
     }
 
-    /// Returns the configured MSAA sample count.
     pub fn msaa_samples(&self) -> u32 {
         self.msaa_samples
     }
 
-    /// Updates the anti-aliasing mode.
     pub fn set_anti_aliasing_mode(&mut self, mode: AntiAliasingMode) -> Result<(), String> {
         self.anti_aliasing_mode = mode;
         self.backend.set_multisampling_enabled(mode.uses_msaa());
         Ok(())
     }
 
-    /// Updates the requested MSAA sample count.
     pub fn set_msaa_samples(&mut self, samples: u32) {
         self.msaa_samples = match samples {
             2 | 4 | 8 => samples,
@@ -340,27 +342,22 @@ impl Renderer3D {
         };
     }
 
-    /// Sets the directional shadow bias.
     pub fn set_shadow_bias(&mut self, bias: f32) {
         self.shadow_bias = bias.max(0.0);
     }
 
-    /// Returns the directional shadow bias.
     pub fn shadow_bias(&self) -> f32 {
         self.shadow_bias
     }
 
-    /// Enable or disable CPU shadow mapping.
     pub fn set_shadows_enabled(&mut self, enabled: bool) {
         self.shadows_enabled = enabled;
     }
 
-    /// Returns whether CPU shadow mapping is enabled.
     pub fn shadows_enabled(&self) -> bool {
         self.shadows_enabled
     }
 
-    /// Configure grid
     pub fn configure_grid(&mut self, config: GridConfig) {
         if config.size != self.grid_config.size || config.divisions != self.grid_config.divisions {
             self.backend.destroy_buffer(self.grid_buffer);
@@ -379,7 +376,6 @@ impl Renderer3D {
         }
     }
 
-    /// Enable or disable the debug grid. Also updates the active scene if one is set.
     pub fn set_grid_enabled(&mut self, enabled: bool) {
         self.grid_config.enabled = enabled;
         if let Some(scene_id) = self.current_scene {
@@ -389,7 +385,6 @@ impl Renderer3D {
         }
     }
 
-    /// Configure skybox
     pub fn configure_skybox(&mut self, config: SkyboxConfig) {
         self.skybox_config = config.clone();
         if let Some(scene_id) = self.current_scene {
@@ -399,7 +394,6 @@ impl Renderer3D {
         }
     }
 
-    /// Configure fog
     pub fn configure_fog(&mut self, config: FogConfig) {
         self.fog_config = config.clone();
         if let Some(scene_id) = self.current_scene {
@@ -409,7 +403,6 @@ impl Renderer3D {
         }
     }
 
-    /// Enable or disable fog. Also updates the active scene if one is set.
     pub fn set_fog_enabled(&mut self, enabled: bool) {
         self.fog_config.enabled = enabled;
         if let Some(scene_id) = self.current_scene {
@@ -419,7 +412,6 @@ impl Renderer3D {
         }
     }
 
-    /// Upload debug draw shapes as line vertices (position + color) for rendering.
     pub fn set_debug_draw_shapes(&mut self, shapes: &[DebugShape3D]) {
         let vertices = build_debug_draw_vertices(shapes);
         if vertices.is_empty() {
@@ -469,26 +461,38 @@ impl Renderer3D {
 
 impl Drop for Renderer3D {
     fn drop(&mut self) {
-        for obj in self.objects.values() { self.backend.destroy_buffer(obj.buffer); }
+        for obj in self.objects.values() {
+            self.backend.destroy_buffer(obj.buffer);
+        }
         for mesh in self.instanced_meshes.values() {
             self.backend.destroy_buffer(mesh.mesh_buffer);
             self.backend.destroy_buffer(mesh.instance_buffer);
         }
-        for e in self.particle_emitters.values() { self.backend.destroy_buffer(e.instance_buffer); }
-        for m in self.skinned_meshes.values() { self.backend.destroy_buffer(m.buffer); }
+        for e in self.particle_emitters.values() {
+            self.backend.destroy_buffer(e.instance_buffer);
+        }
+        for m in self.skinned_meshes.values() {
+            self.backend.destroy_buffer(m.buffer);
+        }
         self.backend.destroy_buffer(self.grid_buffer);
         self.backend.destroy_buffer(self.axis_buffer);
         self.backend.destroy_buffer(self.particle_quad_buffer);
         self.backend.destroy_buffer(self.postprocess_quad_buffer);
-        for tex in [self.postprocess_texture.take(), self.shadow_texture.take()].into_iter().flatten() {
+        for tex in [self.postprocess_texture.take(), self.shadow_texture.take()]
+            .into_iter()
+            .flatten()
+        {
             self.backend.destroy_texture(tex);
         }
         if self.backend.is_buffer_valid(self.debug_draw_buffer) {
             self.backend.destroy_buffer(self.debug_draw_buffer);
         }
         for &sh in &[
-            self.shader_handle, self.instanced_shader_handle, self.grid_shader_handle,
-            self.postprocess_shader_handle, self.skinned_shader_handle,
+            self.shader_handle,
+            self.instanced_shader_handle,
+            self.grid_shader_handle,
+            self.postprocess_shader_handle,
+            self.skinned_shader_handle,
         ] {
             self.backend.destroy_shader(sh);
         }

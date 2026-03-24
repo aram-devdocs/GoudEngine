@@ -37,10 +37,7 @@ pub(super) fn build_directional_shadow_map(
 
     // Count total vertices across all objects. Each vertex uses 8 floats
     // (pos + normal + uv), so divide by the stride to get the vertex count.
-    let total_vertex_floats: usize = objects
-        .values()
-        .map(|o| o.vertices.len())
-        .sum();
+    let total_vertex_floats: usize = objects.values().map(|o| o.vertices.len()).sum();
     let total_vertices = total_vertex_floats / 8;
     if total_vertices > MAX_SHADOW_VERTICES {
         return None;
