@@ -170,6 +170,7 @@ impl Renderer3D {
             mat_ids: *const Vec<u32>,
             bone_mats: *const Vec<[f32; 16]>,
             bounds: crate::core::types::MeshBounds,
+            upload_key: Option<(u32, usize, u32)>,
         }
 
         let mut draws: Vec<SkinnedDraw> = Vec::new();
@@ -184,11 +185,23 @@ impl Renderer3D {
                 }
             }
             if let Some(player) = self.animation_players.get(&model_id) {
+                let upload_key = if self.config.skinning.shared_animation_eval
+                    && player.transition.is_none()
+                    && player.blend_factor <= f32::EPSILON
+                {
+                    player.primary.as_ref().filter(|state| state.playing).map(|state| {
+                        let quantized_time = (state.time * 30.0).round() / 30.0;
+                        (model_id, state.clip_index, quantized_time.to_bits())
+                    })
+                } else {
+                    None
+                };
                 draws.push(SkinnedDraw {
                     obj_ids: &model.mesh_object_ids as *const _,
                     mat_ids: &model.mesh_material_ids as *const _,
                     bone_mats: &player.bone_matrices as *const _,
                     bounds: model.bounds,
+                    upload_key,
                 });
             }
         }
@@ -207,11 +220,23 @@ impl Renderer3D {
                 }
             }
             if let Some(player) = self.animation_players.get(&inst_id) {
+                let upload_key = if self.config.skinning.shared_animation_eval
+                    && player.transition.is_none()
+                    && player.blend_factor <= f32::EPSILON
+                {
+                    player.primary.as_ref().filter(|state| state.playing).map(|state| {
+                        let quantized_time = (state.time * 30.0).round() / 30.0;
+                        (inst.source_model_id, state.clip_index, quantized_time.to_bits())
+                    })
+                } else {
+                    None
+                };
                 draws.push(SkinnedDraw {
                     obj_ids: &inst.mesh_object_ids as *const _,
                     mat_ids: &inst.mesh_material_ids as *const _,
                     bone_mats: &player.bone_matrices as *const _,
                     bounds: source.bounds,
+                    upload_key,
                 });
             }
         }
@@ -219,6 +244,12 @@ impl Renderer3D {
         if draws.is_empty() {
             return;
         }
+
+        draws.sort_by(|a, b| {
+            let a_key = a.upload_key.unwrap_or((u32::MAX, usize::MAX, u32::MAX));
+            let b_key = b.upload_key.unwrap_or((u32::MAX, usize::MAX, u32::MAX));
+            a_key.cmp(&b_key)
+        });
 
         let _ = self.backend.bind_shader(self.skinned_shader_handle);
         let skinned_unis = self.skinned_uniforms.clone();
@@ -231,6 +262,8 @@ impl Renderer3D {
             fog,
             lights,
         );
+
+        let mut last_upload_key: Option<(u32, usize, u32)> = None;
 
         for draw in &draws {
             // SAFETY: self.models, self.model_instances, and self.animation_players
@@ -287,21 +320,24 @@ impl Renderer3D {
                 .culled_objects
                 .saturating_sub(obj_ids.len() as u32);
 
+            let should_upload_bones = draw.upload_key.is_none() || draw.upload_key != last_upload_key;
             if gpu_skinning {
                 // Upload bone matrices to a storage buffer for the GPU skinning shader.
                 let bone_data: &[u8] = bytemuck::cast_slice(bone_mats);
                 self.ensure_bone_storage_buffer(bone_data.len());
                 if let Some(storage_handle) = self.bone_storage_buffer {
-                    if let Err(e) = self
-                        .backend
-                        .update_storage_buffer(storage_handle, 0, bone_data)
-                    {
-                        log::error!("Failed to upload bone matrices to storage buffer: {e}");
+                    if should_upload_bones {
+                        if let Err(e) = self
+                            .backend
+                            .update_storage_buffer(storage_handle, 0, bone_data)
+                        {
+                            log::error!("Failed to upload bone matrices to storage buffer: {e}");
+                        }
+                        self.stats.bone_matrix_uploads += 1;
                     }
                     let _ = self.backend.bind_storage_buffer(storage_handle, 0);
                 }
-                self.stats.bone_matrix_uploads += 1;
-            } else {
+            } else if should_upload_bones {
                 // Upload bone matrices as individual uniforms (OpenGL/CPU path).
                 for (i, mat) in bone_mats.iter().enumerate() {
                     if i < skinned_unis.bone_matrices.len() {
@@ -311,6 +347,7 @@ impl Renderer3D {
                 }
                 self.stats.bone_matrix_uploads += 1;
             }
+            last_upload_key = draw.upload_key;
 
             for (sub_idx, &obj_id) in obj_ids.iter().enumerate() {
                 let (buffer, vc, pos, rot, scl, color, tid) = match self.objects.get(&obj_id) {
