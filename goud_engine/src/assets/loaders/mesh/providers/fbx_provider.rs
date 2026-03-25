@@ -203,7 +203,6 @@ fn extract_skeleton(
         .enumerate()
         .map(|(index, name)| (name.clone(), index))
         .collect();
-
     let bones = ordered_names
         .iter()
         .map(|name| {

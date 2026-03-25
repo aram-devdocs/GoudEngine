@@ -44,6 +44,7 @@ sealed class AssetProfile
     public AssetCategory Category { get; init; }
     public bool IsDynamic { get; init; }
     public float Scale { get; init; } = 1f;
+    public float? TargetHeight { get; init; }
     public float RotationX { get; init; }
     public float RotationY { get; init; }
     public float RotationZ { get; init; }
@@ -71,9 +72,30 @@ sealed class RigConfig
     public float RotationZ { get; init; }
 }
 
+sealed class AssetDiagnostics
+{
+    public string Name { get; init; } = "";
+    public string Path { get; init; } = "";
+    public string Category { get; init; } = "";
+    public bool IsDynamic { get; init; }
+    public float RawWidth { get; init; }
+    public float RawHeight { get; init; }
+    public float RawDepth { get; init; }
+    public float FinalScale { get; init; }
+    public float GroundOffsetY { get; init; }
+    public int AnimationCount { get; init; }
+    public int IdleAnimation { get; init; }
+    public int WalkAnimation { get; init; }
+    public int RunAnimation { get; init; }
+    public string[] AnimationNames { get; init; } = Array.Empty<string>();
+}
+
 enum ScenarioKind
 {
     Baseline,
+    FbxStaticDiagnostic,
+    FbxAnimalDiagnostic,
+    MixedCorrectnessDiagnostic,
     FullGameStress,
     GameLikeVillage,
     VariedAnimationCrowd,
@@ -105,6 +127,11 @@ sealed class SandboxOptions
     public string? MetricsOutPath { get; set; }
     public string ThroneAssetsRoot { get; set; } = Program.DefaultThroneAssetsRoot;
     public int Seed { get; set; } = 42;
+    public AssetCategory? OnlyCategory { get; set; }
+    public string? OnlyAsset { get; set; }
+    public bool NoHumanoids { get; set; }
+    public bool NoAnimals { get; set; }
+    public bool NoStatics { get; set; }
 
     public bool BenchmarkMode =>
         DurationSeconds > 0f ||
@@ -123,6 +150,7 @@ sealed class ScenarioState
     public List<string> LoadedAssets { get; } = new();
     public List<string> FailedAssets { get; } = new();
     public Dictionary<uint, AssetProfile> SourceProfiles { get; } = new();
+    public List<AssetDiagnostics> AssetDiagnostics { get; } = new();
     public int StaticBuildingCount { get; set; }
     public int StaticPropCount { get; set; }
     public int StaticDecorationCount { get; set; }
@@ -177,11 +205,14 @@ class Program
         SandboxOptions options = ParseOptions(args);
         PrintStartup(options);
 
-        if (options.Scenario == ScenarioKind.FullGameStress)
+        if (options.Scenario == ScenarioKind.FullGameStress ||
+            options.Scenario == ScenarioKind.FbxStaticDiagnostic ||
+            options.Scenario == ScenarioKind.FbxAnimalDiagnostic ||
+            options.Scenario == ScenarioKind.MixedCorrectnessDiagnostic)
         {
-            cameraDistance = 18f;
-            cameraHeight = 8f;
-            cameraPitch = 30f;
+            cameraDistance = 36f;
+            cameraHeight = 13f;
+            cameraPitch = 20f;
         }
 
         var config = new EngineConfig()
@@ -798,6 +829,28 @@ class Program
                 options.Seed = seed;
                 i++;
             }
+            else if (arg == "--only-category" && i + 1 < args.Length)
+            {
+                options.OnlyCategory = ParseCategory(args[i + 1]);
+                i++;
+            }
+            else if (arg == "--only-asset" && i + 1 < args.Length)
+            {
+                options.OnlyAsset = args[i + 1];
+                i++;
+            }
+            else if (arg == "--no-humanoids")
+            {
+                options.NoHumanoids = true;
+            }
+            else if (arg == "--no-animals")
+            {
+                options.NoAnimals = true;
+            }
+            else if (arg == "--no-statics")
+            {
+                options.NoStatics = true;
+            }
         }
 
         if (options.BenchmarkMode && options.DurationSeconds <= 0f)
@@ -813,6 +866,12 @@ class Program
         return raw.ToLowerInvariant() switch
         {
             "baseline" => ScenarioKind.Baseline,
+            "fbx-static-diagnostic" => ScenarioKind.FbxStaticDiagnostic,
+            "static-diagnostic" => ScenarioKind.FbxStaticDiagnostic,
+            "fbx-animal-diagnostic" => ScenarioKind.FbxAnimalDiagnostic,
+            "animal-diagnostic" => ScenarioKind.FbxAnimalDiagnostic,
+            "mixed-correctness-diagnostic" => ScenarioKind.MixedCorrectnessDiagnostic,
+            "mixed-diagnostic" => ScenarioKind.MixedCorrectnessDiagnostic,
             "full-game-stress" => ScenarioKind.FullGameStress,
             "full-game" => ScenarioKind.FullGameStress,
             "stress" => ScenarioKind.FullGameStress,
@@ -828,6 +887,19 @@ class Program
             "spawn-despawn" => ScenarioKind.SpawnDespawnChurn,
             "spawn-despawn-churn" => ScenarioKind.SpawnDespawnChurn,
             _ => ScenarioKind.FullGameStress,
+        };
+    }
+
+    static AssetCategory ParseCategory(string raw)
+    {
+        return raw.ToLowerInvariant() switch
+        {
+            "humanoid" => AssetCategory.Humanoid,
+            "animal" => AssetCategory.Animal,
+            "building" => AssetCategory.Building,
+            "prop" => AssetCategory.Prop,
+            "decoration" => AssetCategory.Decoration,
+            _ => throw new ArgumentException($"Unknown category '{raw}'"),
         };
     }
 
@@ -862,6 +934,20 @@ class Program
         {
             Console.WriteLine($"  Metrics output: {options.MetricsOutPath}");
         }
+        if (options.OnlyCategory.HasValue)
+        {
+            Console.WriteLine($"  Only category: {options.OnlyCategory.Value}");
+        }
+        if (!string.IsNullOrWhiteSpace(options.OnlyAsset))
+        {
+            Console.WriteLine($"  Only asset: {options.OnlyAsset}");
+        }
+        if (options.NoHumanoids || options.NoAnimals || options.NoStatics)
+        {
+            Console.WriteLine(
+                $"  Filters: noHumanoids={options.NoHumanoids} noAnimals={options.NoAnimals} noStatics={options.NoStatics}"
+            );
+        }
         Console.WriteLine($"  Throne assets: {options.ThroneAssetsRoot}");
         Console.WriteLine(
             "  Usage: dotnet run -- --scenario full-game-stress --npcs 120"
@@ -874,6 +960,9 @@ class Program
         return scenario switch
         {
             ScenarioKind.Baseline => "baseline",
+            ScenarioKind.FbxStaticDiagnostic => "fbx-static-diagnostic",
+            ScenarioKind.FbxAnimalDiagnostic => "fbx-animal-diagnostic",
+            ScenarioKind.MixedCorrectnessDiagnostic => "mixed-correctness-diagnostic",
             ScenarioKind.FullGameStress => "full-game-stress",
             ScenarioKind.GameLikeVillage => "game-like-village",
             ScenarioKind.VariedAnimationCrowd => "varied-animation",
@@ -889,6 +978,9 @@ class Program
         return scenario switch
         {
             ScenarioKind.WorstCaseAllVisible => SpawnLayout.Compact,
+            ScenarioKind.FbxStaticDiagnostic => SpawnLayout.Village,
+            ScenarioKind.FbxAnimalDiagnostic => SpawnLayout.Village,
+            ScenarioKind.MixedCorrectnessDiagnostic => SpawnLayout.Village,
             ScenarioKind.FullGameStress => SpawnLayout.Village,
             ScenarioKind.GameLikeVillage => SpawnLayout.Village,
             _ => SpawnLayout.Wide,
@@ -943,6 +1035,7 @@ class Program
             Category = profile.Category,
             IsDynamic = profile.IsDynamic,
             Scale = ResolveAssetScale(profile.Category, name, profile.Scale),
+            TargetHeight = ResolveTargetHeight(profile.Category, name, profile.TargetHeight),
             RotationX = profile.RotationX,
             RotationY = profile.RotationY,
             RotationZ = profile.RotationZ,
@@ -976,6 +1069,72 @@ class Program
         }
 
         return currentScale;
+    }
+
+    static float? ResolveTargetHeight(AssetCategory category, string name, float? currentTarget)
+    {
+        if (currentTarget.HasValue)
+        {
+            return currentTarget;
+        }
+
+        return category switch
+        {
+            AssetCategory.Humanoid => 1.8f,
+            AssetCategory.Animal => name switch
+            {
+                "horse" => 1.85f,
+                "stag" => 1.75f,
+                "deer" => 1.45f,
+                "bull" => 1.8f,
+                "cow" => 1.65f,
+                "wolf" => 0.95f,
+                "fox" => 0.65f,
+                "husky" => 0.85f,
+                _ => 1.0f,
+            },
+            AssetCategory.Building => name switch
+            {
+                "bell_tower" => 18.0f,
+                "mill" => 12.0f,
+                "sawmill" => 10.0f,
+                "stable" => 8.0f,
+                "inn" => 7.5f,
+                "blacksmith" => 6.5f,
+                "house_1" or "house_2" or "house_3" or "house_4" => 5.75f,
+                _ => 6.0f,
+            },
+            AssetCategory.Prop => name switch
+            {
+                "marketstand_1" => 3.0f,
+                "cart" => 1.7f,
+                "bench_1" => 1.0f,
+                "barrel" => 0.95f,
+                "crate" => 0.9f,
+                "fence" => 1.2f,
+                "well" => 1.8f,
+                "gazebo" => 4.2f,
+                "bonfire" => 0.8f,
+                "rock_1" or "rock_2" or "rock_3" => 1.25f,
+                "hay" => 1.0f,
+                "bag" => 0.6f,
+                "cauldron" => 0.85f,
+                _ => 1.0f,
+            },
+            AssetCategory.Decoration => name switch
+            {
+                "fence" => 1.2f,
+                "bonfire" => 0.8f,
+                "rock_1" or "rock_2" or "rock_3" => 1.1f,
+                "hay" => 1.0f,
+                "barrel" => 0.95f,
+                "crate" => 0.9f,
+                "bag" => 0.6f,
+                "cauldron" => 0.85f,
+                _ => 0.9f,
+            },
+            _ => null,
+        };
     }
 
     static float ResolveGroundBias(AssetCategory category, string name, float currentBias)
@@ -1053,9 +1212,10 @@ class Program
     {
         string baseDir = AppDomain.CurrentDomain.BaseDirectory;
         string localCharacter = Path.Combine(baseDir, "assets", "Character.glb");
-        List<AssetProfile> humanoidProfiles = BuildHumanoidProfiles(options, localCharacter);
-        List<AssetProfile> animalProfiles = BuildAnimalProfiles(options);
-        List<AssetProfile> buildingProfiles = BuildStaticProfiles(
+        List<AssetProfile> playerProfiles = BuildHumanoidProfiles(options, localCharacter);
+        List<AssetProfile> humanoidProfiles = FilterProfiles(playerProfiles, options, includeHumanoids: true);
+        List<AssetProfile> animalProfiles = FilterProfiles(BuildAnimalProfiles(options), options);
+        List<AssetProfile> buildingProfiles = FilterProfiles(BuildStaticProfiles(
             options,
             "buildings",
             AssetCategory.Building,
@@ -1069,8 +1229,8 @@ class Program
             "Sawmill.fbx",
             "Stable.fbx",
             "Bell_Tower.fbx"
-        );
-        List<AssetProfile> propProfiles = BuildStaticProfiles(
+        ), options);
+        List<AssetProfile> propProfiles = FilterProfiles(BuildStaticProfiles(
             options,
             "props",
             AssetCategory.Prop,
@@ -1089,8 +1249,8 @@ class Program
             "Hay.fbx",
             "Bag.fbx",
             "Cauldron.fbx"
-        );
-        List<AssetProfile> decorationProfiles = BuildStaticProfiles(
+        ), options);
+        List<AssetProfile> decorationProfiles = FilterProfiles(BuildStaticProfiles(
             options,
             "props",
             AssetCategory.Decoration,
@@ -1104,14 +1264,15 @@ class Program
             "Bag.fbx",
             "Cauldron.fbx",
             "Bonfire.fbx"
-        );
+        ), options);
 
         RigConfig? playerRig = null;
         List<uint> sourceModelIds = new();
         List<string> loadedAssets = new();
         List<string> failedAssets = new();
+        List<AssetDiagnostics> assetDiagnostics = new();
 
-        foreach (AssetProfile profile in humanoidProfiles)
+        foreach (AssetProfile profile in playerProfiles)
         {
             playerRig = LoadRig(
                 game,
@@ -1119,7 +1280,8 @@ class Program
                 sourceModelIds,
                 loadedAssets,
                 failedAssets,
-                new Dictionary<uint, AssetProfile>()
+                new Dictionary<uint, AssetProfile>(),
+                assetDiagnostics
             );
             if (playerRig is not null)
             {
@@ -1136,7 +1298,7 @@ class Program
 
         playerX = 0f;
         playerY = playerRig.GroundOffsetY;
-        playerZ = options.Scenario == ScenarioKind.FullGameStress ? 18f : 0f;
+        playerZ = InitialPlayerZ(options.Scenario);
         playerFacing = 0f;
         currentAnim = AnimState.Idle;
 
@@ -1163,20 +1325,30 @@ class Program
         state.SourceModelIds.AddRange(sourceModelIds);
         state.LoadedAssets.AddRange(loadedAssets);
         state.FailedAssets.AddRange(failedAssets);
-        state.SourceProfiles[playerRig.SourceModelId] = humanoidProfiles.First(p => p.Path == playerRig.Path);
+        state.AssetDiagnostics.AddRange(assetDiagnostics);
+        state.SourceProfiles[playerRig.SourceModelId] = playerProfiles.First(p => p.Path == playerRig.Path);
         state.HumanoidRigs.Add(playerRig);
 
-        if (options.Scenario != ScenarioKind.Baseline)
+        bool spawnHumanoids = ShouldSpawnHumanoids(options);
+        bool spawnAnimals = ShouldSpawnAnimals(options);
+        bool spawnStatics = ShouldSpawnStatics(options);
+
+        if (spawnHumanoids && options.Scenario != ScenarioKind.Baseline)
         {
-            foreach (AssetProfile profile in humanoidProfiles.Skip(1))
+            foreach (AssetProfile profile in humanoidProfiles)
             {
+                if (profile.Path == playerRig.Path)
+                {
+                    continue;
+                }
                 RigConfig? extraHumanoid = LoadRig(
                     game,
                     profile,
                     state.SourceModelIds,
                     state.LoadedAssets,
                     state.FailedAssets,
-                    state.SourceProfiles
+                    state.SourceProfiles,
+                    state.AssetDiagnostics
                 );
                 if (extraHumanoid is not null && extraHumanoid.Path != playerRig.Path)
                 {
@@ -1185,15 +1357,9 @@ class Program
             }
         }
 
-        if (options.Scenario == ScenarioKind.FullGameStress ||
-            options.Scenario == ScenarioKind.GameLikeVillage ||
-            options.Scenario == ScenarioKind.ThroneCurrentMix ||
-            options.Scenario == ScenarioKind.WorstCaseAllVisible ||
-            options.Scenario == ScenarioKind.SpawnDespawnChurn)
+        if (spawnAnimals)
         {
-            int animalProfileLimit = options.Scenario == ScenarioKind.FullGameStress
-                ? animalProfiles.Count
-                : (options.Scenario == ScenarioKind.GameLikeVillage ? 8 : 6);
+            int animalProfileLimit = AnimalProfileLimit(options, animalProfiles.Count);
             foreach (AssetProfile animalProfile in animalProfiles.Take(animalProfileLimit))
             {
                 RigConfig? animalRig = LoadRig(
@@ -1202,7 +1368,8 @@ class Program
                     state.SourceModelIds,
                     state.LoadedAssets,
                     state.FailedAssets,
-                    state.SourceProfiles
+                    state.SourceProfiles,
+                    state.AssetDiagnostics
                 );
                 if (animalRig is not null)
                 {
@@ -1214,6 +1381,8 @@ class Program
         int humanoidCount = options.InitialNpcCount;
         int animalCount = options.Scenario switch
         {
+            ScenarioKind.FbxAnimalDiagnostic => animalProfiles.Count == 0 ? 0 : Math.Max(24, options.InitialNpcCount / 2),
+            ScenarioKind.MixedCorrectnessDiagnostic => Math.Max(18, options.InitialNpcCount / 3),
             ScenarioKind.FullGameStress => Math.Max(48, options.InitialNpcCount / 2),
             ScenarioKind.GameLikeVillage => Math.Max(24, options.InitialNpcCount / 3),
             ScenarioKind.ThroneCurrentMix => Math.Max(16, options.InitialNpcCount / 2),
@@ -1221,6 +1390,14 @@ class Program
             ScenarioKind.SpawnDespawnChurn => Math.Max(12, options.InitialNpcCount / 3),
             _ => 0,
         };
+        if (!spawnHumanoids)
+        {
+            humanoidCount = 0;
+        }
+        if (!spawnAnimals)
+        {
+            animalCount = 0;
+        }
 
         for (int i = 0; i < humanoidCount; i++)
         {
@@ -1256,11 +1433,7 @@ class Program
             }
         }
 
-        if (options.Scenario == ScenarioKind.FullGameStress ||
-            options.Scenario == ScenarioKind.GameLikeVillage ||
-            options.Scenario == ScenarioKind.ThroneCurrentMix ||
-            options.Scenario == ScenarioKind.WorstCaseAllVisible ||
-            options.Scenario == ScenarioKind.SpawnDespawnChurn)
+        if (spawnStatics)
         {
             List<uint> buildingSources = LoadStaticSources(
                 game,
@@ -1269,7 +1442,8 @@ class Program
                 state.SourceModelIds,
                 state.LoadedAssets,
                 state.FailedAssets,
-                state.SourceProfiles
+                state.SourceProfiles,
+                state.AssetDiagnostics
             );
 
             List<uint> propSources = LoadStaticSources(
@@ -1279,7 +1453,8 @@ class Program
                 state.SourceModelIds,
                 state.LoadedAssets,
                 state.FailedAssets,
-                state.SourceProfiles
+                state.SourceProfiles,
+                state.AssetDiagnostics
             );
 
             List<uint> decorationSources = LoadStaticSources(
@@ -1289,11 +1464,14 @@ class Program
                 state.SourceModelIds,
                 state.LoadedAssets,
                 state.FailedAssets,
-                state.SourceProfiles
+                state.SourceProfiles,
+                state.AssetDiagnostics
             );
 
             int buildingInstances = options.Scenario switch
             {
+                ScenarioKind.FbxStaticDiagnostic => 18,
+                ScenarioKind.MixedCorrectnessDiagnostic => 18,
                 ScenarioKind.FullGameStress => 32,
                 ScenarioKind.GameLikeVillage => 24,
                 ScenarioKind.WorstCaseAllVisible => 18,
@@ -1302,6 +1480,8 @@ class Program
             };
             int propInstances = options.Scenario switch
             {
+                ScenarioKind.FbxStaticDiagnostic => 64,
+                ScenarioKind.MixedCorrectnessDiagnostic => 64,
                 ScenarioKind.FullGameStress => 96,
                 ScenarioKind.GameLikeVillage => 72,
                 ScenarioKind.WorstCaseAllVisible => 64,
@@ -1310,6 +1490,8 @@ class Program
             };
             int decorationInstances = options.Scenario switch
             {
+                ScenarioKind.FbxStaticDiagnostic => 48,
+                ScenarioKind.MixedCorrectnessDiagnostic => 48,
                 ScenarioKind.FullGameStress => 128,
                 ScenarioKind.GameLikeVillage => 96,
                 ScenarioKind.WorstCaseAllVisible => 72,
@@ -1353,6 +1535,137 @@ class Program
         }
 
         return state;
+    }
+
+    static float InitialPlayerZ(ScenarioKind scenario)
+    {
+        return scenario switch
+        {
+            ScenarioKind.FullGameStress => -8f,
+            ScenarioKind.FbxStaticDiagnostic => 18f,
+            ScenarioKind.FbxAnimalDiagnostic => 18f,
+            ScenarioKind.MixedCorrectnessDiagnostic => 18f,
+            _ => 0f,
+        };
+    }
+
+    static List<AssetProfile> FilterProfiles(
+        IEnumerable<AssetProfile> profiles,
+        SandboxOptions options,
+        bool includeHumanoids = false
+    )
+    {
+        List<AssetProfile> filtered = new();
+        foreach (AssetProfile profile in profiles)
+        {
+            if (!ProfileMatchesFilters(profile, options, includeHumanoids))
+            {
+                continue;
+            }
+            filtered.Add(profile);
+        }
+        return filtered;
+    }
+
+    static bool ProfileMatchesFilters(AssetProfile profile, SandboxOptions options, bool includeHumanoids)
+    {
+        if (options.OnlyCategory.HasValue && profile.Category != options.OnlyCategory.Value)
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.OnlyAsset))
+        {
+            string requested = options.OnlyAsset!;
+            string assetName = Path.GetFileNameWithoutExtension(profile.Path);
+            string fileName = Path.GetFileName(profile.Path);
+            if (!assetName.Equals(requested, StringComparison.OrdinalIgnoreCase) &&
+                !fileName.Equals(requested, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        if (options.NoHumanoids && profile.Category == AssetCategory.Humanoid && !includeHumanoids)
+        {
+            return false;
+        }
+        if (options.NoAnimals && profile.Category == AssetCategory.Animal)
+        {
+            return false;
+        }
+        if (options.NoStatics && (profile.Category == AssetCategory.Building ||
+                                  profile.Category == AssetCategory.Prop ||
+                                  profile.Category == AssetCategory.Decoration))
+        {
+            return false;
+        }
+
+        return options.Scenario switch
+        {
+            ScenarioKind.FbxStaticDiagnostic => profile.Category is AssetCategory.Building or AssetCategory.Prop or AssetCategory.Decoration,
+            ScenarioKind.FbxAnimalDiagnostic => profile.Category == AssetCategory.Animal,
+            ScenarioKind.MixedCorrectnessDiagnostic => profile.Category is AssetCategory.Humanoid or AssetCategory.Animal or AssetCategory.Building or AssetCategory.Prop or AssetCategory.Decoration,
+            _ => true,
+        };
+    }
+
+    static bool ShouldSpawnHumanoids(SandboxOptions options)
+    {
+        if (options.NoHumanoids)
+        {
+            return false;
+        }
+
+        return options.Scenario switch
+        {
+            ScenarioKind.FbxStaticDiagnostic => false,
+            ScenarioKind.FbxAnimalDiagnostic => false,
+            _ => true,
+        };
+    }
+
+    static bool ShouldSpawnAnimals(SandboxOptions options)
+    {
+        if (options.NoAnimals)
+        {
+            return false;
+        }
+
+        return options.Scenario switch
+        {
+            ScenarioKind.Baseline => false,
+            ScenarioKind.FbxStaticDiagnostic => false,
+            _ => true,
+        };
+    }
+
+    static bool ShouldSpawnStatics(SandboxOptions options)
+    {
+        if (options.NoStatics)
+        {
+            return false;
+        }
+
+        return options.Scenario switch
+        {
+            ScenarioKind.Baseline => false,
+            ScenarioKind.VariedAnimationCrowd => false,
+            ScenarioKind.FbxAnimalDiagnostic => false,
+            _ => true,
+        };
+    }
+
+    static int AnimalProfileLimit(SandboxOptions options, int availableCount)
+    {
+        return options.Scenario switch
+        {
+            ScenarioKind.FbxAnimalDiagnostic => availableCount,
+            ScenarioKind.MixedCorrectnessDiagnostic => Math.Min(availableCount, 6),
+            ScenarioKind.FullGameStress => availableCount,
+            ScenarioKind.GameLikeVillage => Math.Min(availableCount, 8),
+            _ => Math.Min(availableCount, 6),
+        };
     }
 
     static RigConfig PickSpawnRig(ScenarioState state, int index)
@@ -1434,7 +1747,8 @@ class Program
         List<uint> sourceModelIds,
         List<string> loadedAssets,
         List<string> failedAssets,
-        Dictionary<uint, AssetProfile> sourceProfiles
+        Dictionary<uint, AssetProfile> sourceProfiles,
+        List<AssetDiagnostics> assetDiagnostics
     )
     {
         string path = profile.Path;
@@ -1454,11 +1768,17 @@ class Program
 
         int animCount = game.GetAnimationCount(modelId);
         (int idleAnim, int walkAnim, int runAnim) = ResolveAnimationIndices(game, modelId, animCount, profile);
-        float groundOffsetY = ComputeGroundOffsetY(game, modelId, profile.Scale, profile.GroundOffsetBias);
+        string[] animationNames = Enumerable.Range(0, animCount)
+            .Select(index => game.GetAnimationName(modelId, index))
+            .ToArray();
+        BoundingBox3D bounds = game.GetModelBoundingBox(modelId);
+        float finalScale = ResolveFinalScale(bounds, profile.Scale, profile.TargetHeight);
+        float groundOffsetY = ComputeGroundOffsetY(bounds, finalScale, profile.GroundOffsetBias);
 
         sourceModelIds.Add(modelId);
         loadedAssets.Add(path);
         sourceProfiles[modelId] = profile;
+        AppendAssetDiagnostics(assetDiagnostics, profile, bounds, finalScale, groundOffsetY, animCount, idleAnim, walkAnim, runAnim, animationNames);
 
         string name = Path.GetFileNameWithoutExtension(path);
         return new RigConfig
@@ -1470,7 +1790,7 @@ class Program
             IdleAnim = idleAnim,
             WalkAnim = walkAnim,
             RunAnim = runAnim,
-            Scale = profile.Scale,
+            Scale = finalScale,
             MoveSpeed = GuessMoveSpeed(name, profile.Category == AssetCategory.Animal),
             IsAnimal = profile.Category == AssetCategory.Animal,
             GroundOffsetY = groundOffsetY,
@@ -1487,7 +1807,8 @@ class Program
         List<uint> sourceModelIds,
         List<string> loadedAssets,
         List<string> failedAssets,
-        Dictionary<uint, AssetProfile> sourceProfiles
+        Dictionary<uint, AssetProfile> sourceProfiles,
+        List<AssetDiagnostics> assetDiagnostics
     )
     {
         List<uint> loaded = new();
@@ -1512,6 +1833,10 @@ class Program
             sourceModelIds.Add(modelId);
             loadedAssets.Add(path);
             sourceProfiles[modelId] = profile;
+            BoundingBox3D bounds = game.GetModelBoundingBox(modelId);
+            float finalScale = ResolveFinalScale(bounds, profile.Scale, profile.TargetHeight);
+            float groundOffsetY = ComputeGroundOffsetY(bounds, finalScale, profile.GroundOffsetBias);
+            AppendAssetDiagnostics(assetDiagnostics, profile, bounds, finalScale, groundOffsetY, 0, -1, -1, -1, Array.Empty<string>());
             loaded.Add(modelId);
         }
 
@@ -1565,8 +1890,10 @@ class Program
                 z = (float)(rng.NextDouble() * 150.0 - 75.0);
                 yaw = (float)(rng.NextDouble() * 360.0);
             }
-            float scale = profile.Scale * (0.95f + (float)(rng.NextDouble() * 0.1));
-            float groundOffsetY = ComputeGroundOffsetY(game, sourceModel, scale, profile.GroundOffsetBias);
+            BoundingBox3D bounds = game.GetModelBoundingBox(sourceModel);
+            float baseScale = ResolveFinalScale(bounds, profile.Scale, profile.TargetHeight);
+            float scale = baseScale * (0.95f + (float)(rng.NextDouble() * 0.1));
+            float groundOffsetY = ComputeGroundOffsetY(bounds, scale, profile.GroundOffsetBias);
 
             game.SetModelPosition(modelId, x, groundOffsetY, z);
             game.SetModelRotation(
@@ -1598,25 +1925,27 @@ class Program
             return PickTarget(rng, layout, isAnimal);
         }
 
-        (float baseX, float baseZ)[] anchors = isAnimal
-            ? new (float, float)[]
-            {
-                (-24f, 26f), (-18f, 32f), (-12f, 28f), (-6f, 34f),
-                (6f, 34f), (12f, 28f), (18f, 32f), (24f, 26f),
-                (-16f, 22f), (16f, 22f),
-            }
-            : new (float, float)[]
-            {
-                (-20f, 10f), (-14f, 16f), (-8f, 22f), (-2f, 12f),
-                (4f, 18f), (10f, 10f), (16f, 16f), (22f, 12f),
-                (-18f, 28f), (-10f, 30f), (0f, 24f), (10f, 28f), (20f, 24f),
-            };
+        if (isAnimal)
+        {
+            int penIndex = spawnIndex % 2;
+            int slot = spawnIndex / 2;
+            int column = slot % 4;
+            int row = slot / 4;
+            float baseX = penIndex == 0 ? (-22f + column * 3.8f) : (10f + column * 3.8f);
+            float baseZ = 8f + row * 4.6f;
+            float jitterX = (float)(rng.NextDouble() * 0.8 - 0.4);
+            float jitterZ = (float)(rng.NextDouble() * 0.8 - 0.4);
+            return (baseX + jitterX, baseZ + jitterZ);
+        }
 
-        (float baseX, float baseZ) anchor = anchors[spawnIndex % anchors.Length];
-        float jitterRange = isAnimal ? 2.0f : 1.25f;
-        float jitterX = (float)(rng.NextDouble() * jitterRange * 2.0 - jitterRange);
-        float jitterZ = (float)(rng.NextDouble() * jitterRange * 2.0 - jitterRange);
-        return (anchor.baseX + jitterX, anchor.baseZ + jitterZ);
+        int lane = spawnIndex % 5;
+        int rowIndex = spawnIndex / 5;
+        float[] laneX = { -10f, -5f, 0f, 5f, 10f };
+        float baseHumanoidX = laneX[lane];
+        float baseHumanoidZ = 26f + rowIndex * 4.5f;
+        float humanoidJitterX = (float)(rng.NextDouble() * 1.2 - 0.6);
+        float humanoidJitterZ = (float)(rng.NextDouble() * 1.2 - 0.6);
+        return (baseHumanoidX + humanoidJitterX, baseHumanoidZ + humanoidJitterZ);
     }
 
     static (float x, float z) PickTarget(Random rng, SpawnLayout layout, bool isAnimal = false)
@@ -1632,14 +1961,14 @@ class Program
             (float baseX, float baseZ)[] waypoints = isAnimal
                 ? new (float, float)[]
                 {
-                    (-30f, 28f), (-24f, 34f), (-20f, 22f), (-14f, 30f),
-                    (16f, 30f), (20f, 24f), (24f, 34f), (30f, 26f),
+                    (-24f, 10f), (-20f, 18f), (-16f, 26f), (-12f, 14f),
+                    (12f, 14f), (16f, 26f), (20f, 18f), (24f, 10f),
                 }
                 : new (float, float)[]
                 {
-                    (-20f, 12f), (-16f, 20f), (-10f, 28f), (-4f, 14f),
-                    (4f, 24f), (10f, 12f), (16f, 20f), (22f, 10f),
-                    (0f, 18f), (8f, 30f), (-8f, 30f), (24f, 20f),
+                    (-10f, 26f), (-6f, 32f), (-2f, 38f), (2f, 30f),
+                    (6f, 36f), (10f, 26f), (-8f, 44f), (0f, 42f),
+                    (8f, 44f), (14f, 36f), (-14f, 36f), (0f, 50f),
                 };
             (float baseX, float baseZ) anchor = waypoints[rng.Next(waypoints.Length)];
             float jitterX = (float)(rng.NextDouble() * (isAnimal ? 6.0 : 4.0) - (isAnimal ? 3.0 : 2.0));
@@ -1658,35 +1987,71 @@ class Program
         Random rng
     )
     {
-        (float x, float z, float yaw)[] anchors = scatterKind switch
+        return scatterKind switch
         {
-            StaticScatterKind.Building => new (float, float, float)[]
-            {
-                (-30f, 10f, 90f), (-12f, 8f, 0f), (12f, 8f, 0f), (30f, 10f, 270f),
-                (-28f, 24f, 90f), (-10f, 26f, 180f), (10f, 26f, 180f), (28f, 24f, 270f),
-                (-20f, 38f, 180f), (0f, 40f, 180f), (20f, 38f, 180f), (0f, 18f, 90f),
-            },
-            StaticScatterKind.Prop => new (float, float, float)[]
-            {
-                (-24f, 14f, 0f), (-18f, 18f, 45f), (-12f, 14f, 90f), (-6f, 18f, 0f),
-                (0f, 12f, 180f), (6f, 18f, 90f), (12f, 14f, 0f), (18f, 18f, 270f),
-                (24f, 14f, 180f), (-22f, 30f, 45f), (-14f, 32f, 0f), (-6f, 28f, 90f),
-                (6f, 28f, 270f), (14f, 32f, 180f), (22f, 30f, 0f), (0f, 34f, 0f),
-            },
-            _ => new (float, float, float)[]
-            {
-                (-34f, 8f, 0f), (-30f, 18f, 45f), (-26f, 34f, 90f), (-18f, 10f, 0f),
-                (-16f, 24f, 90f), (-10f, 34f, 135f), (-2f, 8f, 0f), (4f, 22f, 270f),
-                (8f, 34f, 180f), (18f, 8f, 0f), (20f, 22f, 90f), (24f, 34f, 0f),
-                (30f, 12f, 180f), (34f, 26f, 270f), (36f, 38f, 90f), (0f, 18f, 0f),
-                (-8f, 40f, 180f), (8f, 40f, 180f), (-24f, 28f, 45f), (24f, 28f, 315f),
-            },
+            StaticScatterKind.Building => PickBuildingAnchor(index, rng),
+            StaticScatterKind.Prop => PickPropAnchor(index, rng),
+            _ => PickDecorationAnchor(index, rng),
         };
+    }
 
-        (float baseX, float baseZ, float baseYaw) anchor = anchors[index % anchors.Length];
-        float jitterX = (float)(rng.NextDouble() * 2.0 - 1.0);
-        float jitterZ = (float)(rng.NextDouble() * 2.0 - 1.0);
-        return (anchor.baseX + jitterX, anchor.baseZ + jitterZ, anchor.baseYaw);
+    static (float x, float z, float yaw) PickBuildingAnchor(int index, Random rng)
+    {
+        int column = index % 4;
+        int row = index / 4;
+        float[] laneX = { -28f, -10f, 10f, 28f };
+        float[] yawByLane = { 90f, 90f, 270f, 270f };
+        float baseX = laneX[column];
+        float baseZ = 10f + row * 14f;
+        float jitterX = (float)(rng.NextDouble() * 0.6 - 0.3);
+        float jitterZ = (float)(rng.NextDouble() * 1.0 - 0.5);
+        return (baseX + jitterX, baseZ + jitterZ, yawByLane[column]);
+    }
+
+    static (float x, float z, float yaw) PickPropAnchor(int index, Random rng)
+    {
+        int district = index % 4;
+        int slot = index / 4;
+        int column = slot % 4;
+        int row = slot / 4;
+
+        float districtCenterX = district switch
+        {
+            0 => -18f,
+            1 => -6f,
+            2 => 6f,
+            _ => 18f,
+        };
+        float districtCenterZ = district < 2 ? 12f : 24f;
+        float baseX = districtCenterX + (column - 1.5f) * 3.5f;
+        float baseZ = districtCenterZ + row * 5.0f;
+        float jitterX = (float)(rng.NextDouble() * 1.0 - 0.5);
+        float jitterZ = (float)(rng.NextDouble() * 1.0 - 0.5);
+        float yaw = (index * 37) % 360;
+        return (baseX + jitterX, baseZ + jitterZ, yaw);
+    }
+
+    static (float x, float z, float yaw) PickDecorationAnchor(int index, Random rng)
+    {
+        int band = index % 6;
+        int slot = index / 6;
+        int row = slot / 3;
+        int column = slot % 3;
+
+        float baseX = band switch
+        {
+            0 => -30f + column * 4f,
+            1 => -16f + column * 4f,
+            2 => -2f + column * 4f,
+            3 => 12f + column * 4f,
+            4 => -22f + column * 4f,
+            _ => 16f + column * 4f,
+        };
+        float baseZ = band < 4 ? (8f + row * 6f) : (20f + row * 6f);
+        float jitterX = (float)(rng.NextDouble() * 0.8 - 0.4);
+        float jitterZ = (float)(rng.NextDouble() * 0.8 - 0.4);
+        float yaw = (index * 53) % 360;
+        return (baseX + jitterX, baseZ + jitterZ, yaw);
     }
 
     static float WrapDegrees(float degrees)
@@ -1765,10 +2130,57 @@ class Program
             .ToLowerInvariant();
     }
 
-    static float ComputeGroundOffsetY(GoudGame game, uint modelId, float scale, float bias)
+    static float ResolveFinalScale(BoundingBox3D bounds, float fallbackScale, float? targetHeight)
     {
-        BoundingBox3D bounds = game.GetModelBoundingBox(modelId);
+        if (targetHeight is null)
+        {
+            return fallbackScale;
+        }
+
+        float rawHeight = MathF.Max(bounds.MaxY - bounds.MinY, 0.0001f);
+        float fittedScale = targetHeight.Value / rawHeight;
+        if (!float.IsFinite(fittedScale) || fittedScale <= 0.0f)
+        {
+            return fallbackScale;
+        }
+
+        return fittedScale;
+    }
+
+    static float ComputeGroundOffsetY(BoundingBox3D bounds, float scale, float bias)
+    {
         return (-bounds.MinY * scale) + bias;
+    }
+
+    static void AppendAssetDiagnostics(
+        List<AssetDiagnostics> diagnostics,
+        AssetProfile profile,
+        BoundingBox3D bounds,
+        float finalScale,
+        float groundOffsetY,
+        int animationCount,
+        int idleAnim,
+        int walkAnim,
+        int runAnim,
+        string[] animationNames)
+    {
+        diagnostics.Add(new AssetDiagnostics
+        {
+            Name = profile.Name,
+            Path = profile.Path,
+            Category = profile.Category.ToString(),
+            IsDynamic = profile.IsDynamic,
+            RawWidth = bounds.MaxX - bounds.MinX,
+            RawHeight = bounds.MaxY - bounds.MinY,
+            RawDepth = bounds.MaxZ - bounds.MinZ,
+            FinalScale = finalScale,
+            GroundOffsetY = groundOffsetY,
+            AnimationCount = animationCount,
+            IdleAnimation = idleAnim,
+            WalkAnimation = walkAnim,
+            RunAnimation = runAnim,
+            AnimationNames = animationNames,
+        });
     }
 
     static float GuessMoveSpeed(string name, bool isAnimal)
@@ -1893,6 +2305,10 @@ class Program
             {
                 loaded = state.LoadedAssets.Distinct().OrderBy(path => path).ToArray(),
                 failed = state.FailedAssets.Distinct().OrderBy(path => path).ToArray(),
+                diagnostics = state.AssetDiagnostics
+                    .OrderBy(record => record.Category)
+                    .ThenBy(record => record.Name)
+                    .ToArray(),
             },
             frameMs = Summarize(metrics.FrameMs),
             fps = Summarize(fpsSamples),

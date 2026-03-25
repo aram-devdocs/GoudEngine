@@ -148,6 +148,7 @@ impl Renderer3D {
     /// and draws each sub-mesh with the skinned vertex layout.
     pub(super) fn render_skinned_models(
         &mut self,
+        frustum: Option<&super::frustum::Frustum>,
         view_arr: &[f32; 16],
         proj_arr: &[f32; 16],
         shadow_matrix: &[f32; 16],
@@ -168,6 +169,7 @@ impl Renderer3D {
             obj_ids: *const Vec<u32>,
             mat_ids: *const Vec<u32>,
             bone_mats: *const Vec<[f32; 16]>,
+            bounds: crate::core::types::MeshBounds,
         }
 
         let mut draws: Vec<SkinnedDraw> = Vec::new();
@@ -186,6 +188,7 @@ impl Renderer3D {
                     obj_ids: &model.mesh_object_ids as *const _,
                     mat_ids: &model.mesh_material_ids as *const _,
                     bone_mats: &player.bone_matrices as *const _,
+                    bounds: model.bounds,
                 });
             }
         }
@@ -208,6 +211,7 @@ impl Renderer3D {
                     obj_ids: &inst.mesh_object_ids as *const _,
                     mat_ids: &inst.mesh_material_ids as *const _,
                     bone_mats: &player.bone_matrices as *const _,
+                    bounds: source.bounds,
                 });
             }
         }
@@ -234,8 +238,54 @@ impl Renderer3D {
             let obj_ids = unsafe { &*draw.obj_ids };
             let mat_ids = unsafe { &*draw.mat_ids };
             let bone_mats = unsafe { &*draw.bone_mats };
+            let Some(&anchor_obj_id) = obj_ids.first() else {
+                continue;
+            };
+            let Some(anchor_obj) = self.objects.get(&anchor_obj_id) else {
+                continue;
+            };
+
+            if let Some(frustum) = frustum {
+                let center = [
+                    (draw.bounds.min[0] + draw.bounds.max[0]) * 0.5,
+                    (draw.bounds.min[1] + draw.bounds.max[1]) * 0.5,
+                    (draw.bounds.min[2] + draw.bounds.max[2]) * 0.5,
+                ];
+                let extent = [
+                    draw.bounds.max[0] - center[0],
+                    draw.bounds.max[1] - center[1],
+                    draw.bounds.max[2] - center[2],
+                ];
+                let world_center = cgmath::Vector3::new(
+                    anchor_obj.position.x + center[0] * anchor_obj.scale.x.abs(),
+                    anchor_obj.position.y + center[1] * anchor_obj.scale.y.abs(),
+                    anchor_obj.position.z + center[2] * anchor_obj.scale.z.abs(),
+                );
+                let max_scale = anchor_obj
+                    .scale
+                    .x
+                    .abs()
+                    .max(anchor_obj.scale.y.abs())
+                    .max(anchor_obj.scale.z.abs());
+                let world_radius = (extent[0] * extent[0]
+                    + extent[1] * extent[1]
+                    + extent[2] * extent[2])
+                    .sqrt()
+                    * max_scale;
+                if !frustum.intersects_sphere(world_center, world_radius) {
+                    continue;
+                }
+            }
 
             self.stats.skinned_instances += 1;
+            self.stats.visible_objects = self
+                .stats
+                .visible_objects
+                .saturating_add(obj_ids.len() as u32);
+            self.stats.culled_objects = self
+                .stats
+                .culled_objects
+                .saturating_sub(obj_ids.len() as u32);
 
             if gpu_skinning {
                 // Upload bone matrices to a storage buffer for the GPU skinning shader.

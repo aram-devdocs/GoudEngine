@@ -409,6 +409,7 @@ impl Renderer3D {
 
         // Single-instance skinned model rendering pass.
         self.render_skinned_models(
+            frustum.as_ref(),
             &view_arr,
             &proj_arr,
             &shadow_matrix,
