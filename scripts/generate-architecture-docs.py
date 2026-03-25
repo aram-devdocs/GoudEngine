@@ -352,6 +352,17 @@ def write_or_check(path: Path, content: str, check: bool) -> None:
     if check:
         current = path.read_text(encoding="utf-8") if path.exists() else ""
         if current != content:
+            # Show the first difference for debugging
+            import difflib
+            diff = list(difflib.unified_diff(
+                current.splitlines(keepends=True),
+                content.splitlines(keepends=True),
+                fromfile="committed",
+                tofile="generated",
+                n=2,
+            ))
+            if diff:
+                print("".join(diff[:30]), file=sys.stderr)
             raise SystemExit(f"Generated file is out of date: {path.relative_to(ROOT)}")
         return
     path.write_text(content, encoding="utf-8")
