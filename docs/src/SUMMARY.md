@@ -26,6 +26,7 @@
 - [SDK-First Architecture](architecture/sdk-first.md)
 - [Architecture Deep Dive](architecture/deep-dive.md)
 - [Provider System](architecture/providers.md)
+- [Console Render Backend Contract](architecture/console-render-provider.md)
 - [Adding a New Language](architecture/adding-a-language.md)
 
 # Features
@@ -49,6 +50,7 @@
 - [Debugger Runtime](guides/debugger-runtime.md)
 - [Sandbox Guide](guides/sandbox.md)
 - [Cross-Platform Deployment](guides/deployment.md)
+- [Console Porting Guide](guides/console-porting.md)
 - [Web Platform Gotchas](guides/web-platform-gotchas.md)
 - [FAQ and Troubleshooting](guides/faq.md)
 - [Video Tutorials](guides/videos.md)

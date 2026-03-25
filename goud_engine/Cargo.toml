@@ -88,7 +88,7 @@ interprocess = { git = "https://github.com/kotauskas/interprocess", rev = "41fac
 
 [lib]
 name = "goud_engine"
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib", "rlib", "staticlib"]
 path = "src/lib.rs"
 
 [build-dependencies]

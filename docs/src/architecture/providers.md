@@ -119,6 +119,8 @@ Key methods:
 
 The `FrameContext` token returned by `begin_frame` must be passed to `end_frame`. This enforces correct frame pairing at compile time — you cannot present without first beginning, and you cannot call `begin_frame` twice without calling `end_frame` between.
 
+Console partners should read [Console Render Backend Contract](console-render-provider.md) before writing a proprietary renderer. That guide maps each method to the engine's frame loop, resource lifetime rules, and the public integration points for windowing and command submission.
+
 ### AudioProvider
 
 | Implementation | Feature | Notes |
