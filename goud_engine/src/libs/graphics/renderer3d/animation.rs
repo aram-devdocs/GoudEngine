@@ -328,6 +328,26 @@ impl AnimationPlayer {
         bone_count
     }
 
+    /// Advance playback state without recomputing bone matrices.
+    ///
+    /// Used when the actor is culled or otherwise not worth sampling this
+    /// frame, while still keeping animation time and transitions coherent.
+    pub fn advance_only(&mut self, dt: f32, animations: &[KeyframeAnimation]) {
+        advance_state(&mut self.primary, dt, animations);
+        advance_state(&mut self.secondary, dt, animations);
+
+        if let Some(ref mut tr) = self.transition {
+            tr.elapsed += dt;
+            if tr.elapsed >= tr.duration {
+                self.transition = None;
+                self.secondary = None;
+                self.blend_factor = 0.0;
+            } else {
+                self.blend_factor = 1.0 - (tr.elapsed / tr.duration);
+            }
+        }
+    }
+
     /// Reset all bone matrices to identity.
     fn reset_bone_matrices_to_identity(&mut self) {
         for m in self.bone_matrices.iter_mut() {
@@ -350,17 +370,6 @@ impl AnimationPlayer {
 // ============================================================================
 // Internal helpers
 // ============================================================================
-
-/// Public wrapper for `advance_state` used by `core_model_animation` for
-/// shared evaluation (G5) — advances the animation clock without recomputing
-/// bone matrices.
-pub(in crate::libs::graphics::renderer3d) fn advance_state_pub(
-    state: &mut Option<AnimationState>,
-    dt: f32,
-    animations: &[KeyframeAnimation],
-) {
-    advance_state(state, dt, animations);
-}
 
 fn advance_state(state: &mut Option<AnimationState>, dt: f32, animations: &[KeyframeAnimation]) {
     if let Some(ref mut s) = state {

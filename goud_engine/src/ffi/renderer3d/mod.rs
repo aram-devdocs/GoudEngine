@@ -48,12 +48,16 @@ pub use animation::{
 pub use camera::{goud_renderer3d_set_camera_position, goud_renderer3d_set_camera_rotation};
 pub use environment::{
     goud_renderer3d_configure_fog, goud_renderer3d_configure_grid,
-    goud_renderer3d_configure_skybox, goud_renderer3d_get_culled_object_count,
-    goud_renderer3d_get_draw_calls, goud_renderer3d_get_visible_object_count,
-    goud_renderer3d_render, goud_renderer3d_render_all, goud_renderer3d_set_animation_lod_enabled,
-    goud_renderer3d_set_fog_enabled, goud_renderer3d_set_frustum_culling_enabled,
-    goud_renderer3d_set_grid_enabled, goud_renderer3d_set_material_sorting_enabled,
-    goud_renderer3d_set_shared_animation_eval, goud_renderer3d_set_skinning_mode,
+    goud_renderer3d_configure_skybox, goud_renderer3d_get_active_instance_count,
+    goud_renderer3d_get_animation_evaluation_count,
+    goud_renderer3d_get_animation_evaluation_saved_count,
+    goud_renderer3d_get_bone_matrix_upload_count, goud_renderer3d_get_culled_object_count,
+    goud_renderer3d_get_draw_calls, goud_renderer3d_get_instanced_draw_calls,
+    goud_renderer3d_get_visible_object_count, goud_renderer3d_render, goud_renderer3d_render_all,
+    goud_renderer3d_set_animation_lod_enabled, goud_renderer3d_set_fog_enabled,
+    goud_renderer3d_set_frustum_culling_enabled, goud_renderer3d_set_grid_enabled,
+    goud_renderer3d_set_material_sorting_enabled, goud_renderer3d_set_shared_animation_eval,
+    goud_renderer3d_set_skinning_mode,
 };
 pub use lighting::{
     goud_renderer3d_add_light, goud_renderer3d_remove_light, goud_renderer3d_update_light,
@@ -69,7 +73,7 @@ pub use model::{
     goud_renderer3d_get_model_mesh_count, goud_renderer3d_instantiate_model,
     goud_renderer3d_load_model, goud_renderer3d_set_model_material,
     goud_renderer3d_set_model_position, goud_renderer3d_set_model_rotation,
-    goud_renderer3d_set_model_scale, GOUD_INVALID_MODEL,
+    goud_renderer3d_set_model_scale, goud_renderer3d_set_model_static, GOUD_INVALID_MODEL,
 };
 pub use postprocess::{
     goud_renderer3d_add_bloom_pass, goud_renderer3d_add_blur_pass,

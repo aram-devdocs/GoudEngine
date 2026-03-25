@@ -11,11 +11,13 @@ mod tests {
                 BoneData {
                     name: "root".to_string(),
                     parent_index: -1,
+                    local_bind_transform: IDENTITY_MAT4,
                     inverse_bind_matrix: IDENTITY_MAT4,
                 },
                 BoneData {
                     name: "child".to_string(),
                     parent_index: 0,
+                    local_bind_transform: IDENTITY_MAT4,
                     inverse_bind_matrix: IDENTITY_MAT4,
                 },
             ],

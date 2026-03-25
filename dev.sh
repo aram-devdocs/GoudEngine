@@ -6,6 +6,7 @@ LOCAL=false
 SKIP_BUILD=false
 NEXT=false
 SDK_TYPE="csharp"  # csharp, python, rust, typescript
+GAME_ARGS=()
 
 # Script directory for absolute paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -122,6 +123,11 @@ ensure_example_node_modules() {
 # Parse command line arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
+    --)
+        shift
+        GAME_ARGS=("$@")
+        break
+        ;;
     --game)
         GAME="$2"
         shift
@@ -135,6 +141,7 @@ while [[ "$#" -gt 0 ]]; do
     --next) NEXT=true ;;
     -h|--help)
         echo "Usage: ./dev.sh [OPTIONS]"
+        echo "       ./dev.sh [OPTIONS] -- [game arguments]"
         echo ""
         echo "Options:"
         echo "  --game <name>    Game to run (default: flappy_goud)"
@@ -142,6 +149,7 @@ while [[ "$#" -gt 0 ]]; do
         echo "  --local          Use local feed when needed; direct-project C# examples use a fast local path"
         echo "  --skipBuild      Skip build step"
         echo "  --next           Run version increment and rebuild"
+        echo "  --               Pass remaining args to the game executable"
         echo "  -h, --help       Show this help message"
         echo ""
         echo "C Games:        flappy_bird (use --sdk c)"
@@ -467,7 +475,7 @@ case $SDK_TYPE in
         "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" restore --source "$HOME/nuget-local" --source https://api.nuget.org/v3/index.json --nologo
         "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" build --no-restore --nologo
     fi
-    "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" run --no-build --nologo
+    "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" run --no-build --nologo -- "${GAME_ARGS[@]}"
     ;;
 
 "c")

@@ -768,6 +768,36 @@ namespace GoudEngine
             return NativeMethods.goud_renderer3d_get_culled_object_count(_ctx);
         }
 
+        /// <summary>Returns the number of instanced draw calls last frame</summary>
+        public int GetInstancedDrawCalls()
+        {
+            return NativeMethods.goud_renderer3d_get_instanced_draw_calls(_ctx);
+        }
+
+        /// <summary>Returns the number of active instances submitted last frame</summary>
+        public int GetActiveInstanceCount()
+        {
+            return NativeMethods.goud_renderer3d_get_active_instance_count(_ctx);
+        }
+
+        /// <summary>Returns the number of uploaded bone matrices last frame</summary>
+        public int GetBoneMatrixUploadCount()
+        {
+            return NativeMethods.goud_renderer3d_get_bone_matrix_upload_count(_ctx);
+        }
+
+        /// <summary>Returns the number of animation evaluations last frame</summary>
+        public int GetAnimationEvaluationCount()
+        {
+            return NativeMethods.goud_renderer3d_get_animation_evaluation_count(_ctx);
+        }
+
+        /// <summary>Returns the number of animation evaluations avoided last frame</summary>
+        public int GetAnimationEvaluationSavedCount()
+        {
+            return NativeMethods.goud_renderer3d_get_animation_evaluation_saved_count(_ctx);
+        }
+
         /// <summary>Renders all 3D objects</summary>
         public bool Render3D()
         {
@@ -886,6 +916,12 @@ namespace GoudEngine
         public uint InstantiateModel(uint sourceModelId)
         {
             return NativeMethods.goud_renderer3d_instantiate_model(_ctx, sourceModelId);
+        }
+
+        /// <summary>Marks a model as static or dynamic for renderer-side batching</summary>
+        public bool SetModelStatic(uint modelId, bool isStatic)
+        {
+            return NativeMethods.goud_renderer3d_set_model_static(_ctx, modelId, isStatic);
         }
 
         /// <summary>Overrides the material on a specific sub-mesh of a model (-1 for all sub-meshes)</summary>

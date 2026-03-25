@@ -160,6 +160,8 @@ impl Renderer3D {
             .current_scene
             .and_then(|sid| self.scenes.get(&sid))
             .map(|s| &s.models);
+        let gpu_skinning = matches!(self.config.skinning.mode, super::config::SkinningMode::Gpu)
+            && self.backend.supports_storage_buffers();
 
         // Collect draw data using raw pointers to avoid cloning Vec data per frame.
         struct SkinnedDraw {
@@ -213,9 +215,6 @@ impl Renderer3D {
         if draws.is_empty() {
             return;
         }
-
-        let gpu_skinning = matches!(self.config.skinning.mode, super::config::SkinningMode::Gpu)
-            && self.backend.supports_storage_buffers();
 
         let _ = self.backend.bind_shader(self.skinned_shader_handle);
         let skinned_unis = self.skinned_uniforms.clone();

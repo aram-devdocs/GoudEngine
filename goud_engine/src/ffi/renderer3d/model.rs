@@ -250,6 +250,24 @@ pub extern "C" fn goud_renderer3d_instantiate_model(
     .unwrap_or(GOUD_INVALID_MODEL)
 }
 
+/// Marks a loaded model or model instance as static or dynamic.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_model_static(
+    context_id: GoudContextId,
+    model_id: u32,
+    is_static: bool,
+) -> bool {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return false;
+    }
+
+    with_renderer(context_id, |renderer| {
+        renderer.set_model_static(model_id, is_static)
+    })
+    .unwrap_or(false)
+}
+
 /// Overrides the material on a specific sub-mesh of a model or instance.
 ///
 /// Pass `mesh_index = -1` to apply to all sub-meshes.

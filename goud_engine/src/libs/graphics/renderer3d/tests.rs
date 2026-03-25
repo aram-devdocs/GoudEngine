@@ -12,6 +12,46 @@ fn make_renderer() -> Renderer3D {
     Renderer3D::new(Box::new(NullBackend::new()), 800, 600).expect("renderer should initialize")
 }
 
+fn test_model_data() -> crate::core::types::ModelData {
+    use crate::core::types::{MeshAsset, MeshBounds, MeshVertex, ModelData, SubMesh};
+
+    let vertices = vec![
+        MeshVertex {
+            position: [0.0, 0.0, 0.0],
+            normal: [0.0, 0.0, 1.0],
+            uv: [0.0, 0.0],
+        },
+        MeshVertex {
+            position: [1.0, 0.0, 0.0],
+            normal: [0.0, 0.0, 1.0],
+            uv: [1.0, 0.0],
+        },
+        MeshVertex {
+            position: [0.0, 1.0, 0.0],
+            normal: [0.0, 0.0, 1.0],
+            uv: [0.0, 1.0],
+        },
+    ];
+
+    ModelData {
+        mesh: MeshAsset {
+            vertices,
+            indices: vec![0, 1, 2],
+            sub_meshes: vec![SubMesh {
+                name: "default".to_string(),
+                start_index: 0,
+                index_count: 3,
+                material_index: None,
+                material: None,
+                bounds: MeshBounds::from_positions(&[[0.0, 0.0, 0.0], [1.0, 1.0, 0.0]]),
+            }],
+            bounds: MeshBounds::from_positions(&[[0.0, 0.0, 0.0], [1.0, 1.0, 0.0]]),
+        },
+        skeleton: None,
+        animations: Vec::new(),
+    }
+}
+
 #[test]
 fn test_instanced_mesh_keeps_single_draw_call_for_many_instances() {
     let mut renderer = make_renderer();
@@ -378,4 +418,130 @@ fn test_scene_filtering_limits_rendered_objects() {
     renderer.clear_current_scene();
     renderer.render(None);
     assert_eq!(renderer.stats().draw_calls, 2);
+}
+
+#[test]
+fn test_destroy_instance_cleans_scene_membership_and_objects() {
+    let mut renderer = make_renderer();
+    let scene_id = renderer.create_scene("models");
+    let source_id = renderer.load_model(test_model_data(), "triangle.glb");
+    let instance_id = renderer
+        .instantiate_model(source_id)
+        .expect("instance should be created");
+
+    assert!(renderer.add_model_to_scene(scene_id, instance_id));
+    let instance_object_ids = renderer
+        .model_instances
+        .get(&instance_id)
+        .expect("instance should exist")
+        .mesh_object_ids
+        .clone();
+    assert!(renderer.destroy_model(instance_id));
+
+    let scene = renderer.scenes.get(&scene_id).expect("scene should exist");
+    assert!(!scene.contains_model(instance_id));
+    for object_id in instance_object_ids {
+        assert!(!scene.contains_object(object_id));
+        assert!(!renderer.objects.contains_key(&object_id));
+    }
+    assert!(!renderer.model_instances.contains_key(&instance_id));
+}
+
+#[test]
+fn test_destroy_source_model_also_destroys_child_instances() {
+    let mut renderer = make_renderer();
+    let scene_id = renderer.create_scene("models");
+    let source_id = renderer.load_model(test_model_data(), "triangle.glb");
+    let instance_a = renderer
+        .instantiate_model(source_id)
+        .expect("first instance should be created");
+    let instance_b = renderer
+        .instantiate_model(source_id)
+        .expect("second instance should be created");
+
+    assert!(renderer.add_model_to_scene(scene_id, source_id));
+    assert!(renderer.add_model_to_scene(scene_id, instance_a));
+    assert!(renderer.add_model_to_scene(scene_id, instance_b));
+    assert!(renderer.destroy_model(source_id));
+
+    let scene = renderer.scenes.get(&scene_id).expect("scene should exist");
+    assert!(scene.models.is_empty());
+    assert!(scene.objects.is_empty());
+    assert!(!renderer.models.contains_key(&source_id));
+    assert!(!renderer.model_instances.contains_key(&instance_a));
+    assert!(!renderer.model_instances.contains_key(&instance_b));
+    assert!(renderer.objects.is_empty());
+}
+
+#[test]
+fn test_remove_model_from_scene_then_destroy_model_is_idempotent() {
+    let mut renderer = make_renderer();
+    let scene_id = renderer.create_scene("models");
+    let source_id = renderer.load_model(test_model_data(), "triangle.glb");
+    let instance_id = renderer
+        .instantiate_model(source_id)
+        .expect("instance should be created");
+
+    assert!(renderer.add_model_to_scene(scene_id, instance_id));
+    assert!(renderer.remove_model_from_scene(scene_id, instance_id));
+    assert!(renderer.destroy_model(instance_id));
+
+    let scene = renderer.scenes.get(&scene_id).expect("scene should exist");
+    assert!(scene.models.is_empty());
+    assert!(scene.objects.is_empty());
+}
+
+#[test]
+fn test_spawn_destroy_churn_leaves_zero_culled_objects() {
+    let mut renderer = make_renderer();
+    let scene_id = renderer.create_scene("models");
+    assert!(renderer.set_current_scene(scene_id));
+    let source_id = renderer.load_model(test_model_data(), "triangle.glb");
+    assert!(renderer.add_model_to_scene(scene_id, source_id));
+
+    for _ in 0..32 {
+        let instance_id = renderer
+            .instantiate_model(source_id)
+            .expect("instance should be created");
+        assert!(renderer.add_model_to_scene(scene_id, instance_id));
+        assert!(renderer.destroy_model(instance_id));
+    }
+
+    renderer.render(None);
+    let stats = renderer.stats();
+    assert_eq!(stats.total_objects, 1);
+    assert_eq!(stats.visible_objects, 1);
+    assert_eq!(stats.culled_objects, 0);
+
+    assert!(renderer.destroy_model(source_id));
+    renderer.render(None);
+    let stats = renderer.stats();
+    assert_eq!(stats.total_objects, 0);
+    assert_eq!(stats.visible_objects, 0);
+    assert_eq!(stats.culled_objects, 0);
+}
+
+#[test]
+fn test_static_models_render_through_instanced_path() {
+    let mut renderer = make_renderer();
+    let scene_id = renderer.create_scene("models");
+    assert!(renderer.set_current_scene(scene_id));
+    let source_id = renderer.load_model(test_model_data(), "triangle.glb");
+    let instance_a = renderer
+        .instantiate_model(source_id)
+        .expect("first instance should be created");
+    let instance_b = renderer
+        .instantiate_model(source_id)
+        .expect("second instance should be created");
+
+    assert!(renderer.add_model_to_scene(scene_id, instance_a));
+    assert!(renderer.add_model_to_scene(scene_id, instance_b));
+    assert!(renderer.set_model_static(instance_a, true));
+    assert!(renderer.set_model_static(instance_b, true));
+
+    renderer.render(None);
+    let stats = renderer.stats();
+    assert_eq!(stats.instanced_draw_calls, 1);
+    assert_eq!(stats.draw_calls, 1);
+    assert_eq!(stats.active_instances, 2);
 }

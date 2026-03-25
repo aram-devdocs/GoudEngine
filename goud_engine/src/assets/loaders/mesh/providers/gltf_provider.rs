@@ -186,10 +186,13 @@ fn extract_skeleton(
             parent_index = -1;
         }
         let ibm = flatten_mat4(inverse_bind_matrices.get(i).unwrap_or(&identity_ibm));
+        let (translation, rotation, scale) = joint_node.transform().decomposed();
+        let local_bind_transform = compose_trs_matrix(translation, rotation, scale);
 
         bones.push(BoneData {
             name: joint_node.name().unwrap_or("unnamed_bone").to_string(),
             parent_index,
+            local_bind_transform,
             inverse_bind_matrix: ibm,
         });
     }
@@ -384,5 +387,40 @@ fn flatten_mat4(m: &[[f32; 4]; 4]) -> [f32; 16] {
         m[1][0], m[1][1], m[1][2], m[1][3], // column 1
         m[2][0], m[2][1], m[2][2], m[2][3], // column 2
         m[3][0], m[3][1], m[3][2], m[3][3], // column 3
+    ]
+}
+
+fn compose_trs_matrix(translation: [f32; 3], rotation: [f32; 4], scale: [f32; 3]) -> [f32; 16] {
+    let [x, y, z, w] = rotation;
+    let x2 = x + x;
+    let y2 = y + y;
+    let z2 = z + z;
+    let xx = x * x2;
+    let xy = x * y2;
+    let xz = x * z2;
+    let yy = y * y2;
+    let yz = y * z2;
+    let zz = z * z2;
+    let wx = w * x2;
+    let wy = w * y2;
+    let wz = w * z2;
+
+    [
+        scale[0] * (1.0 - yy - zz),
+        scale[0] * (xy + wz),
+        scale[0] * (xz - wy),
+        0.0,
+        scale[1] * (xy - wz),
+        scale[1] * (1.0 - xx - zz),
+        scale[1] * (yz + wx),
+        0.0,
+        scale[2] * (xz + wy),
+        scale[2] * (yz - wx),
+        scale[2] * (1.0 - xx - yy),
+        0.0,
+        translation[0],
+        translation[1],
+        translation[2],
+        1.0,
     ]
 }

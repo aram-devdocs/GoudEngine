@@ -5,6 +5,7 @@
 use crate::core::types::{interpolate, KeyframeAnimation, SkeletonData};
 
 use super::animation::IDENTITY_MAT4;
+use super::animation_math::decompose_mat4;
 
 /// Pre-computed property name strings for a single bone (10 channels).
 ///
@@ -94,10 +95,12 @@ pub(in crate::libs::graphics::renderer3d) fn compute_bone_matrices_with_names(
     let mut global_transforms = vec![IDENTITY_MAT4; bone_count];
     let mut result = vec![IDENTITY_MAT4; bone_count];
 
-    for names in prop_names.iter().take(bone_count) {
-        let (tx, ty, tz) = sample_translation_indexed(anim, names, time);
-        let (rx, ry, rz, rw) = sample_rotation_indexed(anim, names, time);
-        let (sx, sy, sz) = sample_scale_indexed(anim, names, time);
+    for (i, names) in prop_names.iter().enumerate().take(bone_count) {
+        let bind = &skeleton.bones[i];
+        let (bind_t, bind_r, bind_s) = decompose_mat4(&bind.local_bind_transform);
+        let (tx, ty, tz) = sample_translation_indexed(anim, names, time, bind_t);
+        let (rx, ry, rz, rw) = sample_rotation_indexed(anim, names, time, bind_r);
+        let (sx, sy, sz) = sample_scale_indexed(anim, names, time, bind_s);
 
         let local = build_trs_matrix(tx, ty, tz, rx, ry, rz, rw, sx, sy, sz);
         local_transforms.push(local);
@@ -128,9 +131,11 @@ pub(in crate::libs::graphics::renderer3d) fn compute_bone_matrices_into(
     let bone_count = skeleton.bones.len();
 
     for (i, names) in prop_names.iter().enumerate().take(bone_count) {
-        let (tx, ty, tz) = sample_translation_indexed(anim, names, time);
-        let (rx, ry, rz, rw) = sample_rotation_indexed(anim, names, time);
-        let (sx, sy, sz) = sample_scale_indexed(anim, names, time);
+        let bind = &skeleton.bones[i];
+        let (bind_t, bind_r, bind_s) = decompose_mat4(&bind.local_bind_transform);
+        let (tx, ty, tz) = sample_translation_indexed(anim, names, time, bind_t);
+        let (rx, ry, rz, rw) = sample_rotation_indexed(anim, names, time, bind_r);
+        let (sx, sy, sz) = sample_scale_indexed(anim, names, time, bind_s);
 
         local_transforms[i] = build_trs_matrix(tx, ty, tz, rx, ry, rz, rw, sx, sy, sz);
     }
@@ -157,10 +162,11 @@ pub(in crate::libs::graphics::renderer3d) fn compute_bone_matrices_into_fast(
 ) {
     let bone_count = skeleton.bones.len();
 
-    for (cm, local_out) in channel_map
+    for (bone_index, (cm, local_out)) in channel_map
         .channels
         .iter()
         .zip(local_transforms.iter_mut())
+        .enumerate()
         .take(bone_count)
     {
         let sample = |idx: Option<usize>, default: f32| -> f32 {
@@ -169,17 +175,19 @@ pub(in crate::libs::graphics::renderer3d) fn compute_bone_matrices_into_fast(
                 None => default,
             }
         };
+        let (bind_t, bind_r, bind_s) =
+            decompose_mat4(&skeleton.bones[bone_index].local_bind_transform);
 
-        let tx = sample(cm[0], 0.0);
-        let ty = sample(cm[1], 0.0);
-        let tz = sample(cm[2], 0.0);
-        let rx = sample(cm[3], 0.0);
-        let ry = sample(cm[4], 0.0);
-        let rz = sample(cm[5], 0.0);
-        let rw = sample(cm[6], 1.0);
-        let sx = sample(cm[7], 1.0);
-        let sy = sample(cm[8], 1.0);
-        let sz = sample(cm[9], 1.0);
+        let tx = sample(cm[0], bind_t[0]);
+        let ty = sample(cm[1], bind_t[1]);
+        let tz = sample(cm[2], bind_t[2]);
+        let rx = sample(cm[3], bind_r[0]);
+        let ry = sample(cm[4], bind_r[1]);
+        let rz = sample(cm[5], bind_r[2]);
+        let rw = sample(cm[6], bind_r[3]);
+        let sx = sample(cm[7], bind_s[0]);
+        let sy = sample(cm[8], bind_s[1]);
+        let sz = sample(cm[9], bind_s[2]);
 
         // Normalize quaternion.
         let len = (rx * rx + ry * ry + rz * rz + rw * rw).sqrt();
@@ -253,10 +261,11 @@ fn sample_translation_indexed(
     anim: &KeyframeAnimation,
     names: &BonePropertyNames,
     time: f32,
+    bind_translation: [f32; 3],
 ) -> (f32, f32, f32) {
-    let x = sample_channel(anim, &names.translation[0], time).unwrap_or(0.0);
-    let y = sample_channel(anim, &names.translation[1], time).unwrap_or(0.0);
-    let z = sample_channel(anim, &names.translation[2], time).unwrap_or(0.0);
+    let x = sample_channel(anim, &names.translation[0], time).unwrap_or(bind_translation[0]);
+    let y = sample_channel(anim, &names.translation[1], time).unwrap_or(bind_translation[1]);
+    let z = sample_channel(anim, &names.translation[2], time).unwrap_or(bind_translation[2]);
     (x, y, z)
 }
 
@@ -264,11 +273,12 @@ fn sample_rotation_indexed(
     anim: &KeyframeAnimation,
     names: &BonePropertyNames,
     time: f32,
+    bind_rotation: [f32; 4],
 ) -> (f32, f32, f32, f32) {
-    let x = sample_channel(anim, &names.rotation[0], time).unwrap_or(0.0);
-    let y = sample_channel(anim, &names.rotation[1], time).unwrap_or(0.0);
-    let z = sample_channel(anim, &names.rotation[2], time).unwrap_or(0.0);
-    let w = sample_channel(anim, &names.rotation[3], time).unwrap_or(1.0);
+    let x = sample_channel(anim, &names.rotation[0], time).unwrap_or(bind_rotation[0]);
+    let y = sample_channel(anim, &names.rotation[1], time).unwrap_or(bind_rotation[1]);
+    let z = sample_channel(anim, &names.rotation[2], time).unwrap_or(bind_rotation[2]);
+    let w = sample_channel(anim, &names.rotation[3], time).unwrap_or(bind_rotation[3]);
     // Normalize quaternion.
     let len = (x * x + y * y + z * z + w * w).sqrt();
     if len > f32::EPSILON {
@@ -282,10 +292,11 @@ fn sample_scale_indexed(
     anim: &KeyframeAnimation,
     names: &BonePropertyNames,
     time: f32,
+    bind_scale: [f32; 3],
 ) -> (f32, f32, f32) {
-    let x = sample_channel(anim, &names.scale[0], time).unwrap_or(1.0);
-    let y = sample_channel(anim, &names.scale[1], time).unwrap_or(1.0);
-    let z = sample_channel(anim, &names.scale[2], time).unwrap_or(1.0);
+    let x = sample_channel(anim, &names.scale[0], time).unwrap_or(bind_scale[0]);
+    let y = sample_channel(anim, &names.scale[1], time).unwrap_or(bind_scale[1]);
+    let z = sample_channel(anim, &names.scale[2], time).unwrap_or(bind_scale[2]);
     (x, y, z)
 }
 

@@ -1,192 +1,194 @@
-// Character Sandbox - Demonstrates model loading, skeletal animation,
-// scene management, character movement, and third-person camera.
-//
-// This example loads a glTF (.glb) animated model, instantiates a
-// configurable number of wandering NPCs, and lets the player walk
-// around a lit ground plane with smooth animation transitions.
-// It doubles as a scalable performance benchmark.
-//
-// CONTROLS:
-//   W / S        - Move forward / backward
-//   A / D        - Strafe left / right
-//   Left Shift   - Hold to run
-//   Arrow keys   - Rotate camera yaw (left/right) and pitch (up/down)
-//   G            - Toggle debug grid
-//   F            - Toggle fog
-//   = / +        - Spawn 10 more NPCs
-//   -            - Remove 10 NPCs
-//   0-9          - Play animation  0- 9
-//   Shift+0-9    - Play animation 10-19
-//   Ctrl+0-9     - Play animation 20-29
-//   Alt+0-9      - Play animation 30-39
-//   Tab+0-9      - Play animation 40-44
-//   ESC          - Quit
-//
-// CLI:
-//   dotnet run -- --npcs 200
-
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Text.Json;
 using GoudEngine;
 
-// ----------------------------------------------------------------
-// NPC state
-// ----------------------------------------------------------------
-struct NpcState
+struct CrowdAgent
 {
-    public uint modelId;
-    public float x, z;
-    public float facing;
-    public float targetX, targetZ;
-    public float idleTimer;
-    public bool isMoving;
+    public uint ModelId;
+    public float X;
+    public float Y;
+    public float Z;
+    public float Facing;
+    public float TargetX;
+    public float TargetZ;
+    public float IdleTimer;
+    public float MoveSpeed;
+    public float SpeedMultiplier;
+    public int IdleAnim;
+    public int WalkAnim;
+    public int RunAnim;
+    public bool IsMoving;
+    public bool IsAnimal;
+    public float RotationX;
+    public float RotationZ;
+    public float YawOffset;
+}
+
+enum AssetCategory
+{
+    Humanoid,
+    Animal,
+    Building,
+    Prop,
+    Decoration,
+}
+
+sealed class AssetProfile
+{
+    public string Name { get; init; } = "";
+    public string Path { get; init; } = "";
+    public AssetCategory Category { get; init; }
+    public bool IsDynamic { get; init; }
+    public float Scale { get; init; } = 1f;
+    public float RotationX { get; init; }
+    public float RotationY { get; init; }
+    public float RotationZ { get; init; }
+    public float GroundOffsetBias { get; init; }
+    public string[] IdleClipNames { get; init; } = Array.Empty<string>();
+    public string[] WalkClipNames { get; init; } = Array.Empty<string>();
+    public string[] RunClipNames { get; init; } = Array.Empty<string>();
+}
+
+sealed class RigConfig
+{
+    public string Name { get; init; } = "";
+    public string Path { get; init; } = "";
+    public uint SourceModelId { get; init; }
+    public int AnimCount { get; init; }
+    public int IdleAnim { get; init; }
+    public int WalkAnim { get; init; }
+    public int RunAnim { get; init; }
+    public float Scale { get; init; } = 1f;
+    public float MoveSpeed { get; init; } = 3f;
+    public bool IsAnimal { get; init; }
+    public float GroundOffsetY { get; init; }
+    public float RotationX { get; init; }
+    public float RotationY { get; init; }
+    public float RotationZ { get; init; }
+}
+
+enum ScenarioKind
+{
+    Baseline,
+    FullGameStress,
+    GameLikeVillage,
+    VariedAnimationCrowd,
+    ThroneCurrentMix,
+    WorstCaseAllVisible,
+    SpawnDespawnChurn,
+}
+
+enum SpawnLayout
+{
+    Wide,
+    Compact,
+    Village,
+}
+
+enum StaticScatterKind
+{
+    Building,
+    Prop,
+    Decoration,
+}
+
+sealed class SandboxOptions
+{
+    public int InitialNpcCount { get; set; } = 80;
+    public string BackendName { get; set; } = "wgpu";
+    public ScenarioKind Scenario { get; set; } = ScenarioKind.FullGameStress;
+    public float DurationSeconds { get; set; } = 0f;
+    public string? MetricsOutPath { get; set; }
+    public string ThroneAssetsRoot { get; set; } = Program.DefaultThroneAssetsRoot;
+    public int Seed { get; set; } = 42;
+
+    public bool BenchmarkMode =>
+        DurationSeconds > 0f ||
+        !string.IsNullOrWhiteSpace(MetricsOutPath);
+}
+
+sealed class ScenarioState
+{
+    public required RigConfig PlayerRig { get; init; }
+    public uint PlayerModelId { get; init; }
+    public List<RigConfig> HumanoidRigs { get; } = new();
+    public List<RigConfig> AnimalRigs { get; } = new();
+    public List<uint> SourceModelIds { get; } = new();
+    public List<CrowdAgent> Agents { get; } = new();
+    public List<uint> StaticInstances { get; } = new();
+    public List<string> LoadedAssets { get; } = new();
+    public List<string> FailedAssets { get; } = new();
+    public Dictionary<uint, AssetProfile> SourceProfiles { get; } = new();
+    public int StaticBuildingCount { get; set; }
+    public int StaticPropCount { get; set; }
+    public int StaticDecorationCount { get; set; }
+}
+
+sealed class MetricsAccumulator
+{
+    public List<double> FrameMs { get; } = new();
+    public List<double> DrawCalls { get; } = new();
+    public List<double> VisibleObjects { get; } = new();
+    public List<double> CulledObjects { get; } = new();
+    public List<double> InstancedDrawCalls { get; } = new();
+    public List<double> ActiveInstances { get; } = new();
+    public List<double> BoneMatrixUploads { get; } = new();
+    public List<double> AnimationEvaluations { get; } = new();
+    public List<double> AnimationEvaluationsSaved { get; } = new();
 }
 
 class Program
 {
-    // ----------------------------------------------------------------
-    // Animation state machine
-    // ----------------------------------------------------------------
-    enum AnimState { Idle, Walk, Run }
+    enum AnimState
+    {
+        Idle,
+        Walk,
+        Run,
+    }
 
-    // ----------------------------------------------------------------
-    // Camera parameters (third-person)
-    // ----------------------------------------------------------------
-    static float cameraPitch = 25f;   // degrees above horizontal
-    static float cameraYaw   = 0f;    // degrees around Y axis
-    static float cameraDistance = 12f; // distance behind character
-    static float cameraHeight  = 6f;  // height above character
+    public const string DefaultThroneAssetsRoot = "/Users/aramhammoudeh/dev/game/throne_ge/assets/models";
 
-    static float cameraRotSpeed = 90f; // degrees per second
+    static float cameraPitch = 25f;
+    static float cameraYaw = 0f;
+    static float cameraDistance = 12f;
+    static float cameraHeight = 6f;
+    static float cameraRotSpeed = 90f;
 
-    // ----------------------------------------------------------------
-    // Movement parameters
-    // ----------------------------------------------------------------
     static float walkSpeed = 4f;
-    static float runSpeed  = 9f;
+    static float runSpeed = 9f;
 
-    // ----------------------------------------------------------------
-    // Player state
-    // ----------------------------------------------------------------
     static float playerX = 0f;
     static float playerY = 0f;
     static float playerZ = 0f;
-    static float playerFacing = 0f; // degrees around Y
+    static float playerFacing = 0f;
 
     static AnimState currentAnim = AnimState.Idle;
-    static float animTransitionTime = 0.25f; // seconds
+    static float animTransitionTime = 0.25f;
 
-    // ----------------------------------------------------------------
-    // NPC placement bounds (ground plane is 200x200, keep NPCs inside)
-    // ----------------------------------------------------------------
     static float npcBoundsMin = -95f;
-    static float npcBoundsMax =  95f;
+    static float npcBoundsMax = 95f;
 
-    // ----------------------------------------------------------------
-    // Helpers
-    // ----------------------------------------------------------------
-    static int ParseNpcCount(string[] args, int defaultCount)
-    {
-        for (int i = 0; i < args.Length - 1; i++)
-        {
-            if (args[i] == "--npcs" && int.TryParse(args[i + 1], out int n) && n >= 0)
-                return n;
-        }
-        return defaultCount;
-    }
-
-    static string ParseBackend(string[] args, string defaultBackend)
-    {
-        for (int i = 0; i < args.Length - 1; i++)
-        {
-            if (args[i] == "--backend")
-                return args[i + 1].ToLowerInvariant();
-        }
-        return defaultBackend;
-    }
-
-    static NpcState CreateNpc(
-        GoudGame game, uint baseModel, uint sceneId,
-        Random rng, int animCount, int idleAnim, int walkAnim)
-    {
-        NpcState npc = new NpcState();
-
-        npc.modelId = game.InstantiateModel(baseModel);
-        if (npc.modelId == 0)
-            return npc;
-
-        npc.x = (float)(rng.NextDouble() * (npcBoundsMax - npcBoundsMin) + npcBoundsMin);
-        npc.z = (float)(rng.NextDouble() * (npcBoundsMax - npcBoundsMin) + npcBoundsMin);
-        npc.facing = (float)(rng.NextDouble() * 360.0);
-
-        npc.targetX = (float)(rng.NextDouble() * (npcBoundsMax - npcBoundsMin) + npcBoundsMin);
-        npc.targetZ = (float)(rng.NextDouble() * (npcBoundsMax - npcBoundsMin) + npcBoundsMin);
-
-        // Start some NPCs idle, some moving
-        npc.isMoving = rng.NextDouble() > 0.5;
-        npc.idleTimer = npc.isMoving ? 0f : (float)(rng.NextDouble() * 2.0 + 1.0);
-
-        game.SetModelPosition(npc.modelId, npc.x, 0f, npc.z);
-        game.SetModelRotation(npc.modelId, 0f, npc.facing, 0f);
-        game.SetModelScale(npc.modelId, 1f, 1f, 1f);
-        game.AddModelToScene(sceneId, npc.modelId);
-
-        // Random starting animation from the available set
-        int startAnim = rng.Next(animCount);
-        game.PlayAnimation(npc.modelId, startAnim, true);
-
-        // Random speed multiplier 0.7 - 1.3
-        float speedMul = 0.7f + (float)(rng.NextDouble() * 0.6);
-        game.SetAnimationSpeed(npc.modelId, speedMul);
-
-        // If moving, switch to walk animation
-        if (npc.isMoving)
-            game.TransitionAnimation(npc.modelId, walkAnim, 0.3f);
-
-        return npc;
-    }
-
-    // ----------------------------------------------------------------
-    // Entry point
-    // ----------------------------------------------------------------
     static void Main(string[] args)
     {
-        int initialNpcCount = ParseNpcCount(args, 50);
-        string backendName = ParseBackend(args, "wgpu");
+        SandboxOptions options = ParseOptions(args);
+        PrintStartup(options);
 
-        Console.WriteLine("========================================");
-        Console.WriteLine("  CHARACTER SANDBOX - GoudEngine");
-        Console.WriteLine("========================================");
-        Console.WriteLine("  W/S        Forward / Backward");
-        Console.WriteLine("  A/D        Strafe left / right");
-        Console.WriteLine("  Shift      Hold to run");
-        Console.WriteLine("  Arrows     Camera yaw & pitch");
-        Console.WriteLine("  G          Toggle grid");
-        Console.WriteLine("  F          Toggle fog");
-        Console.WriteLine("  =/+        Spawn 10 more NPCs");
-        Console.WriteLine("  -          Remove 10 NPCs");
-        Console.WriteLine("  1          Toggle frustum culling");
-        Console.WriteLine("  2          Toggle GPU/CPU skinning");
-        Console.WriteLine("  3          Toggle material sorting");
-        Console.WriteLine("  4          Toggle animation LOD");
-        Console.WriteLine("  5          Toggle shared anim eval");
-        Console.WriteLine("  Shift+0-9  Play animation 10-19");
-        Console.WriteLine("  Ctrl+0-9   Play animation 20-29");
-        Console.WriteLine("  Alt+0-9    Play animation 30-39");
-        Console.WriteLine("  Tab+0-9    Play animation 40-44");
-        Console.WriteLine("  ESC        Quit");
-        Console.WriteLine("========================================");
-        Console.WriteLine($"  Initial NPCs: {initialNpcCount}");
-        Console.WriteLine($"  Backend: {backendName}");
-        Console.WriteLine("  Usage: dotnet run -- --npcs 200 --backend opengl");
-        Console.WriteLine();
+        if (options.Scenario == ScenarioKind.FullGameStress)
+        {
+            cameraDistance = 18f;
+            cameraHeight = 8f;
+            cameraPitch = 30f;
+        }
 
-        // --- Window (backend selectable via --backend wgpu|opengl) ---
         var config = new EngineConfig()
             .SetSize(1280, 720)
             .SetTitle("Character Sandbox");
-        if (backendName == "opengl")
+
+        if (options.BackendName == "opengl")
         {
             config.SetRenderBackend(RenderBackendKind.OpenGlLegacy);
             config.SetWindowBackend(WindowBackendKind.GlfwLegacy);
@@ -198,174 +200,99 @@ class Program
             config.SetWindowBackend(WindowBackendKind.Winit);
             Console.WriteLine("Using wgpu (Vulkan/Metal/DX12) + winit backend");
         }
+
         using var game = config.Build();
 
-        // --- Scene setup ---
         uint sceneId = game.CreateScene("main");
         game.SetCurrentScene(sceneId);
 
-        // --- Skybox & fog ---
-        game.ConfigureSkybox(enabled: true, r: 0.1f, g: 0.1f, b: 0.15f, a: 1.0f);
-        game.ConfigureFog(enabled: true, r: 0.1f, g: 0.1f, b: 0.15f, density: 0.015f);
+        game.ConfigureSkybox(enabled: true, r: 0.56f, g: 0.71f, b: 0.90f, a: 1.0f);
+        game.ConfigureFog(enabled: false, r: 0.56f, g: 0.71f, b: 0.90f, density: 0.005f);
+        game.ConfigureGrid(enabled: false, size: 200.0f, divisions: 100);
 
-        // --- Grid (optional debug aid) ---
-        game.ConfigureGrid(enabled: true, size: 200.0f, divisions: 100);
-
-        // --- Lights ---
-        // Point light above the scene (sun-like)
         uint sunLight = game.AddLight(
-            0,                          // type: point
-            0f, 25f, 0f,               // position: directly above center
-            0f, -1f, 0f,               // direction
-            1.0f, 0.95f, 0.85f,        // warm white color
-            2.0f, 120f, 0f             // intensity, range, spotAngle
+            0,
+            0f, 25f, 0f,
+            0f, -1f, 0f,
+            1.0f, 0.97f, 0.90f,
+            4.5f, 120f, 0f
         );
         game.AddLightToScene(sceneId, sunLight);
 
-        // Fill light on the opposite side
         uint fillLight = game.AddLight(
             0,
             -20f, 15f, 20f,
             0f, -1f, 0f,
-            0.3f, 0.4f, 0.6f,          // cool blue fill
-            1.0f, 80f, 0f
+            0.55f, 0.62f, 0.72f,
+            2.0f, 120f, 0f
         );
         game.AddLightToScene(sceneId, fillLight);
 
-        // --- Ground plane (200x200) ---
         uint groundPlane = game.CreatePlane(0, 200f, 200f);
         game.SetObjectPosition(groundPlane, 0f, 0f, 0f);
 
-        // Give the ground a greenish material
         uint groundMat = game.CreateMaterial(
-            0,                          // type: standard/phong
-            0.35f, 0.55f, 0.25f, 1f,   // earthy green
-            16f,                        // shininess
-            0f, 0.8f, 0.1f             // metallic, roughness, ao
+            0,
+            0.43f, 0.62f, 0.34f, 1f,
+            16f,
+            0f, 0.8f, 0.1f
         );
         game.SetObjectMaterial(groundPlane, groundMat);
         game.AddObjectToScene(sceneId, groundPlane);
 
-        // --- Load model ---
-        string modelPath = Path.Combine(
-            AppDomain.CurrentDomain.BaseDirectory,
-            "assets", "Character.glb"
+        game.SetFrustumCullingEnabled(true);
+        game.SetSkinningMode(1u);
+        game.SetMaterialSortingEnabled(true);
+        game.SetAnimationLodEnabled(true);
+        game.SetSharedAnimationEval(true);
+
+        Random rng = new(options.Seed);
+        ScenarioState state = BuildScenario(game, options, sceneId, rng);
+        Console.WriteLine(
+            $"Scenario loaded: humanoids={state.Agents.Count(a => !a.IsAnimal)} " +
+            $"animals={state.Agents.Count(a => a.IsAnimal)} " +
+            $"staticBuildings={state.StaticBuildingCount} staticProps={state.StaticPropCount} " +
+            $"staticDecorations={state.StaticDecorationCount}"
         );
 
-        if (!File.Exists(modelPath))
-        {
-            Console.WriteLine($"ERROR: Model not found at {modelPath}");
-            Console.WriteLine("Place a .glb model at examples/csharp/character_sandbox/assets/Character.glb");
-            return;
-        }
-
-        uint baseModel = game.LoadModel(modelPath);
-        if (baseModel == 0)
-        {
-            Console.WriteLine("ERROR: LoadModel returned 0 - model loading failed.");
-            return;
-        }
-        Console.WriteLine($"Loaded model (id={baseModel})");
-
-        // --- List animations ---
-        int animCount = game.GetAnimationCount(baseModel);
-        Console.WriteLine($"Animation count: {animCount}");
-
-        // Build a name -> index lookup so we can pick idle/walk/run by name.
-        // Fallback: index 0 = idle, 1 = walk, 2 = run (common ordering).
-        int idleAnim = 0;
-        int walkAnim = Math.Min(1, animCount - 1);
-        int runAnim  = Math.Min(2, animCount - 1);
-
-        for (int i = 0; i < animCount; i++)
-        {
-            string name = game.GetAnimationName(baseModel, i);
-            Console.WriteLine($"  [{i}] {name}");
-
-            string lower = name.ToLowerInvariant();
-            // Match most specific first
-            if (lower == "idle_loop")
-                idleAnim = i;
-            else if (lower == "walk_loop")
-                walkAnim = i;
-            else if (lower == "sprint_loop" || lower == "jog_fwd_loop")
-                runAnim = i;
-        }
-
-        Console.WriteLine($"Animation mapping -> idle={idleAnim}, walk={walkAnim}, run={runAnim}");
-
-        // --- Player character ---
-        // Use the base model as the player instance.
-        game.SetModelPosition(baseModel, playerX, playerY, playerZ);
-        game.SetModelScale(baseModel, 1f, 1f, 1f); // Model is in meters (1.83m tall)
-        game.AddModelToScene(sceneId, baseModel);
-
-        // Start with idle animation
-        game.PlayAnimation(baseModel, idleAnim, true);
-
-        // --- NPC characters ---
-        Random rng = new Random(42); // fixed seed for reproducibility
-        List<NpcState> npcs = new List<NpcState>();
-
-        for (int i = 0; i < initialNpcCount; i++)
-        {
-            NpcState npc = CreateNpc(game, baseModel, sceneId, rng, animCount, idleAnim, walkAnim);
-            if (npc.modelId != 0)
-                npcs.Add(npc);
-            else
-                Console.WriteLine($"WARNING: Failed to instantiate NPC {i}");
-        }
-        Console.WriteLine($"Spawned {npcs.Count} NPCs");
-
-        // --- Decorative cubes (landmarks) ---
-        uint pillarMat = game.CreateMaterial(0, 0.6f, 0.6f, 0.6f, 1f, 32f, 0f, 0.5f, 0.2f);
-        float[] pillarX = { 40f, -40f, 40f, -40f };
-        float[] pillarZ = { 40f, 40f, -40f, -40f };
-        for (int i = 0; i < pillarX.Length; i++)
-        {
-            uint pillar = game.CreateCube(0, 1f, 4f, 1f);
-            game.SetObjectPosition(pillar, pillarX[i], 2f, pillarZ[i]);
-            game.SetObjectMaterial(pillar, pillarMat);
-            game.AddObjectToScene(sceneId, pillar);
-        }
-
-        // --- State ---
-        bool gridEnabled = true;
-        bool fogEnabled  = true;
+        bool gridEnabled = false;
+        bool fogEnabled = false;
         bool frustumCullingEnabled = true;
-        bool gpuSkinning = true;       // 0=CPU, 1=GPU; starts GPU
+        bool gpuSkinning = true;
         bool materialSortingEnabled = true;
         bool animationLodEnabled = true;
         bool sharedAnimEvalEnabled = true;
 
-        int frameCount = 0;
+        float npcRotSpeed = 360f;
         float fpsTimer = 0f;
-        float lastFps  = 0f;
+        int fpsFrames = 0;
+        double lastFps = 0.0;
+        float churnTimer = 0f;
+        bool churnGrowing = true;
 
-        float npcWalkSpeed = 3f; // NPCs walk slightly slower than the player
-        float npcRotSpeed  = 360f; // degrees per second for NPC turning
+        var benchmarkClock = Stopwatch.StartNew();
+        MetricsAccumulator metrics = new();
 
-        // --- Game loop ---
         while (!game.ShouldClose())
         {
+            long frameStart = Stopwatch.GetTimestamp();
             float dt = game.DeltaTime;
 
             game.BeginFrame(0.1f, 0.1f, 0.15f, 1.0f);
 
-            // Exit
             if (game.IsKeyPressed(Keys.Escape))
             {
                 game.Close();
                 continue;
             }
 
-            // --- Toggle grid / fog ---
             if (game.IsKeyJustPressed(Keys.G))
             {
                 gridEnabled = !gridEnabled;
                 game.SetGridEnabled(gridEnabled);
                 Console.WriteLine($"Grid {(gridEnabled ? "enabled" : "disabled")}");
             }
+
             if (game.IsKeyJustPressed(Keys.F))
             {
                 fogEnabled = !fogEnabled;
@@ -373,136 +300,187 @@ class Program
                 Console.WriteLine($"Fog {(fogEnabled ? "enabled" : "disabled")}");
             }
 
-            // --- Dynamic NPC spawning / removal ---
             if (game.IsKeyJustPressed(Keys.Equal))
             {
-                int before = npcs.Count;
+                int before = state.Agents.Count;
                 for (int i = 0; i < 10; i++)
                 {
-                    NpcState npc = CreateNpc(game, baseModel, sceneId, rng, animCount, idleAnim, walkAnim);
-                    if (npc.modelId != 0)
-                        npcs.Add(npc);
+                    RigConfig rig = PickSpawnRig(state, before + i);
+                    CrowdAgent agent = CreateCrowdAgent(
+                        game,
+                        rig,
+                        sceneId,
+                        rng,
+                        LayoutForScenario(options.Scenario),
+                        before + i
+                    );
+                    if (agent.ModelId != 0)
+                    {
+                        state.Agents.Add(agent);
+                    }
                 }
-                Console.WriteLine($"Spawned NPCs: {before} -> {npcs.Count}");
+                Console.WriteLine($"Spawned agents: {before} -> {state.Agents.Count}");
             }
+
             if (game.IsKeyJustPressed(Keys.Minus))
             {
-                int toRemove = Math.Min(10, npcs.Count);
+                int toRemove = Math.Min(10, state.Agents.Count);
                 if (toRemove > 0)
                 {
-                    int before = npcs.Count;
+                    int before = state.Agents.Count;
                     for (int i = 0; i < toRemove; i++)
                     {
-                        int last = npcs.Count - 1;
-                        game.DestroyModel(npcs[last].modelId);
-                        npcs.RemoveAt(last);
+                        int last = state.Agents.Count - 1;
+                        game.DestroyModel(state.Agents[last].ModelId);
+                        state.Agents.RemoveAt(last);
                     }
-                    Console.WriteLine($"Removed NPCs: {before} -> {npcs.Count}");
+                    Console.WriteLine($"Removed agents: {before} -> {state.Agents.Count}");
                 }
             }
 
-            // --- Profiling toggles (digit keys 1-5 without modifier) ---
+            bool shift = game.IsKeyPressed(Keys.LeftShift) || game.IsKeyPressed(Keys.RightShift);
+            bool ctrl = game.IsKeyPressed(Keys.LeftControl) || game.IsKeyPressed(Keys.RightControl);
+            bool alt = game.IsKeyPressed(Keys.LeftAlt) || game.IsKeyPressed(Keys.RightAlt);
+            bool tab = game.IsKeyPressed(Keys.Tab);
+            bool noMod = !shift && !ctrl && !alt && !tab;
+
+            if (noMod && game.IsKeyJustPressed(Keys.Digit1))
             {
-                bool shift = game.IsKeyPressed(Keys.LeftShift) || game.IsKeyPressed(Keys.RightShift);
-                bool ctrl  = game.IsKeyPressed(Keys.LeftControl) || game.IsKeyPressed(Keys.RightControl);
-                bool alt   = game.IsKeyPressed(Keys.LeftAlt) || game.IsKeyPressed(Keys.RightAlt);
-                bool tab   = game.IsKeyPressed(Keys.Tab);
-                bool noMod = !shift && !ctrl && !alt && !tab;
+                frustumCullingEnabled = !frustumCullingEnabled;
+                game.SetFrustumCullingEnabled(frustumCullingEnabled);
+                Console.WriteLine($"Frustum culling {(frustumCullingEnabled ? "ON" : "OFF")}");
+            }
 
-                if (noMod && game.IsKeyJustPressed(Keys.Digit1))
-                {
-                    frustumCullingEnabled = !frustumCullingEnabled;
-                    game.SetFrustumCullingEnabled(frustumCullingEnabled);
-                    Console.WriteLine($"Frustum culling {(frustumCullingEnabled ? "ON" : "OFF")}");
-                }
-                if (noMod && game.IsKeyJustPressed(Keys.Digit2))
-                {
-                    gpuSkinning = !gpuSkinning;
-                    game.SetSkinningMode(gpuSkinning ? 1u : 0u);
-                    Console.WriteLine($"Skinning mode: {(gpuSkinning ? "GPU" : "CPU")}");
-                }
-                if (noMod && game.IsKeyJustPressed(Keys.Digit3))
-                {
-                    materialSortingEnabled = !materialSortingEnabled;
-                    game.SetMaterialSortingEnabled(materialSortingEnabled);
-                    Console.WriteLine($"Material sorting {(materialSortingEnabled ? "ON" : "OFF")}");
-                }
-                if (noMod && game.IsKeyJustPressed(Keys.Digit4))
-                {
-                    animationLodEnabled = !animationLodEnabled;
-                    game.SetAnimationLodEnabled(animationLodEnabled);
-                    Console.WriteLine($"Animation LOD {(animationLodEnabled ? "ON" : "OFF")}");
-                }
-                if (noMod && game.IsKeyJustPressed(Keys.Digit5))
-                {
-                    sharedAnimEvalEnabled = !sharedAnimEvalEnabled;
-                    game.SetSharedAnimationEval(sharedAnimEvalEnabled);
-                    Console.WriteLine($"Shared anim eval {(sharedAnimEvalEnabled ? "ON" : "OFF")}");
-                }
+            if (noMod && game.IsKeyJustPressed(Keys.Digit2))
+            {
+                gpuSkinning = !gpuSkinning;
+                game.SetSkinningMode(gpuSkinning ? 1u : 0u);
+                Console.WriteLine($"Skinning mode: {(gpuSkinning ? "GPU" : "CPU")}");
+            }
 
-                // --- Direct animation playback (modifier + digit keys) ---
-                int animOffset = -1;
-                if (tab)       animOffset = 40;
-                else if (alt)  animOffset = 30;
-                else if (ctrl) animOffset = 20;
-                else if (shift) animOffset = 10;
+            if (noMod && game.IsKeyJustPressed(Keys.Digit3))
+            {
+                materialSortingEnabled = !materialSortingEnabled;
+                game.SetMaterialSortingEnabled(materialSortingEnabled);
+                Console.WriteLine($"Material sorting {(materialSortingEnabled ? "ON" : "OFF")}");
+            }
 
-                if (animOffset >= 0)
+            if (noMod && game.IsKeyJustPressed(Keys.Digit4))
+            {
+                animationLodEnabled = !animationLodEnabled;
+                game.SetAnimationLodEnabled(animationLodEnabled);
+                Console.WriteLine($"Animation LOD {(animationLodEnabled ? "ON" : "OFF")}");
+            }
+
+            if (noMod && game.IsKeyJustPressed(Keys.Digit5))
+            {
+                sharedAnimEvalEnabled = !sharedAnimEvalEnabled;
+                game.SetSharedAnimationEval(sharedAnimEvalEnabled);
+                Console.WriteLine($"Shared anim eval {(sharedAnimEvalEnabled ? "ON" : "OFF")}");
+            }
+
+            int animOffset = -1;
+            if (tab)
+            {
+                animOffset = 40;
+            }
+            else if (alt)
+            {
+                animOffset = 30;
+            }
+            else if (ctrl)
+            {
+                animOffset = 20;
+            }
+            else if (shift)
+            {
+                animOffset = 10;
+            }
+
+            if (animOffset >= 0)
+            {
+                Keys[] digitKeys =
                 {
-                    Keys[] digitKeys = {
-                        Keys.Digit0, Keys.Digit1, Keys.Digit2, Keys.Digit3, Keys.Digit4,
-                        Keys.Digit5, Keys.Digit6, Keys.Digit7, Keys.Digit8, Keys.Digit9,
-                    };
-                    for (int d = 0; d < digitKeys.Length; d++)
+                    Keys.Digit0, Keys.Digit1, Keys.Digit2, Keys.Digit3, Keys.Digit4,
+                    Keys.Digit5, Keys.Digit6, Keys.Digit7, Keys.Digit8, Keys.Digit9,
+                };
+                for (int digit = 0; digit < digitKeys.Length; digit++)
+                {
+                    if (!game.IsKeyJustPressed(digitKeys[digit]))
                     {
-                        if (game.IsKeyJustPressed(digitKeys[d]))
-                        {
-                            int idx = animOffset + d;
-                            if (idx < animCount)
-                            {
-                                string name = game.GetAnimationName(baseModel, idx);
-                                Console.WriteLine($"Playing animation [{idx}] {name}");
-                                game.TransitionAnimation(baseModel, idx, animTransitionTime);
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Animation index {idx} out of range (max {animCount - 1})");
-                            }
-                            break;
-                        }
+                        continue;
                     }
+
+                    int targetAnim = animOffset + digit;
+                    if (targetAnim < state.PlayerRig.AnimCount)
+                    {
+                        string name = game.GetAnimationName(state.PlayerModelId, targetAnim);
+                        Console.WriteLine($"Playing animation [{targetAnim}] {name}");
+                        game.TransitionAnimation(state.PlayerModelId, targetAnim, animTransitionTime);
+                    }
+                    else
+                    {
+                        Console.WriteLine(
+                            $"Animation index {targetAnim} out of range (max {state.PlayerRig.AnimCount - 1})"
+                        );
+                    }
+                    break;
                 }
             }
 
-            // --- Camera rotation (arrow keys) ---
             if (game.IsKeyPressed(Keys.Left))
+            {
                 cameraYaw += cameraRotSpeed * dt;
+            }
             if (game.IsKeyPressed(Keys.Right))
+            {
                 cameraYaw -= cameraRotSpeed * dt;
+            }
             if (game.IsKeyPressed(Keys.Up))
+            {
                 cameraPitch = Math.Clamp(cameraPitch + cameraRotSpeed * dt, 5f, 80f);
+            }
             if (game.IsKeyPressed(Keys.Down))
+            {
                 cameraPitch = Math.Clamp(cameraPitch - cameraRotSpeed * dt, 5f, 80f);
+            }
 
-            // --- Movement input ---
             float moveX = 0f;
             float moveZ = 0f;
             bool moving = false;
             bool running = game.IsKeyPressed(Keys.LeftShift) || game.IsKeyPressed(Keys.RightShift);
 
-            // Camera-relative directions on the XZ plane
             float yawRad = cameraYaw * MathF.PI / 180f;
             float fwdX = MathF.Sin(yawRad);
             float fwdZ = MathF.Cos(yawRad);
-            float rgtX =  MathF.Cos(yawRad);
+            float rgtX = MathF.Cos(yawRad);
             float rgtZ = -MathF.Sin(yawRad);
 
-            if (game.IsKeyPressed(Keys.W)) { moveX += fwdX; moveZ += fwdZ; moving = true; }
-            if (game.IsKeyPressed(Keys.S)) { moveX -= fwdX; moveZ -= fwdZ; moving = true; }
-            if (game.IsKeyPressed(Keys.A)) { moveX += rgtX; moveZ += rgtZ; moving = true; }
-            if (game.IsKeyPressed(Keys.D)) { moveX -= rgtX; moveZ -= rgtZ; moving = true; }
+            if (game.IsKeyPressed(Keys.W))
+            {
+                moveX += fwdX;
+                moveZ += fwdZ;
+                moving = true;
+            }
+            if (game.IsKeyPressed(Keys.S))
+            {
+                moveX -= fwdX;
+                moveZ -= fwdZ;
+                moving = true;
+            }
+            if (game.IsKeyPressed(Keys.A))
+            {
+                moveX += rgtX;
+                moveZ += rgtZ;
+                moving = true;
+            }
+            if (game.IsKeyPressed(Keys.D))
+            {
+                moveX -= rgtX;
+                moveZ -= rgtZ;
+                moving = true;
+            }
 
-            // Normalize diagonal movement
             float moveLen = MathF.Sqrt(moveX * moveX + moveZ * moveZ);
             if (moveLen > 0.001f)
             {
@@ -514,111 +492,158 @@ class Program
             playerX += moveX * speed * dt;
             playerZ += moveZ * speed * dt;
 
-            // Face movement direction
             if (moving)
             {
                 float targetFacing = MathF.Atan2(moveX, moveZ) * 180f / MathF.PI;
-                // Smooth rotation towards target facing
-                float diff = targetFacing - playerFacing;
-                // Wrap to [-180, 180]
-                while (diff > 180f)  diff -= 360f;
-                while (diff < -180f) diff += 360f;
-                float rotSpeed = 720f; // degrees per second
-                if (MathF.Abs(diff) < rotSpeed * dt)
+                float diff = WrapDegrees(targetFacing - playerFacing);
+                float rotationSpeed = 720f;
+                if (MathF.Abs(diff) < rotationSpeed * dt)
+                {
                     playerFacing = targetFacing;
+                }
                 else
-                    playerFacing += MathF.Sign(diff) * rotSpeed * dt;
+                {
+                    playerFacing += MathF.Sign(diff) * rotationSpeed * dt;
+                }
             }
 
-            // --- Update player model transform ---
-            game.SetModelPosition(baseModel, playerX, playerY, playerZ);
-            game.SetModelRotation(baseModel, 0f, playerFacing, 0f);
+            game.SetModelPosition(state.PlayerModelId, playerX, playerY, playerZ);
+            game.SetModelRotation(
+                state.PlayerModelId,
+                state.PlayerRig.RotationX,
+                playerFacing + state.PlayerRig.RotationY,
+                state.PlayerRig.RotationZ
+            );
 
-            // --- Animation state machine ---
-            AnimState desired;
-            if (!moving)
-                desired = AnimState.Idle;
-            else if (running)
-                desired = AnimState.Run;
-            else
-                desired = AnimState.Walk;
+            AnimState desired = !moving
+                ? AnimState.Idle
+                : (running ? AnimState.Run : AnimState.Walk);
 
-            if (desired != currentAnim)
+            if (desired != currentAnim && state.PlayerRig.AnimCount > 0)
             {
                 int targetIndex = desired switch
                 {
-                    AnimState.Idle => idleAnim,
-                    AnimState.Walk => walkAnim,
-                    AnimState.Run  => runAnim,
-                    _ => idleAnim
+                    AnimState.Idle => state.PlayerRig.IdleAnim,
+                    AnimState.Walk => state.PlayerRig.WalkAnim,
+                    AnimState.Run => state.PlayerRig.RunAnim,
+                    _ => state.PlayerRig.IdleAnim,
                 };
-                game.TransitionAnimation(baseModel, targetIndex, animTransitionTime);
+                game.TransitionAnimation(state.PlayerModelId, targetIndex, animTransitionTime);
                 currentAnim = desired;
             }
 
-            // --- Update NPC wander AI ---
-            for (int i = 0; i < npcs.Count; i++)
+            if (options.Scenario == ScenarioKind.SpawnDespawnChurn)
             {
-                NpcState npc = npcs[i];
-
-                if (npc.isMoving)
+                churnTimer += dt;
+                if (churnTimer >= 1.5f)
                 {
-                    // Move toward target
-                    float dx = npc.targetX - npc.x;
-                    float dz = npc.targetZ - npc.z;
-                    float dist = MathF.Sqrt(dx * dx + dz * dz);
-
-                    if (dist < 1.0f)
+                    churnTimer = 0f;
+                    int batchSize = 12;
+                    if (churnGrowing || state.Agents.Count < batchSize)
                     {
-                        // Arrived at target - idle for 1-3 seconds
-                        npc.isMoving = false;
-                        npc.idleTimer = 1.0f + (float)(rng.NextDouble() * 2.0);
-                        game.TransitionAnimation(npc.modelId, idleAnim, 0.3f);
+                        for (int i = 0; i < batchSize; i++)
+                        {
+                            RigConfig rig = PickSpawnRig(state, state.Agents.Count + i);
+                            CrowdAgent agent = CreateCrowdAgent(
+                                game,
+                                rig,
+                                sceneId,
+                                rng,
+                                SpawnLayout.Village,
+                                state.Agents.Count + i
+                            );
+                            if (agent.ModelId != 0)
+                            {
+                                state.Agents.Add(agent);
+                            }
+                        }
                     }
                     else
                     {
-                        // Normalize direction and move
-                        float ndx = dx / dist;
-                        float ndz = dz / dist;
+                        int toRemove = Math.Min(batchSize, state.Agents.Count);
+                        for (int i = 0; i < toRemove; i++)
+                        {
+                            int last = state.Agents.Count - 1;
+                            game.DestroyModel(state.Agents[last].ModelId);
+                            state.Agents.RemoveAt(last);
+                        }
+                    }
 
-                        npc.x += ndx * npcWalkSpeed * dt;
-                        npc.z += ndz * npcWalkSpeed * dt;
+                    churnGrowing = !churnGrowing;
+                }
+            }
 
-                        // Face movement direction (smooth rotation)
+            for (int i = 0; i < state.Agents.Count; i++)
+            {
+                CrowdAgent agent = state.Agents[i];
+
+                if (agent.IsMoving)
+                {
+                    float dx = agent.TargetX - agent.X;
+                    float dz = agent.TargetZ - agent.Z;
+                    float distance = MathF.Sqrt(dx * dx + dz * dz);
+
+                    if (distance < 1.0f)
+                    {
+                        agent.IsMoving = false;
+                        agent.IdleTimer = 0.75f + (float)(rng.NextDouble() * 1.75);
+                        if (agent.IdleAnim >= 0)
+                        {
+                            game.TransitionAnimation(agent.ModelId, agent.IdleAnim, 0.25f);
+                        }
+                    }
+                    else
+                    {
+                        float ndx = dx / distance;
+                        float ndz = dz / distance;
+                        float motionSpeed = agent.MoveSpeed * agent.SpeedMultiplier;
+
+                        agent.X += ndx * motionSpeed * dt;
+                        agent.Z += ndz * motionSpeed * dt;
+
                         float targetFacing = MathF.Atan2(ndx, ndz) * 180f / MathF.PI;
-                        float faceDiff = targetFacing - npc.facing;
-                        while (faceDiff > 180f)  faceDiff -= 360f;
-                        while (faceDiff < -180f) faceDiff += 360f;
+                        float faceDiff = WrapDegrees(targetFacing - agent.Facing);
                         if (MathF.Abs(faceDiff) < npcRotSpeed * dt)
-                            npc.facing = targetFacing;
+                        {
+                            agent.Facing = targetFacing;
+                        }
                         else
-                            npc.facing += MathF.Sign(faceDiff) * npcRotSpeed * dt;
+                        {
+                            agent.Facing += MathF.Sign(faceDiff) * npcRotSpeed * dt;
+                        }
 
-                        game.SetModelPosition(npc.modelId, npc.x, 0f, npc.z);
-                        game.SetModelRotation(npc.modelId, 0f, npc.facing, 0f);
+                        game.SetModelPosition(agent.ModelId, agent.X, agent.Y, agent.Z);
+                        game.SetModelRotation(
+                            agent.ModelId,
+                            agent.RotationX,
+                            agent.Facing + agent.YawOffset,
+                            agent.RotationZ
+                        );
                     }
                 }
                 else
                 {
-                    // Idling - count down timer
-                    npc.idleTimer -= dt;
-                    if (npc.idleTimer <= 0f)
+                    agent.IdleTimer -= dt;
+                    if (agent.IdleTimer <= 0f)
                     {
-                        // Pick new random target and start walking
-                        npc.targetX = (float)(rng.NextDouble() * (npcBoundsMax - npcBoundsMin) + npcBoundsMin);
-                        npc.targetZ = (float)(rng.NextDouble() * (npcBoundsMax - npcBoundsMin) + npcBoundsMin);
-                        npc.isMoving = true;
-                        game.TransitionAnimation(npc.modelId, walkAnim, 0.3f);
+                        (agent.TargetX, agent.TargetZ) = PickTarget(
+                            rng,
+                            LayoutForScenario(options.Scenario),
+                            agent.IsAnimal
+                        );
+                        agent.IsMoving = true;
+                        if (agent.WalkAnim >= 0)
+                        {
+                            game.TransitionAnimation(agent.ModelId, agent.WalkAnim, 0.25f);
+                        }
                     }
                 }
 
-                npcs[i] = npc; // write back (struct copy)
+                state.Agents[i] = agent;
             }
 
-            // --- Advance all animations ---
             game.UpdateAnimations(dt);
 
-            // --- Third-person camera ---
             float pitchRad = cameraPitch * MathF.PI / 180f;
             float camOffX = -MathF.Sin(yawRad) * MathF.Cos(pitchRad) * cameraDistance;
             float camOffY = MathF.Sin(pitchRad) * cameraDistance + cameraHeight;
@@ -630,44 +655,1299 @@ class Program
 
             game.SetCameraPosition3D(camX, camY, camZ);
 
-            // Camera looks at player: compute pitch/yaw from camera to player
             float lookX = playerX - camX;
-            float lookY = (playerY + 1.5f) - camY; // look slightly above feet
+            float lookY = (playerY + 1.5f) - camY;
             float lookZ = playerZ - camZ;
             float lookDist = MathF.Sqrt(lookX * lookX + lookZ * lookZ);
             float lookPitch = MathF.Atan2(lookY, lookDist) * 180f / MathF.PI;
             float lookYaw = MathF.Atan2(lookX, lookZ) * 180f / MathF.PI;
 
             game.SetCameraRotation3D(lookPitch, lookYaw, 0f);
-
-            // --- Render ---
             game.Render3D();
             game.EndFrame();
 
-            // --- FPS counter & stats overlay ---
-            frameCount++;
-            fpsTimer += dt;
+            double frameMs = (Stopwatch.GetTimestamp() - frameStart) * 1000.0 / Stopwatch.Frequency;
+            fpsTimer += (float)(frameMs / 1000.0);
+            fpsFrames++;
+
+            metrics.FrameMs.Add(frameMs);
+            metrics.DrawCalls.Add(game.GetDrawCalls());
+            metrics.VisibleObjects.Add(game.GetVisibleObjectCount());
+            metrics.CulledObjects.Add(game.GetCulledObjectCount());
+            metrics.InstancedDrawCalls.Add(game.GetInstancedDrawCalls());
+            metrics.ActiveInstances.Add(game.GetActiveInstanceCount());
+            metrics.BoneMatrixUploads.Add(game.GetBoneMatrixUploadCount());
+            metrics.AnimationEvaluations.Add(game.GetAnimationEvaluationCount());
+            metrics.AnimationEvaluationsSaved.Add(game.GetAnimationEvaluationSavedCount());
+
             if (fpsTimer >= 1.0f)
             {
-                lastFps = frameCount / fpsTimer;
+                lastFps = fpsFrames / fpsTimer;
                 int draws = game.GetDrawCalls();
                 int visible = game.GetVisibleObjectCount();
                 int culled = game.GetCulledObjectCount();
+                int instanced = game.GetInstancedDrawCalls();
+                int activeInstances = game.GetActiveInstanceCount();
+                int animEval = game.GetAnimationEvaluationCount();
+                int animSaved = game.GetAnimationEvaluationSavedCount();
+                int boneUploads = game.GetBoneMatrixUploadCount();
                 int total = visible + culled;
-                Console.Write($"\rFPS: {lastFps:F1}  NPCs: {npcs.Count}  Draws: {draws}  Visible: {visible}/{total}   ");
-                frameCount = 0;
+
+                string status =
+                    $"FPS: {lastFps:F1}  Agents: {state.Agents.Count}  Draws: {draws}  " +
+                    $"Visible: {visible}/{total}  Instanced: {instanced}  ActiveInstances: {activeInstances}  " +
+                    $"AnimEval: {animEval}  Saved: {animSaved}  BoneUploads: {boneUploads}";
+
+                if (options.BenchmarkMode)
+                {
+                    Console.WriteLine(status);
+                }
+                else
+                {
+                    Console.Write($"\r{status}   ");
+                }
+
+                fpsFrames = 0;
                 fpsTimer = 0f;
+            }
+
+            if (options.BenchmarkMode && options.DurationSeconds > 0f)
+            {
+                if (benchmarkClock.Elapsed.TotalSeconds >= options.DurationSeconds)
+                {
+                    game.Close();
+                }
             }
         }
 
-        // --- Cleanup ---
-        for (int i = 0; i < npcs.Count; i++)
+        double elapsedSeconds = benchmarkClock.Elapsed.TotalSeconds;
+
+        if (!string.IsNullOrWhiteSpace(options.MetricsOutPath))
         {
-            if (npcs[i].modelId != 0) game.DestroyModel(npcs[i].modelId);
+            WriteMetricsReport(options, state, metrics, elapsedSeconds, lastFps);
+            Console.WriteLine($"Wrote metrics to {options.MetricsOutPath}");
         }
-        game.DestroyModel(baseModel);
+
+        foreach (CrowdAgent agent in state.Agents)
+        {
+            if (agent.ModelId != 0)
+            {
+                game.DestroyModel(agent.ModelId);
+            }
+        }
+
+        foreach (uint modelId in state.StaticInstances)
+        {
+            if (modelId != 0)
+            {
+                game.DestroyModel(modelId);
+            }
+        }
+
+        foreach (uint modelId in state.SourceModelIds.Distinct().Reverse())
+        {
+            if (modelId != 0)
+            {
+                game.DestroyModel(modelId);
+            }
+        }
 
         Console.WriteLine();
         Console.WriteLine("Character Sandbox ended.");
+    }
+
+    static SandboxOptions ParseOptions(string[] args)
+    {
+        SandboxOptions options = new();
+
+        for (int i = 0; i < args.Length; i++)
+        {
+            string arg = args[i];
+            if (arg == "--npcs" && i + 1 < args.Length && int.TryParse(args[i + 1], out int npcCount))
+            {
+                options.InitialNpcCount = Math.Max(0, npcCount);
+                i++;
+            }
+            else if (arg == "--backend" && i + 1 < args.Length)
+            {
+                options.BackendName = args[i + 1].ToLowerInvariant();
+                i++;
+            }
+            else if (arg == "--scenario" && i + 1 < args.Length)
+            {
+                options.Scenario = ParseScenario(args[i + 1]);
+                i++;
+            }
+            else if (arg == "--duration" && i + 1 < args.Length && float.TryParse(args[i + 1], out float seconds))
+            {
+                options.DurationSeconds = Math.Max(0f, seconds);
+                i++;
+            }
+            else if (arg == "--metrics-out" && i + 1 < args.Length)
+            {
+                options.MetricsOutPath = args[i + 1];
+                i++;
+            }
+            else if (arg == "--throne-assets" && i + 1 < args.Length)
+            {
+                options.ThroneAssetsRoot = args[i + 1];
+                i++;
+            }
+            else if (arg == "--seed" && i + 1 < args.Length && int.TryParse(args[i + 1], out int seed))
+            {
+                options.Seed = seed;
+                i++;
+            }
+        }
+
+        if (options.BenchmarkMode && options.DurationSeconds <= 0f)
+        {
+            options.DurationSeconds = 20f;
+        }
+
+        return options;
+    }
+
+    static ScenarioKind ParseScenario(string raw)
+    {
+        return raw.ToLowerInvariant() switch
+        {
+            "baseline" => ScenarioKind.Baseline,
+            "full-game-stress" => ScenarioKind.FullGameStress,
+            "full-game" => ScenarioKind.FullGameStress,
+            "stress" => ScenarioKind.FullGameStress,
+            "game-like" => ScenarioKind.GameLikeVillage,
+            "game-like-village" => ScenarioKind.GameLikeVillage,
+            "village" => ScenarioKind.GameLikeVillage,
+            "live" => ScenarioKind.GameLikeVillage,
+            "varied-animation" => ScenarioKind.VariedAnimationCrowd,
+            "varied-animation-crowd" => ScenarioKind.VariedAnimationCrowd,
+            "throne-current-mix" => ScenarioKind.ThroneCurrentMix,
+            "worst-case" => ScenarioKind.WorstCaseAllVisible,
+            "worst-case-all-visible" => ScenarioKind.WorstCaseAllVisible,
+            "spawn-despawn" => ScenarioKind.SpawnDespawnChurn,
+            "spawn-despawn-churn" => ScenarioKind.SpawnDespawnChurn,
+            _ => ScenarioKind.FullGameStress,
+        };
+    }
+
+    static void PrintStartup(SandboxOptions options)
+    {
+        Console.WriteLine("========================================");
+        Console.WriteLine("  CHARACTER SANDBOX - GoudEngine");
+        Console.WriteLine("========================================");
+        Console.WriteLine("  W/S        Forward / Backward");
+        Console.WriteLine("  A/D        Strafe left / right");
+        Console.WriteLine("  Shift      Hold to run");
+        Console.WriteLine("  Arrows     Camera yaw & pitch");
+        Console.WriteLine("  G          Toggle grid");
+        Console.WriteLine("  F          Toggle fog");
+        Console.WriteLine("  =/+        Spawn 10 more agents");
+        Console.WriteLine("  -          Remove 10 agents");
+        Console.WriteLine("  1          Toggle frustum culling");
+        Console.WriteLine("  2          Toggle GPU/CPU skinning");
+        Console.WriteLine("  3          Toggle material sorting");
+        Console.WriteLine("  4          Toggle animation LOD");
+        Console.WriteLine("  5          Toggle shared anim eval");
+        Console.WriteLine("  ESC        Quit");
+        Console.WriteLine("========================================");
+        Console.WriteLine($"  Initial crowd: {options.InitialNpcCount}");
+        Console.WriteLine($"  Backend: {options.BackendName}");
+        Console.WriteLine($"  Scenario: {ScenarioLabel(options.Scenario)}");
+        if (options.BenchmarkMode)
+        {
+            Console.WriteLine($"  Benchmark duration: {options.DurationSeconds:F1}s");
+        }
+        if (!string.IsNullOrWhiteSpace(options.MetricsOutPath))
+        {
+            Console.WriteLine($"  Metrics output: {options.MetricsOutPath}");
+        }
+        Console.WriteLine($"  Throne assets: {options.ThroneAssetsRoot}");
+        Console.WriteLine(
+            "  Usage: dotnet run -- --scenario full-game-stress --npcs 120"
+        );
+        Console.WriteLine();
+    }
+
+    static string ScenarioLabel(ScenarioKind scenario)
+    {
+        return scenario switch
+        {
+            ScenarioKind.Baseline => "baseline",
+            ScenarioKind.FullGameStress => "full-game-stress",
+            ScenarioKind.GameLikeVillage => "game-like-village",
+            ScenarioKind.VariedAnimationCrowd => "varied-animation",
+            ScenarioKind.ThroneCurrentMix => "throne-current-mix",
+            ScenarioKind.WorstCaseAllVisible => "worst-case-all-visible",
+            ScenarioKind.SpawnDespawnChurn => "spawn-despawn-churn",
+            _ => "full-game-stress",
+        };
+    }
+
+    static SpawnLayout LayoutForScenario(ScenarioKind scenario)
+    {
+        return scenario switch
+        {
+            ScenarioKind.WorstCaseAllVisible => SpawnLayout.Compact,
+            ScenarioKind.FullGameStress => SpawnLayout.Village,
+            ScenarioKind.GameLikeVillage => SpawnLayout.Village,
+            _ => SpawnLayout.Wide,
+        };
+    }
+
+    static AssetProfile DynamicProfile(
+        string path,
+        AssetCategory category,
+        float scale,
+        string[] idleClipNames,
+        string[] walkClipNames,
+        string[] runClipNames
+    )
+    {
+        AssetProfile profile = new AssetProfile
+        {
+            Name = Path.GetFileNameWithoutExtension(path),
+            Path = path,
+            Category = category,
+            IsDynamic = true,
+            Scale = scale,
+            GroundOffsetBias = category == AssetCategory.Humanoid ? 0.02f : 0.05f,
+            IdleClipNames = idleClipNames,
+            WalkClipNames = walkClipNames,
+            RunClipNames = runClipNames,
+        };
+        return ApplyAssetProfileOverrides(profile);
+    }
+
+    static AssetProfile StaticProfile(string path, AssetCategory category, float scale)
+    {
+        AssetProfile profile = new AssetProfile
+        {
+            Name = Path.GetFileNameWithoutExtension(path),
+            Path = path,
+            Category = category,
+            IsDynamic = false,
+            Scale = scale,
+            GroundOffsetBias = 0.0f,
+        };
+        return ApplyAssetProfileOverrides(profile);
+    }
+
+    static AssetProfile ApplyAssetProfileOverrides(AssetProfile profile)
+    {
+        string name = Path.GetFileNameWithoutExtension(profile.Path).ToLowerInvariant();
+        return new AssetProfile
+        {
+            Name = profile.Name,
+            Path = profile.Path,
+            Category = profile.Category,
+            IsDynamic = profile.IsDynamic,
+            Scale = ResolveAssetScale(profile.Category, name, profile.Scale),
+            RotationX = profile.RotationX,
+            RotationY = profile.RotationY,
+            RotationZ = profile.RotationZ,
+            GroundOffsetBias = ResolveGroundBias(profile.Category, name, profile.GroundOffsetBias),
+            IdleClipNames = profile.IdleClipNames,
+            WalkClipNames = profile.WalkClipNames,
+            RunClipNames = profile.RunClipNames,
+        };
+    }
+
+    static float ResolveAssetScale(AssetCategory category, string name, float currentScale)
+    {
+        if (category == AssetCategory.Building)
+        {
+            return name switch
+            {
+                "bell_tower" => 0.014f,
+                "inn" or "blacksmith" or "mill" or "sawmill" or "stable" => 0.0125f,
+                _ => 0.012f,
+            };
+        }
+
+        if (category == AssetCategory.Prop || category == AssetCategory.Decoration)
+        {
+            return name switch
+            {
+                "marketstand_1" or "cart" or "gazebo" or "well" => 0.0115f,
+                "fence" => 0.012f,
+                _ => 0.0105f,
+            };
+        }
+
+        return currentScale;
+    }
+
+    static float ResolveGroundBias(AssetCategory category, string name, float currentBias)
+    {
+        if (category == AssetCategory.Animal)
+        {
+            return name switch
+            {
+                "horse" or "stag" or "deer" => 0.08f,
+                "bull" or "cow" => 0.07f,
+                _ => 0.06f,
+            };
+        }
+
+        if (category == AssetCategory.Building)
+        {
+            return 0.01f;
+        }
+
+        return currentBias;
+    }
+
+    static List<AssetProfile> BuildHumanoidProfiles(SandboxOptions options, string localCharacter)
+    {
+        string[] idle = { "Idle_Loop", "Idle" };
+        string[] walk = { "Walk_Loop", "Walk_Formal_Loop", "Jog_Fwd_Loop" };
+        string[] run = { "Sprint_Loop", "Jog_Fwd_Loop", "Walk_Loop" };
+
+        return DistinctExistingPaths(
+                new[]
+                {
+                    localCharacter,
+                    Path.Combine(options.ThroneAssetsRoot, "characters", "Character.glb"),
+                    Path.Combine(options.ThroneAssetsRoot, "characters", "humanoid.glb"),
+                }
+            )
+            .Select(path => DynamicProfile(path, AssetCategory.Humanoid, 1f, idle, walk, run))
+            .ToList();
+    }
+
+    static List<AssetProfile> BuildAnimalProfiles(SandboxOptions options)
+    {
+        string[] idle = { "Idle", "Idle_2", "Idle_HeadLow", "Eating" };
+        string[] walk = { "Walk", "Trot" };
+        string[] run = { "Gallop", "Run", "Sprint", "Jog" };
+
+        return EnumeratePreferredModels(
+                Path.Combine(options.ThroneAssetsRoot, "animals"),
+                "horse.fbx",
+                "deer.fbx",
+                "wolf.fbx",
+                "fox.fbx",
+                "cow.fbx",
+                "husky.fbx",
+                "stag.fbx",
+                "bull.fbx"
+            )
+            .Select(path => DynamicProfile(path, AssetCategory.Animal, 0.01f, idle, walk, run))
+            .ToList();
+    }
+
+    static List<AssetProfile> BuildStaticProfiles(
+        SandboxOptions options,
+        string subDirectory,
+        AssetCategory category,
+        params string[] fileNames
+    )
+    {
+        return EnumeratePreferredModels(Path.Combine(options.ThroneAssetsRoot, subDirectory), fileNames)
+            .Select(path => StaticProfile(path, category, 0.01f))
+            .ToList();
+    }
+
+    static ScenarioState BuildScenario(GoudGame game, SandboxOptions options, uint sceneId, Random rng)
+    {
+        string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+        string localCharacter = Path.Combine(baseDir, "assets", "Character.glb");
+        List<AssetProfile> humanoidProfiles = BuildHumanoidProfiles(options, localCharacter);
+        List<AssetProfile> animalProfiles = BuildAnimalProfiles(options);
+        List<AssetProfile> buildingProfiles = BuildStaticProfiles(
+            options,
+            "buildings",
+            AssetCategory.Building,
+            "Inn.fbx",
+            "House_1.fbx",
+            "House_2.fbx",
+            "House_3.fbx",
+            "House_4.fbx",
+            "Blacksmith.fbx",
+            "Mill.fbx",
+            "Sawmill.fbx",
+            "Stable.fbx",
+            "Bell_Tower.fbx"
+        );
+        List<AssetProfile> propProfiles = BuildStaticProfiles(
+            options,
+            "props",
+            AssetCategory.Prop,
+            "MarketStand_1.fbx",
+            "Cart.fbx",
+            "Bench_1.fbx",
+            "Barrel.fbx",
+            "Crate.fbx",
+            "Fence.fbx",
+            "Well.fbx",
+            "Gazebo.fbx",
+            "Bonfire.fbx",
+            "Rock_1.fbx",
+            "Rock_2.fbx",
+            "Rock_3.fbx",
+            "Hay.fbx",
+            "Bag.fbx",
+            "Cauldron.fbx"
+        );
+        List<AssetProfile> decorationProfiles = BuildStaticProfiles(
+            options,
+            "props",
+            AssetCategory.Decoration,
+            "Barrel.fbx",
+            "Crate.fbx",
+            "Fence.fbx",
+            "Rock_1.fbx",
+            "Rock_2.fbx",
+            "Rock_3.fbx",
+            "Hay.fbx",
+            "Bag.fbx",
+            "Cauldron.fbx",
+            "Bonfire.fbx"
+        );
+
+        RigConfig? playerRig = null;
+        List<uint> sourceModelIds = new();
+        List<string> loadedAssets = new();
+        List<string> failedAssets = new();
+
+        foreach (AssetProfile profile in humanoidProfiles)
+        {
+            playerRig = LoadRig(
+                game,
+                profile,
+                sourceModelIds,
+                loadedAssets,
+                failedAssets,
+                new Dictionary<uint, AssetProfile>()
+            );
+            if (playerRig is not null)
+            {
+                break;
+            }
+        }
+
+        if (playerRig is null)
+        {
+            throw new InvalidOperationException(
+                "No humanoid model could be loaded. Checked local sandbox assets and Throne character assets."
+            );
+        }
+
+        playerX = 0f;
+        playerY = playerRig.GroundOffsetY;
+        playerZ = options.Scenario == ScenarioKind.FullGameStress ? 18f : 0f;
+        playerFacing = 0f;
+        currentAnim = AnimState.Idle;
+
+        game.SetModelPosition(playerRig.SourceModelId, playerX, playerRig.GroundOffsetY, playerZ);
+        game.SetModelRotation(
+            playerRig.SourceModelId,
+            playerRig.RotationX,
+            playerFacing + playerRig.RotationY,
+            playerRig.RotationZ
+        );
+        game.SetModelScale(playerRig.SourceModelId, playerRig.Scale, playerRig.Scale, playerRig.Scale);
+        game.AddModelToScene(sceneId, playerRig.SourceModelId);
+        if (playerRig.AnimCount > 0)
+        {
+            game.PlayAnimation(playerRig.SourceModelId, playerRig.IdleAnim, true);
+        }
+
+        ScenarioState state = new()
+        {
+            PlayerRig = playerRig,
+            PlayerModelId = playerRig.SourceModelId,
+        };
+
+        state.SourceModelIds.AddRange(sourceModelIds);
+        state.LoadedAssets.AddRange(loadedAssets);
+        state.FailedAssets.AddRange(failedAssets);
+        state.SourceProfiles[playerRig.SourceModelId] = humanoidProfiles.First(p => p.Path == playerRig.Path);
+        state.HumanoidRigs.Add(playerRig);
+
+        if (options.Scenario != ScenarioKind.Baseline)
+        {
+            foreach (AssetProfile profile in humanoidProfiles.Skip(1))
+            {
+                RigConfig? extraHumanoid = LoadRig(
+                    game,
+                    profile,
+                    state.SourceModelIds,
+                    state.LoadedAssets,
+                    state.FailedAssets,
+                    state.SourceProfiles
+                );
+                if (extraHumanoid is not null && extraHumanoid.Path != playerRig.Path)
+                {
+                    state.HumanoidRigs.Add(extraHumanoid);
+                }
+            }
+        }
+
+        if (options.Scenario == ScenarioKind.FullGameStress ||
+            options.Scenario == ScenarioKind.GameLikeVillage ||
+            options.Scenario == ScenarioKind.ThroneCurrentMix ||
+            options.Scenario == ScenarioKind.WorstCaseAllVisible ||
+            options.Scenario == ScenarioKind.SpawnDespawnChurn)
+        {
+            int animalProfileLimit = options.Scenario == ScenarioKind.FullGameStress
+                ? animalProfiles.Count
+                : (options.Scenario == ScenarioKind.GameLikeVillage ? 8 : 6);
+            foreach (AssetProfile animalProfile in animalProfiles.Take(animalProfileLimit))
+            {
+                RigConfig? animalRig = LoadRig(
+                    game,
+                    animalProfile,
+                    state.SourceModelIds,
+                    state.LoadedAssets,
+                    state.FailedAssets,
+                    state.SourceProfiles
+                );
+                if (animalRig is not null)
+                {
+                    state.AnimalRigs.Add(animalRig);
+                }
+            }
+        }
+
+        int humanoidCount = options.InitialNpcCount;
+        int animalCount = options.Scenario switch
+        {
+            ScenarioKind.FullGameStress => Math.Max(48, options.InitialNpcCount / 2),
+            ScenarioKind.GameLikeVillage => Math.Max(24, options.InitialNpcCount / 3),
+            ScenarioKind.ThroneCurrentMix => Math.Max(16, options.InitialNpcCount / 2),
+            ScenarioKind.WorstCaseAllVisible => Math.Max(24, options.InitialNpcCount / 2),
+            ScenarioKind.SpawnDespawnChurn => Math.Max(12, options.InitialNpcCount / 3),
+            _ => 0,
+        };
+
+        for (int i = 0; i < humanoidCount; i++)
+        {
+            RigConfig rig = state.HumanoidRigs[i % state.HumanoidRigs.Count];
+            CrowdAgent agent = CreateCrowdAgent(
+                game,
+                rig,
+                sceneId,
+                rng,
+                LayoutForScenario(options.Scenario),
+                i
+            );
+            if (agent.ModelId != 0)
+            {
+                state.Agents.Add(agent);
+            }
+        }
+
+        for (int i = 0; i < animalCount && state.AnimalRigs.Count > 0; i++)
+        {
+            RigConfig rig = state.AnimalRigs[i % state.AnimalRigs.Count];
+            CrowdAgent agent = CreateCrowdAgent(
+                game,
+                rig,
+                sceneId,
+                rng,
+                LayoutForScenario(options.Scenario),
+                i
+            );
+            if (agent.ModelId != 0)
+            {
+                state.Agents.Add(agent);
+            }
+        }
+
+        if (options.Scenario == ScenarioKind.FullGameStress ||
+            options.Scenario == ScenarioKind.GameLikeVillage ||
+            options.Scenario == ScenarioKind.ThroneCurrentMix ||
+            options.Scenario == ScenarioKind.WorstCaseAllVisible ||
+            options.Scenario == ScenarioKind.SpawnDespawnChurn)
+        {
+            List<uint> buildingSources = LoadStaticSources(
+                game,
+                buildingProfiles,
+                options.Scenario == ScenarioKind.FullGameStress ? buildingProfiles.Count : (options.Scenario == ScenarioKind.GameLikeVillage ? 8 : 6),
+                state.SourceModelIds,
+                state.LoadedAssets,
+                state.FailedAssets,
+                state.SourceProfiles
+            );
+
+            List<uint> propSources = LoadStaticSources(
+                game,
+                propProfiles,
+                options.Scenario == ScenarioKind.FullGameStress ? propProfiles.Count : (options.Scenario == ScenarioKind.GameLikeVillage ? 8 : 10),
+                state.SourceModelIds,
+                state.LoadedAssets,
+                state.FailedAssets,
+                state.SourceProfiles
+            );
+
+            List<uint> decorationSources = LoadStaticSources(
+                game,
+                decorationProfiles,
+                options.Scenario == ScenarioKind.FullGameStress ? decorationProfiles.Count : 10,
+                state.SourceModelIds,
+                state.LoadedAssets,
+                state.FailedAssets,
+                state.SourceProfiles
+            );
+
+            int buildingInstances = options.Scenario switch
+            {
+                ScenarioKind.FullGameStress => 32,
+                ScenarioKind.GameLikeVillage => 24,
+                ScenarioKind.WorstCaseAllVisible => 18,
+                ScenarioKind.SpawnDespawnChurn => 14,
+                _ => 14,
+            };
+            int propInstances = options.Scenario switch
+            {
+                ScenarioKind.FullGameStress => 96,
+                ScenarioKind.GameLikeVillage => 72,
+                ScenarioKind.WorstCaseAllVisible => 64,
+                ScenarioKind.SpawnDespawnChurn => 48,
+                _ => 48,
+            };
+            int decorationInstances = options.Scenario switch
+            {
+                ScenarioKind.FullGameStress => 128,
+                ScenarioKind.GameLikeVillage => 96,
+                ScenarioKind.WorstCaseAllVisible => 72,
+                ScenarioKind.SpawnDespawnChurn => 40,
+                _ => 0,
+            };
+
+            state.StaticBuildingCount = ScatterStaticInstances(
+                game,
+                sceneId,
+                buildingSources,
+                buildingInstances,
+                rng,
+                state.StaticInstances,
+                state.SourceProfiles,
+                LayoutForScenario(options.Scenario),
+                StaticScatterKind.Building
+            );
+            state.StaticPropCount = ScatterStaticInstances(
+                game,
+                sceneId,
+                propSources,
+                propInstances,
+                rng,
+                state.StaticInstances,
+                state.SourceProfiles,
+                LayoutForScenario(options.Scenario),
+                StaticScatterKind.Prop
+            );
+            state.StaticDecorationCount = ScatterStaticInstances(
+                game,
+                sceneId,
+                decorationSources,
+                decorationInstances,
+                rng,
+                state.StaticInstances,
+                state.SourceProfiles,
+                LayoutForScenario(options.Scenario),
+                StaticScatterKind.Decoration
+            );
+        }
+
+        return state;
+    }
+
+    static RigConfig PickSpawnRig(ScenarioState state, int index)
+    {
+        if (state.AnimalRigs.Count == 0)
+        {
+            return state.HumanoidRigs[index % state.HumanoidRigs.Count];
+        }
+
+        int total = state.HumanoidRigs.Count + state.AnimalRigs.Count;
+        int cursor = index % total;
+        if (cursor < state.HumanoidRigs.Count)
+        {
+            return state.HumanoidRigs[cursor];
+        }
+
+        return state.AnimalRigs[cursor - state.HumanoidRigs.Count];
+    }
+
+    static CrowdAgent CreateCrowdAgent(
+        GoudGame game,
+        RigConfig rig,
+        uint sceneId,
+        Random rng,
+        SpawnLayout layout,
+        int spawnIndex
+    )
+    {
+        CrowdAgent agent = new();
+        agent.ModelId = game.InstantiateModel(rig.SourceModelId);
+        if (agent.ModelId == 0)
+        {
+            return agent;
+        }
+
+        (agent.X, agent.Z) = PickSpawnPoint(rng, layout, rig.IsAnimal, spawnIndex);
+        (agent.TargetX, agent.TargetZ) = PickTarget(rng, layout, rig.IsAnimal);
+        if (MathF.Abs(agent.TargetX - agent.X) < 2.0f && MathF.Abs(agent.TargetZ - agent.Z) < 2.0f)
+        {
+            (agent.TargetX, agent.TargetZ) = PickTarget(rng, layout, rig.IsAnimal);
+        }
+        agent.Facing = (float)(rng.NextDouble() * 360.0);
+        agent.IsMoving = rng.NextDouble() > 0.35;
+        agent.IdleTimer = agent.IsMoving ? 0f : (float)(rng.NextDouble() * 2.0 + 0.75);
+        agent.MoveSpeed = rig.MoveSpeed;
+        agent.SpeedMultiplier = 0.75f + (float)(rng.NextDouble() * 0.55);
+        agent.IdleAnim = rig.AnimCount > 0 ? rig.IdleAnim : -1;
+        agent.WalkAnim = rig.AnimCount > 0 ? rig.WalkAnim : -1;
+        agent.RunAnim = rig.AnimCount > 0 ? rig.RunAnim : -1;
+        agent.IsAnimal = rig.IsAnimal;
+        agent.Y = rig.GroundOffsetY;
+        agent.RotationX = rig.RotationX;
+        agent.YawOffset = rig.RotationY;
+        agent.RotationZ = rig.RotationZ;
+
+        game.SetModelPosition(agent.ModelId, agent.X, agent.Y, agent.Z);
+        game.SetModelRotation(
+            agent.ModelId,
+            agent.RotationX,
+            agent.Facing + agent.YawOffset,
+            agent.RotationZ
+        );
+        game.SetModelScale(agent.ModelId, rig.Scale, rig.Scale, rig.Scale);
+        game.AddModelToScene(sceneId, agent.ModelId);
+
+        if (rig.AnimCount > 0)
+        {
+            int startAnim = agent.IsMoving ? rig.WalkAnim : rig.IdleAnim;
+            game.PlayAnimation(agent.ModelId, Math.Max(0, startAnim), true);
+            game.SetAnimationSpeed(agent.ModelId, agent.SpeedMultiplier);
+        }
+
+        return agent;
+    }
+
+    static RigConfig? LoadRig(
+        GoudGame game,
+        AssetProfile profile,
+        List<uint> sourceModelIds,
+        List<string> loadedAssets,
+        List<string> failedAssets,
+        Dictionary<uint, AssetProfile> sourceProfiles
+    )
+    {
+        string path = profile.Path;
+        if (!File.Exists(path))
+        {
+            failedAssets.Add(path);
+            return null;
+        }
+
+        uint modelId = game.LoadModel(path);
+        if (modelId == 0)
+        {
+            failedAssets.Add(path);
+            Console.WriteLine($"Failed to load model: {path}");
+            return null;
+        }
+
+        int animCount = game.GetAnimationCount(modelId);
+        (int idleAnim, int walkAnim, int runAnim) = ResolveAnimationIndices(game, modelId, animCount, profile);
+        float groundOffsetY = ComputeGroundOffsetY(game, modelId, profile.Scale, profile.GroundOffsetBias);
+
+        sourceModelIds.Add(modelId);
+        loadedAssets.Add(path);
+        sourceProfiles[modelId] = profile;
+
+        string name = Path.GetFileNameWithoutExtension(path);
+        return new RigConfig
+        {
+            Name = name,
+            Path = path,
+            SourceModelId = modelId,
+            AnimCount = animCount,
+            IdleAnim = idleAnim,
+            WalkAnim = walkAnim,
+            RunAnim = runAnim,
+            Scale = profile.Scale,
+            MoveSpeed = GuessMoveSpeed(name, profile.Category == AssetCategory.Animal),
+            IsAnimal = profile.Category == AssetCategory.Animal,
+            GroundOffsetY = groundOffsetY,
+            RotationX = profile.RotationX,
+            RotationY = profile.RotationY,
+            RotationZ = profile.RotationZ,
+        };
+    }
+
+    static List<uint> LoadStaticSources(
+        GoudGame game,
+        IEnumerable<AssetProfile> profiles,
+        int maxCount,
+        List<uint> sourceModelIds,
+        List<string> loadedAssets,
+        List<string> failedAssets,
+        Dictionary<uint, AssetProfile> sourceProfiles
+    )
+    {
+        List<uint> loaded = new();
+
+        foreach (AssetProfile profile in profiles.Take(maxCount))
+        {
+            string path = profile.Path;
+            if (!File.Exists(path))
+            {
+                failedAssets.Add(path);
+                continue;
+            }
+
+            uint modelId = game.LoadModel(path);
+            if (modelId == 0)
+            {
+                failedAssets.Add(path);
+                Console.WriteLine($"Failed to load static model: {path}");
+                continue;
+            }
+
+            sourceModelIds.Add(modelId);
+            loadedAssets.Add(path);
+            sourceProfiles[modelId] = profile;
+            loaded.Add(modelId);
+        }
+
+        return loaded;
+    }
+
+    static int ScatterStaticInstances(
+        GoudGame game,
+        uint sceneId,
+        List<uint> sourceModels,
+        int count,
+        Random rng,
+        List<uint> staticInstances,
+        Dictionary<uint, AssetProfile> sourceProfiles,
+        SpawnLayout layout,
+        StaticScatterKind scatterKind
+    )
+    {
+        int created = 0;
+        if (sourceModels.Count == 0)
+        {
+            return created;
+        }
+
+        for (int i = 0; i < count; i++)
+        {
+            uint sourceModel = sourceModels[i % sourceModels.Count];
+            uint modelId = game.InstantiateModel(sourceModel);
+            if (modelId == 0)
+            {
+                continue;
+            }
+
+            AssetProfile profile = sourceProfiles[sourceModel];
+            float x;
+            float z;
+            float yaw;
+            if (layout == SpawnLayout.Village)
+            {
+                (x, z, yaw) = PickVillageStaticAnchor(i, scatterKind, rng);
+            }
+            else if (layout == SpawnLayout.Compact)
+            {
+                x = -22f + (i % 6) * 8f + (float)(rng.NextDouble() * 1.5 - 0.75);
+                z = 10f + (i / 6) * 7f + (float)(rng.NextDouble() * 1.5 - 0.75);
+                yaw = (i % 2 == 0) ? 0f : 90f;
+            }
+            else
+            {
+                x = (float)(rng.NextDouble() * 150.0 - 75.0);
+                z = (float)(rng.NextDouble() * 150.0 - 75.0);
+                yaw = (float)(rng.NextDouble() * 360.0);
+            }
+            float scale = profile.Scale * (0.95f + (float)(rng.NextDouble() * 0.1));
+            float groundOffsetY = ComputeGroundOffsetY(game, sourceModel, scale, profile.GroundOffsetBias);
+
+            game.SetModelPosition(modelId, x, groundOffsetY, z);
+            game.SetModelRotation(
+                modelId,
+                profile.RotationX,
+                yaw + profile.RotationY,
+                profile.RotationZ
+            );
+            game.SetModelScale(modelId, scale, scale, scale);
+            game.SetModelStatic(modelId, true);
+            game.AddModelToScene(sceneId, modelId);
+
+            staticInstances.Add(modelId);
+            created++;
+        }
+
+        return created;
+    }
+
+    static (float x, float z) PickSpawnPoint(
+        Random rng,
+        SpawnLayout layout,
+        bool isAnimal,
+        int spawnIndex
+    )
+    {
+        if (layout != SpawnLayout.Village)
+        {
+            return PickTarget(rng, layout, isAnimal);
+        }
+
+        (float baseX, float baseZ)[] anchors = isAnimal
+            ? new (float, float)[]
+            {
+                (-24f, 26f), (-18f, 32f), (-12f, 28f), (-6f, 34f),
+                (6f, 34f), (12f, 28f), (18f, 32f), (24f, 26f),
+                (-16f, 22f), (16f, 22f),
+            }
+            : new (float, float)[]
+            {
+                (-20f, 10f), (-14f, 16f), (-8f, 22f), (-2f, 12f),
+                (4f, 18f), (10f, 10f), (16f, 16f), (22f, 12f),
+                (-18f, 28f), (-10f, 30f), (0f, 24f), (10f, 28f), (20f, 24f),
+            };
+
+        (float baseX, float baseZ) anchor = anchors[spawnIndex % anchors.Length];
+        float jitterRange = isAnimal ? 2.0f : 1.25f;
+        float jitterX = (float)(rng.NextDouble() * jitterRange * 2.0 - jitterRange);
+        float jitterZ = (float)(rng.NextDouble() * jitterRange * 2.0 - jitterRange);
+        return (anchor.baseX + jitterX, anchor.baseZ + jitterZ);
+    }
+
+    static (float x, float z) PickTarget(Random rng, SpawnLayout layout, bool isAnimal = false)
+    {
+        if (layout == SpawnLayout.Compact)
+        {
+            float x = (float)(rng.NextDouble() * 48.0 - 24.0);
+            float z = (float)(rng.NextDouble() * 28.0 + 8.0);
+            return (x, z);
+        }
+        if (layout == SpawnLayout.Village)
+        {
+            (float baseX, float baseZ)[] waypoints = isAnimal
+                ? new (float, float)[]
+                {
+                    (-30f, 28f), (-24f, 34f), (-20f, 22f), (-14f, 30f),
+                    (16f, 30f), (20f, 24f), (24f, 34f), (30f, 26f),
+                }
+                : new (float, float)[]
+                {
+                    (-20f, 12f), (-16f, 20f), (-10f, 28f), (-4f, 14f),
+                    (4f, 24f), (10f, 12f), (16f, 20f), (22f, 10f),
+                    (0f, 18f), (8f, 30f), (-8f, 30f), (24f, 20f),
+                };
+            (float baseX, float baseZ) anchor = waypoints[rng.Next(waypoints.Length)];
+            float jitterX = (float)(rng.NextDouble() * (isAnimal ? 6.0 : 4.0) - (isAnimal ? 3.0 : 2.0));
+            float jitterZ = (float)(rng.NextDouble() * (isAnimal ? 6.0 : 4.0) - (isAnimal ? 3.0 : 2.0));
+            return (anchor.baseX + jitterX, anchor.baseZ + jitterZ);
+        }
+
+        float wideX = (float)(rng.NextDouble() * (npcBoundsMax - npcBoundsMin) + npcBoundsMin);
+        float wideZ = (float)(rng.NextDouble() * (npcBoundsMax - npcBoundsMin) + npcBoundsMin);
+        return (wideX, wideZ);
+    }
+
+    static (float x, float z, float yaw) PickVillageStaticAnchor(
+        int index,
+        StaticScatterKind scatterKind,
+        Random rng
+    )
+    {
+        (float x, float z, float yaw)[] anchors = scatterKind switch
+        {
+            StaticScatterKind.Building => new (float, float, float)[]
+            {
+                (-30f, 10f, 90f), (-12f, 8f, 0f), (12f, 8f, 0f), (30f, 10f, 270f),
+                (-28f, 24f, 90f), (-10f, 26f, 180f), (10f, 26f, 180f), (28f, 24f, 270f),
+                (-20f, 38f, 180f), (0f, 40f, 180f), (20f, 38f, 180f), (0f, 18f, 90f),
+            },
+            StaticScatterKind.Prop => new (float, float, float)[]
+            {
+                (-24f, 14f, 0f), (-18f, 18f, 45f), (-12f, 14f, 90f), (-6f, 18f, 0f),
+                (0f, 12f, 180f), (6f, 18f, 90f), (12f, 14f, 0f), (18f, 18f, 270f),
+                (24f, 14f, 180f), (-22f, 30f, 45f), (-14f, 32f, 0f), (-6f, 28f, 90f),
+                (6f, 28f, 270f), (14f, 32f, 180f), (22f, 30f, 0f), (0f, 34f, 0f),
+            },
+            _ => new (float, float, float)[]
+            {
+                (-34f, 8f, 0f), (-30f, 18f, 45f), (-26f, 34f, 90f), (-18f, 10f, 0f),
+                (-16f, 24f, 90f), (-10f, 34f, 135f), (-2f, 8f, 0f), (4f, 22f, 270f),
+                (8f, 34f, 180f), (18f, 8f, 0f), (20f, 22f, 90f), (24f, 34f, 0f),
+                (30f, 12f, 180f), (34f, 26f, 270f), (36f, 38f, 90f), (0f, 18f, 0f),
+                (-8f, 40f, 180f), (8f, 40f, 180f), (-24f, 28f, 45f), (24f, 28f, 315f),
+            },
+        };
+
+        (float baseX, float baseZ, float baseYaw) anchor = anchors[index % anchors.Length];
+        float jitterX = (float)(rng.NextDouble() * 2.0 - 1.0);
+        float jitterZ = (float)(rng.NextDouble() * 2.0 - 1.0);
+        return (anchor.baseX + jitterX, anchor.baseZ + jitterZ, anchor.baseYaw);
+    }
+
+    static float WrapDegrees(float degrees)
+    {
+        while (degrees > 180f)
+        {
+            degrees -= 360f;
+        }
+        while (degrees < -180f)
+        {
+            degrees += 360f;
+        }
+        return degrees;
+    }
+
+    static (int idle, int walk, int run) ResolveAnimationIndices(
+        GoudGame game,
+        uint modelId,
+        int animCount,
+        AssetProfile profile
+    )
+    {
+        if (animCount <= 0)
+        {
+            return (-1, -1, -1);
+        }
+
+        int idle = FindAnimationIndexByNames(game, modelId, animCount, profile.IdleClipNames, 0);
+        int walk = FindAnimationIndexByNames(game, modelId, animCount, profile.WalkClipNames, Math.Min(1, animCount - 1));
+        int run = FindAnimationIndexByNames(game, modelId, animCount, profile.RunClipNames, walk >= 0 ? walk : Math.Min(2, animCount - 1));
+        return (idle, walk, run);
+    }
+
+    static int FindAnimationIndexByNames(
+        GoudGame game,
+        uint modelId,
+        int animCount,
+        string[] preferredNames,
+        int fallbackIndex
+    )
+    {
+        Dictionary<string, int> animations = new(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < animCount; i++)
+        {
+            animations[NormalizeAnimName(game.GetAnimationName(modelId, i))] = i;
+        }
+
+        foreach (string preferredName in preferredNames)
+        {
+            string normalized = NormalizeAnimName(preferredName);
+            if (animations.TryGetValue(normalized, out int exact))
+            {
+                return exact;
+            }
+
+            KeyValuePair<string, int> partialMatch = animations.FirstOrDefault(
+                entry => entry.Key.Contains(normalized, StringComparison.OrdinalIgnoreCase)
+            );
+            if (!string.IsNullOrEmpty(partialMatch.Key))
+            {
+                return partialMatch.Value;
+            }
+        }
+
+        return fallbackIndex;
+    }
+
+    static string NormalizeAnimName(string raw)
+    {
+        return raw
+            .Split('|')
+            .Last()
+            .Replace(" ", "")
+            .Replace("-", "")
+            .Replace("_", "")
+            .ToLowerInvariant();
+    }
+
+    static float ComputeGroundOffsetY(GoudGame game, uint modelId, float scale, float bias)
+    {
+        BoundingBox3D bounds = game.GetModelBoundingBox(modelId);
+        return (-bounds.MinY * scale) + bias;
+    }
+
+    static float GuessMoveSpeed(string name, bool isAnimal)
+    {
+        string lower = name.ToLowerInvariant();
+        if (!isAnimal)
+        {
+            return 3f;
+        }
+
+        if (lower.Contains("horse") || lower.Contains("stag") || lower.Contains("deer"))
+        {
+            return 4.5f;
+        }
+        if (lower.Contains("wolf") || lower.Contains("fox") || lower.Contains("husky"))
+        {
+            return 4.0f;
+        }
+        if (lower.Contains("cow") || lower.Contains("bull"))
+        {
+            return 2.5f;
+        }
+
+        return 3.25f;
+    }
+
+    static IEnumerable<string> DistinctExistingPaths(IEnumerable<string> paths)
+    {
+        HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+        foreach (string path in paths)
+        {
+            if (!seen.Add(path))
+            {
+                continue;
+            }
+            if (File.Exists(path))
+            {
+                yield return path;
+            }
+        }
+    }
+
+    static IEnumerable<string> EnumeratePreferredModels(string directory, params string[] preferredNames)
+    {
+        HashSet<string> yielded = new(StringComparer.OrdinalIgnoreCase);
+
+        foreach (string name in preferredNames)
+        {
+            string fullPath = Path.Combine(directory, name);
+            if (File.Exists(fullPath) && yielded.Add(fullPath))
+            {
+                yield return fullPath;
+            }
+        }
+
+        if (!Directory.Exists(directory))
+        {
+            yield break;
+        }
+
+        foreach (string file in Directory.EnumerateFiles(directory)
+                     .Where(IsModelAsset)
+                     .OrderBy(Path.GetFileName))
+        {
+            if (yielded.Add(file))
+            {
+                yield return file;
+            }
+        }
+    }
+
+    static bool IsModelAsset(string path)
+    {
+        string ext = Path.GetExtension(path).ToLowerInvariant();
+        return ext is ".glb" or ".gltf" or ".fbx" or ".obj";
+    }
+
+    static void WriteMetricsReport(
+        SandboxOptions options,
+        ScenarioState state,
+        MetricsAccumulator metrics,
+        double elapsedSeconds,
+        double lastFps
+    )
+    {
+        if (string.IsNullOrWhiteSpace(options.MetricsOutPath))
+        {
+            return;
+        }
+
+        string outputPath = options.MetricsOutPath!;
+        string? outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrWhiteSpace(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
+        List<double> fpsSamples = metrics.FrameMs
+            .Where(ms => ms > 0.0)
+            .Select(ms => 1000.0 / ms)
+            .ToList();
+
+        var report = new
+        {
+            capturedAtUtc = DateTime.UtcNow.ToString("O"),
+            scenario = ScenarioLabel(options.Scenario),
+            backend = options.BackendName,
+            durationSeconds = elapsedSeconds,
+            frameCount = metrics.FrameMs.Count,
+            lastFps,
+            counts = new
+            {
+                activeAgents = state.Agents.Count,
+                humanoids = state.Agents.Count(agent => !agent.IsAnimal),
+                animals = state.Agents.Count(agent => agent.IsAnimal),
+                staticBuildings = state.StaticBuildingCount,
+                staticProps = state.StaticPropCount,
+                staticDecorations = state.StaticDecorationCount,
+                staticInstances = state.StaticInstances.Count,
+            },
+            assets = new
+            {
+                loaded = state.LoadedAssets.Distinct().OrderBy(path => path).ToArray(),
+                failed = state.FailedAssets.Distinct().OrderBy(path => path).ToArray(),
+            },
+            frameMs = Summarize(metrics.FrameMs),
+            fps = Summarize(fpsSamples),
+            drawCalls = Summarize(metrics.DrawCalls),
+            visibleObjects = Summarize(metrics.VisibleObjects),
+            culledObjects = Summarize(metrics.CulledObjects),
+            instancedDrawCalls = Summarize(metrics.InstancedDrawCalls),
+            activeInstances = Summarize(metrics.ActiveInstances),
+            boneMatrixUploads = Summarize(metrics.BoneMatrixUploads),
+            animationEvaluations = Summarize(metrics.AnimationEvaluations),
+            animationEvaluationsSaved = Summarize(metrics.AnimationEvaluationsSaved),
+        };
+
+        string json = JsonSerializer.Serialize(report, new JsonSerializerOptions
+        {
+            WriteIndented = true,
+        });
+        File.WriteAllText(outputPath, json);
+    }
+
+    static object Summarize(IEnumerable<double> source)
+    {
+        List<double> values = source
+            .Where(value => !double.IsNaN(value) && !double.IsInfinity(value))
+            .OrderBy(value => value)
+            .ToList();
+
+        if (values.Count == 0)
+        {
+            return new
+            {
+                average = 0.0,
+                minimum = 0.0,
+                maximum = 0.0,
+                p50 = 0.0,
+                p95 = 0.0,
+                p99 = 0.0,
+            };
+        }
+
+        double Percentile(double pct)
+        {
+            int index = (int)Math.Ceiling(values.Count * pct) - 1;
+            index = Math.Clamp(index, 0, values.Count - 1);
+            return values[index];
+        }
+
+        return new
+        {
+            average = values.Average(),
+            minimum = values[0],
+            maximum = values[^1],
+            p50 = Percentile(0.50),
+            p95 = Percentile(0.95),
+            p99 = Percentile(0.99),
+        };
     }
 }

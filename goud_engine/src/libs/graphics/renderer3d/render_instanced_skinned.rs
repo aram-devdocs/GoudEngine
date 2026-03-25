@@ -12,6 +12,7 @@ use crate::libs::graphics::backend::PrimitiveTopology;
 
 impl Renderer3D {
     /// Render skinned models using instanced drawing, grouped by source model.
+    #[allow(dead_code)] // Temporarily disabled from the main render loop until corrected.
     pub(super) fn render_instanced_skinned_models(
         &mut self,
         view_arr: &[f32; 16],
@@ -24,6 +25,10 @@ impl Renderer3D {
     ) {
         let gpu_skinning = matches!(self.config.skinning.mode, super::config::SkinningMode::Gpu)
             && self.backend.supports_storage_buffers();
+        let scene_model_filter = self
+            .current_scene
+            .and_then(|sid| self.scenes.get(&sid))
+            .map(|s| &s.models);
 
         if !gpu_skinning {
             return;
@@ -37,6 +42,11 @@ impl Renderer3D {
                 _ => continue,
             };
             let _ = source; // just checking is_skinned
+            if let Some(filter) = scene_model_filter {
+                if !filter.contains(&inst_id) {
+                    continue;
+                }
+            }
             if self.animation_players.contains_key(&inst_id) {
                 groups
                     .entry(inst.source_model_id)
@@ -49,6 +59,11 @@ impl Renderer3D {
         for (&model_id, model) in &self.models {
             if !model.is_skinned {
                 continue;
+            }
+            if let Some(filter) = scene_model_filter {
+                if !filter.contains(&model_id) {
+                    continue;
+                }
             }
             if self.animation_players.contains_key(&model_id) {
                 groups.entry(model_id).or_default().insert(0, model_id);
