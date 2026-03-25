@@ -11,8 +11,10 @@ keywords = ["game-engine", "ecs", "rendering", "ffi"]
 categories = ["game-engines", "graphics", "rendering"]
 
 [features]
-default = ["native"]
-native = ["wgpu-backend", "dep:rodio", "dep:notify", "dep:cc", "dep:bindgen", "dep:cbindgen", "dep:tiled", "dep:rayon", "dep:env_logger", "dep:toml", "dep:gltf", "dep:tobj", "dep:fbxcel", "dep:jni", "net-udp", "net-tcp", "net-ws", "rapier2d", "rapier3d"]
+default = ["native", "desktop-native", "jni-bridge"]
+native = ["wgpu-backend", "dep:rodio", "dep:notify", "dep:cc", "dep:bindgen", "dep:cbindgen", "dep:tiled", "dep:rayon", "dep:env_logger", "dep:toml", "dep:gltf", "dep:tobj", "dep:fbxcel", "net-udp", "net-tcp", "net-ws", "rapier2d", "rapier3d"]
+desktop-native = ["dep:interprocess"]
+jni-bridge = ["dep:jni"]
 legacy-glfw-opengl = ["dep:gl", "dep:glfw"]
 lua = ["dep:mlua"]
 net-udp = []
@@ -61,7 +63,7 @@ fbxcel = { version = "0.9", optional = true, features = ["tree"] }
 bytemuck = "1.14"
 goud_engine_macros = { version = "=0.0.837", path = "../goud_engine_macros" } # x-release-please-version
 wgpu = { version = "28", optional = true }
-winit = { version = "0.30", optional = true }
+winit = { version = "0.30", optional = true, features = ["android-native-activity"] }
 naga = { version = "28", optional = true, features = ["glsl-in", "wgsl-out"] }
 pollster = { version = "0.4", optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
@@ -83,12 +85,12 @@ web-sys = { version = "0.3", optional = true, features = [
 bumpalo = "3.20.2"
 smallvec = "1.15.1"
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-interprocess = { git = "https://github.com/kotauskas/interprocess", rev = "41facdd4e7517cae4b99a44b24671603bc65041e" }
+[target.'cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))'.dependencies]
+interprocess = { git = "https://github.com/kotauskas/interprocess", rev = "41facdd4e7517cae4b99a44b24671603bc65041e", optional = true }
 
 [lib]
 name = "goud_engine"
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib", "rlib", "staticlib"]
 path = "src/lib.rs"
 
 [build-dependencies]
@@ -146,7 +148,7 @@ required-features = ["native"]
 [[test]]
 name = "jni_smoke"
 path = "tests/jni_smoke.rs"
-required-features = ["native"]
+required-features = ["native", "jni-bridge"]
 
 [[test]]
 name = "lua_script_integration"

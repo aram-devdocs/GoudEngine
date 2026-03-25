@@ -1,9 +1,9 @@
 //! Native runtime factory for valid window/render backend pairs.
 
 use crate::core::error::{GoudError, GoudResult};
-use crate::libs::graphics::backend::native_backend::{
-    NativeRenderBackend, SharedNativeRenderBackend,
-};
+#[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+use crate::libs::graphics::backend::native_backend::NativeRenderBackend;
+use crate::libs::graphics::backend::native_backend::SharedNativeRenderBackend;
 
 use super::{PlatformBackend, RenderBackendKind, WindowBackendKind, WindowConfig};
 
@@ -29,7 +29,11 @@ fn invalid_pair_error(
 /// Tries wgpu (Winit + Wgpu) first, then falls back to OpenGL (GLFW + OpenGL).
 #[allow(unreachable_code)]
 pub fn detect_best_backend() -> (WindowBackendKind, RenderBackendKind) {
-    #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+    #[cfg(all(
+        feature = "native",
+        feature = "wgpu-backend",
+        any(target_os = "linux", target_os = "macos", target_os = "windows")
+    ))]
     {
         return (WindowBackendKind::Winit, RenderBackendKind::Wgpu);
     }
@@ -76,7 +80,11 @@ pub fn create_native_runtime(
     validate_native_backend_pair(window_backend, render_backend)?;
 
     match (window_backend, render_backend) {
-        #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+        #[cfg(all(
+            feature = "native",
+            feature = "wgpu-backend",
+            any(target_os = "linux", target_os = "macos", target_os = "windows")
+        ))]
         (WindowBackendKind::Winit, RenderBackendKind::Wgpu) => {
             let platform = super::winit_platform::WinitPlatform::new(window_config)?;
             let framebuffer_size = platform.get_framebuffer_size();
@@ -91,10 +99,15 @@ pub fn create_native_runtime(
                 )),
             })
         }
-        #[cfg(not(all(feature = "native", feature = "wgpu-backend")))]
+        #[cfg(not(all(
+            feature = "native",
+            feature = "wgpu-backend",
+            any(target_os = "linux", target_os = "macos", target_os = "windows")
+        )))]
         (WindowBackendKind::Winit, RenderBackendKind::Wgpu) => {
             Err(GoudError::InitializationFailed(
-                "wgpu support is not enabled in this build".to_string(),
+                "wgpu native runtime is only available on desktop targets in this build"
+                    .to_string(),
             ))
         }
         #[cfg(feature = "legacy-glfw-opengl")]

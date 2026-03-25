@@ -34,7 +34,11 @@
 pub mod glfw_platform;
 #[cfg(feature = "native")]
 pub mod native_runtime;
-#[cfg(all(feature = "wgpu-backend", feature = "native"))]
+#[cfg(all(
+    feature = "wgpu-backend",
+    feature = "native",
+    any(target_os = "linux", target_os = "macos", target_os = "windows")
+))]
 pub mod winit_platform;
 
 #[cfg(feature = "native")]
