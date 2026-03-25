@@ -8,7 +8,7 @@ use super::{
     conversions, gl_check_debug,
 };
 use crate::libs::error::GoudResult;
-use crate::libs::graphics::backend::types::{DepthFunc, FrontFace, VertexBufferBinding};
+use crate::libs::graphics::backend::types::{DepthFunc, FrontFace};
 
 mod readback;
 #[cfg(test)]
