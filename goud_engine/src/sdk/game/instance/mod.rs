@@ -5,9 +5,9 @@ mod debugger_frame;
 mod ecs_scene;
 #[cfg(feature = "lua")]
 mod lua_bindings;
-#[cfg(all(feature = "lua", feature = "native"))]
+#[cfg(all(feature = "lua", feature = "desktop-native"))]
 mod lua_bridge;
-#[cfg(all(feature = "lua", feature = "native"))]
+#[cfg(all(feature = "lua", feature = "desktop-native"))]
 pub(crate) mod lua_hot_reload;
 #[cfg(feature = "lua")]
 mod lua_integration;
@@ -122,7 +122,7 @@ pub struct GoudGame {
     lua_runtime: LuaRuntime,
 
     /// Optional Lua script hot-reload watcher (native + lua only).
-    #[cfg(all(feature = "lua", feature = "native"))]
+    #[cfg(all(feature = "lua", feature = "desktop-native"))]
     lua_watcher: Option<lua_hot_reload::LuaScriptWatcher>,
 
     // =========================================================================
@@ -242,7 +242,7 @@ impl GoudGame {
             window_resized_events: Events::new(),
             #[cfg(feature = "lua")]
             lua_runtime,
-            #[cfg(all(feature = "lua", feature = "native"))]
+            #[cfg(all(feature = "lua", feature = "desktop-native"))]
             lua_watcher: None,
             #[cfg(feature = "native")]
             platform: None,
@@ -390,7 +390,7 @@ impl GoudGame {
             window_resized_events: Events::new(),
             #[cfg(feature = "lua")]
             lua_runtime,
-            #[cfg(feature = "lua")]
+            #[cfg(all(feature = "lua", feature = "desktop-native"))]
             lua_watcher: None,
             platform: Some(native_runtime.platform),
             render_backend: Some(render_backend),

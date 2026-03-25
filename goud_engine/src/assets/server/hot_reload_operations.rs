@@ -1,5 +1,5 @@
 use super::core::AssetServer;
-#[cfg(feature = "native")]
+#[cfg(feature = "desktop-native")]
 use crate::assets::{HotReloadConfig, HotReloadWatcher};
 
 impl AssetServer {
@@ -26,7 +26,7 @@ impl AssetServer {
     ///     // ... rest of game loop
     /// }
     /// ```
-    #[cfg(feature = "native")]
+    #[cfg(feature = "desktop-native")]
     pub fn create_hot_reload_watcher(&self) -> notify::Result<HotReloadWatcher> {
         HotReloadWatcher::new(self)
     }
@@ -57,7 +57,7 @@ impl AssetServer {
     ///     // ... rest of game loop
     /// }
     /// ```
-    #[cfg(feature = "native")]
+    #[cfg(feature = "desktop-native")]
     pub fn create_hot_reload_watcher_with_config(
         &self,
         config: HotReloadConfig,
