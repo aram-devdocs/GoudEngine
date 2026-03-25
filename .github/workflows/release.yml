@@ -182,6 +182,132 @@ jobs:
           TARBALL="goud-engine-v${VERSION}-${RID}.tar.gz"
           gh release upload "v${VERSION}" "${TARBALL}" --clobber
 
+  # ── Step 2a++: Build console-partner static libraries ──
+  build-console-static-libs:
+    name: Console Static Lib (${{ matrix.rid }})
+    needs: release-please
+    if: needs.release-please.outputs.should_publish == 'true'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            rid: linux-x64
+            static_lib: libgoud_engine.a
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            rid: osx-x64
+            static_lib: libgoud_engine.a
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            rid: osx-arm64
+            static_lib: libgoud_engine.a
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            rid: win-x64
+            static_lib: goud_engine.lib
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install system deps (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgl1-mesa-dev libglu1-mesa-dev \
+            libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev \
+            libasound2-dev
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }} -p goud-engine-core
+
+      - name: Verify static artifact
+        shell: bash
+        run: |
+          STATIC_LIB="target/${{ matrix.target }}/release/${{ matrix.static_lib }}"
+          HEADER_FILE="codegen/generated/goud_engine.h"
+          SIZE=$(stat -c%s "$STATIC_LIB" 2>/dev/null || stat -f%z "$STATIC_LIB")
+          echo "Static artifact: $STATIC_LIB ($SIZE bytes)"
+          if [ "$SIZE" -lt 100000 ]; then
+            echo "ERROR: Static artifact too small ($SIZE bytes), expected > 100KB"
+            exit 1
+          fi
+
+          if [ ! -f "$HEADER_FILE" ]; then
+            echo "ERROR: Missing generated header: $HEADER_FILE"
+            exit 1
+          fi
+
+          ARTIFACT_DIR="artifacts/console-static-${{ matrix.rid }}"
+          mkdir -p "$ARTIFACT_DIR/lib"
+          mkdir -p "$ARTIFACT_DIR/include"
+          cp "$STATIC_LIB" "$ARTIFACT_DIR/lib/"
+          cp "$HEADER_FILE" "$ARTIFACT_DIR/include/"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: console-static-${{ matrix.rid }}
+          path: artifacts/console-static-${{ matrix.rid }}
+          if-no-files-found: error
+          retention-days: 3
+
+  # ── Step 2a+++: Publish console-partner static tarballs ──
+  publish-console-static-tarballs:
+    name: Console Static Tarballs
+    needs: [build-console-static-libs, release-please]
+    if: needs.release-please.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: linux-x64
+            static_lib: libgoud_engine.a
+          - rid: osx-x64
+            static_lib: libgoud_engine.a
+          - rid: osx-arm64
+            static_lib: libgoud_engine.a
+          - rid: win-x64
+            static_lib: goud_engine.lib
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download console static artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: console-static-${{ matrix.rid }}
+          path: artifacts/console-static-${{ matrix.rid }}
+
+      - name: Create console partner tarball
+        env:
+          VERSION: ${{ needs.release-please.outputs.version }}
+          RID: ${{ matrix.rid }}
+          STATIC_LIB: ${{ matrix.static_lib }}
+        run: |
+          STAGING="goud-engine-console-v${VERSION}-${RID}"
+          mkdir -p "${STAGING}/lib"
+          mkdir -p "${STAGING}/include"
+
+          cp "artifacts/console-static-${RID}/lib/${STATIC_LIB}" "${STAGING}/lib/"
+          cp "artifacts/console-static-${RID}/include/goud_engine.h" "${STAGING}/include/"
+
+          tar -czf "${STAGING}.tar.gz" "${STAGING}"
+
+      - name: Upload console partner tarball to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.release-please.outputs.version }}
+          RID: ${{ matrix.rid }}
+        run: |
+          TARBALL="goud-engine-console-v${VERSION}-${RID}.tar.gz"
+          gh release upload "v${VERSION}" "${TARBALL}" --clobber
+
   # ── Step 2b: Build napi-rs addons for Node.js ──
   build-napi:
     name: Napi (${{ matrix.name }})
@@ -640,6 +766,7 @@ jobs:
 
   # ── C/C++ Package Managers (vcpkg, Conan) ──
   # vcpkg: Packages are distributed via native tarballs (see publish-native-tarballs).
+  # Console partners use the static release archives from publish-console-static-tarballs.
   #        To publish to vcpkg registry, submit a PR to microsoft/vcpkg with the port.
   # Conan: Optional. If CONAN_LOGIN_USERNAME and CONAN_PASSWORD secrets are configured,
   #        add a publish-conan job here. See docs/SECRETS_SETUP.md for details.
@@ -647,7 +774,7 @@ jobs:
   # ── Summary ──
   release-summary:
     name: Release Summary
-    needs: [release-please, publish-npm, publish-nuget, publish-pypi, publish-kotlin, publish-crates, publish-native-tarballs, publish-luarocks, publish-go]
+    needs: [release-please, publish-npm, publish-nuget, publish-pypi, publish-kotlin, publish-crates, publish-native-tarballs, publish-console-static-tarballs, publish-luarocks, publish-go]
     if: always() && needs.release-please.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -665,6 +792,7 @@ jobs:
           | Maven Central | \`goud-engine-kotlin\` | ${{ needs.publish-kotlin.result }} |
           | crates.io | \`goud-engine\` | ${{ needs.publish-crates.result }} |
           | GitHub Release | C/C++ tarballs | ${{ needs.publish-native-tarballs.result }} |
+          | GitHub Release | Console static tarballs | ${{ needs.publish-console-static-tarballs.result }} |
           | LuaRocks | \`goudengine\` | ${{ needs.publish-luarocks.result }} |
           | Go Proxy | \`goud-engine-go\` | ${{ needs.publish-go.result }} |
           EOF
