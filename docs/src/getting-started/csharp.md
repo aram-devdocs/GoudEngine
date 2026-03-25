@@ -45,10 +45,11 @@ Run it:
 dotnet run
 ```
 
-For a 3D window, pass the renderer type:
+For 3D rendering, the same game window supports both 2D and 3D rendering. Load a 3D model and render it within the same frame loop:
 
 ```csharp
-using var game = new GoudGame(800, 600, "3D Game", RendererType.Renderer3D);
+var model = game.LoadModel("assets/model.gltf");
+game.Draw3D(model, transform);
 ```
 
 ## Debugger Runtime

@@ -1,7 +1,7 @@
 # GoudEngine Codegen Pipeline
 
-Generates SDK wrapper code for C#, Python, and TypeScript from a single schema.
-One source of truth, four generators, zero hand-written SDK boilerplate.
+Generates SDK wrapper code for all supported languages from a single schema.
+One source of truth (`goud_sdk.schema.json`), multiple generators (`codegen/gen_*.py`), zero hand-written SDK boilerplate.
 
 ## Quick Start
 

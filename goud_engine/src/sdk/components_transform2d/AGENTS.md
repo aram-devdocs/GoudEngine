@@ -1,51 +1,28 @@
-# components_transform2d/ -- SDK Transform2D Component Operations
+# components_transform2d/ — Transform2D FFI Operations
 
-## Purpose
-
-FFI-ready Transform2D operations: factory constructors, a heap-allocated builder,
-and pointer-based mutation/query functions. All methods use `#[goud_api]` for
-automatic C FFI wrapper generation.
-
-## Files
-
-- `mod.rs` -- Module declaration, re-exports submodules
-- `factory.rs` -- `Transform2DOps`: value constructors (`new_default`, `from_position`, `from_rotation`, `lerp`, `look_at`, `normalize_angle`)
-- `builder.rs` -- `Transform2DBuilderOps`: heap-allocated builder (`builder_new` -> chain -> `builder_build`)
-- `ptr_ops.rs` -- `Transform2DPtrOps`: get/set/mutate on `*mut FfiTransform2D` pointers
+Factory constructors, heap-allocated builder, and pointer-based mutation/query. All methods tagged with `#[goud_api]` for automatic FFI wrapper generation.
 
 ## Key Types
 
-- `FfiTransform2D` -- `#[repr(C)]` struct with position (x,y), rotation (radians), scale (x,y)
-- `FfiTransform2DBuilder` -- wrapper holding an `FfiTransform2D` for builder pattern
-- `FfiVec2`, `FfiMat3x3` -- C-compatible return types for getters
+- `FfiTransform2D` — C-compatible struct: position, rotation (radians), scale
+- `FfiTransform2DBuilder` — heap-allocated builder pattern
+- `FfiVec2`, `FfiMat3x3` — return types for getters
 
-## ptr_ops Highlights
+## Modules
 
-Beyond basic get/set, `Transform2DPtrOps` provides:
-- `translate` / `translate_local` -- world-space and local-space movement
-- `rotate` / `rotate_degrees` -- incremental rotation
-- `look_at_target` -- orient toward a point
-- `forward` / `right` / `backward` / `left` -- direction vectors
-- `matrix` / `matrix_inverse` -- 3x3 transformation matrices
-- `transform_point` / `inverse_transform_point` -- space conversions
-
-These convert between `FfiTransform2D` and the internal `Transform2D` ECS
-component to reuse core math, then write back to the FFI struct.
+- `factory.rs` — Constructors: `new_default`, `from_position`, `lerp`, `normalize_angle`
+- `builder.rs` — Builder pattern: `builder_new` → chain → `builder_build`
+- `ptr_ops.rs` — Pointer operations: translate, rotate, look_at, matrix math
 
 ## Patterns
 
-- Factory functions return `FfiTransform2D` by value (no allocation)
-- Builder uses `Box::into_raw` / `Box::from_raw` for heap ownership across FFI
-- All pointer ops check null and return identity/zero defaults on null input
-- Rotation stored in radians internally; degree variants do conversion
+- Factory functions return by value (no allocation)
+- Builder uses `Box::into_raw`/`Box::from_raw` for FFI ownership
+- All pointer ops null-check and return identity defaults
+- Rotation in radians; degree variants convert
 
 ## Anti-Patterns
 
-- NEVER skip null checks on pointer parameters
-- NEVER implement transform math here -- delegate to `Transform2D` from `ecs::components`
-- NEVER forget to pair `builder_new` with `builder_build` or `builder_free`
-
-## Dependencies
-
-Layer 2 (Engine/SDK). Imports from `crate::core::math`, `crate::core::types`,
-and `crate::ecs::components::Transform2D`.
+- Never skip null checks on pointers
+- Never implement transform math here — delegate to `Transform2D`
+- Never forget to pair `builder_new` with `builder_build` or `builder_free`

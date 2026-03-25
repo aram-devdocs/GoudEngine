@@ -126,12 +126,6 @@ export enum MouseButton {
   Button8 = 7,
 }
 
-/** Rendering backend selection */
-export enum RendererType {
-  Renderer2D = 0,
-  Renderer3D = 1,
-}
-
 /** Screen corner where the debug overlay is displayed */
 export enum OverlayCorner {
   TopLeft = 0,

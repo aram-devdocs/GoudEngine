@@ -127,12 +127,6 @@ public enum MouseButton: Int32 {
     case BUTTON8 = 7
 }
 
-/// Rendering backend selection
-public enum RendererType: Int32 {
-    case RENDERER2_D = 0
-    case RENDERER3_D = 1
-}
-
 /// Screen corner where the debug overlay is displayed
 public enum OverlayCorner: Int32 {
     case TOP_LEFT = 0

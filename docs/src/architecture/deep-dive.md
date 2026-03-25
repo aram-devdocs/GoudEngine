@@ -37,7 +37,7 @@ Beyond the engine crate, two additional layers complete the picture:
 
 | Layer | Path | Responsibility |
 |-------|------|----------------|
-| SDKs | `sdks/` | Language-specific wrappers over FFI (C#, Python, TypeScript, Rust) |
+| SDKs | `sdks/` | Language-specific wrappers over FFI (all SDK languages under `sdks/`) |
 | Apps | `examples/` | Example games that use SDK APIs |
 
 ### Enforcement
@@ -141,11 +141,7 @@ wasm/                             — WASM bindings
 
 --- external to goud_engine crate ---
 
-sdks/
-  ├── csharp/         — .NET 8, DllImport, NuGet packaging
-  ├── python/         — Python 3, ctypes, PyPI packaging
-  ├── typescript/     — Node.js (napi-rs) + Web (wasm-bindgen)
-  └── rust/           — convenience re-export crate (zero FFI overhead)
+sdks/                   — all SDK language wrappers (see sdks/ for full list)
 
 examples/
   ├── csharp/         — flappy_goud, 3d_cube, goud_jumper, isometric_rpg, hello_ecs

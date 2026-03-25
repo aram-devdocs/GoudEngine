@@ -137,15 +137,6 @@ const (
 	MouseButtonButton8 MouseButton = 7
 )
 
-// RendererType Rendering backend selection
-type RendererType int32
-
-// RendererType constants.
-const (
-	RendererTypeRenderer2D RendererType = 0
-	RendererTypeRenderer3D RendererType = 1
-)
-
 // OverlayCorner Screen corner where the debug overlay is displayed
 type OverlayCorner int32
 

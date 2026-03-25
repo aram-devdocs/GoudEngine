@@ -1,53 +1,34 @@
-# typescript/ -- TypeScript Example Games
+# typescript/ — TypeScript Example Games
 
-## Purpose
+Desktop (Node + napi-rs) and web (WASM) examples using the TypeScript SDK.
 
-Example games built on the GoudEngine TypeScript SDK, demonstrating both desktop (napi-rs)
-and web (WASM) targets from the same game logic.
+## Examples
 
-## Structure
-
-- `flappy_bird/` -- Flappy Bird clone, mirrors C#/Python versions for SDK parity testing
-- `sandbox/` -- Flagship parity sandbox (desktop + web entrypoints, shared asset pack)
-- `feature_lab/` -- Supplemental wrapper/network smoke lab (desktop + web entrypoints)
+- `flappy_bird/` — Flappy Bird parity game
+- `sandbox/` — Feature parity tester (desktop + web)
+- `feature_lab/` — API smoke coverage (desktop + web)
 
 ## Running
 
-### Desktop (Node.js + native addon)
+```bash
+./dev.sh --sdk typescript --game flappy_bird
+./dev.sh --sdk typescript --game sandbox
+./dev.sh --sdk typescript --game feature_lab
+```
+
+Or manually:
 
 ```bash
 cd examples/typescript/flappy_bird
 npm install
-npm run desktop
+npm run desktop      # Node.js (requires native addon)
+npm run build:web && npm run web  # Browser on port 8765
 ```
-
-Requires the native addon to be built first: `cd sdks/typescript && npm run build:native`
-
-### Web (WASM in browser)
-
-```bash
-cd examples/typescript/flappy_bird
-npm run build:web        # Compile TS to dist/
-npm run web              # Start local server on port 8765
-# Open http://localhost:8765/examples/typescript/flappy_bird/web/index.html
-```
-
-Sandbox parity app:
-
-```bash
-./dev.sh --sdk typescript --game sandbox
-./dev.sh --sdk typescript --game sandbox_web
-```
-
-Requires the WASM build: see `sdks/typescript/wasm/`.
 
 ## Conventions
 
-- Game logic lives in a shared `.ts` file (e.g., `game.ts`) that is platform-agnostic
-- Desktop and web entry points import the shared logic and pass their platform's GoudGame
-- Examples depend on `goudengine` via file reference to `sdks/typescript/`
-- Constants and physics match the C#/Python Flappy Bird implementations exactly
+- Game logic in shared `.ts` file (platform-agnostic)
+- Desktop and web entry points pass their platform's `GoudGame` to shared logic
+- Constants match C#/Python implementations exactly
 
-## Dependencies
-
-Layer 5 (Apps). Examples depend on the TypeScript SDK only. Never import engine internals.
+See `.agents/rules/examples.md`.
