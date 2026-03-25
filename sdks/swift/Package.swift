@@ -28,6 +28,7 @@ let package = Package(
             dependencies: ["CGoudEngine"],
             path: "Sources/GoudEngine",
             linkerSettings: [
+                .linkedLibrary("goud_engine"),
                 .unsafeFlags(["-L", macLibSearchPath], .when(platforms: [.macOS])),
                 .unsafeFlags(["-L", iosLibSearchPath], .when(platforms: [.iOS])),
             ]
@@ -37,6 +38,7 @@ let package = Package(
             dependencies: ["GoudEngine"],
             path: "Tests/GoudEngineTests",
             linkerSettings: [
+                .linkedLibrary("goud_engine"),
                 .unsafeFlags(["-L", macLibSearchPath]),
             ]
         ),
