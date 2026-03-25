@@ -45,8 +45,8 @@ static library from `lib/`.
 Generic example:
 
 ```text
-INCLUDE_DIR=/path/to/goud-engine-console-v0.0.837-osx-arm64/include
-LIB_DIR=/path/to/goud-engine-console-v0.0.837-osx-arm64/lib
+INCLUDE_DIR=/path/to/goud-engine-console-v<version>-osx-arm64/include
+LIB_DIR=/path/to/goud-engine-console-v<version>-osx-arm64/lib
 ```
 
 - Add `INCLUDE_DIR` to the compiler include path.
