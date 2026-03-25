@@ -281,10 +281,7 @@ pub extern "C" fn goud_renderer3d_set_frustum_culling_enabled(
 
 /// Sets the skinning mode (0 = CPU, 1 = GPU).
 #[no_mangle]
-pub extern "C" fn goud_renderer3d_set_skinning_mode(
-    context_id: GoudContextId,
-    mode: u32,
-) -> i32 {
+pub extern "C" fn goud_renderer3d_set_skinning_mode(context_id: GoudContextId, mode: u32) -> i32 {
     if context_id == GOUD_INVALID_CONTEXT_ID {
         set_last_error(GoudError::InvalidContext);
         return -1;
@@ -385,7 +382,10 @@ pub extern "C" fn goud_renderer3d_get_visible_object_count(context_id: GoudConte
         return -1;
     }
 
-    with_renderer(context_id, |renderer| renderer.stats().visible_objects as i32).unwrap_or(-1)
+    with_renderer(context_id, |renderer| {
+        renderer.stats().visible_objects as i32
+    })
+    .unwrap_or(-1)
 }
 
 /// Returns the number of culled objects last frame, or -1 on error.
@@ -396,7 +396,10 @@ pub extern "C" fn goud_renderer3d_get_culled_object_count(context_id: GoudContex
         return -1;
     }
 
-    with_renderer(context_id, |renderer| renderer.stats().culled_objects as i32).unwrap_or(-1)
+    with_renderer(context_id, |renderer| {
+        renderer.stats().culled_objects as i32
+    })
+    .unwrap_or(-1)
 }
 
 #[cfg(test)]

@@ -78,11 +78,11 @@ impl Renderer3D {
         // SAFETY: the models HashMap is not mutated during this loop -- only
         // animation_players is mutated via get_mut.
         type UpdateItem = (
-            u32,                                // player ID
-            u32,                                // source model ID (for shared eval grouping)
-            *const SkeletonData,                // skeleton data
-            *const Vec<KeyframeAnimation>,      // animations
-            *const Vec<BoneChannelMap>,          // channel maps (fast path)
+            u32,                           // player ID
+            u32,                           // source model ID (for shared eval grouping)
+            *const SkeletonData,           // skeleton data
+            *const Vec<KeyframeAnimation>, // animations
+            *const Vec<BoneChannelMap>,    // channel maps (fast path)
         );
         let update_list: Vec<UpdateItem> = player_ids
             .iter()
@@ -148,7 +148,10 @@ impl Renderer3D {
                     }
                     if dist > lod_dist {
                         // Half rate: skip every other frame using player_id parity.
-                        if !frame_counter.wrapping_add(player_id as u64).is_multiple_of(2) {
+                        if !frame_counter
+                            .wrapping_add(player_id as u64)
+                            .is_multiple_of(2)
+                        {
                             self.stats.animation_evaluations_saved += 1;
                             continue;
                         }
@@ -169,11 +172,8 @@ impl Renderer3D {
                     if let Some(ref state) = player.primary {
                         if state.playing {
                             let quantized_time = (state.time * 30.0).round() / 30.0;
-                            let cache_key = (
-                                source_model_id,
-                                state.clip_index,
-                                quantized_time.to_bits(),
-                            );
+                            let cache_key =
+                                (source_model_id, state.clip_index, quantized_time.to_bits());
 
                             if let Some(cached) = bone_cache.get(&cache_key) {
                                 // Advance time without recomputing matrices.

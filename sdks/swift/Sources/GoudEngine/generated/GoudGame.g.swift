@@ -203,6 +203,11 @@ public final class GoudGame {
         return goud_renderer3d_set_object_scale(_ctx, objectId, x, y, z)
     }
 
+    /// Marks a 3D object as static or dynamic for batching optimisation
+    public func setObjectStatic(objectId: UInt32, isStatic: Bool) -> Bool {
+        return goud_renderer3d_set_object_static(_ctx, objectId, isStatic)
+    }
+
     /// Destroys a 3D object
     public func destroyObject(objectId: UInt32) -> Bool {
         return goud_renderer3d_destroy_object(_ctx, objectId)
@@ -256,6 +261,46 @@ public final class GoudGame {
     /// Sets fog visibility
     public func setFogEnabled(enabled: Bool) -> Bool {
         return goud_renderer3d_set_fog_enabled(_ctx, enabled)
+    }
+
+    /// Enables or disables frustum culling
+    public func setFrustumCullingEnabled(enabled: Bool) -> Int32 {
+        return goud_renderer3d_set_frustum_culling_enabled(_ctx, enabled)
+    }
+
+    /// Sets the skinning mode (0=CPU, 1=GPU)
+    public func setSkinningMode(mode: UInt32) -> Int32 {
+        return goud_renderer3d_set_skinning_mode(_ctx, mode)
+    }
+
+    /// Enables or disables material sorting
+    public func setMaterialSortingEnabled(enabled: Bool) -> Int32 {
+        return goud_renderer3d_set_material_sorting_enabled(_ctx, enabled)
+    }
+
+    /// Enables or disables animation LOD
+    public func setAnimationLodEnabled(enabled: Bool) -> Int32 {
+        return goud_renderer3d_set_animation_lod_enabled(_ctx, enabled)
+    }
+
+    /// Enables or disables shared animation evaluation
+    public func setSharedAnimationEval(enabled: Bool) -> Int32 {
+        return goud_renderer3d_set_shared_animation_eval(_ctx, enabled)
+    }
+
+    /// Returns the number of draw calls last frame
+    public func getDrawCalls() -> Int32 {
+        return goud_renderer3d_get_draw_calls(_ctx)
+    }
+
+    /// Returns the number of visible objects last frame
+    public func getVisibleObjectCount() -> Int32 {
+        return goud_renderer3d_get_visible_object_count(_ctx)
+    }
+
+    /// Returns the number of culled objects last frame
+    public func getCulledObjectCount() -> Int32 {
+        return goud_renderer3d_get_culled_object_count(_ctx)
     }
 
     /// Renders all 3D objects
@@ -331,6 +376,150 @@ public final class GoudGame {
     /// Returns the number of post-processing passes
     public func postprocessPassCount() -> UInt32 {
         return goud_renderer3d_postprocess_pass_count(_ctx)
+    }
+
+    /// Loads a 3D model from a file (glTF, OBJ, FBX) and returns a model handle
+    public func loadModel(path: String) -> UInt32 {
+        path.withCString { pathPtr in
+            return goud_renderer3d_load_model(_ctx, pathPtr)
+        }
+    }
+
+    /// Destroys a 3D model and frees its GPU resources
+    public func destroyModel(modelId: UInt32) -> Bool {
+        return goud_renderer3d_destroy_model(_ctx, modelId)
+    }
+
+    /// Creates an independent instance of a source model
+    public func instantiateModel(sourceModelId: UInt32) -> UInt32 {
+        return goud_renderer3d_instantiate_model(_ctx, sourceModelId)
+    }
+
+    /// Overrides the material on a specific sub-mesh of a model (-1 for all sub-meshes)
+    public func setModelMaterial(modelId: UInt32, meshIndex: Int32, materialId: UInt32) -> Bool {
+        return goud_renderer3d_set_model_material(_ctx, modelId, meshIndex, materialId)
+    }
+
+    /// Returns the number of sub-meshes in a model
+    public func getModelMeshCount(modelId: UInt32) -> Int32 {
+        return goud_renderer3d_get_model_mesh_count(_ctx, modelId)
+    }
+
+    /// Sets the position of a 3D model or instance
+    public func setModelPosition(modelId: UInt32, x: Float, y: Float, z: Float) -> Bool {
+        return goud_renderer3d_set_model_position(_ctx, modelId, x, y, z)
+    }
+
+    /// Sets the rotation of a 3D model or instance in degrees
+    public func setModelRotation(modelId: UInt32, x: Float, y: Float, z: Float) -> Bool {
+        return goud_renderer3d_set_model_rotation(_ctx, modelId, x, y, z)
+    }
+
+    /// Sets the scale of a 3D model or instance
+    public func setModelScale(modelId: UInt32, x: Float, y: Float, z: Float) -> Bool {
+        return goud_renderer3d_set_model_scale(_ctx, modelId, x, y, z)
+    }
+
+    /// Returns the number of animations in a model
+    public func getAnimationCount(modelId: UInt32) -> Int32 {
+        return goud_renderer3d_get_animation_count(_ctx, modelId)
+    }
+
+    /// Starts playing an animation on a model instance
+    public func playAnimation(instanceId: UInt32, animIndex: Int32, looping: Bool) -> Bool {
+        return goud_renderer3d_play_animation(_ctx, instanceId, animIndex, looping)
+    }
+
+    /// Stops animation playback on a model instance
+    public func stopAnimation(instanceId: UInt32) -> Bool {
+        return goud_renderer3d_stop_animation(_ctx, instanceId)
+    }
+
+    /// Sets the playback speed for a model instance's animation
+    public func setAnimationSpeed(instanceId: UInt32, speed: Float) -> Bool {
+        return goud_renderer3d_set_animation_speed(_ctx, instanceId, speed)
+    }
+
+    /// Sets up blending between two animation clips
+    public func blendAnimations(instanceId: UInt32, animA: Int32, animB: Int32, blendFactor: Float) -> Bool {
+        return goud_renderer3d_blend_animations(_ctx, instanceId, animA, animB, blendFactor)
+    }
+
+    /// Starts a timed transition to a target animation clip
+    public func transitionAnimation(instanceId: UInt32, targetAnim: Int32, duration: Float) -> Bool {
+        return goud_renderer3d_transition_animation(_ctx, instanceId, targetAnim, duration)
+    }
+
+    /// Returns whether an animation is currently playing on a model instance
+    public func isAnimationPlaying(instanceId: UInt32) -> Bool {
+        return goud_renderer3d_is_animation_playing(_ctx, instanceId)
+    }
+
+    /// Returns the playback progress (0.0 to 1.0) of the primary animation
+    public func getAnimationProgress(instanceId: UInt32) -> Float {
+        return goud_renderer3d_get_animation_progress(_ctx, instanceId)
+    }
+
+    /// Advances all animation players by delta_time seconds (call once per frame)
+    public func updateAnimations(deltaTime: Float) -> Bool {
+        return goud_renderer3d_update_animations(_ctx, deltaTime)
+    }
+
+    /// Creates a new named 3D scene and returns its ID
+    public func createScene(name: String) -> UInt32 {
+        name.withCString { namePtr in
+            return goud_renderer3d_create_scene(_ctx, namePtr)
+        }
+    }
+
+    /// Destroys a 3D scene by ID
+    public func destroyScene(sceneId: UInt32) -> Bool {
+        return goud_renderer3d_destroy_scene(_ctx, sceneId)
+    }
+
+    /// Sets the current active 3D scene
+    public func setCurrentScene(sceneId: UInt32) -> Bool {
+        return goud_renderer3d_set_current_scene(_ctx, sceneId)
+    }
+
+    /// Returns the current active 3D scene ID
+    public func getCurrentScene() -> UInt32 {
+        return goud_renderer3d_get_current_scene(_ctx)
+    }
+
+    /// Clears the current active scene so all objects are rendered
+    public func clearCurrentScene() -> Bool {
+        return goud_renderer3d_clear_current_scene(_ctx)
+    }
+
+    /// Adds a 3D object to a scene
+    public func addObjectToScene(sceneId: UInt32, objectId: UInt32) -> Bool {
+        return goud_renderer3d_add_object_to_scene(_ctx, sceneId, objectId)
+    }
+
+    /// Removes a 3D object from a scene
+    public func removeObjectFromScene(sceneId: UInt32, objectId: UInt32) -> Bool {
+        return goud_renderer3d_remove_object_from_scene(_ctx, sceneId, objectId)
+    }
+
+    /// Adds a model to a 3D scene
+    public func addModelToScene(sceneId: UInt32, modelId: UInt32) -> Bool {
+        return goud_renderer3d_add_model_to_scene(_ctx, sceneId, modelId)
+    }
+
+    /// Removes a model from a 3D scene
+    public func removeModelFromScene(sceneId: UInt32, modelId: UInt32) -> Bool {
+        return goud_renderer3d_remove_model_from_scene(_ctx, sceneId, modelId)
+    }
+
+    /// Adds a light to a 3D scene
+    public func addLightToScene(sceneId: UInt32, lightId: UInt32) -> Bool {
+        return goud_renderer3d_add_light_to_scene(_ctx, sceneId, lightId)
+    }
+
+    /// Removes a light from a 3D scene
+    public func removeLightFromScene(sceneId: UInt32, lightId: UInt32) -> Bool {
+        return goud_renderer3d_remove_light_from_scene(_ctx, sceneId, lightId)
     }
 
     /// Draws a sprite with source rectangle for sprite sheets

@@ -26,6 +26,7 @@ use std::collections::HashMap;
 mod buffer;
 mod convert;
 mod frame;
+mod frame_draw_ops;
 mod init;
 mod pipeline;
 mod readback;

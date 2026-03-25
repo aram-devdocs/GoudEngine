@@ -13,17 +13,21 @@
 mod animation;
 #[allow(dead_code)]
 mod animation_math;
+mod animation_sampling;
 #[cfg(test)]
 mod animation_tests;
 pub mod config;
 mod core;
+mod core_config;
 mod core_materials;
 mod core_model_animation;
+mod core_model_instances;
 mod core_models;
 mod core_particles;
 mod core_primitives;
 mod core_scenes;
 mod core_skinned;
+mod core_static_batch;
 mod debug_draw;
 mod frustum;
 mod material;
@@ -32,6 +36,8 @@ mod model;
 mod postprocess;
 mod render;
 mod render_helpers;
+mod render_instanced;
+mod render_instanced_skinned;
 mod render_pass;
 pub mod scene;
 mod shaders;
