@@ -70,12 +70,14 @@
 //! ```
 
 mod asset;
-#[cfg(feature = "native")]
+#[cfg(feature = "desktop-native")]
 mod audio_manager;
+#[cfg(not(feature = "desktop-native"))]
+mod audio_manager_stub;
 pub mod dependency;
 pub mod fallback;
 mod handle;
-#[cfg(feature = "native")]
+#[cfg(feature = "desktop-native")]
 mod hot_reload;
 mod loader;
 pub mod packager;
@@ -110,12 +112,14 @@ pub use server::AssetServer;
 pub use storage::{AnyAssetStorage, AssetEntry, AssetStorage, TypedAssetStorage};
 
 // Re-export hot reload types
-#[cfg(feature = "native")]
+#[cfg(feature = "desktop-native")]
 pub use hot_reload::{AssetChangeEvent, HotReloadConfig, HotReloadWatcher};
 
 // Re-export audio manager
-#[cfg(feature = "native")]
+#[cfg(feature = "desktop-native")]
 pub use audio_manager::AudioManager;
+#[cfg(not(feature = "desktop-native"))]
+pub use audio_manager_stub::AudioManager;
 
 // Re-export virtual filesystem types
 pub use vfs::{ArchiveFs, OsFs, VirtualFs};

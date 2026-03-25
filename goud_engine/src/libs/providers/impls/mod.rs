@@ -27,7 +27,7 @@ pub mod glfw_input;
 pub mod glfw_window;
 #[cfg(feature = "legacy-glfw-opengl")]
 pub mod opengl_render;
-#[cfg(feature = "native")]
+#[cfg(feature = "desktop-native")]
 pub mod rodio_audio;
 
 #[cfg(feature = "legacy-glfw-opengl")]
@@ -36,7 +36,7 @@ pub use glfw_input::GlfwInputProvider;
 pub use glfw_window::GlfwWindowProvider;
 #[cfg(feature = "legacy-glfw-opengl")]
 pub use opengl_render::OpenGLRenderProvider;
-#[cfg(feature = "native")]
+#[cfg(feature = "desktop-native")]
 pub use rodio_audio::RodioAudioProvider;
 
 #[cfg(feature = "rapier2d")]

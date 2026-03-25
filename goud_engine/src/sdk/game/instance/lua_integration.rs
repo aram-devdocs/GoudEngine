@@ -45,7 +45,7 @@ impl GoudGame {
     /// # Errors
     ///
     /// Returns an error if the file-system watcher cannot be initialised.
-    #[cfg(feature = "native")]
+    #[cfg(feature = "desktop-native")]
     pub fn watch_lua_dir(&mut self, path: impl AsRef<std::path::Path>) -> GoudResult<()> {
         let watcher = super::lua_hot_reload::LuaScriptWatcher::new(path.as_ref())?;
         self.lua_watcher = Some(watcher);
@@ -56,7 +56,7 @@ impl GoudGame {
     ///
     /// Call this once per frame (e.g., at the start of the update loop).
     /// If no watcher is active this is a no-op.
-    #[cfg(feature = "native")]
+    #[cfg(feature = "desktop-native")]
     pub fn process_lua_hot_reload(&mut self) {
         let changed = match self.lua_watcher.as_mut() {
             Some(w) => w.poll_changes(),
