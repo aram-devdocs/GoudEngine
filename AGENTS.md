@@ -21,7 +21,18 @@ cargo check && cargo fmt --all -- --check && cargo clippy -- -D warnings
 
 ## Workflow
 
-See `.agents/rules/orchestrator-protocol.md` for dispatch guide, subagent reference, and `/gh-issue` details.
+See `.agents/rules/orchestrator-protocol.md` for full workflow and `/gh-issue` details.
+
+### Subagent Dispatch Reference
+
+| Role | Model | Use For |
+|------|-------|---------|
+| engine-lead | opus | Direct implementation for Rust engine and core modules |
+| integration-lead | opus | Direct implementation for FFI, SDK, and codegen work |
+| quick-fix | haiku | Tightly scoped low-risk fixes |
+| reviewer | sonnet | Single review pass for requirements, tests, and major regressions |
+| security-auditor | opus | FFI, unsafe, pointer, and ownership-boundary review |
+| debugger | sonnet | Root-cause analysis for failing verification or runtime issues |
 
 ## Agent Config Generation
 
