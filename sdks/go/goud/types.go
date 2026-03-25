@@ -939,3 +939,43 @@ func NewTextCmd(fontHandle uint64, x float32, y float32, fontSize float32, maxWi
 		A: a,
 	}
 }
+
+// BoundingBox3D Axis-aligned bounding box in 3D space
+type BoundingBox3D struct {
+	MinX float32
+	MinY float32
+	MinZ float32
+	MaxX float32
+	MaxY float32
+	MaxZ float32
+}
+
+// NewBoundingBox3D creates a new BoundingBox3D.
+func NewBoundingBox3D(minX float32, minY float32, minZ float32, maxX float32, maxY float32, maxZ float32) BoundingBox3D {
+	return BoundingBox3D{
+		MinX: minX,
+		MinY: minY,
+		MinZ: minZ,
+		MaxX: maxX,
+		MaxY: maxY,
+		MaxZ: maxZ,
+	}
+}
+
+// CharacterMoveResult Result of a character controller move operation
+type CharacterMoveResult struct {
+	X float32
+	Y float32
+	Z float32
+	Grounded bool
+}
+
+// NewCharacterMoveResult creates a new CharacterMoveResult.
+func NewCharacterMoveResult(x float32, y float32, z float32, grounded bool) CharacterMoveResult {
+	return CharacterMoveResult{
+		X: x,
+		Y: y,
+		Z: z,
+		Grounded: grounded,
+	}
+}

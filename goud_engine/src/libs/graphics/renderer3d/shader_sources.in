@@ -37,7 +37,7 @@ in vec4 FragPosLightSpace;
 out vec4 FragColor;
 
 struct Light {
-    int type;           // 0 = point, 1 = directional, 2 = spot
+    int light_type;     // 0 = point, 1 = directional, 2 = spot
     vec3 position;
     vec3 direction;
     vec3 color;
@@ -144,13 +144,13 @@ void main() {
         if (!lights[i].enabled) continue;
 
         vec3 lightContribution;
-        if (lights[i].type == 0) {
+        if (lights[i].light_type == 0) {
             lightContribution = calculatePointLight(lights[i], norm, FragPos, viewDir);
         }
-        else if (lights[i].type == 1) {
+        else if (lights[i].light_type == 1) {
             lightContribution = calculateDirectionalLight(lights[i], norm, viewDir);
         }
-        else if (lights[i].type == 2) {
+        else if (lights[i].light_type == 2) {
             lightContribution = calculateSpotLight(lights[i], norm, FragPos, viewDir);
         }
 
@@ -224,7 +224,7 @@ in vec4 FragPosLightSpace;
 out vec4 FragColor;
 
 struct Light {
-    int type;
+    int light_type;
     vec3 position;
     vec3 direction;
     vec3 color;
@@ -319,9 +319,9 @@ void main() {
         if (!lights[i].enabled) continue;
 
         vec3 lightContribution;
-        if (lights[i].type == 0) {
+        if (lights[i].light_type == 0) {
             lightContribution = calculatePointLight(lights[i], norm, FragPos, viewDir);
-        } else if (lights[i].type == 1) {
+        } else if (lights[i].light_type == 1) {
             lightContribution = calculateDirectionalLight(lights[i], norm, viewDir);
         } else {
             lightContribution = calculateSpotLight(lights[i], norm, FragPos, viewDir);
@@ -395,6 +395,17 @@ void main()
 
 // NOTE: The Uniforms struct is duplicated in each vertex/fragment shader pair because WGSL modules are self-contained. Layout changes must update all copies.
 pub(super) const INSTANCED_VERTEX_SHADER_3D_WGSL: &str = r#"
+struct Light {
+    light_type: i32,
+    position: vec3<f32>,
+    direction: vec3<f32>,
+    color: vec3<f32>,
+    intensity: f32,
+    range: f32,
+    spotAngle: f32,
+    enabled: i32,
+}
+
 struct Uniforms {
     view: mat4x4<f32>,
     projection: mat4x4<f32>,
@@ -414,6 +425,8 @@ struct Uniforms {
     primaryLightDir: vec3<f32>,
     primaryLightIntensity: f32,
     primaryLightColor: vec3<f32>,
+    _pad4: f32,
+    lights: array<Light, 8>,
 }
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
@@ -452,6 +465,17 @@ fn main(input: VertexInput) -> VertexOutput {
 "#;
 
 pub(super) const INSTANCED_FRAGMENT_SHADER_3D_WGSL: &str = r#"
+struct Light {
+    light_type: i32,
+    position: vec3<f32>,
+    direction: vec3<f32>,
+    color: vec3<f32>,
+    intensity: f32,
+    range: f32,
+    spotAngle: f32,
+    enabled: i32,
+}
+
 struct Uniforms {
     view: mat4x4<f32>,
     projection: mat4x4<f32>,
@@ -471,11 +495,49 @@ struct Uniforms {
     primaryLightDir: vec3<f32>,
     primaryLightIntensity: f32,
     primaryLightColor: vec3<f32>,
+    _pad4: f32,
+    lights: array<Light, 8>,
 }
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
 @group(1) @binding(0) var u_texture: texture_2d<f32>;
 @group(1) @binding(1) var u_sampler: sampler;
+
+fn calculate_point_light(light: Light, normal: vec3<f32>, frag_pos: vec3<f32>, view_dir: vec3<f32>) -> vec3<f32> {
+    let light_dir = normalize(light.position - frag_pos);
+    let distance = length(light.position - frag_pos);
+    let attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * distance * distance);
+    let diff = max(dot(normal, light_dir), 0.0);
+    let diffuse = diff * light.color;
+    let half_dir = normalize(light_dir + view_dir);
+    let spec = pow(max(dot(normal, half_dir), 0.0), 64.0);
+    let specular = spec * light.color * 0.3;
+    let range_atten = 1.0 - smoothstep(0.0, light.range, distance);
+    return (diffuse + specular) * attenuation * range_atten * light.intensity;
+}
+
+fn calculate_directional_light(light: Light, normal: vec3<f32>, view_dir: vec3<f32>) -> vec3<f32> {
+    let light_dir = normalize(-light.direction);
+    let diff = max(dot(normal, light_dir), 0.0);
+    let diffuse = diff * light.color;
+    let half_dir = normalize(light_dir + view_dir);
+    let spec = pow(max(dot(normal, half_dir), 0.0), 64.0);
+    let specular = spec * light.color * 0.3;
+    return (diffuse + specular) * light.intensity;
+}
+
+fn calculate_spot_light(light: Light, normal: vec3<f32>, frag_pos: vec3<f32>, view_dir: vec3<f32>) -> vec3<f32> {
+    let light_dir = normalize(light.position - frag_pos);
+    let theta = dot(light_dir, normalize(-light.direction));
+    let outer_cos = cos(radians(light.spotAngle + 5.0));
+    let inner_cos = cos(radians(light.spotAngle));
+    let epsilon = inner_cos - outer_cos;
+    let spot_intensity = clamp((theta - outer_cos) / epsilon, 0.0, 1.0);
+    if spot_intensity > 0.0 {
+        return calculate_point_light(light, normal, frag_pos, view_dir) * spot_intensity;
+    }
+    return vec3<f32>(0.0);
+}
 
 @fragment
 fn main(
@@ -487,23 +549,47 @@ fn main(
     let norm = normalize(normal);
     let view_dir = normalize(uniforms.viewPos - frag_pos);
 
-    var light_dir: vec3<f32>;
-    var light_color: vec3<f32>;
-    var light_intensity: f32;
-    if uniforms.primaryLightIntensity > 0.0 {
-        light_dir = normalize(uniforms.primaryLightDir);
-        light_color = uniforms.primaryLightColor;
-        light_intensity = uniforms.primaryLightIntensity;
-    } else {
-        light_dir = normalize(vec3<f32>(0.3, 1.0, 0.5));
-        light_color = vec3<f32>(1.0, 1.0, 1.0);
-        light_intensity = 1.0;
+    var result = vec3<f32>(0.1);
+
+    var light_count = uniforms.numLights;
+    if light_count > 8 {
+        light_count = 8;
     }
 
-    let diff = max(dot(norm, light_dir), 0.0);
-    let half_dir = normalize(light_dir + view_dir);
-    let spec = pow(max(dot(norm, half_dir), 0.0), 64.0) * 0.3;
-    let lighting = vec3<f32>(0.1) + (diff + spec) * light_color * light_intensity;
+    if light_count > 0 {
+        for (var i = 0; i < light_count; i = i + 1) {
+            if uniforms.lights[i].enabled == 0 {
+                continue;
+            }
+            var contribution: vec3<f32>;
+            if uniforms.lights[i].light_type == 0 {
+                contribution = calculate_point_light(uniforms.lights[i], norm, frag_pos, view_dir);
+            } else if uniforms.lights[i].light_type == 1 {
+                contribution = calculate_directional_light(uniforms.lights[i], norm, view_dir);
+            } else {
+                contribution = calculate_spot_light(uniforms.lights[i], norm, frag_pos, view_dir);
+            }
+            result = result + contribution;
+        }
+    } else {
+        // Fallback to primary light when no structured lights are provided
+        var light_dir: vec3<f32>;
+        var light_color: vec3<f32>;
+        var light_i: f32;
+        if uniforms.primaryLightIntensity > 0.0 {
+            light_dir = normalize(uniforms.primaryLightDir);
+            light_color = uniforms.primaryLightColor;
+            light_i = uniforms.primaryLightIntensity;
+        } else {
+            light_dir = normalize(vec3<f32>(0.3, 1.0, 0.5));
+            light_color = vec3<f32>(1.0, 1.0, 1.0);
+            light_i = 1.0;
+        }
+        let diff = max(dot(norm, light_dir), 0.0);
+        let half_dir = normalize(light_dir + view_dir);
+        let spec = pow(max(dot(norm, half_dir), 0.0), 64.0) * 0.3;
+        result = vec3<f32>(0.1) + (diff + spec) * light_color * light_i;
+    }
 
     var base_color: vec4<f32>;
     if uniforms.useTexture != 0 {
@@ -513,7 +599,7 @@ fn main(
     }
     base_color = base_color * inst_color;
 
-    var final_color = lighting * base_color.rgb;
+    var final_color = result * base_color.rgb;
 
     if uniforms.fogEnabled != 0 {
         let dist = length(frag_pos - uniforms.viewPos);
@@ -526,6 +612,17 @@ fn main(
 "#;
 
 pub(super) const VERTEX_SHADER_3D_WGSL: &str = r#"
+struct Light {
+    light_type: i32,
+    position: vec3<f32>,
+    direction: vec3<f32>,
+    color: vec3<f32>,
+    intensity: f32,
+    range: f32,
+    spotAngle: f32,
+    enabled: i32,
+}
+
 struct Uniforms {
     model: mat4x4<f32>,
     view: mat4x4<f32>,
@@ -546,6 +643,8 @@ struct Uniforms {
     primaryLightDir: vec3<f32>,
     primaryLightIntensity: f32,
     primaryLightColor: vec3<f32>,
+    _pad4: f32,
+    lights: array<Light, 8>,
 }
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
@@ -576,6 +675,17 @@ fn main(input: VertexInput) -> VertexOutput {
 "#;
 
 pub(super) const FRAGMENT_SHADER_3D_WGSL: &str = r#"
+struct Light {
+    light_type: i32,
+    position: vec3<f32>,
+    direction: vec3<f32>,
+    color: vec3<f32>,
+    intensity: f32,
+    range: f32,
+    spotAngle: f32,
+    enabled: i32,
+}
+
 struct Uniforms {
     model: mat4x4<f32>,
     view: mat4x4<f32>,
@@ -596,11 +706,49 @@ struct Uniforms {
     primaryLightDir: vec3<f32>,
     primaryLightIntensity: f32,
     primaryLightColor: vec3<f32>,
+    _pad4: f32,
+    lights: array<Light, 8>,
 }
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
 @group(1) @binding(0) var u_texture: texture_2d<f32>;
 @group(1) @binding(1) var u_sampler: sampler;
+
+fn calculate_point_light(light: Light, normal: vec3<f32>, frag_pos: vec3<f32>, view_dir: vec3<f32>) -> vec3<f32> {
+    let light_dir = normalize(light.position - frag_pos);
+    let distance = length(light.position - frag_pos);
+    let attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * distance * distance);
+    let diff = max(dot(normal, light_dir), 0.0);
+    let diffuse = diff * light.color;
+    let half_dir = normalize(light_dir + view_dir);
+    let spec = pow(max(dot(normal, half_dir), 0.0), 64.0);
+    let specular = spec * light.color * 0.3;
+    let range_atten = 1.0 - smoothstep(0.0, light.range, distance);
+    return (diffuse + specular) * attenuation * range_atten * light.intensity;
+}
+
+fn calculate_directional_light(light: Light, normal: vec3<f32>, view_dir: vec3<f32>) -> vec3<f32> {
+    let light_dir = normalize(-light.direction);
+    let diff = max(dot(normal, light_dir), 0.0);
+    let diffuse = diff * light.color;
+    let half_dir = normalize(light_dir + view_dir);
+    let spec = pow(max(dot(normal, half_dir), 0.0), 64.0);
+    let specular = spec * light.color * 0.3;
+    return (diffuse + specular) * light.intensity;
+}
+
+fn calculate_spot_light(light: Light, normal: vec3<f32>, frag_pos: vec3<f32>, view_dir: vec3<f32>) -> vec3<f32> {
+    let light_dir = normalize(light.position - frag_pos);
+    let theta = dot(light_dir, normalize(-light.direction));
+    let outer_cos = cos(radians(light.spotAngle + 5.0));
+    let inner_cos = cos(radians(light.spotAngle));
+    let epsilon = inner_cos - outer_cos;
+    let spot_intensity = clamp((theta - outer_cos) / epsilon, 0.0, 1.0);
+    if spot_intensity > 0.0 {
+        return calculate_point_light(light, normal, frag_pos, view_dir) * spot_intensity;
+    }
+    return vec3<f32>(0.0);
+}
 
 @fragment
 fn main(
@@ -611,24 +759,47 @@ fn main(
     let norm = normalize(normal);
     let view_dir = normalize(uniforms.viewPos - frag_pos);
 
-    // Use primary light from uniform, falling back to a default directional light
-    var light_dir: vec3<f32>;
-    var light_color: vec3<f32>;
-    var light_intensity: f32;
-    if uniforms.primaryLightIntensity > 0.0 {
-        light_dir = normalize(uniforms.primaryLightDir);
-        light_color = uniforms.primaryLightColor;
-        light_intensity = uniforms.primaryLightIntensity;
-    } else {
-        light_dir = normalize(vec3<f32>(0.3, 1.0, 0.5));
-        light_color = vec3<f32>(1.0, 1.0, 1.0);
-        light_intensity = 1.0;
+    var result = vec3<f32>(0.1);
+
+    var light_count = uniforms.numLights;
+    if light_count > 8 {
+        light_count = 8;
     }
 
-    let diff = max(dot(norm, light_dir), 0.0);
-    let half_dir = normalize(light_dir + view_dir);
-    let spec = pow(max(dot(norm, half_dir), 0.0), 64.0) * 0.3;
-    let lighting = vec3<f32>(0.1) + (diff + spec) * light_color * light_intensity;
+    if light_count > 0 {
+        for (var i = 0; i < light_count; i = i + 1) {
+            if uniforms.lights[i].enabled == 0 {
+                continue;
+            }
+            var contribution: vec3<f32>;
+            if uniforms.lights[i].light_type == 0 {
+                contribution = calculate_point_light(uniforms.lights[i], norm, frag_pos, view_dir);
+            } else if uniforms.lights[i].light_type == 1 {
+                contribution = calculate_directional_light(uniforms.lights[i], norm, view_dir);
+            } else {
+                contribution = calculate_spot_light(uniforms.lights[i], norm, frag_pos, view_dir);
+            }
+            result = result + contribution;
+        }
+    } else {
+        // Fallback to primary light when no structured lights are provided
+        var light_dir: vec3<f32>;
+        var light_color: vec3<f32>;
+        var light_i: f32;
+        if uniforms.primaryLightIntensity > 0.0 {
+            light_dir = normalize(uniforms.primaryLightDir);
+            light_color = uniforms.primaryLightColor;
+            light_i = uniforms.primaryLightIntensity;
+        } else {
+            light_dir = normalize(vec3<f32>(0.3, 1.0, 0.5));
+            light_color = vec3<f32>(1.0, 1.0, 1.0);
+            light_i = 1.0;
+        }
+        let diff = max(dot(norm, light_dir), 0.0);
+        let half_dir = normalize(light_dir + view_dir);
+        let spec = pow(max(dot(norm, half_dir), 0.0), 64.0) * 0.3;
+        result = vec3<f32>(0.1) + (diff + spec) * light_color * light_i;
+    }
 
     var base_color: vec4<f32>;
     if uniforms.useTexture != 0 {
@@ -637,7 +808,7 @@ fn main(
         base_color = uniforms.objectColor;
     }
 
-    var final_color = lighting * base_color.rgb;
+    var final_color = result * base_color.rgb;
 
     if uniforms.fogEnabled != 0 {
         let dist = length(frag_pos - uniforms.viewPos);
@@ -772,7 +943,7 @@ in vec2 TexCoord;
 out vec4 FragColor;
 
 struct Light {
-    int type;
+    int light_type;
     vec3 position;
     vec3 direction;
     vec3 color;
@@ -825,7 +996,7 @@ void main() {
 
         vec3 L;
         float attenuation = 1.0;
-        if (lights[i].type == 1) {
+        if (lights[i].light_type == 1) {
             L = normalize(-lights[i].direction);
         } else {
             L = normalize(lights[i].position - FragPos);
@@ -896,6 +1067,17 @@ void main() {
 // skinned shader shares the same fragment shader (FRAGMENT_SHADER_3D_WGSL).
 // Bone matrices are read from a storage buffer at @group(2) @binding(0).
 pub(super) const SKINNED_VERTEX_SHADER_WGSL: &str = r#"
+struct Light {
+    light_type: i32,
+    position: vec3<f32>,
+    direction: vec3<f32>,
+    color: vec3<f32>,
+    intensity: f32,
+    range: f32,
+    spotAngle: f32,
+    enabled: i32,
+}
+
 struct Uniforms {
     model: mat4x4<f32>,
     view: mat4x4<f32>,
@@ -916,6 +1098,8 @@ struct Uniforms {
     primaryLightDir: vec3<f32>,
     primaryLightIntensity: f32,
     primaryLightColor: vec3<f32>,
+    _pad4: f32,
+    lights: array<Light, 8>,
 }
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
@@ -1010,6 +1194,17 @@ void main() {
 "#;
 
 pub(super) const INSTANCED_SKINNED_VERTEX_SHADER_WGSL: &str = r#"
+struct Light {
+    light_type: i32,
+    position: vec3<f32>,
+    direction: vec3<f32>,
+    color: vec3<f32>,
+    intensity: f32,
+    range: f32,
+    spotAngle: f32,
+    enabled: i32,
+}
+
 struct Uniforms {
     view: mat4x4<f32>,
     projection: mat4x4<f32>,
@@ -1029,6 +1224,8 @@ struct Uniforms {
     primaryLightDir: vec3<f32>,
     primaryLightIntensity: f32,
     primaryLightColor: vec3<f32>,
+    _pad4: f32,
+    lights: array<Light, 8>,
 }
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;

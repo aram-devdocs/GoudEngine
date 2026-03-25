@@ -3565,6 +3565,16 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_renderer3d_set_object_static": {
+      "source_file": "ffi/renderer3d/primitives.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "object_id: u32",
+        "is_static: bool"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
     "goud_renderer3d_set_shared_animation_eval": {
       "source_file": "ffi/renderer3d/environment.rs",
       "params": [
@@ -5838,5 +5848,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 587
+  "total_count": 588
 }

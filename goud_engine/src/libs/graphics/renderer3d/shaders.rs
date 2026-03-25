@@ -81,7 +81,7 @@ pub(super) fn resolve_main_uniforms(
     let mut lights = Vec::with_capacity(MAX_LIGHTS);
     for i in 0..MAX_LIGHTS {
         lights.push(LightUniforms {
-            light_type: loc(&format!("lights[{i}].type")),
+            light_type: loc(&format!("lights[{i}].light_type")),
             position: loc(&format!("lights[{i}].position")),
             direction: loc(&format!("lights[{i}].direction")),
             color: loc(&format!("lights[{i}].color")),

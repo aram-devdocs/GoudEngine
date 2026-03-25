@@ -312,6 +312,22 @@ export interface IGoudGame {
   configureFog(enabled: boolean, r: number, g: number, b: number, density: number): boolean;
   /** Sets fog visibility */
   setFogEnabled(enabled: boolean): boolean;
+  /** Enables or disables frustum culling */
+  setFrustumCullingEnabled(enabled: boolean): number;
+  /** Sets the skinning mode (0=CPU, 1=GPU) */
+  setSkinningMode(mode: number): number;
+  /** Enables or disables material sorting */
+  setMaterialSortingEnabled(enabled: boolean): number;
+  /** Enables or disables animation LOD */
+  setAnimationLodEnabled(enabled: boolean): number;
+  /** Enables or disables shared animation evaluation */
+  setSharedAnimationEval(enabled: boolean): number;
+  /** Returns the number of draw calls last frame */
+  getDrawCalls(): number;
+  /** Returns the number of visible objects last frame */
+  getVisibleObjectCount(): number;
+  /** Returns the number of culled objects last frame */
+  getCulledObjectCount(): number;
   /** Renders all 3D objects */
   render3D(): boolean;
   /** Creates a 3D material */

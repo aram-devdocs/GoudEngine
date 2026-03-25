@@ -15,6 +15,11 @@ impl Renderer3D {
     /// scene are rendered and the scene's fog/skybox/grid configs are used.
     /// When no scene is active all entities are rendered (backward-compatible).
     pub fn render(&mut self, texture_manager: Option<&dyn TextureManagerTrait>) {
+        // Rebuild the static batch VBO if any static flags changed.
+        if self.static_batch_dirty && self.config.batching.static_batching_enabled {
+            self.rebuild_static_batch();
+        }
+
         self.frame_counter = self.frame_counter.wrapping_add(1);
         self.stats = Default::default();
         self.backend.set_viewport(
@@ -151,11 +156,20 @@ impl Renderer3D {
         // Track total object count before culling.
         self.stats.total_objects = self.objects.len() as u32;
 
+        // Whether static objects are covered by the batch and should be skipped
+        // in the per-object draw loop.
+        let has_static_batch = self.static_batch_buffer.is_some()
+            && self.config.batching.static_batching_enabled;
+
         // Collect visible object IDs into the pre-allocated buffer (B3: avoids
         // per-frame Vec<DrawCmd> allocation for large scenes).
         self.visible_object_ids.clear();
         for (&id, obj) in &self.objects {
             if skinned_obj_ids.contains(&id) {
+                continue;
+            }
+            // Static objects are drawn via the batch buffer, skip them here.
+            if has_static_batch && obj.is_static {
                 continue;
             }
             if let Some(filter) = scene_obj_filter {
@@ -213,6 +227,52 @@ impl Renderer3D {
             &eff_fog,
             &filtered_lights,
         );
+
+        // Draw static batch groups before the per-object loop.
+        if has_static_batch {
+            // Identity model matrix: vertices are already world-space.
+            let identity = mat4_to_array(&Matrix4::from_scale(1.0f32));
+            self.backend
+                .set_uniform_mat4(self.uniforms.model, &identity);
+
+            // Snapshot groups to avoid borrow conflict with &mut self.
+            let groups = self.static_batch_groups.clone();
+            let batch_buf = self.static_batch_buffer.unwrap(); // guarded by has_static_batch
+            let mut batch_last_tex = u32::MAX;
+
+            for group in &groups {
+                if group.texture_id > 0 {
+                    if group.texture_id != batch_last_tex {
+                        if let Some(tm) = texture_manager {
+                            tm.bind_texture(group.texture_id, 0);
+                        } else {
+                            let th = TextureHandle::new(group.texture_id, 1);
+                            let _ = self.backend.bind_texture(th, 0);
+                        }
+                        batch_last_tex = group.texture_id;
+                        self.stats.texture_binds += 1;
+                    }
+                    self.backend.set_uniform_int(self.uniforms.use_texture, 1);
+                } else {
+                    self.backend.set_uniform_int(self.uniforms.use_texture, 0);
+                }
+                self.backend.set_uniform_vec4(
+                    self.uniforms.object_color,
+                    group.color[0],
+                    group.color[1],
+                    group.color[2],
+                    group.color[3],
+                );
+                let _ = self.backend.bind_buffer(batch_buf);
+                self.backend.set_vertex_attributes(&self.object_layout);
+                let _ = self.backend.draw_arrays(
+                    PrimitiveTopology::Triangles,
+                    group.start_vertex,
+                    group.vertex_count,
+                );
+                self.stats.draw_calls += 1;
+            }
+        }
 
         let mut last_texture_id = u32::MAX;
         // Draw loop: look up object data inline from the pre-collected IDs.

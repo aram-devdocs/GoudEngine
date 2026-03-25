@@ -81,7 +81,7 @@ pub use primitives::{
     goud_renderer3d_create_cube, goud_renderer3d_create_cylinder, goud_renderer3d_create_plane,
     goud_renderer3d_create_sphere, goud_renderer3d_destroy_object,
     goud_renderer3d_set_object_position, goud_renderer3d_set_object_rotation,
-    goud_renderer3d_set_object_scale,
+    goud_renderer3d_set_object_scale, goud_renderer3d_set_object_static,
 };
 pub use scene::{
     goud_renderer3d_add_light_to_scene, goud_renderer3d_add_model_to_scene,

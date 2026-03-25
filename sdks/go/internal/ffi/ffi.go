@@ -1401,6 +1401,11 @@ func GoudPhysics3dCreate(ctx C.GoudContextId, gx float32, gy float32, gz float32
 	return int32(C.goud_physics3d_create(ctx, C.float(gx), C.float(gy), C.float(gz)))
 }
 
+// GoudPhysics3dCreateCharacterController wraps goud_physics3d_create_character_controller.
+func GoudPhysics3dCreateCharacterController(ctx C.GoudContextId, radius float32, half_height float32, x float32, y float32, z float32, max_slope_angle float32, step_height float32) int64 {
+	return int64(C.goud_physics3d_create_character_controller(ctx, C.float(radius), C.float(half_height), C.float(x), C.float(y), C.float(z), C.float(max_slope_angle), C.float(step_height)))
+}
+
 // GoudPhysics3dCreateJoint wraps goud_physics3d_create_joint.
 func GoudPhysics3dCreateJoint(ctx C.GoudContextId, body_a uint64, body_b uint64, joint_kind uint32, anchor_ax float32, anchor_ay float32, anchor_az float32, anchor_bx float32, anchor_by float32, anchor_bz float32, axis_x float32, axis_y float32, axis_z float32, use_limits bool, limit_min float32, limit_max float32, use_motor bool, motor_target_velocity float32, motor_max_force float32) int64 {
 	return int64(C.goud_physics3d_create_joint(ctx, C.uint64_t(body_a), C.uint64_t(body_b), C.uint32_t(joint_kind), C.float(anchor_ax), C.float(anchor_ay), C.float(anchor_az), C.float(anchor_bx), C.float(anchor_by), C.float(anchor_bz), C.float(axis_x), C.float(axis_y), C.float(axis_z), C._Bool(use_limits), C.float(limit_min), C.float(limit_max), C._Bool(use_motor), C.float(motor_target_velocity), C.float(motor_max_force)))
@@ -1411,12 +1416,31 @@ func GoudPhysics3dDestroy(ctx C.GoudContextId) int32 {
 	return int32(C.goud_physics3d_destroy(ctx))
 }
 
+// GoudPhysics3dDestroyCharacterController wraps goud_physics3d_destroy_character_controller.
+func GoudPhysics3dDestroyCharacterController(ctx C.GoudContextId, controller_id uint64) int32 {
+	return int32(C.goud_physics3d_destroy_character_controller(ctx, C.uint64_t(controller_id)))
+}
+
 // GoudPhysics3dGetBodyGravityScale wraps goud_physics3d_get_body_gravity_scale.
 func GoudPhysics3dGetBodyGravityScale(ctx C.GoudContextId, handle uint64, out_scale *C.float) int32 {
 	if out_scale == nil {
 		return -1
 	}
 	return int32(C.goud_physics3d_get_body_gravity_scale(ctx, C.uint64_t(handle), out_scale))
+}
+
+// GoudPhysics3dGetCharacterPosition wraps goud_physics3d_get_character_position.
+func GoudPhysics3dGetCharacterPosition(ctx C.GoudContextId, controller_id uint64, out_x *C.float, out_y *C.float, out_z *C.float) int32 {
+	if out_x == nil {
+		return -1
+	}
+	if out_y == nil {
+		return -1
+	}
+	if out_z == nil {
+		return -1
+	}
+	return int32(C.goud_physics3d_get_character_position(ctx, C.uint64_t(controller_id), out_x, out_y, out_z))
 }
 
 // GoudPhysics3dGetColliderFriction wraps goud_physics3d_get_collider_friction.
@@ -1469,6 +1493,28 @@ func GoudPhysics3dGetTimestep(ctx C.GoudContextId, out_dt *C.float) int32 {
 		return -1
 	}
 	return int32(C.goud_physics3d_get_timestep(ctx, out_dt))
+}
+
+// GoudPhysics3dIsCharacterGrounded wraps goud_physics3d_is_character_grounded.
+func GoudPhysics3dIsCharacterGrounded(ctx C.GoudContextId, controller_id uint64) bool {
+	return bool(C.goud_physics3d_is_character_grounded(ctx, C.uint64_t(controller_id)))
+}
+
+// GoudPhysics3dMoveCharacter wraps goud_physics3d_move_character.
+func GoudPhysics3dMoveCharacter(ctx C.GoudContextId, controller_id uint64, dx float32, dy float32, dz float32, dt float32, out_x *C.float, out_y *C.float, out_z *C.float, out_grounded *C.int32_t) int32 {
+	if out_x == nil {
+		return -1
+	}
+	if out_y == nil {
+		return -1
+	}
+	if out_z == nil {
+		return -1
+	}
+	if out_grounded == nil {
+		return -1
+	}
+	return int32(C.goud_physics3d_move_character(ctx, C.uint64_t(controller_id), C.float(dx), C.float(dy), C.float(dz), C.float(dt), out_x, out_y, out_z, out_grounded))
 }
 
 // GoudPhysics3dRemoveBody wraps goud_physics3d_remove_body.
@@ -1861,6 +1907,31 @@ func GoudRenderer3dAddLight(context_id C.GoudContextId, light_type int32, pos_x 
 	return uint32(C.goud_renderer3d_add_light(context_id, C.int32_t(light_type), C.float(pos_x), C.float(pos_y), C.float(pos_z), C.float(dir_x), C.float(dir_y), C.float(dir_z), C.float(r), C.float(g), C.float(b), C.float(intensity), C.float(range_), C.float(spot_angle)))
 }
 
+// GoudRenderer3dAddLightToScene wraps goud_renderer3d_add_light_to_scene.
+func GoudRenderer3dAddLightToScene(context_id C.GoudContextId, scene_id uint32, light_id uint32) bool {
+	return bool(C.goud_renderer3d_add_light_to_scene(context_id, C.uint32_t(scene_id), C.uint32_t(light_id)))
+}
+
+// GoudRenderer3dAddModelToScene wraps goud_renderer3d_add_model_to_scene.
+func GoudRenderer3dAddModelToScene(context_id C.GoudContextId, scene_id uint32, model_id uint32) bool {
+	return bool(C.goud_renderer3d_add_model_to_scene(context_id, C.uint32_t(scene_id), C.uint32_t(model_id)))
+}
+
+// GoudRenderer3dAddObjectToScene wraps goud_renderer3d_add_object_to_scene.
+func GoudRenderer3dAddObjectToScene(context_id C.GoudContextId, scene_id uint32, object_id uint32) bool {
+	return bool(C.goud_renderer3d_add_object_to_scene(context_id, C.uint32_t(scene_id), C.uint32_t(object_id)))
+}
+
+// GoudRenderer3dBlendAnimations wraps goud_renderer3d_blend_animations.
+func GoudRenderer3dBlendAnimations(context_id C.GoudContextId, instance_id uint32, anim_a int32, anim_b int32, blend_factor float32) bool {
+	return bool(C.goud_renderer3d_blend_animations(context_id, C.uint32_t(instance_id), C.int32_t(anim_a), C.int32_t(anim_b), C.float(blend_factor)))
+}
+
+// GoudRenderer3dClearCurrentScene wraps goud_renderer3d_clear_current_scene.
+func GoudRenderer3dClearCurrentScene(context_id C.GoudContextId) bool {
+	return bool(C.goud_renderer3d_clear_current_scene(context_id))
+}
+
 // GoudRenderer3dConfigureFog wraps goud_renderer3d_configure_fog.
 func GoudRenderer3dConfigureFog(context_id C.GoudContextId, enabled bool, r float32, g float32, b float32, density float32) bool {
 	return bool(C.goud_renderer3d_configure_fog(context_id, C._Bool(enabled), C.float(r), C.float(g), C.float(b), C.float(density)))
@@ -1896,6 +1967,14 @@ func GoudRenderer3dCreatePlane(context_id C.GoudContextId, texture_id uint32, wi
 	return uint32(C.goud_renderer3d_create_plane(context_id, C.uint32_t(texture_id), C.float(width), C.float(depth)))
 }
 
+// GoudRenderer3dCreateScene wraps goud_renderer3d_create_scene.
+func GoudRenderer3dCreateScene(context_id C.GoudContextId, name_ptr *C.char) uint32 {
+	if name_ptr == nil {
+		return 0
+	}
+	return uint32(C.goud_renderer3d_create_scene(context_id, name_ptr))
+}
+
 // GoudRenderer3dCreateSkinnedMesh wraps goud_renderer3d_create_skinned_mesh.
 func GoudRenderer3dCreateSkinnedMesh(context_id C.GoudContextId, vertices_ptr *C.float, vertex_count uint32) uint32 {
 	if vertices_ptr == nil {
@@ -1909,14 +1988,113 @@ func GoudRenderer3dCreateSphere(context_id C.GoudContextId, texture_id uint32, d
 	return uint32(C.goud_renderer3d_create_sphere(context_id, C.uint32_t(texture_id), C.float(diameter), C.uint32_t(segments)))
 }
 
+// GoudRenderer3dDestroyModel wraps goud_renderer3d_destroy_model.
+func GoudRenderer3dDestroyModel(context_id C.GoudContextId, model_id uint32) bool {
+	return bool(C.goud_renderer3d_destroy_model(context_id, C.uint32_t(model_id)))
+}
+
 // GoudRenderer3dDestroyObject wraps goud_renderer3d_destroy_object.
 func GoudRenderer3dDestroyObject(context_id C.GoudContextId, object_id uint32) bool {
 	return bool(C.goud_renderer3d_destroy_object(context_id, C.uint32_t(object_id)))
 }
 
+// GoudRenderer3dDestroyScene wraps goud_renderer3d_destroy_scene.
+func GoudRenderer3dDestroyScene(context_id C.GoudContextId, scene_id uint32) bool {
+	return bool(C.goud_renderer3d_destroy_scene(context_id, C.uint32_t(scene_id)))
+}
+
+// GoudRenderer3dGetAnimationCount wraps goud_renderer3d_get_animation_count.
+func GoudRenderer3dGetAnimationCount(context_id C.GoudContextId, model_id uint32) int32 {
+	return int32(C.goud_renderer3d_get_animation_count(context_id, C.uint32_t(model_id)))
+}
+
+// GoudRenderer3dGetAnimationName wraps goud_renderer3d_get_animation_name.
+func GoudRenderer3dGetAnimationName(context_id C.GoudContextId, model_id uint32, anim_index int32, out_buf *C.char, buf_len int32) int32 {
+	if out_buf == nil {
+		return -1
+	}
+	return int32(C.goud_renderer3d_get_animation_name(context_id, C.uint32_t(model_id), C.int32_t(anim_index), out_buf, C.int32_t(buf_len)))
+}
+
+// GoudRenderer3dGetAnimationProgress wraps goud_renderer3d_get_animation_progress.
+func GoudRenderer3dGetAnimationProgress(context_id C.GoudContextId, instance_id uint32) float32 {
+	return float32(C.goud_renderer3d_get_animation_progress(context_id, C.uint32_t(instance_id)))
+}
+
+// GoudRenderer3dGetCulledObjectCount wraps goud_renderer3d_get_culled_object_count.
+func GoudRenderer3dGetCulledObjectCount(context_id C.GoudContextId) int32 {
+	return int32(C.goud_renderer3d_get_culled_object_count(context_id))
+}
+
+// GoudRenderer3dGetCurrentScene wraps goud_renderer3d_get_current_scene.
+func GoudRenderer3dGetCurrentScene(context_id C.GoudContextId) uint32 {
+	return uint32(C.goud_renderer3d_get_current_scene(context_id))
+}
+
+// GoudRenderer3dGetDrawCalls wraps goud_renderer3d_get_draw_calls.
+func GoudRenderer3dGetDrawCalls(context_id C.GoudContextId) int32 {
+	return int32(C.goud_renderer3d_get_draw_calls(context_id))
+}
+
+// GoudRenderer3dGetModelBoundingBox wraps goud_renderer3d_get_model_bounding_box.
+func GoudRenderer3dGetModelBoundingBox(context_id C.GoudContextId, model_id uint32, out_min_x *C.float, out_min_y *C.float, out_min_z *C.float, out_max_x *C.float, out_max_y *C.float, out_max_z *C.float) bool {
+	if out_min_x == nil {
+		return false
+	}
+	if out_min_y == nil {
+		return false
+	}
+	if out_min_z == nil {
+		return false
+	}
+	if out_max_x == nil {
+		return false
+	}
+	if out_max_y == nil {
+		return false
+	}
+	if out_max_z == nil {
+		return false
+	}
+	return bool(C.goud_renderer3d_get_model_bounding_box(context_id, C.uint32_t(model_id), out_min_x, out_min_y, out_min_z, out_max_x, out_max_y, out_max_z))
+}
+
+// GoudRenderer3dGetModelMeshCount wraps goud_renderer3d_get_model_mesh_count.
+func GoudRenderer3dGetModelMeshCount(context_id C.GoudContextId, model_id uint32) int32 {
+	return int32(C.goud_renderer3d_get_model_mesh_count(context_id, C.uint32_t(model_id)))
+}
+
 // GoudRenderer3dGetObjectMaterial wraps goud_renderer3d_get_object_material.
 func GoudRenderer3dGetObjectMaterial(context_id C.GoudContextId, object_id uint32) uint32 {
 	return uint32(C.goud_renderer3d_get_object_material(context_id, C.uint32_t(object_id)))
+}
+
+// GoudRenderer3dGetVisibleObjectCount wraps goud_renderer3d_get_visible_object_count.
+func GoudRenderer3dGetVisibleObjectCount(context_id C.GoudContextId) int32 {
+	return int32(C.goud_renderer3d_get_visible_object_count(context_id))
+}
+
+// GoudRenderer3dInstantiateModel wraps goud_renderer3d_instantiate_model.
+func GoudRenderer3dInstantiateModel(context_id C.GoudContextId, source_model_id uint32) uint32 {
+	return uint32(C.goud_renderer3d_instantiate_model(context_id, C.uint32_t(source_model_id)))
+}
+
+// GoudRenderer3dIsAnimationPlaying wraps goud_renderer3d_is_animation_playing.
+func GoudRenderer3dIsAnimationPlaying(context_id C.GoudContextId, instance_id uint32) bool {
+	return bool(C.goud_renderer3d_is_animation_playing(context_id, C.uint32_t(instance_id)))
+}
+
+// GoudRenderer3dLoadModel wraps goud_renderer3d_load_model.
+func GoudRenderer3dLoadModel(context_id C.GoudContextId, path_ptr *C.char) uint32 {
+	if path_ptr == nil {
+		return 0
+	}
+	return uint32(C.goud_renderer3d_load_model(context_id, path_ptr))
+}
+
+// GoudRenderer3dPlayAnimation wraps goud_renderer3d_play_animation.
+func GoudRenderer3dPlayAnimation(context_id C.GoudContextId, instance_id uint32, anim_index int32, looping bool) bool {
+	return bool(C.goud_renderer3d_play_animation(context_id, C.uint32_t(instance_id), C.int32_t(anim_index), C._Bool(looping)))
 }
 
 // GoudRenderer3dPostprocessPassCount wraps goud_renderer3d_postprocess_pass_count.
@@ -1929,9 +2107,24 @@ func GoudRenderer3dRemoveLight(context_id C.GoudContextId, light_id uint32) bool
 	return bool(C.goud_renderer3d_remove_light(context_id, C.uint32_t(light_id)))
 }
 
+// GoudRenderer3dRemoveLightFromScene wraps goud_renderer3d_remove_light_from_scene.
+func GoudRenderer3dRemoveLightFromScene(context_id C.GoudContextId, scene_id uint32, light_id uint32) bool {
+	return bool(C.goud_renderer3d_remove_light_from_scene(context_id, C.uint32_t(scene_id), C.uint32_t(light_id)))
+}
+
 // GoudRenderer3dRemoveMaterial wraps goud_renderer3d_remove_material.
 func GoudRenderer3dRemoveMaterial(context_id C.GoudContextId, material_id uint32) bool {
 	return bool(C.goud_renderer3d_remove_material(context_id, C.uint32_t(material_id)))
+}
+
+// GoudRenderer3dRemoveModelFromScene wraps goud_renderer3d_remove_model_from_scene.
+func GoudRenderer3dRemoveModelFromScene(context_id C.GoudContextId, scene_id uint32, model_id uint32) bool {
+	return bool(C.goud_renderer3d_remove_model_from_scene(context_id, C.uint32_t(scene_id), C.uint32_t(model_id)))
+}
+
+// GoudRenderer3dRemoveObjectFromScene wraps goud_renderer3d_remove_object_from_scene.
+func GoudRenderer3dRemoveObjectFromScene(context_id C.GoudContextId, scene_id uint32, object_id uint32) bool {
+	return bool(C.goud_renderer3d_remove_object_from_scene(context_id, C.uint32_t(scene_id), C.uint32_t(object_id)))
 }
 
 // GoudRenderer3dRemovePostprocessPass wraps goud_renderer3d_remove_postprocess_pass.
@@ -1954,6 +2147,16 @@ func GoudRenderer3dRenderAll(context_id C.GoudContextId) bool {
 	return bool(C.goud_renderer3d_render_all(context_id))
 }
 
+// GoudRenderer3dSetAnimationLodEnabled wraps goud_renderer3d_set_animation_lod_enabled.
+func GoudRenderer3dSetAnimationLodEnabled(context_id C.GoudContextId, enabled bool) int32 {
+	return int32(C.goud_renderer3d_set_animation_lod_enabled(context_id, C._Bool(enabled)))
+}
+
+// GoudRenderer3dSetAnimationSpeed wraps goud_renderer3d_set_animation_speed.
+func GoudRenderer3dSetAnimationSpeed(context_id C.GoudContextId, instance_id uint32, speed float32) bool {
+	return bool(C.goud_renderer3d_set_animation_speed(context_id, C.uint32_t(instance_id), C.float(speed)))
+}
+
 // GoudRenderer3dSetCameraPosition wraps goud_renderer3d_set_camera_position.
 func GoudRenderer3dSetCameraPosition(context_id C.GoudContextId, x float32, y float32, z float32) bool {
 	return bool(C.goud_renderer3d_set_camera_position(context_id, C.float(x), C.float(y), C.float(z)))
@@ -1964,14 +2167,49 @@ func GoudRenderer3dSetCameraRotation(context_id C.GoudContextId, pitch float32, 
 	return bool(C.goud_renderer3d_set_camera_rotation(context_id, C.float(pitch), C.float(yaw), C.float(roll)))
 }
 
+// GoudRenderer3dSetCurrentScene wraps goud_renderer3d_set_current_scene.
+func GoudRenderer3dSetCurrentScene(context_id C.GoudContextId, scene_id uint32) bool {
+	return bool(C.goud_renderer3d_set_current_scene(context_id, C.uint32_t(scene_id)))
+}
+
 // GoudRenderer3dSetFogEnabled wraps goud_renderer3d_set_fog_enabled.
 func GoudRenderer3dSetFogEnabled(context_id C.GoudContextId, enabled bool) bool {
 	return bool(C.goud_renderer3d_set_fog_enabled(context_id, C._Bool(enabled)))
 }
 
+// GoudRenderer3dSetFrustumCullingEnabled wraps goud_renderer3d_set_frustum_culling_enabled.
+func GoudRenderer3dSetFrustumCullingEnabled(context_id C.GoudContextId, enabled bool) int32 {
+	return int32(C.goud_renderer3d_set_frustum_culling_enabled(context_id, C._Bool(enabled)))
+}
+
 // GoudRenderer3dSetGridEnabled wraps goud_renderer3d_set_grid_enabled.
 func GoudRenderer3dSetGridEnabled(context_id C.GoudContextId, enabled bool) bool {
 	return bool(C.goud_renderer3d_set_grid_enabled(context_id, C._Bool(enabled)))
+}
+
+// GoudRenderer3dSetMaterialSortingEnabled wraps goud_renderer3d_set_material_sorting_enabled.
+func GoudRenderer3dSetMaterialSortingEnabled(context_id C.GoudContextId, enabled bool) int32 {
+	return int32(C.goud_renderer3d_set_material_sorting_enabled(context_id, C._Bool(enabled)))
+}
+
+// GoudRenderer3dSetModelMaterial wraps goud_renderer3d_set_model_material.
+func GoudRenderer3dSetModelMaterial(context_id C.GoudContextId, model_id uint32, mesh_index int32, material_id uint32) bool {
+	return bool(C.goud_renderer3d_set_model_material(context_id, C.uint32_t(model_id), C.int32_t(mesh_index), C.uint32_t(material_id)))
+}
+
+// GoudRenderer3dSetModelPosition wraps goud_renderer3d_set_model_position.
+func GoudRenderer3dSetModelPosition(context_id C.GoudContextId, model_id uint32, x float32, y float32, z float32) bool {
+	return bool(C.goud_renderer3d_set_model_position(context_id, C.uint32_t(model_id), C.float(x), C.float(y), C.float(z)))
+}
+
+// GoudRenderer3dSetModelRotation wraps goud_renderer3d_set_model_rotation.
+func GoudRenderer3dSetModelRotation(context_id C.GoudContextId, model_id uint32, x float32, y float32, z float32) bool {
+	return bool(C.goud_renderer3d_set_model_rotation(context_id, C.uint32_t(model_id), C.float(x), C.float(y), C.float(z)))
+}
+
+// GoudRenderer3dSetModelScale wraps goud_renderer3d_set_model_scale.
+func GoudRenderer3dSetModelScale(context_id C.GoudContextId, model_id uint32, x float32, y float32, z float32) bool {
+	return bool(C.goud_renderer3d_set_model_scale(context_id, C.uint32_t(model_id), C.float(x), C.float(y), C.float(z)))
 }
 
 // GoudRenderer3dSetObjectMaterial wraps goud_renderer3d_set_object_material.
@@ -1992,6 +2230,11 @@ func GoudRenderer3dSetObjectRotation(context_id C.GoudContextId, object_id uint3
 // GoudRenderer3dSetObjectScale wraps goud_renderer3d_set_object_scale.
 func GoudRenderer3dSetObjectScale(context_id C.GoudContextId, object_id uint32, x float32, y float32, z float32) bool {
 	return bool(C.goud_renderer3d_set_object_scale(context_id, C.uint32_t(object_id), C.float(x), C.float(y), C.float(z)))
+}
+
+// GoudRenderer3dSetSharedAnimationEval wraps goud_renderer3d_set_shared_animation_eval.
+func GoudRenderer3dSetSharedAnimationEval(context_id C.GoudContextId, enabled bool) int32 {
+	return int32(C.goud_renderer3d_set_shared_animation_eval(context_id, C._Bool(enabled)))
 }
 
 // GoudRenderer3dSetSkinnedMeshBones wraps goud_renderer3d_set_skinned_mesh_bones.
@@ -2015,6 +2258,26 @@ func GoudRenderer3dSetSkinnedMeshRotation(context_id C.GoudContextId, mesh_id ui
 // GoudRenderer3dSetSkinnedMeshScale wraps goud_renderer3d_set_skinned_mesh_scale.
 func GoudRenderer3dSetSkinnedMeshScale(context_id C.GoudContextId, mesh_id uint32, x float32, y float32, z float32) bool {
 	return bool(C.goud_renderer3d_set_skinned_mesh_scale(context_id, C.uint32_t(mesh_id), C.float(x), C.float(y), C.float(z)))
+}
+
+// GoudRenderer3dSetSkinningMode wraps goud_renderer3d_set_skinning_mode.
+func GoudRenderer3dSetSkinningMode(context_id C.GoudContextId, mode uint32) int32 {
+	return int32(C.goud_renderer3d_set_skinning_mode(context_id, C.uint32_t(mode)))
+}
+
+// GoudRenderer3dStopAnimation wraps goud_renderer3d_stop_animation.
+func GoudRenderer3dStopAnimation(context_id C.GoudContextId, instance_id uint32) bool {
+	return bool(C.goud_renderer3d_stop_animation(context_id, C.uint32_t(instance_id)))
+}
+
+// GoudRenderer3dTransitionAnimation wraps goud_renderer3d_transition_animation.
+func GoudRenderer3dTransitionAnimation(context_id C.GoudContextId, instance_id uint32, target_anim int32, duration float32) bool {
+	return bool(C.goud_renderer3d_transition_animation(context_id, C.uint32_t(instance_id), C.int32_t(target_anim), C.float(duration)))
+}
+
+// GoudRenderer3dUpdateAnimations wraps goud_renderer3d_update_animations.
+func GoudRenderer3dUpdateAnimations(context_id C.GoudContextId, delta_time float32) bool {
+	return bool(C.goud_renderer3d_update_animations(context_id, C.float(delta_time)))
 }
 
 // GoudRenderer3dUpdateLight wraps goud_renderer3d_update_light.

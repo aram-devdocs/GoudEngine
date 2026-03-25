@@ -570,6 +570,46 @@ export class GoudGame implements IGoudGame {
     return this.native.setFogEnabled(enabled);
   }
 
+  /** Enables or disables frustum culling */
+  setFrustumCullingEnabled(enabled: boolean): number {
+    return (this.native as any).setFrustumCullingEnabled(enabled);
+  }
+
+  /** Sets the skinning mode (0=CPU, 1=GPU) */
+  setSkinningMode(mode: number): number {
+    return (this.native as any).setSkinningMode(mode);
+  }
+
+  /** Enables or disables material sorting */
+  setMaterialSortingEnabled(enabled: boolean): number {
+    return (this.native as any).setMaterialSortingEnabled(enabled);
+  }
+
+  /** Enables or disables animation LOD */
+  setAnimationLodEnabled(enabled: boolean): number {
+    return (this.native as any).setAnimationLodEnabled(enabled);
+  }
+
+  /** Enables or disables shared animation evaluation */
+  setSharedAnimationEval(enabled: boolean): number {
+    return (this.native as any).setSharedAnimationEval(enabled);
+  }
+
+  /** Returns the number of draw calls last frame */
+  getDrawCalls(): number {
+    return (this.native as any).getDrawCalls();
+  }
+
+  /** Returns the number of visible objects last frame */
+  getVisibleObjectCount(): number {
+    return (this.native as any).getVisibleObjectCount();
+  }
+
+  /** Returns the number of culled objects last frame */
+  getCulledObjectCount(): number {
+    return (this.native as any).getCulledObjectCount();
+  }
+
   /** Renders all 3D objects */
   render3D(): boolean {
     return this.native.render3D();

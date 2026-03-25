@@ -233,6 +233,30 @@ pub extern "C" fn goud_renderer3d_set_object_scale(
     .unwrap_or(false)
 }
 
+/// Marks a 3D object as static or dynamic.
+///
+/// Static objects are batched into a single VBO for reduced draw calls.
+/// Once marked static, the object's transform should not change.
+///
+/// # Returns
+/// `true` on success, `false` if context or object is invalid.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_object_static(
+    context_id: GoudContextId,
+    object_id: u32,
+    is_static: bool,
+) -> bool {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return false;
+    }
+
+    with_renderer(context_id, |renderer| {
+        renderer.set_object_static(object_id, is_static)
+    })
+    .unwrap_or(false)
+}
+
 /// Destroys a 3D object.
 #[no_mangle]
 pub extern "C" fn goud_renderer3d_destroy_object(
