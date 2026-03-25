@@ -1011,7 +1011,7 @@ export class GoudGame implements IGoudGame {
   getDrawCalls(): number { return 0; }
   getVisibleObjectCount(): number { return 0; }
   getCulledObjectCount(): number { return 0; }
-  setObjectStatic(_objectId: number, _isStatic: boolean): number { return 0; }
+  setObjectStatic(_objectId: number, _isStatic: boolean): boolean { return false; }
   createMaterial(_materialType: number, _r: number, _g: number, _b: number, _a: number, _shininess: number, _metallic: number, _roughness: number, _ao: number): number { return 0; }
   updateMaterial(_materialId: number, _materialType: number, _r: number, _g: number, _b: number, _a: number, _shininess: number, _metallic: number, _roughness: number, _ao: number): boolean { return false; }
   removeMaterial(_materialId: number): boolean { return false; }
