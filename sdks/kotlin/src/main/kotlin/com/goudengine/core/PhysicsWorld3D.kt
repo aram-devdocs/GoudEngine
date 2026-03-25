@@ -3,6 +3,8 @@ package com.goudengine.core
 
 import com.goudengine.internal.PhysicsWorld3DNative
 import com.goudengine.internal.GoudContextNative
+import com.goudengine.types.CharacterMoveResult
+import com.goudengine.types.Vec3
 
 class PhysicsWorld3D private constructor(private val contextId: Long) : AutoCloseable {
 

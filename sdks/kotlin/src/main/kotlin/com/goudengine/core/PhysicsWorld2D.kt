@@ -3,6 +3,9 @@ package com.goudengine.core
 
 import com.goudengine.internal.PhysicsWorld2DNative
 import com.goudengine.internal.GoudContextNative
+import com.goudengine.types.PhysicsCollisionEvent2D
+import com.goudengine.types.PhysicsRaycastHit2D
+import com.goudengine.types.Vec2
 
 class PhysicsWorld2D private constructor(private val contextId: Long) : AutoCloseable {
 
