@@ -648,6 +648,12 @@ namespace GoudEngine
             return NativeMethods.goud_renderer3d_set_object_scale(_ctx, objectId, x, y, z);
         }
 
+        /// <summary>Marks a 3D object as static or dynamic for batching optimisation</summary>
+        public bool SetObjectStatic(uint objectId, bool isStatic)
+        {
+            return NativeMethods.goud_renderer3d_set_object_static(_ctx, objectId, isStatic);
+        }
+
         /// <summary>Destroys a 3D object</summary>
         public bool DestroyObject(uint objectId)
         {

@@ -228,6 +228,9 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
     fun setObjectScale(objectId: Int, x: Float, y: Float, z: Float): Boolean =
         GoudGameNative.setObjectScale(contextId, objectId, x, y, z)
 
+    fun setObjectStatic(objectId: Int, isStatic: Boolean): Boolean =
+        GoudGameNative.setObjectStatic(contextId, objectId, isStatic)
+
     fun destroyObject(objectId: Int): Boolean =
         GoudGameNative.destroyObject(contextId, objectId)
 
@@ -260,6 +263,30 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
 
     fun setFogEnabled(enabled: Boolean): Boolean =
         GoudGameNative.setFogEnabled(contextId, enabled)
+
+    fun setFrustumCullingEnabled(enabled: Boolean): Int =
+        GoudGameNative.setFrustumCullingEnabled(contextId, enabled)
+
+    fun setSkinningMode(mode: Int): Int =
+        GoudGameNative.setSkinningMode(contextId, mode)
+
+    fun setMaterialSortingEnabled(enabled: Boolean): Int =
+        GoudGameNative.setMaterialSortingEnabled(contextId, enabled)
+
+    fun setAnimationLodEnabled(enabled: Boolean): Int =
+        GoudGameNative.setAnimationLodEnabled(contextId, enabled)
+
+    fun setSharedAnimationEval(enabled: Boolean): Int =
+        GoudGameNative.setSharedAnimationEval(contextId, enabled)
+
+    fun getDrawCalls(): Int =
+        GoudGameNative.getDrawCalls(contextId)
+
+    fun getVisibleObjectCount(): Int =
+        GoudGameNative.getVisibleObjectCount(contextId)
+
+    fun getCulledObjectCount(): Int =
+        GoudGameNative.getCulledObjectCount(contextId)
 
     fun render3D(): Boolean =
         GoudGameNative.render3D(contextId)
@@ -305,6 +332,95 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
 
     fun postprocessPassCount(): Int =
         GoudGameNative.postprocessPassCount(contextId)
+
+    fun loadModel(path: String): Int =
+        GoudGameNative.loadModel(contextId, path)
+
+    fun destroyModel(modelId: Int): Boolean =
+        GoudGameNative.destroyModel(contextId, modelId)
+
+    fun instantiateModel(sourceModelId: Int): Int =
+        GoudGameNative.instantiateModel(contextId, sourceModelId)
+
+    fun setModelMaterial(modelId: Int, meshIndex: Int, materialId: Int): Boolean =
+        GoudGameNative.setModelMaterial(contextId, modelId, meshIndex, materialId)
+
+    fun getModelMeshCount(modelId: Int): Int =
+        GoudGameNative.getModelMeshCount(contextId, modelId)
+
+    fun getModelBoundingBox(modelId: Int): BoundingBox3D {
+        val r = GoudGameNative.getModelBoundingBox(contextId, modelId)
+        return com.goudengine.types.BoundingBox3D(r.minX, r.minY, r.minZ, r.maxX, r.maxY, r.maxZ)
+    }
+
+    fun setModelPosition(modelId: Int, x: Float, y: Float, z: Float): Boolean =
+        GoudGameNative.setModelPosition(contextId, modelId, x, y, z)
+
+    fun setModelRotation(modelId: Int, x: Float, y: Float, z: Float): Boolean =
+        GoudGameNative.setModelRotation(contextId, modelId, x, y, z)
+
+    fun setModelScale(modelId: Int, x: Float, y: Float, z: Float): Boolean =
+        GoudGameNative.setModelScale(contextId, modelId, x, y, z)
+
+    fun getAnimationCount(modelId: Int): Int =
+        GoudGameNative.getAnimationCount(contextId, modelId)
+
+    fun playAnimation(instanceId: Int, animIndex: Int, looping: Boolean): Boolean =
+        GoudGameNative.playAnimation(contextId, instanceId, animIndex, looping)
+
+    fun stopAnimation(instanceId: Int): Boolean =
+        GoudGameNative.stopAnimation(contextId, instanceId)
+
+    fun setAnimationSpeed(instanceId: Int, speed: Float): Boolean =
+        GoudGameNative.setAnimationSpeed(contextId, instanceId, speed)
+
+    fun blendAnimations(instanceId: Int, animA: Int, animB: Int, blendFactor: Float): Boolean =
+        GoudGameNative.blendAnimations(contextId, instanceId, animA, animB, blendFactor)
+
+    fun transitionAnimation(instanceId: Int, targetAnim: Int, duration: Float): Boolean =
+        GoudGameNative.transitionAnimation(contextId, instanceId, targetAnim, duration)
+
+    fun isAnimationPlaying(instanceId: Int): Boolean =
+        GoudGameNative.isAnimationPlaying(contextId, instanceId)
+
+    fun getAnimationProgress(instanceId: Int): Float =
+        GoudGameNative.getAnimationProgress(contextId, instanceId)
+
+    fun updateAnimations(deltaTime: Float): Boolean =
+        GoudGameNative.updateAnimations(contextId, deltaTime)
+
+    fun createScene(name: String): Int =
+        GoudGameNative.createScene(contextId, name)
+
+    fun destroyScene(sceneId: Int): Boolean =
+        GoudGameNative.destroyScene(contextId, sceneId)
+
+    fun setCurrentScene(sceneId: Int): Boolean =
+        GoudGameNative.setCurrentScene(contextId, sceneId)
+
+    fun getCurrentScene(): Int =
+        GoudGameNative.getCurrentScene(contextId)
+
+    fun clearCurrentScene(): Boolean =
+        GoudGameNative.clearCurrentScene(contextId)
+
+    fun addObjectToScene(sceneId: Int, objectId: Int): Boolean =
+        GoudGameNative.addObjectToScene(contextId, sceneId, objectId)
+
+    fun removeObjectFromScene(sceneId: Int, objectId: Int): Boolean =
+        GoudGameNative.removeObjectFromScene(contextId, sceneId, objectId)
+
+    fun addModelToScene(sceneId: Int, modelId: Int): Boolean =
+        GoudGameNative.addModelToScene(contextId, sceneId, modelId)
+
+    fun removeModelFromScene(sceneId: Int, modelId: Int): Boolean =
+        GoudGameNative.removeModelFromScene(contextId, sceneId, modelId)
+
+    fun addLightToScene(sceneId: Int, lightId: Int): Boolean =
+        GoudGameNative.addLightToScene(contextId, sceneId, lightId)
+
+    fun removeLightFromScene(sceneId: Int, lightId: Int): Boolean =
+        GoudGameNative.removeLightFromScene(contextId, sceneId, lightId)
 
     fun drawSpriteRect(texture: Long, x: Float, y: Float, width: Float, height: Float, rotation: Float, srcX: Float, srcY: Float, srcW: Float, srcH: Float, color: com.goudengine.types.Color, srcMode: Int): Boolean =
         GoudGameNative.drawSpriteRect(contextId, texture, x, y, width, height, rotation, srcX, srcY, srcW, srcH, srcMode, color.toNative())

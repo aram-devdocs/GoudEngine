@@ -92,5 +92,24 @@ class PhysicsWorld3D private constructor(private val contextId: Long) : AutoClos
     fun getTimestep(): Float =
         PhysicsWorld3DNative.getTimestep(contextId)
 
+    fun createCharacterController(radius: Float, halfHeight: Float, x: Float, y: Float, z: Float, maxSlopeAngle: Float, stepHeight: Float): Long =
+        PhysicsWorld3DNative.createCharacterController(contextId, radius, halfHeight, x, y, z, maxSlopeAngle, stepHeight)
+
+    fun moveCharacter(controllerId: Long, dx: Float, dy: Float, dz: Float, dt: Float): CharacterMoveResult {
+        val r = PhysicsWorld3DNative.moveCharacter(contextId, controllerId, dx, dy, dz, dt)
+        return com.goudengine.types.CharacterMoveResult(r.x, r.y, r.z, r.grounded)
+    }
+
+    fun getCharacterPosition(controllerId: Long): com.goudengine.types.Vec3 {
+        val r = PhysicsWorld3DNative.getCharacterPosition(contextId, controllerId)
+        return com.goudengine.types.Vec3(r.x, r.y, r.z)
+    }
+
+    fun isCharacterGrounded(controllerId: Long): Boolean =
+        PhysicsWorld3DNative.isCharacterGrounded(contextId, controllerId)
+
+    fun destroyCharacterController(controllerId: Long): Int =
+        PhysicsWorld3DNative.destroyCharacterController(contextId, controllerId)
+
     override fun close() { destroy() }
 }

@@ -2232,6 +2232,11 @@ func GoudRenderer3dSetObjectScale(context_id C.GoudContextId, object_id uint32, 
 	return bool(C.goud_renderer3d_set_object_scale(context_id, C.uint32_t(object_id), C.float(x), C.float(y), C.float(z)))
 }
 
+// GoudRenderer3dSetObjectStatic wraps goud_renderer3d_set_object_static.
+func GoudRenderer3dSetObjectStatic(context_id C.GoudContextId, object_id uint32, is_static bool) bool {
+	return bool(C.goud_renderer3d_set_object_static(context_id, C.uint32_t(object_id), C._Bool(is_static)))
+}
+
 // GoudRenderer3dSetSharedAnimationEval wraps goud_renderer3d_set_shared_animation_eval.
 func GoudRenderer3dSetSharedAnimationEval(context_id C.GoudContextId, enabled bool) int32 {
 	return int32(C.goud_renderer3d_set_shared_animation_eval(context_id, C._Bool(enabled)))
