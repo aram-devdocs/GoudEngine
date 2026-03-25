@@ -636,6 +636,14 @@
       "goud_renderer3d_configure_skybox": {},
       "goud_renderer3d_configure_fog": {},
       "goud_renderer3d_set_fog_enabled": {},
+      "goud_renderer3d_set_frustum_culling_enabled": {},
+      "goud_renderer3d_set_skinning_mode": {},
+      "goud_renderer3d_set_material_sorting_enabled": {},
+      "goud_renderer3d_set_animation_lod_enabled": {},
+      "goud_renderer3d_set_shared_animation_eval": {},
+      "goud_renderer3d_get_draw_calls": {},
+      "goud_renderer3d_get_visible_object_count": {},
+      "goud_renderer3d_get_culled_object_count": {},
       "goud_renderer3d_render": {},
       "goud_renderer3d_render_all": {
         "alias_of": "goud_renderer3d_render"

@@ -5257,6 +5257,79 @@
           "returns": "bool"
         },
         {
+          "name": "setFrustumCullingEnabled",
+          "doc": "Enables or disables frustum culling",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setSkinningMode",
+          "doc": "Sets the skinning mode (0=CPU, 1=GPU)",
+          "params": [
+            {
+              "name": "mode",
+              "type": "u32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setMaterialSortingEnabled",
+          "doc": "Enables or disables material sorting",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setAnimationLodEnabled",
+          "doc": "Enables or disables animation LOD",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setSharedAnimationEval",
+          "doc": "Enables or disables shared animation evaluation",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getDrawCalls",
+          "doc": "Returns the number of draw calls last frame",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "getVisibleObjectCount",
+          "doc": "Returns the number of visible objects last frame",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "getCulledObjectCount",
+          "doc": "Returns the number of culled objects last frame",
+          "params": [],
+          "returns": "i32"
+        },
+        {
           "name": "render3D",
           "doc": "Renders all 3D objects",
           "params": [],
@@ -12225,6 +12298,30 @@
         },
         "setFogEnabled": {
           "ffi": "goud_renderer3d_set_fog_enabled"
+        },
+        "setFrustumCullingEnabled": {
+          "ffi": "goud_renderer3d_set_frustum_culling_enabled"
+        },
+        "setSkinningMode": {
+          "ffi": "goud_renderer3d_set_skinning_mode"
+        },
+        "setMaterialSortingEnabled": {
+          "ffi": "goud_renderer3d_set_material_sorting_enabled"
+        },
+        "setAnimationLodEnabled": {
+          "ffi": "goud_renderer3d_set_animation_lod_enabled"
+        },
+        "setSharedAnimationEval": {
+          "ffi": "goud_renderer3d_set_shared_animation_eval"
+        },
+        "getDrawCalls": {
+          "ffi": "goud_renderer3d_get_draw_calls"
+        },
+        "getVisibleObjectCount": {
+          "ffi": "goud_renderer3d_get_visible_object_count"
+        },
+        "getCulledObjectCount": {
+          "ffi": "goud_renderer3d_get_culled_object_count"
         },
         "render3D": {
           "ffi": "goud_renderer3d_render"
