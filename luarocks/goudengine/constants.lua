@@ -125,12 +125,6 @@ M.mouse_button = {
     button8 = 7,
 }
 
--- Renderer type
-M.renderer_type = {
-    renderer2_d = 0,
-    renderer3_d = 1,
-}
-
 -- Overlay corner positions
 M.overlay_corner = {
     top_left = 0,

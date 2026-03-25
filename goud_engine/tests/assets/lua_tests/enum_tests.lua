@@ -19,9 +19,6 @@ assert(key.right == 262, "key.right should be 262, got: " .. tostring(key.right)
 -- mouse_button table exists
 assert(mouse_button ~= nil, "mouse_button table should exist")
 
--- renderer_type table exists
-assert(renderer_type ~= nil, "renderer_type table should exist")
-
 -- blend_mode table exists
 assert(blend_mode ~= nil, "blend_mode table should exist")
 

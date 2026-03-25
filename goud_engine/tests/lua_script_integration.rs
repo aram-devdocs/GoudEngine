@@ -197,18 +197,6 @@ mod lua_tests {
     }
 
     #[test]
-    fn test_lua_enum_renderer_type_table_exists() {
-        let game = GoudGame::new(GameConfig::default()).expect("headless game should init");
-        game.execute_lua(
-            r#"
-            assert(renderer_type ~= nil, "renderer_type table should exist")
-            "#,
-            "test_enum_renderer_type",
-        )
-        .expect("renderer_type enum table should exist");
-    }
-
-    #[test]
     fn test_lua_enum_blend_mode_table_exists() {
         let game = GoudGame::new(GameConfig::default()).expect("headless game should init");
         game.execute_lua(

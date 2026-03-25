@@ -73,7 +73,7 @@ KOTLIN_TYPES = {
 
 ENUM_SUBDIRS = {
     "Key": "input", "MouseButton": "input",
-    "RendererType": "core", "OverlayCorner": "core", "DebuggerStepKind": "core",
+    "OverlayCorner": "core", "DebuggerStepKind": "core",
     "PlaybackMode": "animation", "BodyType": "physics", "ShapeType": "physics",
     "PhysicsBackend2D": "physics", "RenderBackendKind": "core", "WindowBackendKind": "core",
     "EasingType": "animation", "NetworkProtocol": "network", "TransitionType": "animation",
