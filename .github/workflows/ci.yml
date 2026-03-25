@@ -57,6 +57,12 @@ jobs:
       with:
         python-version: '3.11'
 
+    - name: Validate architecture docs
+      run: python3 scripts/generate-architecture-docs.py --check
+
+    - name: Validate AGENTS.md constraints
+      run: bash scripts/check-agents-md.sh
+
     - name: Run SDK codegen (generates .g.rs files needed by workspace)
       run: |
         python codegen/validate_coverage.py
@@ -79,12 +85,6 @@ jobs:
           sdks/typescript/native/src/lib.rs
         if-no-files-found: error
         retention-days: 1
-
-    - name: Validate architecture docs
-      run: python3 scripts/generate-architecture-docs.py --check
-
-    - name: Validate AGENTS.md constraints
-      run: bash scripts/check-agents-md.sh
 
     - name: Quick Rust check
       run: cargo check --workspace --all-targets
