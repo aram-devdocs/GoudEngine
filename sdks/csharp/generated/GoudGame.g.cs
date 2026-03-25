@@ -714,6 +714,54 @@ namespace GoudEngine
             return NativeMethods.goud_renderer3d_set_fog_enabled(_ctx, enabled);
         }
 
+        /// <summary>Enables or disables frustum culling</summary>
+        public int SetFrustumCullingEnabled(bool enabled)
+        {
+            return NativeMethods.goud_renderer3d_set_frustum_culling_enabled(_ctx, enabled);
+        }
+
+        /// <summary>Sets the skinning mode (0=CPU, 1=GPU)</summary>
+        public int SetSkinningMode(uint mode)
+        {
+            return NativeMethods.goud_renderer3d_set_skinning_mode(_ctx, mode);
+        }
+
+        /// <summary>Enables or disables material sorting</summary>
+        public int SetMaterialSortingEnabled(bool enabled)
+        {
+            return NativeMethods.goud_renderer3d_set_material_sorting_enabled(_ctx, enabled);
+        }
+
+        /// <summary>Enables or disables animation LOD</summary>
+        public int SetAnimationLodEnabled(bool enabled)
+        {
+            return NativeMethods.goud_renderer3d_set_animation_lod_enabled(_ctx, enabled);
+        }
+
+        /// <summary>Enables or disables shared animation evaluation</summary>
+        public int SetSharedAnimationEval(bool enabled)
+        {
+            return NativeMethods.goud_renderer3d_set_shared_animation_eval(_ctx, enabled);
+        }
+
+        /// <summary>Returns the number of draw calls last frame</summary>
+        public int GetDrawCalls()
+        {
+            return NativeMethods.goud_renderer3d_get_draw_calls(_ctx);
+        }
+
+        /// <summary>Returns the number of visible objects last frame</summary>
+        public int GetVisibleObjectCount()
+        {
+            return NativeMethods.goud_renderer3d_get_visible_object_count(_ctx);
+        }
+
+        /// <summary>Returns the number of culled objects last frame</summary>
+        public int GetCulledObjectCount()
+        {
+            return NativeMethods.goud_renderer3d_get_culled_object_count(_ctx);
+        }
+
         /// <summary>Renders all 3D objects</summary>
         public bool Render3D()
         {

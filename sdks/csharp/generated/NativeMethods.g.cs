@@ -795,6 +795,30 @@ namespace GoudEngine
         public static extern bool goud_renderer3d_set_fog_enabled(GoudContextId context_id, [MarshalAs(UnmanagedType.U1)] bool enabled);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_set_frustum_culling_enabled(GoudContextId context_id, [MarshalAs(UnmanagedType.U1)] bool enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_set_skinning_mode(GoudContextId context_id, uint mode);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_set_material_sorting_enabled(GoudContextId context_id, [MarshalAs(UnmanagedType.U1)] bool enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_set_animation_lod_enabled(GoudContextId context_id, [MarshalAs(UnmanagedType.U1)] bool enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_set_shared_animation_eval(GoudContextId context_id, [MarshalAs(UnmanagedType.U1)] bool enabled);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_get_draw_calls(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_get_visible_object_count(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_get_culled_object_count(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
         public static extern bool goud_renderer3d_render(GoudContextId context_id);
 

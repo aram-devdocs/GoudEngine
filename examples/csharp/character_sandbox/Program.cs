@@ -166,7 +166,11 @@ class Program
         Console.WriteLine("  F          Toggle fog");
         Console.WriteLine("  =/+        Spawn 10 more NPCs");
         Console.WriteLine("  -          Remove 10 NPCs");
-        Console.WriteLine("  0-9        Play animation  0- 9");
+        Console.WriteLine("  1          Toggle frustum culling");
+        Console.WriteLine("  2          Toggle GPU/CPU skinning");
+        Console.WriteLine("  3          Toggle material sorting");
+        Console.WriteLine("  4          Toggle animation LOD");
+        Console.WriteLine("  5          Toggle shared anim eval");
         Console.WriteLine("  Shift+0-9  Play animation 10-19");
         Console.WriteLine("  Ctrl+0-9   Play animation 20-29");
         Console.WriteLine("  Alt+0-9    Play animation 30-39");
@@ -328,6 +332,11 @@ class Program
         // --- State ---
         bool gridEnabled = true;
         bool fogEnabled  = true;
+        bool frustumCullingEnabled = true;
+        bool gpuSkinning = true;       // 0=CPU, 1=GPU; starts GPU
+        bool materialSortingEnabled = true;
+        bool animationLodEnabled = true;
+        bool sharedAnimEvalEnabled = true;
 
         int frameCount = 0;
         float fpsTimer = 0f;
@@ -392,46 +401,75 @@ class Program
                 }
             }
 
-            // --- Direct animation playback (number keys) ---
+            // --- Profiling toggles (digit keys 1-5 without modifier) ---
             {
-                // Determine the offset based on held modifier key.
-                int animOffset = -1;
                 bool shift = game.IsKeyPressed(Keys.LeftShift) || game.IsKeyPressed(Keys.RightShift);
                 bool ctrl  = game.IsKeyPressed(Keys.LeftControl) || game.IsKeyPressed(Keys.RightControl);
                 bool alt   = game.IsKeyPressed(Keys.LeftAlt) || game.IsKeyPressed(Keys.RightAlt);
                 bool tab   = game.IsKeyPressed(Keys.Tab);
+                bool noMod = !shift && !ctrl && !alt && !tab;
 
+                if (noMod && game.IsKeyJustPressed(Keys.Digit1))
+                {
+                    frustumCullingEnabled = !frustumCullingEnabled;
+                    game.SetFrustumCullingEnabled(frustumCullingEnabled);
+                    Console.WriteLine($"Frustum culling {(frustumCullingEnabled ? "ON" : "OFF")}");
+                }
+                if (noMod && game.IsKeyJustPressed(Keys.Digit2))
+                {
+                    gpuSkinning = !gpuSkinning;
+                    game.SetSkinningMode(gpuSkinning ? 1u : 0u);
+                    Console.WriteLine($"Skinning mode: {(gpuSkinning ? "GPU" : "CPU")}");
+                }
+                if (noMod && game.IsKeyJustPressed(Keys.Digit3))
+                {
+                    materialSortingEnabled = !materialSortingEnabled;
+                    game.SetMaterialSortingEnabled(materialSortingEnabled);
+                    Console.WriteLine($"Material sorting {(materialSortingEnabled ? "ON" : "OFF")}");
+                }
+                if (noMod && game.IsKeyJustPressed(Keys.Digit4))
+                {
+                    animationLodEnabled = !animationLodEnabled;
+                    game.SetAnimationLodEnabled(animationLodEnabled);
+                    Console.WriteLine($"Animation LOD {(animationLodEnabled ? "ON" : "OFF")}");
+                }
+                if (noMod && game.IsKeyJustPressed(Keys.Digit5))
+                {
+                    sharedAnimEvalEnabled = !sharedAnimEvalEnabled;
+                    game.SetSharedAnimationEval(sharedAnimEvalEnabled);
+                    Console.WriteLine($"Shared anim eval {(sharedAnimEvalEnabled ? "ON" : "OFF")}");
+                }
+
+                // --- Direct animation playback (modifier + digit keys) ---
+                int animOffset = -1;
                 if (tab)       animOffset = 40;
                 else if (alt)  animOffset = 30;
                 else if (ctrl) animOffset = 20;
                 else if (shift) animOffset = 10;
 
-                // Only check digit keys when a modifier is held (plain digits
-                // without a modifier are left for future use / no conflict with
-                // WASD movement).  For the base 0-9 range we also listen when
-                // NO modifier is held.
-                if (animOffset < 0) animOffset = 0;
-
-                Keys[] digitKeys = {
-                    Keys.Digit0, Keys.Digit1, Keys.Digit2, Keys.Digit3, Keys.Digit4,
-                    Keys.Digit5, Keys.Digit6, Keys.Digit7, Keys.Digit8, Keys.Digit9,
-                };
-                for (int d = 0; d < digitKeys.Length; d++)
+                if (animOffset >= 0)
                 {
-                    if (game.IsKeyJustPressed(digitKeys[d]))
+                    Keys[] digitKeys = {
+                        Keys.Digit0, Keys.Digit1, Keys.Digit2, Keys.Digit3, Keys.Digit4,
+                        Keys.Digit5, Keys.Digit6, Keys.Digit7, Keys.Digit8, Keys.Digit9,
+                    };
+                    for (int d = 0; d < digitKeys.Length; d++)
                     {
-                        int idx = animOffset + d;
-                        if (idx < animCount)
+                        if (game.IsKeyJustPressed(digitKeys[d]))
                         {
-                            string name = game.GetAnimationName(baseModel, idx);
-                            Console.WriteLine($"Playing animation [{idx}] {name}");
-                            game.TransitionAnimation(baseModel, idx, animTransitionTime);
+                            int idx = animOffset + d;
+                            if (idx < animCount)
+                            {
+                                string name = game.GetAnimationName(baseModel, idx);
+                                Console.WriteLine($"Playing animation [{idx}] {name}");
+                                game.TransitionAnimation(baseModel, idx, animTransitionTime);
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Animation index {idx} out of range (max {animCount - 1})");
+                            }
+                            break;
                         }
-                        else
-                        {
-                            Console.WriteLine($"Animation index {idx} out of range (max {animCount - 1})");
-                        }
-                        break;
                     }
                 }
             }
@@ -612,7 +650,11 @@ class Program
             if (fpsTimer >= 1.0f)
             {
                 lastFps = frameCount / fpsTimer;
-                Console.Write($"\rFPS: {lastFps:F1}  NPCs: {npcs.Count}  Player: ({playerX:F1}, {playerZ:F1})  Anim: {currentAnim}   ");
+                int draws = game.GetDrawCalls();
+                int visible = game.GetVisibleObjectCount();
+                int culled = game.GetCulledObjectCount();
+                int total = visible + culled;
+                Console.Write($"\rFPS: {lastFps:F1}  NPCs: {npcs.Count}  Draws: {draws}  Visible: {visible}/{total}   ");
                 frameCount = 0;
                 fpsTimer = 0f;
             }

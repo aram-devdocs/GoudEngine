@@ -2159,6 +2159,46 @@ bool goud_renderer3d_render(struct GoudContextId context_id);
 bool goud_renderer3d_render_all(struct GoudContextId context_id);
 
 /**
+ * Enables or disables frustum culling.
+ */
+int32_t goud_renderer3d_set_frustum_culling_enabled(struct GoudContextId context_id, bool enabled);
+
+/**
+ * Sets the skinning mode (0 = CPU, 1 = GPU).
+ */
+int32_t goud_renderer3d_set_skinning_mode(struct GoudContextId context_id, uint32_t mode);
+
+/**
+ * Enables or disables material sorting.
+ */
+int32_t goud_renderer3d_set_material_sorting_enabled(struct GoudContextId context_id, bool enabled);
+
+/**
+ * Enables or disables animation LOD (distance-based update throttling).
+ */
+int32_t goud_renderer3d_set_animation_lod_enabled(struct GoudContextId context_id, bool enabled);
+
+/**
+ * Enables or disables shared animation evaluation (cache identical poses).
+ */
+int32_t goud_renderer3d_set_shared_animation_eval(struct GoudContextId context_id, bool enabled);
+
+/**
+ * Returns the number of draw calls last frame, or -1 on error.
+ */
+int32_t goud_renderer3d_get_draw_calls(struct GoudContextId context_id);
+
+/**
+ * Returns the number of visible objects last frame, or -1 on error.
+ */
+int32_t goud_renderer3d_get_visible_object_count(struct GoudContextId context_id);
+
+/**
+ * Returns the number of culled objects last frame, or -1 on error.
+ */
+int32_t goud_renderer3d_get_culled_object_count(struct GoudContextId context_id);
+
+/**
  * Adds a light to the scene.
  */
 uint32_t goud_renderer3d_add_light(struct GoudContextId context_id, int32_t light_type, float pos_x, float pos_y, float pos_z, float dir_x, float dir_y, float dir_z, float r, float g, float b, float intensity, float range, float spot_angle);
