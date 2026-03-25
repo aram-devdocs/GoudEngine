@@ -237,16 +237,16 @@ class Program
         uint sceneId = game.CreateScene("main");
         game.SetCurrentScene(sceneId);
 
-        game.ConfigureSkybox(enabled: true, r: 0.56f, g: 0.71f, b: 0.90f, a: 1.0f);
-        game.ConfigureFog(enabled: false, r: 0.56f, g: 0.71f, b: 0.90f, density: 0.005f);
+        game.ConfigureSkybox(enabled: true, r: 0.78f, g: 0.86f, b: 0.96f, a: 1.0f);
+        game.ConfigureFog(enabled: false, r: 0.78f, g: 0.86f, b: 0.96f, density: 0.0035f);
         game.ConfigureGrid(enabled: false, size: 200.0f, divisions: 100);
 
         uint sunLight = game.AddLight(
             0,
             0f, 25f, 0f,
             0f, -1f, 0f,
-            1.0f, 0.97f, 0.90f,
-            4.5f, 120f, 0f
+            1.0f, 0.98f, 0.93f,
+            6.5f, 120f, 0f
         );
         game.AddLightToScene(sceneId, sunLight);
 
@@ -254,17 +254,26 @@ class Program
             0,
             -20f, 15f, 20f,
             0f, -1f, 0f,
-            0.55f, 0.62f, 0.72f,
-            2.0f, 120f, 0f
+            0.72f, 0.78f, 0.88f,
+            3.5f, 120f, 0f
         );
         game.AddLightToScene(sceneId, fillLight);
+
+        uint rimLight = game.AddLight(
+            0,
+            24f, 18f, -18f,
+            0f, -1f, 0f,
+            0.92f, 0.86f, 0.74f,
+            2.25f, 120f, 0f
+        );
+        game.AddLightToScene(sceneId, rimLight);
 
         uint groundPlane = game.CreatePlane(0, 200f, 200f);
         game.SetObjectPosition(groundPlane, 0f, 0f, 0f);
 
         uint groundMat = game.CreateMaterial(
             0,
-            0.43f, 0.62f, 0.34f, 1f,
+            0.50f, 0.68f, 0.40f, 1f,
             16f,
             0f, 0.8f, 0.1f
         );
