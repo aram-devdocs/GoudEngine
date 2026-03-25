@@ -31,7 +31,6 @@ ensure_target() {
 
 mkdir -p "${DEVICE_DIR}" "${SIMULATOR_DIR}" "${INCLUDE_DIR}"
 
-ensure_command cargo-lipo "cargo install cargo-lipo --locked"
 ensure_target aarch64-apple-ios
 ensure_target aarch64-apple-ios-sim
 ensure_target x86_64-apple-ios
