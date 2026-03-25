@@ -332,7 +332,7 @@ SDKs call FFI functions. They never implement game logic, math, physics, or rend
 | Swift | `sdks/swift/` |
 | TypeScript | `sdks/typescript/` |
 
-**Total: 10 SDK languages**
+Total: 10 SDK languages.
 <!-- /gen:sdk-table -->
 
 ### Rust SDK
@@ -386,7 +386,7 @@ Codegen produces all files under `sdks/*/generated/`. Do not edit them by hand.
 | `gen_ts_node.py` | TypeScript Node.js bindings |
 | `gen_ts_web.py` | TypeScript Web/WASM bindings |
 
-**Total: 12 generators**
+Total: 12 generators.
 <!-- /gen:codegen-generators -->
 
 ### Pipeline

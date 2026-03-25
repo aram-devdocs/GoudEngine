@@ -122,7 +122,7 @@ def collect_sdk_table() -> str:
         lines.append(f"| {display} | `{path}` |")
 
     lines.append("")
-    lines.append(f"**Total: {len(sdks)} SDK languages**")
+    lines.append(f"Total: {len(sdks)} SDK languages.")
     return "\n".join(lines)
 
 
@@ -157,7 +157,7 @@ def collect_codegen_generators() -> str:
         lines.append(f"| `{gen.name}` | {desc} |")
 
     lines.append("")
-    lines.append(f"**Total: {len(generators)} generators**")
+    lines.append(f"Total: {len(generators)} generators.")
     return "\n".join(lines)
 
 
