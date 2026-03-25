@@ -1,8 +1,8 @@
 //! OpenGL render state management and sub-trait forwarding helpers.
 use super::{
     super::{
-        BackendInfo, BlendFactor, BufferOps, ClearOps, CullFace, FrameOps, RenderBackend, ShaderOps,
-        StateOps, TextureOps,
+        BackendInfo, BlendFactor, BufferOps, ClearOps, CullFace, FrameOps, RenderBackend,
+        ShaderOps, StateOps, TextureOps,
     },
     backend::OpenGLBackend,
     conversions, gl_check_debug,
