@@ -1309,3 +1309,49 @@ public struct TextCmd: Equatable {
     }
 
 }
+
+/// Axis-aligned bounding box in 3D space
+public struct BoundingBox3D: Equatable {
+    /// Minimum X coordinate
+    public var minX: Float
+    /// Minimum Y coordinate
+    public var minY: Float
+    /// Minimum Z coordinate
+    public var minZ: Float
+    /// Maximum X coordinate
+    public var maxX: Float
+    /// Maximum Y coordinate
+    public var maxY: Float
+    /// Maximum Z coordinate
+    public var maxZ: Float
+
+    public init(minX: Float = 0, minY: Float = 0, minZ: Float = 0, maxX: Float = 0, maxY: Float = 0, maxZ: Float = 0) {
+        self.minX = minX
+        self.minY = minY
+        self.minZ = minZ
+        self.maxX = maxX
+        self.maxY = maxY
+        self.maxZ = maxZ
+    }
+
+}
+
+/// Result of a character controller move operation
+public struct CharacterMoveResult: Equatable {
+    /// Resulting X position
+    public var x: Float
+    /// Resulting Y position
+    public var y: Float
+    /// Resulting Z position
+    public var z: Float
+    /// Whether the character is on the ground
+    public var grounded: Bool
+
+    public init(x: Float = 0, y: Float = 0, z: Float = 0, grounded: Bool = false) {
+        self.x = x
+        self.y = y
+        self.z = z
+        self.grounded = grounded
+    }
+
+}

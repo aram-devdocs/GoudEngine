@@ -105,21 +105,24 @@ use goud_engine::ffi::renderer3d::{
     goud_renderer3d_create_sphere, goud_renderer3d_destroy_model, goud_renderer3d_destroy_object,
     goud_renderer3d_destroy_scene, goud_renderer3d_get_animation_count,
     goud_renderer3d_get_animation_name, goud_renderer3d_get_animation_progress,
-    goud_renderer3d_get_current_scene, goud_renderer3d_get_model_bounding_box,
-    goud_renderer3d_get_model_mesh_count, goud_renderer3d_instantiate_model,
-    goud_renderer3d_is_animation_playing, goud_renderer3d_load_model,
-    goud_renderer3d_play_animation, goud_renderer3d_remove_light,
+    goud_renderer3d_get_culled_object_count, goud_renderer3d_get_current_scene,
+    goud_renderer3d_get_draw_calls, goud_renderer3d_get_model_bounding_box,
+    goud_renderer3d_get_model_mesh_count, goud_renderer3d_get_visible_object_count,
+    goud_renderer3d_instantiate_model, goud_renderer3d_is_animation_playing,
+    goud_renderer3d_load_model, goud_renderer3d_play_animation, goud_renderer3d_remove_light,
     goud_renderer3d_remove_light_from_scene, goud_renderer3d_remove_model_from_scene,
     goud_renderer3d_remove_object_from_scene, goud_renderer3d_render,
-    goud_renderer3d_set_animation_speed, goud_renderer3d_set_camera_position,
-    goud_renderer3d_set_camera_rotation, goud_renderer3d_set_current_scene,
-    goud_renderer3d_set_fog_enabled, goud_renderer3d_set_grid_enabled,
-    goud_renderer3d_set_model_material, goud_renderer3d_set_model_position,
-    goud_renderer3d_set_model_rotation, goud_renderer3d_set_model_scale,
-    goud_renderer3d_set_object_position, goud_renderer3d_set_object_rotation,
-    goud_renderer3d_set_object_scale, goud_renderer3d_stop_animation,
-    goud_renderer3d_transition_animation, goud_renderer3d_update_animations,
-    goud_renderer3d_update_light,
+    goud_renderer3d_set_animation_lod_enabled, goud_renderer3d_set_animation_speed,
+    goud_renderer3d_set_camera_position, goud_renderer3d_set_camera_rotation,
+    goud_renderer3d_set_current_scene, goud_renderer3d_set_fog_enabled,
+    goud_renderer3d_set_frustum_culling_enabled, goud_renderer3d_set_grid_enabled,
+    goud_renderer3d_set_material_sorting_enabled, goud_renderer3d_set_model_material,
+    goud_renderer3d_set_model_position, goud_renderer3d_set_model_rotation,
+    goud_renderer3d_set_model_scale, goud_renderer3d_set_object_position,
+    goud_renderer3d_set_object_rotation, goud_renderer3d_set_object_scale,
+    goud_renderer3d_set_shared_animation_eval, goud_renderer3d_set_skinning_mode,
+    goud_renderer3d_stop_animation, goud_renderer3d_transition_animation,
+    goud_renderer3d_update_animations, goud_renderer3d_update_light,
 };
 use goud_engine::ffi::scene::goud_scene_set_active;
 use goud_engine::ffi::scene_loading::{goud_scene_load, goud_scene_unload};
@@ -2301,6 +2304,48 @@ impl GoudGame {
     #[napi]
     pub fn render_3d(&self) -> bool {
         goud_renderer3d_render(self.context_id)
+    }
+
+    // =========================================================================
+    // Render Config
+    // =========================================================================
+
+    #[napi]
+    pub fn set_frustum_culling_enabled(&self, enabled: bool) -> i32 {
+        goud_renderer3d_set_frustum_culling_enabled(self.context_id, enabled)
+    }
+    #[napi]
+    pub fn set_skinning_mode(&self, mode: u32) -> i32 {
+        goud_renderer3d_set_skinning_mode(self.context_id, mode)
+    }
+    #[napi]
+    pub fn set_material_sorting_enabled(&self, enabled: bool) -> i32 {
+        goud_renderer3d_set_material_sorting_enabled(self.context_id, enabled)
+    }
+    #[napi]
+    pub fn set_animation_lod_enabled(&self, enabled: bool) -> i32 {
+        goud_renderer3d_set_animation_lod_enabled(self.context_id, enabled)
+    }
+    #[napi]
+    pub fn set_shared_animation_eval(&self, enabled: bool) -> i32 {
+        goud_renderer3d_set_shared_animation_eval(self.context_id, enabled)
+    }
+
+    // =========================================================================
+    // Stats
+    // =========================================================================
+
+    #[napi]
+    pub fn get_draw_calls(&self) -> i32 {
+        goud_renderer3d_get_draw_calls(self.context_id)
+    }
+    #[napi]
+    pub fn get_visible_object_count(&self) -> i32 {
+        goud_renderer3d_get_visible_object_count(self.context_id)
+    }
+    #[napi]
+    pub fn get_culled_object_count(&self) -> i32 {
+        goud_renderer3d_get_culled_object_count(self.context_id)
     }
 
     // =========================================================================

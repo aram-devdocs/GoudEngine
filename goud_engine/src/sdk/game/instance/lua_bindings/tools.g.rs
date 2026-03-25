@@ -92,7 +92,13 @@ use crate::ffi::physics::goud_physics3d_apply_impulse;
 #[cfg(feature = "rapier3d")]
 use crate::ffi::physics::goud_physics3d_create;
 #[cfg(feature = "rapier3d")]
+use crate::ffi::physics::goud_physics3d_create_character_controller;
+#[cfg(feature = "rapier3d")]
 use crate::ffi::physics::goud_physics3d_destroy;
+#[cfg(feature = "rapier3d")]
+use crate::ffi::physics::goud_physics3d_destroy_character_controller;
+#[cfg(feature = "rapier3d")]
+use crate::ffi::physics::goud_physics3d_is_character_grounded;
 #[cfg(feature = "rapier3d")]
 use crate::ffi::physics::goud_physics3d_remove_body;
 #[cfg(feature = "rapier3d")]
@@ -155,6 +161,11 @@ use crate::ffi::providers::goud_provider_check_hot_swap_shortcut;
 use crate::ffi::renderer3d::goud_renderer3d_add_bloom_pass;
 use crate::ffi::renderer3d::goud_renderer3d_add_blur_pass;
 use crate::ffi::renderer3d::goud_renderer3d_add_color_grade_pass;
+use crate::ffi::renderer3d::goud_renderer3d_add_light_to_scene;
+use crate::ffi::renderer3d::goud_renderer3d_add_model_to_scene;
+use crate::ffi::renderer3d::goud_renderer3d_add_object_to_scene;
+use crate::ffi::renderer3d::goud_renderer3d_blend_animations;
+use crate::ffi::renderer3d::goud_renderer3d_clear_current_scene;
 use crate::ffi::renderer3d::goud_renderer3d_configure_fog;
 use crate::ffi::renderer3d::goud_renderer3d_configure_grid;
 use crate::ffi::renderer3d::goud_renderer3d_configure_skybox;
@@ -163,25 +174,55 @@ use crate::ffi::renderer3d::goud_renderer3d_create_cylinder;
 use crate::ffi::renderer3d::goud_renderer3d_create_material;
 use crate::ffi::renderer3d::goud_renderer3d_create_plane;
 use crate::ffi::renderer3d::goud_renderer3d_create_sphere;
+use crate::ffi::renderer3d::goud_renderer3d_destroy_model;
 use crate::ffi::renderer3d::goud_renderer3d_destroy_object;
+use crate::ffi::renderer3d::goud_renderer3d_destroy_scene;
+use crate::ffi::renderer3d::goud_renderer3d_get_animation_count;
+use crate::ffi::renderer3d::goud_renderer3d_get_animation_progress;
+use crate::ffi::renderer3d::goud_renderer3d_get_culled_object_count;
+use crate::ffi::renderer3d::goud_renderer3d_get_current_scene;
+use crate::ffi::renderer3d::goud_renderer3d_get_draw_calls;
+use crate::ffi::renderer3d::goud_renderer3d_get_model_mesh_count;
 use crate::ffi::renderer3d::goud_renderer3d_get_object_material;
+use crate::ffi::renderer3d::goud_renderer3d_get_visible_object_count;
+use crate::ffi::renderer3d::goud_renderer3d_instantiate_model;
+use crate::ffi::renderer3d::goud_renderer3d_is_animation_playing;
+use crate::ffi::renderer3d::goud_renderer3d_play_animation;
 use crate::ffi::renderer3d::goud_renderer3d_postprocess_pass_count;
 use crate::ffi::renderer3d::goud_renderer3d_remove_light;
+use crate::ffi::renderer3d::goud_renderer3d_remove_light_from_scene;
 use crate::ffi::renderer3d::goud_renderer3d_remove_material;
+use crate::ffi::renderer3d::goud_renderer3d_remove_model_from_scene;
+use crate::ffi::renderer3d::goud_renderer3d_remove_object_from_scene;
 use crate::ffi::renderer3d::goud_renderer3d_remove_postprocess_pass;
 use crate::ffi::renderer3d::goud_renderer3d_remove_skinned_mesh;
 use crate::ffi::renderer3d::goud_renderer3d_render;
+use crate::ffi::renderer3d::goud_renderer3d_set_animation_lod_enabled;
+use crate::ffi::renderer3d::goud_renderer3d_set_animation_speed;
 use crate::ffi::renderer3d::goud_renderer3d_set_camera_position;
 use crate::ffi::renderer3d::goud_renderer3d_set_camera_rotation;
+use crate::ffi::renderer3d::goud_renderer3d_set_current_scene;
 use crate::ffi::renderer3d::goud_renderer3d_set_fog_enabled;
+use crate::ffi::renderer3d::goud_renderer3d_set_frustum_culling_enabled;
 use crate::ffi::renderer3d::goud_renderer3d_set_grid_enabled;
+use crate::ffi::renderer3d::goud_renderer3d_set_material_sorting_enabled;
+use crate::ffi::renderer3d::goud_renderer3d_set_model_material;
+use crate::ffi::renderer3d::goud_renderer3d_set_model_position;
+use crate::ffi::renderer3d::goud_renderer3d_set_model_rotation;
+use crate::ffi::renderer3d::goud_renderer3d_set_model_scale;
 use crate::ffi::renderer3d::goud_renderer3d_set_object_material;
 use crate::ffi::renderer3d::goud_renderer3d_set_object_position;
 use crate::ffi::renderer3d::goud_renderer3d_set_object_rotation;
 use crate::ffi::renderer3d::goud_renderer3d_set_object_scale;
+use crate::ffi::renderer3d::goud_renderer3d_set_object_static;
+use crate::ffi::renderer3d::goud_renderer3d_set_shared_animation_eval;
 use crate::ffi::renderer3d::goud_renderer3d_set_skinned_mesh_position;
 use crate::ffi::renderer3d::goud_renderer3d_set_skinned_mesh_rotation;
 use crate::ffi::renderer3d::goud_renderer3d_set_skinned_mesh_scale;
+use crate::ffi::renderer3d::goud_renderer3d_set_skinning_mode;
+use crate::ffi::renderer3d::goud_renderer3d_stop_animation;
+use crate::ffi::renderer3d::goud_renderer3d_transition_animation;
+use crate::ffi::renderer3d::goud_renderer3d_update_animations;
 use crate::ffi::renderer3d::goud_renderer3d_update_material;
 use crate::ffi::renderer::goud_renderer_clear_depth;
 use crate::ffi::renderer::goud_renderer_disable_blending;
@@ -315,6 +356,11 @@ pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> 
         Ok(goud_renderer3d_set_object_scale(ctx, arg0 as u32, arg1 as f32, arg2 as f32, arg3 as f32))
     })?;
     tbl.set("set_object_scale", f_set_object_scale)?;
+    // GoudGame.setObjectStatic
+    let f_set_object_static = lua.create_function(move |_, (arg0, arg1): (i64, bool)| {
+        Ok(goud_renderer3d_set_object_static(ctx, arg0 as u32, arg1))
+    })?;
+    tbl.set("set_object_static", f_set_object_static)?;
     // GoudGame.destroyObject
     let f_destroy_object = lua.create_function(move |_, arg0: i64| {
         Ok(goud_renderer3d_destroy_object(ctx, arg0 as u32))
@@ -360,6 +406,46 @@ pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> 
         Ok(goud_renderer3d_set_fog_enabled(ctx, arg0))
     })?;
     tbl.set("set_fog_enabled", f_set_fog_enabled)?;
+    // GoudGame.setFrustumCullingEnabled
+    let f_set_frustum_culling_enabled = lua.create_function(move |_, arg0: bool| {
+        Ok(goud_renderer3d_set_frustum_culling_enabled(ctx, arg0) as i64)
+    })?;
+    tbl.set("set_frustum_culling_enabled", f_set_frustum_culling_enabled)?;
+    // GoudGame.setSkinningMode
+    let f_set_skinning_mode = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_renderer3d_set_skinning_mode(ctx, arg0 as u32) as i64)
+    })?;
+    tbl.set("set_skinning_mode", f_set_skinning_mode)?;
+    // GoudGame.setMaterialSortingEnabled
+    let f_set_material_sorting_enabled = lua.create_function(move |_, arg0: bool| {
+        Ok(goud_renderer3d_set_material_sorting_enabled(ctx, arg0) as i64)
+    })?;
+    tbl.set("set_material_sorting_enabled", f_set_material_sorting_enabled)?;
+    // GoudGame.setAnimationLodEnabled
+    let f_set_animation_lod_enabled = lua.create_function(move |_, arg0: bool| {
+        Ok(goud_renderer3d_set_animation_lod_enabled(ctx, arg0) as i64)
+    })?;
+    tbl.set("set_animation_lod_enabled", f_set_animation_lod_enabled)?;
+    // GoudGame.setSharedAnimationEval
+    let f_set_shared_animation_eval = lua.create_function(move |_, arg0: bool| {
+        Ok(goud_renderer3d_set_shared_animation_eval(ctx, arg0) as i64)
+    })?;
+    tbl.set("set_shared_animation_eval", f_set_shared_animation_eval)?;
+    // GoudGame.getDrawCalls
+    let f_get_draw_calls = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_draw_calls(ctx) as i64)
+    })?;
+    tbl.set("get_draw_calls", f_get_draw_calls)?;
+    // GoudGame.getVisibleObjectCount
+    let f_get_visible_object_count = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_visible_object_count(ctx) as i64)
+    })?;
+    tbl.set("get_visible_object_count", f_get_visible_object_count)?;
+    // GoudGame.getCulledObjectCount
+    let f_get_culled_object_count = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_culled_object_count(ctx) as i64)
+    })?;
+    tbl.set("get_culled_object_count", f_get_culled_object_count)?;
     // GoudGame.render3D
     let f_render3_d = lua.create_function(move |_, _: ()| {
         Ok(goud_renderer3d_render(ctx))
@@ -788,6 +874,136 @@ pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> 
         Ok(goud_fixed_timestep_set_max_steps(ctx, arg0 as u32))
     })?;
     tbl.set("set_max_fixed_steps", f_set_max_fixed_steps)?;
+    // GoudGame.destroyModel
+    let f_destroy_model = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_renderer3d_destroy_model(ctx, arg0 as u32))
+    })?;
+    tbl.set("destroy_model", f_destroy_model)?;
+    // GoudGame.instantiateModel
+    let f_instantiate_model = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_renderer3d_instantiate_model(ctx, arg0 as u32) as i64)
+    })?;
+    tbl.set("instantiate_model", f_instantiate_model)?;
+    // GoudGame.setModelMaterial
+    let f_set_model_material = lua.create_function(move |_, (arg0, arg1, arg2): (i64, i64, i64)| {
+        Ok(goud_renderer3d_set_model_material(ctx, arg0 as u32, arg1 as i32, arg2 as u32))
+    })?;
+    tbl.set("set_model_material", f_set_model_material)?;
+    // GoudGame.getModelMeshCount
+    let f_get_model_mesh_count = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_renderer3d_get_model_mesh_count(ctx, arg0 as u32) as i64)
+    })?;
+    tbl.set("get_model_mesh_count", f_get_model_mesh_count)?;
+    // GoudGame.setModelPosition
+    let f_set_model_position = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (i64, f64, f64, f64)| {
+        Ok(goud_renderer3d_set_model_position(ctx, arg0 as u32, arg1 as f32, arg2 as f32, arg3 as f32))
+    })?;
+    tbl.set("set_model_position", f_set_model_position)?;
+    // GoudGame.setModelRotation
+    let f_set_model_rotation = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (i64, f64, f64, f64)| {
+        Ok(goud_renderer3d_set_model_rotation(ctx, arg0 as u32, arg1 as f32, arg2 as f32, arg3 as f32))
+    })?;
+    tbl.set("set_model_rotation", f_set_model_rotation)?;
+    // GoudGame.setModelScale
+    let f_set_model_scale = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (i64, f64, f64, f64)| {
+        Ok(goud_renderer3d_set_model_scale(ctx, arg0 as u32, arg1 as f32, arg2 as f32, arg3 as f32))
+    })?;
+    tbl.set("set_model_scale", f_set_model_scale)?;
+    // GoudGame.getAnimationCount
+    let f_get_animation_count = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_renderer3d_get_animation_count(ctx, arg0 as u32) as i64)
+    })?;
+    tbl.set("get_animation_count", f_get_animation_count)?;
+    // GoudGame.playAnimation
+    let f_play_animation = lua.create_function(move |_, (arg0, arg1, arg2): (i64, i64, bool)| {
+        Ok(goud_renderer3d_play_animation(ctx, arg0 as u32, arg1 as i32, arg2))
+    })?;
+    tbl.set("play_animation", f_play_animation)?;
+    // GoudGame.stopAnimation
+    let f_stop_animation = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_renderer3d_stop_animation(ctx, arg0 as u32))
+    })?;
+    tbl.set("stop_animation", f_stop_animation)?;
+    // GoudGame.setAnimationSpeed
+    let f_set_animation_speed = lua.create_function(move |_, (arg0, arg1): (i64, f64)| {
+        Ok(goud_renderer3d_set_animation_speed(ctx, arg0 as u32, arg1 as f32))
+    })?;
+    tbl.set("set_animation_speed", f_set_animation_speed)?;
+    // GoudGame.blendAnimations
+    let f_blend_animations = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (i64, i64, i64, f64)| {
+        Ok(goud_renderer3d_blend_animations(ctx, arg0 as u32, arg1 as i32, arg2 as i32, arg3 as f32))
+    })?;
+    tbl.set("blend_animations", f_blend_animations)?;
+    // GoudGame.transitionAnimation
+    let f_transition_animation = lua.create_function(move |_, (arg0, arg1, arg2): (i64, i64, f64)| {
+        Ok(goud_renderer3d_transition_animation(ctx, arg0 as u32, arg1 as i32, arg2 as f32))
+    })?;
+    tbl.set("transition_animation", f_transition_animation)?;
+    // GoudGame.isAnimationPlaying
+    let f_is_animation_playing = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_renderer3d_is_animation_playing(ctx, arg0 as u32))
+    })?;
+    tbl.set("is_animation_playing", f_is_animation_playing)?;
+    // GoudGame.getAnimationProgress
+    let f_get_animation_progress = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_renderer3d_get_animation_progress(ctx, arg0 as u32) as f64)
+    })?;
+    tbl.set("get_animation_progress", f_get_animation_progress)?;
+    // GoudGame.updateAnimations
+    let f_update_animations = lua.create_function(move |_, arg0: f64| {
+        Ok(goud_renderer3d_update_animations(ctx, arg0 as f32))
+    })?;
+    tbl.set("update_animations", f_update_animations)?;
+    // GoudGame.destroyScene
+    let f_destroy_scene = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_renderer3d_destroy_scene(ctx, arg0 as u32))
+    })?;
+    tbl.set("destroy_scene", f_destroy_scene)?;
+    // GoudGame.setCurrentScene
+    let f_set_current_scene = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_renderer3d_set_current_scene(ctx, arg0 as u32))
+    })?;
+    tbl.set("set_current_scene", f_set_current_scene)?;
+    // GoudGame.getCurrentScene
+    let f_get_current_scene = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_current_scene(ctx) as i64)
+    })?;
+    tbl.set("get_current_scene", f_get_current_scene)?;
+    // GoudGame.addObjectToScene
+    let f_add_object_to_scene = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
+        Ok(goud_renderer3d_add_object_to_scene(ctx, arg0 as u32, arg1 as u32))
+    })?;
+    tbl.set("add_object_to_scene", f_add_object_to_scene)?;
+    // GoudGame.removeObjectFromScene
+    let f_remove_object_from_scene = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
+        Ok(goud_renderer3d_remove_object_from_scene(ctx, arg0 as u32, arg1 as u32))
+    })?;
+    tbl.set("remove_object_from_scene", f_remove_object_from_scene)?;
+    // GoudGame.addModelToScene
+    let f_add_model_to_scene = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
+        Ok(goud_renderer3d_add_model_to_scene(ctx, arg0 as u32, arg1 as u32))
+    })?;
+    tbl.set("add_model_to_scene", f_add_model_to_scene)?;
+    // GoudGame.removeModelFromScene
+    let f_remove_model_from_scene = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
+        Ok(goud_renderer3d_remove_model_from_scene(ctx, arg0 as u32, arg1 as u32))
+    })?;
+    tbl.set("remove_model_from_scene", f_remove_model_from_scene)?;
+    // GoudGame.addLightToScene
+    let f_add_light_to_scene = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
+        Ok(goud_renderer3d_add_light_to_scene(ctx, arg0 as u32, arg1 as u32))
+    })?;
+    tbl.set("add_light_to_scene", f_add_light_to_scene)?;
+    // GoudGame.removeLightFromScene
+    let f_remove_light_from_scene = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
+        Ok(goud_renderer3d_remove_light_from_scene(ctx, arg0 as u32, arg1 as u32))
+    })?;
+    tbl.set("remove_light_from_scene", f_remove_light_from_scene)?;
+    // GoudGame.clearCurrentScene
+    let f_clear_current_scene = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_clear_current_scene(ctx))
+    })?;
+    tbl.set("clear_current_scene", f_clear_current_scene)?;
     globals.set("goud_game", tbl)?;
     Ok(())
 }
@@ -1176,6 +1392,21 @@ pub(crate) fn register_physics_world3_d_tools(lua: &Lua, ctx_id: u64) -> LuaResu
         Ok(goud_physics3d_set_timestep(ctx, arg0 as f32) as i64)
     })?;
     tbl.set("set_timestep", f_set_timestep)?;
+    // PhysicsWorld3D.createCharacterController
+    let f_create_character_controller = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4, arg5, arg6): (f64, f64, f64, f64, f64, f64, f64)| {
+        Ok(goud_physics3d_create_character_controller(ctx, arg0 as f32, arg1 as f32, arg2 as f32, arg3 as f32, arg4 as f32, arg5 as f32, arg6 as f32) as i64)
+    })?;
+    tbl.set("create_character_controller", f_create_character_controller)?;
+    // PhysicsWorld3D.isCharacterGrounded
+    let f_is_character_grounded = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_physics3d_is_character_grounded(ctx, arg0 as u64))
+    })?;
+    tbl.set("is_character_grounded", f_is_character_grounded)?;
+    // PhysicsWorld3D.destroyCharacterController
+    let f_destroy_character_controller = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_physics3d_destroy_character_controller(ctx, arg0 as u64) as i64)
+    })?;
+    tbl.set("destroy_character_controller", f_destroy_character_controller)?;
     globals.set("physics_world3_d", tbl)?;
     Ok(())
 }

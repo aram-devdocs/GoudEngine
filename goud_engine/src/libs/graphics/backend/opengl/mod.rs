@@ -24,6 +24,7 @@ mod gl_tests;
 mod render_target_ops;
 mod shader_ops;
 mod state;
+mod state_draw_ops;
 mod texture_ops;
 
 // Re-export the backend struct so existing code using `opengl::OpenGLBackend` still works.

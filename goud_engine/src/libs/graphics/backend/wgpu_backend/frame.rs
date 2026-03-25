@@ -1,9 +1,9 @@
 //! Sub-trait and RenderBackend implementations for `WgpuBackend`.
 use super::{
-    super::types::{BufferUsage, TextureFilter, TextureFormat, TextureWrap, VertexBufferBinding},
-    BlendFactor, BufferHandle, BufferOps, BufferType, CullFace, DepthFunc, DrawOps, DrawType,
-    FrameOps, FrameState, FrontFace, PipelineKey, PrimitiveTopology, ShaderHandle, ShaderOps,
-    StateOps, TextureHandle, TextureOps, VertexLayout, WgpuBackend,
+    super::types::{BufferUsage, TextureFilter, TextureFormat, TextureWrap},
+    BlendFactor, BufferHandle, BufferOps, BufferType, CullFace, DepthFunc, DrawType, FrameOps,
+    FrameState, FrontFace, PipelineKey, ShaderHandle, ShaderOps, StateOps, TextureHandle,
+    TextureOps, WgpuBackend,
 };
 use crate::libs::error::{GoudError, GoudResult};
 
@@ -63,15 +63,14 @@ impl FrameOps for WgpuBackend {
             if let Some(buf_handle) = cmd.storage_buffer {
                 if !self.storage_bind_group_cache.contains_key(&buf_handle) {
                     if let Some(meta) = self.buffers.get(&buf_handle) {
-                        let bg =
-                            self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                                label: Some("skinning-storage-bg"),
-                                layout: &self.storage_bind_group_layout,
-                                entries: &[wgpu::BindGroupEntry {
-                                    binding: 0,
-                                    resource: meta.buffer.as_entire_binding(),
-                                }],
-                            });
+                        let bg = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                            label: Some("skinning-storage-bg"),
+                            layout: &self.storage_bind_group_layout,
+                            entries: &[wgpu::BindGroupEntry {
+                                binding: 0,
+                                resource: meta.buffer.as_entire_binding(),
+                            }],
+                        });
                         self.storage_bind_group_cache.insert(buf_handle, bg);
                     }
                 }
@@ -454,77 +453,4 @@ impl ShaderOps for WgpuBackend {
     }
 }
 
-// ========================================================================
-// DrawOps
-// ========================================================================
-
-impl DrawOps for WgpuBackend {
-    fn set_vertex_attributes(&mut self, layout: &VertexLayout) {
-        self.set_vertex_attributes_impl(layout);
-    }
-
-    fn set_vertex_bindings(&mut self, bindings: &[VertexBufferBinding]) -> GoudResult<()> {
-        self.current_vertex_bindings = bindings.to_vec();
-        Ok(())
-    }
-
-    fn draw_arrays(
-        &mut self,
-        topology: PrimitiveTopology,
-        first: u32,
-        count: u32,
-    ) -> GoudResult<()> {
-        self.current_topology = topology;
-        self.record_draw(DrawType::Arrays { first, count })
-    }
-
-    fn draw_indexed(
-        &mut self,
-        topology: PrimitiveTopology,
-        count: u32,
-        offset: usize,
-    ) -> GoudResult<()> {
-        self.current_topology = topology;
-        self.record_draw(DrawType::Indexed { count, offset })
-    }
-
-    fn draw_indexed_u16(
-        &mut self,
-        topology: PrimitiveTopology,
-        count: u32,
-        offset: usize,
-    ) -> GoudResult<()> {
-        self.current_topology = topology;
-        self.record_draw(DrawType::IndexedU16 { count, offset })
-    }
-
-    fn draw_arrays_instanced(
-        &mut self,
-        topology: PrimitiveTopology,
-        first: u32,
-        count: u32,
-        instance_count: u32,
-    ) -> GoudResult<()> {
-        self.current_topology = topology;
-        self.record_draw(DrawType::ArraysInstanced {
-            first,
-            count,
-            instances: instance_count,
-        })
-    }
-
-    fn draw_indexed_instanced(
-        &mut self,
-        topology: PrimitiveTopology,
-        count: u32,
-        offset: usize,
-        instance_count: u32,
-    ) -> GoudResult<()> {
-        self.current_topology = topology;
-        self.record_draw(DrawType::IndexedInstanced {
-            count,
-            offset,
-            instances: instance_count,
-        })
-    }
-}
+// DrawOps is implemented in frame_draw_ops.rs

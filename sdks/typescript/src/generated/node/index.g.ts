@@ -515,6 +515,11 @@ export class GoudGame implements IGoudGame {
     return this.native.setObjectScale(objectId, x, y, z);
   }
 
+  /** Marks a 3D object as static or dynamic for batching optimisation */
+  setObjectStatic(objectId: number, isStatic: boolean): boolean {
+    return (this.native as any).setObjectStatic(objectId, isStatic);
+  }
+
   /** Destroys a 3D object */
   destroyObject(objectId: number): boolean {
     return this.native.destroyObject(objectId);
@@ -572,42 +577,42 @@ export class GoudGame implements IGoudGame {
 
   /** Enables or disables frustum culling */
   setFrustumCullingEnabled(enabled: boolean): number {
-    return (this.native as any).setFrustumCullingEnabled(enabled);
+    return this.native.setFrustumCullingEnabled(enabled);
   }
 
   /** Sets the skinning mode (0=CPU, 1=GPU) */
   setSkinningMode(mode: number): number {
-    return (this.native as any).setSkinningMode(mode);
+    return this.native.setSkinningMode(mode);
   }
 
   /** Enables or disables material sorting */
   setMaterialSortingEnabled(enabled: boolean): number {
-    return (this.native as any).setMaterialSortingEnabled(enabled);
+    return this.native.setMaterialSortingEnabled(enabled);
   }
 
   /** Enables or disables animation LOD */
   setAnimationLodEnabled(enabled: boolean): number {
-    return (this.native as any).setAnimationLodEnabled(enabled);
+    return this.native.setAnimationLodEnabled(enabled);
   }
 
   /** Enables or disables shared animation evaluation */
   setSharedAnimationEval(enabled: boolean): number {
-    return (this.native as any).setSharedAnimationEval(enabled);
+    return this.native.setSharedAnimationEval(enabled);
   }
 
   /** Returns the number of draw calls last frame */
   getDrawCalls(): number {
-    return (this.native as any).getDrawCalls();
+    return this.native.getDrawCalls();
   }
 
   /** Returns the number of visible objects last frame */
   getVisibleObjectCount(): number {
-    return (this.native as any).getVisibleObjectCount();
+    return this.native.getVisibleObjectCount();
   }
 
   /** Returns the number of culled objects last frame */
   getCulledObjectCount(): number {
-    return (this.native as any).getCulledObjectCount();
+    return this.native.getCulledObjectCount();
   }
 
   /** Renders all 3D objects */

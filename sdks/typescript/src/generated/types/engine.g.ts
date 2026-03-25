@@ -290,6 +290,8 @@ export interface IGoudGame {
   setObjectRotation(objectId: number, x: number, y: number, z: number): boolean;
   /** Sets a 3D object's scale */
   setObjectScale(objectId: number, x: number, y: number, z: number): boolean;
+  /** Marks a 3D object as static or dynamic for batching optimisation */
+  setObjectStatic(objectId: number, isStatic: boolean): boolean;
   /** Destroys a 3D object */
   destroyObject(objectId: number): boolean;
   /** Adds a light to the 3D scene */

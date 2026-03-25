@@ -1003,6 +1003,14 @@ export class GoudGame implements IGoudGame {
   configureFog(_enabled: boolean, _r: number, _g: number, _b: number, _density: number): boolean { return false; }
   setFogEnabled(_enabled: boolean): boolean { return false; }
   render3D(): boolean { return false; }
+  setFrustumCullingEnabled(_enabled: boolean): number { return 0; }
+  setSkinningMode(_mode: number): number { return 0; }
+  setMaterialSortingEnabled(_enabled: boolean): number { return 0; }
+  setAnimationLodEnabled(_enabled: boolean): number { return 0; }
+  setSharedAnimationEval(_enabled: boolean): number { return 0; }
+  getDrawCalls(): number { return 0; }
+  getVisibleObjectCount(): number { return 0; }
+  getCulledObjectCount(): number { return 0; }
   createMaterial(_materialType: number, _r: number, _g: number, _b: number, _a: number, _shininess: number, _metallic: number, _roughness: number, _ao: number): number { return 0; }
   updateMaterial(_materialId: number, _materialType: number, _r: number, _g: number, _b: number, _a: number, _shininess: number, _metallic: number, _roughness: number, _ao: number): boolean { return false; }
   removeMaterial(_materialId: number): boolean { return false; }
