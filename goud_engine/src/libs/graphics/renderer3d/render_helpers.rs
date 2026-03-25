@@ -10,6 +10,26 @@ use crate::libs::graphics::backend::types::{
 use crate::libs::graphics::backend::PrimitiveTopology;
 
 impl Renderer3D {
+    /// Bind a texture for an object (or signal no-texture) and set the `use_texture` uniform.
+    pub(super) fn bind_or_skip_texture(
+        &mut self,
+        texture_id: u32,
+        texture_manager: Option<&dyn super::texture::TextureManagerTrait>,
+        use_texture_uniform: i32,
+    ) {
+        if texture_id > 0 {
+            if let Some(tm) = texture_manager {
+                tm.bind_texture(texture_id, 0);
+            } else {
+                let texture_handle = TextureHandle::new(texture_id, 1);
+                let _ = self.backend.bind_texture(texture_handle, 0);
+            }
+            self.backend.set_uniform_int(use_texture_uniform, 1);
+        } else {
+            self.backend.set_uniform_int(use_texture_uniform, 0);
+        }
+    }
+
     pub(super) fn update_shadow_texture(&mut self, rgba8: &[u8], width: u32, height: u32) {
         let recreate = self.shadow_texture.is_none();
         if recreate {
@@ -269,19 +289,7 @@ impl Renderer3D {
                 self.backend
                     .set_uniform_mat4(skinned_unis.main.model, &model_arr);
 
-                if tid > 0 {
-                    if let Some(tm) = texture_manager {
-                        tm.bind_texture(tid, 0);
-                    } else {
-                        let texture_handle = TextureHandle::new(tid, 1);
-                        let _ = self.backend.bind_texture(texture_handle, 0);
-                    }
-                    self.backend
-                        .set_uniform_int(skinned_unis.main.use_texture, 1);
-                } else {
-                    self.backend
-                        .set_uniform_int(skinned_unis.main.use_texture, 0);
-                }
+                self.bind_or_skip_texture(tid, texture_manager, skinned_unis.main.use_texture);
 
                 self.backend.set_uniform_vec4(
                     skinned_unis.main.object_color,

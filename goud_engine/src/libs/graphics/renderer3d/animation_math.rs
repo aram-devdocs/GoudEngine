@@ -3,7 +3,6 @@
 use super::animation::IDENTITY_MAT4;
 
 /// Decompose a column-major 4x4 matrix into translation, quaternion, and scale.
-/// Decompose a column-major 4x4 matrix into translation, quaternion, and scale.
 pub(super) fn decompose_mat4(m: &[f32; 16]) -> ([f32; 3], [f32; 4], [f32; 3]) {
     let t = [m[12], m[13], m[14]];
 

@@ -59,17 +59,14 @@ pub struct AnimationPlayer {
 impl AnimationPlayer {
     /// Create a new animation player for a skeleton with `bone_count` bones.
     pub fn new(bone_count: usize) -> Self {
-        let identity: [f32; 16] = [
-            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-        ];
         Self {
             primary: None,
             secondary: None,
             blend_factor: 0.0,
             transition: None,
-            bone_matrices: vec![identity; bone_count],
-            scratch_local: vec![identity; bone_count],
-            scratch_global: vec![identity; bone_count],
+            bone_matrices: vec![IDENTITY_MAT4; bone_count],
+            scratch_local: vec![IDENTITY_MAT4; bone_count],
+            scratch_global: vec![IDENTITY_MAT4; bone_count],
         }
     }
 
@@ -189,39 +186,12 @@ impl AnimationPlayer {
         animations: &[KeyframeAnimation],
         prop_names: &[BonePropertyNames],
     ) {
-        // 1. Advance time on primary and secondary states.
-        advance_state(&mut self.primary, dt, animations);
-        advance_state(&mut self.secondary, dt, animations);
-
-        // 2. Handle transitions.
-        if let Some(ref mut tr) = self.transition {
-            tr.elapsed += dt;
-            if tr.elapsed >= tr.duration {
-                // Transition complete: primary is now the sole animation.
-                self.transition = None;
-                self.secondary = None;
-                self.blend_factor = 0.0;
-            } else {
-                // Interpolate blend factor from 1.0 (old) to 0.0 (new primary).
-                self.blend_factor = 1.0 - (tr.elapsed / tr.duration);
-            }
-        }
-
-        let bone_count = skeleton.bones.len();
+        let bone_count = self.advance_and_prepare(dt, skeleton, animations);
         if bone_count == 0 {
             return;
         }
 
-        // Ensure scratch buffers are the right size.
-        if self.scratch_local.len() != bone_count {
-            self.scratch_local.resize(bone_count, IDENTITY_MAT4);
-            self.scratch_global.resize(bone_count, IDENTITY_MAT4);
-        }
-        if self.bone_matrices.len() != bone_count {
-            self.bone_matrices.resize(bone_count, IDENTITY_MAT4);
-        }
-
-        // 3. Sample primary bone poses into self.bone_matrices using scratch buffers.
+        // Sample primary bone poses into self.bone_matrices using scratch buffers.
         if let Some(ref state) = self.primary {
             if let Some(anim) = animations.get(state.clip_index) {
                 compute_bone_matrices_into(
@@ -234,33 +204,19 @@ impl AnimationPlayer {
                     &mut self.bone_matrices,
                 );
             } else {
-                for m in self.bone_matrices.iter_mut() {
-                    *m = IDENTITY_MAT4;
-                }
+                self.reset_bone_matrices_to_identity();
             }
         } else {
-            for m in self.bone_matrices.iter_mut() {
-                *m = IDENTITY_MAT4;
-            }
+            self.reset_bone_matrices_to_identity();
         }
 
-        // 4. If blending, sample secondary and lerp in-place.
+        // If blending, sample secondary and lerp in-place.
         if self.blend_factor > f32::EPSILON {
             if let Some(ref state) = self.secondary {
                 if let Some(anim) = animations.get(state.clip_index) {
-                    // We need the secondary bone matrices. Use the allocating
-                    // path here since blending is relatively rare (only during
-                    // active transitions) and the scratch buffers are already
-                    // consumed by the primary computation above.
                     let secondary =
                         compute_bone_matrices_with_names(skeleton, anim, state.time, prop_names);
-                    let t = self.blend_factor;
-                    let inv_t = 1.0 - t;
-                    for (primary, sec) in self.bone_matrices.iter_mut().zip(secondary.iter()) {
-                        for (p, &s) in primary.iter_mut().zip(sec.iter()) {
-                            *p = *p * inv_t + s * t;
-                        }
-                    }
+                    self.blend_secondary(&secondary);
                 }
             }
         }
@@ -270,8 +226,7 @@ impl AnimationPlayer {
     /// [`BoneChannelMap`]s (zero per-frame string lookups or HashMap access).
     ///
     /// This is the fast path used when channel maps have been built at model
-    /// load time. Falls back to the `update_with_names` path for blending
-    /// secondary clips when needed.
+    /// load time.
     pub fn update_with_channel_maps(
         &mut self,
         dt: f32,
@@ -279,37 +234,12 @@ impl AnimationPlayer {
         animations: &[KeyframeAnimation],
         channel_maps: &[BoneChannelMap],
     ) {
-        // 1. Advance time on primary and secondary states.
-        advance_state(&mut self.primary, dt, animations);
-        advance_state(&mut self.secondary, dt, animations);
-
-        // 2. Handle transitions.
-        if let Some(ref mut tr) = self.transition {
-            tr.elapsed += dt;
-            if tr.elapsed >= tr.duration {
-                self.transition = None;
-                self.secondary = None;
-                self.blend_factor = 0.0;
-            } else {
-                self.blend_factor = 1.0 - (tr.elapsed / tr.duration);
-            }
-        }
-
-        let bone_count = skeleton.bones.len();
+        let bone_count = self.advance_and_prepare(dt, skeleton, animations);
         if bone_count == 0 {
             return;
         }
 
-        // Ensure scratch buffers are the right size.
-        if self.scratch_local.len() != bone_count {
-            self.scratch_local.resize(bone_count, IDENTITY_MAT4);
-            self.scratch_global.resize(bone_count, IDENTITY_MAT4);
-        }
-        if self.bone_matrices.len() != bone_count {
-            self.bone_matrices.resize(bone_count, IDENTITY_MAT4);
-        }
-
-        // 3. Sample primary bone poses using the fast channel-map path.
+        // Sample primary bone poses using the fast channel-map path.
         if let Some(ref state) = self.primary {
             if let Some(anim) = animations.get(state.clip_index) {
                 if let Some(cm) = channel_maps.get(state.clip_index) {
@@ -337,17 +267,13 @@ impl AnimationPlayer {
                     );
                 }
             } else {
-                for m in self.bone_matrices.iter_mut() {
-                    *m = IDENTITY_MAT4;
-                }
+                self.reset_bone_matrices_to_identity();
             }
         } else {
-            for m in self.bone_matrices.iter_mut() {
-                *m = IDENTITY_MAT4;
-            }
+            self.reset_bone_matrices_to_identity();
         }
 
-        // 4. If blending, sample secondary and lerp in-place.
+        // If blending, sample secondary and lerp in-place.
         if self.blend_factor > f32::EPSILON {
             if let Some(ref state) = self.secondary {
                 if let Some(anim) = animations.get(state.clip_index) {
@@ -358,14 +284,64 @@ impl AnimationPlayer {
                             (0..bone_count).map(BonePropertyNames::new).collect();
                         compute_bone_matrices_with_names(skeleton, anim, state.time, &fallback)
                     };
-                    let t = self.blend_factor;
-                    let inv_t = 1.0 - t;
-                    for (primary, sec) in self.bone_matrices.iter_mut().zip(secondary.iter()) {
-                        for (p, &s) in primary.iter_mut().zip(sec.iter()) {
-                            *p = *p * inv_t + s * t;
-                        }
-                    }
+                    self.blend_secondary(&secondary);
                 }
+            }
+        }
+    }
+
+    /// Shared setup: advance states, handle transitions, resize buffers.
+    /// Returns bone count (0 means caller should return early).
+    fn advance_and_prepare(
+        &mut self,
+        dt: f32,
+        skeleton: &SkeletonData,
+        animations: &[KeyframeAnimation],
+    ) -> usize {
+        advance_state(&mut self.primary, dt, animations);
+        advance_state(&mut self.secondary, dt, animations);
+
+        if let Some(ref mut tr) = self.transition {
+            tr.elapsed += dt;
+            if tr.elapsed >= tr.duration {
+                self.transition = None;
+                self.secondary = None;
+                self.blend_factor = 0.0;
+            } else {
+                self.blend_factor = 1.0 - (tr.elapsed / tr.duration);
+            }
+        }
+
+        let bone_count = skeleton.bones.len();
+        if bone_count == 0 {
+            return 0;
+        }
+
+        if self.scratch_local.len() != bone_count {
+            self.scratch_local.resize(bone_count, IDENTITY_MAT4);
+            self.scratch_global.resize(bone_count, IDENTITY_MAT4);
+        }
+        if self.bone_matrices.len() != bone_count {
+            self.bone_matrices.resize(bone_count, IDENTITY_MAT4);
+        }
+
+        bone_count
+    }
+
+    /// Reset all bone matrices to identity.
+    fn reset_bone_matrices_to_identity(&mut self) {
+        for m in self.bone_matrices.iter_mut() {
+            *m = IDENTITY_MAT4;
+        }
+    }
+
+    /// Blend secondary bone matrices into primary using `self.blend_factor`.
+    fn blend_secondary(&mut self, secondary: &[[f32; 16]]) {
+        let t = self.blend_factor;
+        let inv_t = 1.0 - t;
+        for (primary, sec) in self.bone_matrices.iter_mut().zip(secondary.iter()) {
+            for (p, &s) in primary.iter_mut().zip(sec.iter()) {
+                *p = *p * inv_t + s * t;
             }
         }
     }

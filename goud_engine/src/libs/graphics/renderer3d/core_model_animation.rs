@@ -26,6 +26,13 @@ fn gather_skin_uploads(
     objects: &std::collections::HashMap<u32, super::types::Object3D>,
 ) -> Vec<SkinUpload> {
     let sub_count = model.bind_pose_vertices.len().min(obj_ids.len());
+    if model.bind_pose_vertices.len() != obj_ids.len() {
+        log::warn!(
+            "gather_skin_uploads: bind_pose_vertices count ({}) != obj_ids count ({})",
+            model.bind_pose_vertices.len(),
+            obj_ids.len()
+        );
+    }
     let mut uploads = Vec::with_capacity(sub_count);
     for (i, &obj_id) in obj_ids.iter().enumerate().take(sub_count) {
         if model.bind_pose_bone_indices[i].is_empty() {
