@@ -66,18 +66,22 @@ jobs:
             target: x86_64-unknown-linux-gnu
             rid: linux-x64
             lib: libgoud_engine.so
+            static_lib: libgoud_engine.a
           - os: macos-latest
             target: x86_64-apple-darwin
             rid: osx-x64
             lib: libgoud_engine.dylib
+            static_lib: libgoud_engine.a
           - os: macos-latest
             target: aarch64-apple-darwin
             rid: osx-arm64
             lib: libgoud_engine.dylib
+            static_lib: libgoud_engine.a
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             rid: win-x64
             lib: goud_engine.dll
+            static_lib: goud_engine.lib
     steps:
       - uses: actions/checkout@v6
 
@@ -101,11 +105,19 @@ jobs:
         shell: bash
         run: |
           LIB_FILE="target/${{ matrix.target }}/release/${{ matrix.lib }}"
+          STATIC_LIB="target/${{ matrix.target }}/release/${{ matrix.static_lib }}"
           HEADER_FILE="codegen/generated/goud_engine.h"
           SIZE=$(stat -c%s "$LIB_FILE" 2>/dev/null || stat -f%z "$LIB_FILE")
           echo "Artifact: $LIB_FILE ($SIZE bytes)"
           if [ "$SIZE" -lt 100000 ]; then
             echo "ERROR: Artifact too small ($SIZE bytes), expected > 100KB"
+            exit 1
+          fi
+
+          STATIC_SIZE=$(stat -c%s "$STATIC_LIB" 2>/dev/null || stat -f%z "$STATIC_LIB")
+          echo "Static artifact: $STATIC_LIB ($STATIC_SIZE bytes)"
+          if [ "$STATIC_SIZE" -lt 100000 ]; then
+            echo "ERROR: Static artifact too small ($STATIC_SIZE bytes), expected > 100KB"
             exit 1
           fi
 
@@ -116,7 +128,9 @@ jobs:
 
           ARTIFACT_DIR="artifacts/native-${{ matrix.rid }}"
           mkdir -p "$ARTIFACT_DIR/include"
+          mkdir -p "$ARTIFACT_DIR/static"
           cp "$LIB_FILE" "$ARTIFACT_DIR/"
+          cp "$STATIC_LIB" "$ARTIFACT_DIR/static/"
           cp "$HEADER_FILE" "$ARTIFACT_DIR/include/"
 
       - uses: actions/upload-artifact@v4
@@ -182,85 +196,10 @@ jobs:
           TARBALL="goud-engine-v${VERSION}-${RID}.tar.gz"
           gh release upload "v${VERSION}" "${TARBALL}" --clobber
 
-  # ── Step 2a++: Build console-partner static libraries ──
-  build-console-static-libs:
-    name: Console Static Lib (${{ matrix.rid }})
-    needs: release-please
-    if: needs.release-please.outputs.should_publish == 'true'
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            rid: linux-x64
-            static_lib: libgoud_engine.a
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            rid: osx-x64
-            static_lib: libgoud_engine.a
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            rid: osx-arm64
-            static_lib: libgoud_engine.a
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            rid: win-x64
-            static_lib: goud_engine.lib
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-
-      - name: Install system deps (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libgl1-mesa-dev libglu1-mesa-dev \
-            libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev \
-            libasound2-dev
-
-      - name: Build
-        run: cargo build --release --target ${{ matrix.target }} -p goud-engine-core
-
-      - name: Verify static artifact
-        shell: bash
-        run: |
-          STATIC_LIB="target/${{ matrix.target }}/release/${{ matrix.static_lib }}"
-          HEADER_FILE="codegen/generated/goud_engine.h"
-          SIZE=$(stat -c%s "$STATIC_LIB" 2>/dev/null || stat -f%z "$STATIC_LIB")
-          echo "Static artifact: $STATIC_LIB ($SIZE bytes)"
-          if [ "$SIZE" -lt 100000 ]; then
-            echo "ERROR: Static artifact too small ($SIZE bytes), expected > 100KB"
-            exit 1
-          fi
-
-          if [ ! -f "$HEADER_FILE" ]; then
-            echo "ERROR: Missing generated header: $HEADER_FILE"
-            exit 1
-          fi
-
-          ARTIFACT_DIR="artifacts/console-static-${{ matrix.rid }}"
-          mkdir -p "$ARTIFACT_DIR/lib"
-          mkdir -p "$ARTIFACT_DIR/include"
-          cp "$STATIC_LIB" "$ARTIFACT_DIR/lib/"
-          cp "$HEADER_FILE" "$ARTIFACT_DIR/include/"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: console-static-${{ matrix.rid }}
-          path: artifacts/console-static-${{ matrix.rid }}
-          if-no-files-found: error
-          retention-days: 3
-
   # ── Step 2a+++: Publish console-partner static tarballs ──
   publish-console-static-tarballs:
     name: Console Static Tarballs
-    needs: [build-console-static-libs, release-please]
+    needs: [build-native-libs, release-please]
     if: needs.release-please.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     strategy:
@@ -278,11 +217,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Download console static artifact
+      - name: Download native artifact
         uses: actions/download-artifact@v8
         with:
-          name: console-static-${{ matrix.rid }}
-          path: artifacts/console-static-${{ matrix.rid }}
+          name: native-${{ matrix.rid }}
+          path: artifacts/native-${{ matrix.rid }}
 
       - name: Create console partner tarball
         env:
@@ -294,8 +233,8 @@ jobs:
           mkdir -p "${STAGING}/lib"
           mkdir -p "${STAGING}/include"
 
-          cp "artifacts/console-static-${RID}/lib/${STATIC_LIB}" "${STAGING}/lib/"
-          cp "artifacts/console-static-${RID}/include/goud_engine.h" "${STAGING}/include/"
+          cp "artifacts/native-${RID}/static/${STATIC_LIB}" "${STAGING}/lib/"
+          cp "artifacts/native-${RID}/include/goud_engine.h" "${STAGING}/include/"
 
           tar -czf "${STAGING}.tar.gz" "${STAGING}"
 
