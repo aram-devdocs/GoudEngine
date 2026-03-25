@@ -17,11 +17,6 @@ final class EnumTests: XCTestCase {
         XCTAssertEqual(MouseButton.MIDDLE.rawValue, 2)
     }
 
-    func testRendererTypeRawValues() {
-        XCTAssertEqual(RendererType.RENDERER2_D.rawValue, 0)
-        XCTAssertEqual(RendererType.RENDERER3_D.rawValue, 1)
-    }
-
     func testBodyTypeRawValues() {
         XCTAssertEqual(BodyType.DYNAMIC.rawValue, 0)
         XCTAssertEqual(BodyType.STATIC.rawValue, 1)

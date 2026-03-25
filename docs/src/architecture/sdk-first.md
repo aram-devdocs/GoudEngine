@@ -85,23 +85,7 @@ Run the full pipeline:
 ./codegen.sh
 ```
 
-The script runs 13 steps in order:
-
-1. `gen_sdk_scaffolding.py` — regenerates package manifests
-2. `cargo build` — builds Rust, writes `ffi_manifest.json`, and generates `codegen/generated/goud_engine.h`
-3. `validate_c_header.py` — checks header guards, section markers, and deprecation output
-4. `gen_ts_node.py` — bootstraps Node.js SDK sources
-5. `lint-layers` — validates no upward imports
-6. `validate_coverage.py` — checks every function in `ffi_manifest.json` is covered by `ffi_mapping.json`
-7. `gen_csharp.py` — generates C# SDK wrappers
-8. `gen_python.py` — generates Python SDK wrappers
-9. `gen_ts_node.py` — regenerates TypeScript Node.js SDK
-10. `gen_ts_web.py` — generates TypeScript Web (WASM) SDK
-11. `cargo fmt -p goud-engine-node` — formats generated Rust
-12. `validate.py` — schema consistency check
-13. `generate-doc-snippets.py` — refreshes docs snippets
-
-Steps 3, 5, 6, and 12 are validation gates. If any of them fail, the script exits with an error.
+The script runs scaffolding, build, validation, and generation steps in order. See `codegen.sh` for the current step count and sequence. Validation gates (header checks, lint-layers, coverage, schema consistency) abort the pipeline on failure.
 
 ### Schema Files
 
