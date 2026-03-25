@@ -407,8 +407,7 @@ impl Renderer3D {
             let _ = self.backend.bind_shader(self.shader_handle);
         }
 
-        // Single-instance skinned model rendering pass.
-        self.render_skinned_models(
+        let instanced_skinned_ids = self.render_instanced_skinned_models(
             frustum.as_ref(),
             &view_arr,
             &proj_arr,
@@ -419,10 +418,18 @@ impl Renderer3D {
             texture_manager,
         );
 
-        // Instanced skinned rendering is temporarily disabled while the
-        // renderer is corrected to match the single-instance skinned path for
-        // scene filtering, per-submesh materials/textures, and bone palette
-        // correctness. The per-instance GPU skinning path remains active.
+        // Single-instance skinned model rendering pass.
+        self.render_skinned_models(
+            frustum.as_ref(),
+            &instanced_skinned_ids,
+            &view_arr,
+            &proj_arr,
+            &shadow_matrix,
+            shadow_map.is_some(),
+            &eff_fog,
+            &filtered_lights,
+            texture_manager,
+        );
 
         self.backend.unbind_shader();
 

@@ -210,9 +210,9 @@ class Program
             options.Scenario == ScenarioKind.FbxAnimalDiagnostic ||
             options.Scenario == ScenarioKind.MixedCorrectnessDiagnostic)
         {
-            cameraDistance = 36f;
-            cameraHeight = 13f;
-            cameraPitch = 20f;
+            cameraDistance = options.Scenario == ScenarioKind.FullGameStress ? 28f : 32f;
+            cameraHeight = options.Scenario == ScenarioKind.FullGameStress ? 10.5f : 12f;
+            cameraPitch = 18f;
         }
 
         var config = new EngineConfig()

@@ -149,6 +149,7 @@ impl Renderer3D {
     pub(super) fn render_skinned_models(
         &mut self,
         frustum: Option<&super::frustum::Frustum>,
+        grouped_ids: &std::collections::HashSet<u32>,
         view_arr: &[f32; 16],
         proj_arr: &[f32; 16],
         shadow_matrix: &[f32; 16],
@@ -177,6 +178,9 @@ impl Renderer3D {
 
         for (&model_id, model) in &self.models {
             if !model.is_skinned {
+                continue;
+            }
+            if grouped_ids.contains(&model_id) {
                 continue;
             }
             if let Some(filter) = scene_model_filter {
@@ -212,6 +216,9 @@ impl Renderer3D {
                 None => continue,
             };
             if !source.is_skinned {
+                continue;
+            }
+            if grouped_ids.contains(&inst_id) {
                 continue;
             }
             if let Some(filter) = scene_model_filter {
