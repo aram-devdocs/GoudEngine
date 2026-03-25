@@ -127,11 +127,6 @@ pub(crate) fn register_enum_constants(lua: &Lua) -> LuaResult<()> {
     tbl.set("button7", 6_i64)?;
     tbl.set("button8", 7_i64)?;
     globals.set("mouse_button", tbl)?;
-    // RendererType
-    let tbl = lua.create_table()?;
-    tbl.set("renderer2_d", 0_i64)?;
-    tbl.set("renderer3_d", 1_i64)?;
-    globals.set("renderer_type", tbl)?;
     // OverlayCorner
     let tbl = lua.create_table()?;
     tbl.set("top_left", 0_i64)?;

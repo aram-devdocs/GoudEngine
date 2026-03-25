@@ -1,6 +1,6 @@
 # GoudEngine
 
-GoudEngine is a Rust game engine with multi-language SDK support. All game logic lives in Rust. SDKs for C#, Python, TypeScript, and Rust provide thin wrappers over the FFI boundary.
+GoudEngine is a Rust game engine with multi-language SDK support. All game logic lives in Rust. SDKs under `sdks/` provide thin wrappers over the FFI boundary.
 
 ## SDK Support
 
@@ -10,6 +10,13 @@ GoudEngine is a Rust game engine with multi-language SDK support. All game logic
 | Python | [PyPI](https://pypi.org/project/goudengine/) | ctypes |
 | TypeScript | [npm](https://www.npmjs.com/package/goudengine) | napi-rs (Node.js) + wasm-bindgen (Web) |
 | Rust | [crates.io](https://crates.io/crates/goud-engine) | Direct linking (no FFI) |
+| C/C++ | local | C header via cbindgen |
+| Go | local | cgo |
+| Kotlin | local | JNI |
+| Swift | local | C interop |
+| Lua | local | C FFI |
+
+See the [Getting Started](getting-started/csharp.md) section in the sidebar for per-language guides.
 
 ## Engine Features
 
@@ -23,7 +30,7 @@ GoudEngine is a Rust game engine with multi-language SDK support. All game logic
 
 ## Quick Links
 
-- **New to GoudEngine?** Start with a getting-started guide for your language: [C#](getting-started/csharp.md), [Python](getting-started/python.md), [Rust](getting-started/rust.md), or [TypeScript](getting-started/typescript.md).
+- **New to GoudEngine?** Start with a getting-started guide for your language in the sidebar.
 - **Building from source?** See the [Building](development/building.md) and [Development Guide](development/guide.md).
 - **Understanding the internals?** Read the [SDK-First Architecture](architecture/sdk-first.md) document.
 

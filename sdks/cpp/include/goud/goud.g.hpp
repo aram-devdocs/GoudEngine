@@ -148,12 +148,6 @@ enum class MouseButton : std::int32_t {
     Button8 = 7,
 };
 
-/** @brief Rendering backend selection */
-enum class RendererType : std::int32_t {
-    Renderer2D = 0,
-    Renderer3D = 1,
-};
-
 /** @brief Screen corner where the debug overlay is displayed */
 enum class OverlayCorner : std::int32_t {
     TopLeft = 0,

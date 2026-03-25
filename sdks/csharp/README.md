@@ -17,17 +17,20 @@ dotnet add package GoudEngine
 ```csharp
 using GoudEngine;
 
-var game = new GoudGame(800, 600, "My Game", RendererType.Renderer2D);
+using var config = new EngineConfig()
+    .SetSize(800, 600)
+    .SetTitle("My Game");
+using var game = config.Build();
 
 var tex = game.LoadTexture("assets/player.png");
 
-game.Update(dt =>
+while (!game.ShouldClose())
 {
-    if (game.IsKeyPressed(Keys.Escape)) { game.Close(); return; }
+    game.BeginFrame(0, 0, 0, 1);
+    if (game.IsKeyPressed(Key.Escape)) { break; }
     game.DrawSprite(tex, 400, 300, 64, 64);
-});
-
-game.Run();
+    game.EndFrame();
+}
 ```
 
 ## Documentation

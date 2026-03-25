@@ -3478,14 +3478,6 @@
         "Button8": 7
       }
     },
-    "RendererType": {
-      "doc": "Rendering backend selection",
-      "underlying": "i32",
-      "values": {
-        "Renderer2D": 0,
-        "Renderer3D": 1
-      }
-    },
     "OverlayCorner": {
       "doc": "Screen corner where the debug overlay is displayed",
       "underlying": "i32",

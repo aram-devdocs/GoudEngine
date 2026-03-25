@@ -20,7 +20,7 @@ cargo run -p flappy-bird          # Rust example
 
 ## Rust-First Principle
 
-All game logic lives in Rust. Language SDKs (C#, Python, TypeScript) are thin wrappers that marshal data and call FFI functions. They contain no logic, math, or state.
+All game logic lives in Rust. Language SDKs (under `sdks/`) are thin wrappers that marshal data and call FFI functions. They contain no logic, math, or state.
 
 If you want to add a feature:
 
@@ -28,7 +28,7 @@ If you want to add a feature:
 2. Export it via `goud_engine/src/ffi/`
 3. Run `cargo build` to refresh the generated FFI surfaces (`NativeMethods.g.cs`, `ffi_manifest.json`, and `codegen/generated/goud_engine.h`)
 4. Update `codegen/goud_sdk.schema.json`
-5. Run the codegen generators to update C#, Python, and TypeScript SDK wrappers
+5. Run `./codegen.sh` to regenerate all SDK wrappers
 6. Write tests for the Rust implementation
 
 Never put logic in an SDK. If you find logic in an SDK, move it to Rust.
@@ -37,17 +37,7 @@ Never put logic in an SDK. If you find logic in an SDK, move it to Rust.
 
 ## Layer Architecture
 
-Dependencies flow down only. No upward imports. No same-layer cross-imports.
-
-```
-Layer 1 (Core)   :  libs/              — graphics, platform, ecs, logger
-Layer 2 (Engine) :  goud_engine/src/   — core, assets, sdk
-Layer 3 (FFI)    :  goud_engine/src/ffi/
-Layer 4 (SDKs)   :  sdks/             — csharp, python, typescript
-Layer 5 (Apps)   :  examples/
-```
-
-A `use goud_engine::` in `libs/` is a hierarchy violation. Check `use` statements when touching module boundaries.
+GoudEngine enforces a 5-layer dependency hierarchy within `goud_engine/src/`. Dependencies flow down only. No upward imports. No same-layer cross-imports. See [ARCHITECTURE.md](ARCHITECTURE.md#layer-hierarchy) for the full model. The canonical definition is in `tools/lint_layers.rs`.
 
 ## Building and Testing
 
@@ -74,7 +64,7 @@ python3 sdks/python/test_bindings.py
 cd sdks/typescript && npm test
 ```
 
-Tests that need an OpenGL context must call `test_helpers::init_test_context()`. Pure math/logic tests must not require a GL context.
+Tests that need a GPU context must call `test_helpers::init_test_context()`. Pure math/logic tests must not require a GPU context.
 
 ## Code Style
 
@@ -95,7 +85,7 @@ Follow red-green-refactor:
 3. Refactor, keeping tests green
 
 Rules:
-- No `#[ignore]` on committed tests
+- No `#[ignore]` in committed code except for GPU-context-dependent tests (OpenGL, audio, sprite batch, render system) that cannot run in headless CI. Run them locally with `cargo test -- --ignored`.
 - No `todo!()` or `unimplemented!()` in production code
 - Test names describe behavior: `test_transform2d_translate_updates_position`, not `test1`
 - Aim for 80%+ line coverage and 70%+ branch coverage on new code

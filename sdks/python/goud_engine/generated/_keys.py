@@ -123,11 +123,6 @@ class MouseButton:
     BUTTON7 = 6
     BUTTON8 = 7
 
-class RendererType:
-    """Rendering backend selection"""
-    RENDERER2_D = 0
-    RENDERER3_D = 1
-
 class OverlayCorner:
     """Screen corner where the debug overlay is displayed"""
     TOP_LEFT = 0

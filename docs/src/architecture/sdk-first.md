@@ -4,15 +4,20 @@ GoudEngine is a Rust game engine with multi-language SDK support. All game logic
 
 ## Layer Architecture
 
-Dependencies flow DOWN only. A higher-numbered layer may import from lower layers; the reverse is a violation.
+Dependencies flow DOWN only. A higher-numbered layer may import from lower layers; the reverse is a violation. The canonical layer definition lives in `tools/lint_layers.rs`.
 
 ```
-Layer 1 (Core)   : goud_engine/src/core/   — error types, math, handles, context registry
-Layer 2 (Engine) : goud_engine/src/sdk/    — native Rust API, zero FFI overhead
-Layer 3 (FFI)    : goud_engine/src/ffi/    — C-compatible exports, #[no_mangle] extern "C"
-Layer 4 (SDKs)   : sdks/                   — C#, Python, TypeScript wrappers
-Layer 5 (Apps)   : examples/               — game demos per SDK language
+Layer 1 (Foundation) : goud_engine/src/core/   — error types, math, handles, provider traits
+Layer 2 (Libs)       : goud_engine/src/libs/   — graphics backend, platform, native providers
+Layer 3 (Services)   : goud_engine/src/ecs/, assets/  — ECS, asset loading
+Layer 4 (Engine)     : goud_engine/src/sdk/, rendering/, context_registry/  — game API, render orchestration
+Layer 5 (FFI)        : goud_engine/src/ffi/, wasm/    — C-ABI exports consumed by external SDKs
 ```
+
+Beyond the engine crate, two additional layers complete the picture:
+
+- **SDKs** (`sdks/`) — language-specific wrappers over FFI for all SDK languages
+- **Apps** (`examples/`) — example games that use SDK APIs
 
 Each layer knows nothing about the layers above it. `ffi/` may import from `core/`, `sdk/`, `ecs/`, and `assets/`. It must never import from `sdks/`.
 
@@ -55,11 +60,7 @@ Each domain has its own file. All public functions are `#[no_mangle] pub extern 
 
 ### SDK (`sdks/`)
 
-| Directory | Target |
-|---|---|
-| `sdks/csharp/` | .NET 8, `DllImport`, NuGet package |
-| `sdks/python/` | Python 3, `ctypes`, local install |
-| `sdks/typescript/` | TypeScript, Node.js (napi-rs) + Web (WASM) |
+All SDK languages live under `sdks/`. Each has a generated wrapper surface and a thin hand-written API layer. See the `sdks/` directory for the full list of supported languages.
 
 ## Codegen Pipeline
 
@@ -67,16 +68,15 @@ All SDK source files under `sdks/*/generated/` and `sdks/typescript/src/generate
 
 ```
 goud_sdk.schema.json   — universal type/method definitions
-ffi_mapping.json       — maps schema methods → C ABI function names + signatures
+ffi_mapping.json       — maps schema methods -> C ABI function names + signatures
 ffi_manifest.json      — auto-extracted from Rust source by build.rs (each cargo build)
 goud_engine.h          — auto-generated C header at codegen/generated/ (each native cargo build)
-                                           │
-                    ┌──────────────────────┼───────────────────┐
-                    ▼                      ▼                   ▼
-             gen_csharp.py        gen_python.py         gen_ts_node.py
-                    │                      │             gen_ts_web.py
-                    ▼                      ▼                   ▼
-          sdks/csharp/generated/   sdks/python/generated/   sdks/typescript/src/generated/
+                                           |
+                                           v
+                              codegen/gen_*.py generators
+                                           |
+                                           v
+                              sdks/*/generated/ output directories
 ```
 
 Run the full pipeline:
@@ -133,7 +133,7 @@ All generators import `sdk_common.py` for:
 
 **Rust-first.** Logic is never duplicated in SDKs. If a SDK method does anything beyond marshaling and calling an FFI function, that logic belongs in Rust.
 
-**Single schema, four generators.** Adding a type to `goud_sdk.schema.json` causes it to appear in every SDK on the next codegen run. Naming conventions (PascalCase in C#, snake_case in Python, camelCase in TypeScript) are applied by the generators.
+**Single schema, multiple generators.** Adding a type to `goud_sdk.schema.json` causes it to appear in every SDK on the next codegen run. Each generator (`codegen/gen_*.py`) applies language-appropriate naming conventions. Run `./codegen.sh` to regenerate all SDKs.
 
 **C# bindings are doubly generated.** `NativeMethods.g.cs` is produced by csbindgen on every `cargo build`. The higher-level C# wrapper classes in `sdks/csharp/generated/` are produced by `gen_csharp.py`. The two files work together: csbindgen handles the raw `[DllImport]` declarations, and the Python generator handles the public wrapper API.
 

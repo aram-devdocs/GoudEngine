@@ -56,9 +56,11 @@
 
 # RFCs
 
-- [RFC Process](../rfcs/README.md)
-- [RFC-0001: Provider Trait Pattern](../rfcs/RFC-0001-provider-trait-pattern.md)
-- [RFC-0002: NetworkProvider Trait](../rfcs/RFC-0002-network-provider-trait.md)
+- [RFC Process](rfcs/README.md)
+- [RFC-0001: Provider Trait Pattern](rfcs/RFC-0001-provider-trait-pattern.md)
+- [RFC-0002: NetworkProvider Trait](rfcs/RFC-0002-network-provider-trait.md)
+- [RFC-0003: UI Layout and Input](rfcs/RFC-0003-ui-layout-and-input.md)
+- [RFC-0004: Debugger Runtime](rfcs/RFC-0004-debugger-runtime-and-local-attach.md)
 
 # Reference
 
