@@ -1,5 +1,70 @@
 # Changelog
 
+## [0.0.837](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.836...v0.0.837) (2026-03-25)
+
+
+### Features
+
+* 3D model loading, skeletal animation, scene management, character controller ([231e524](https://github.com/aram-devdocs/GoudEngine/commit/231e5245eb149c777882cb8e4ca4a408f2f3f920)), closes [#621](https://github.com/aram-devdocs/GoudEngine/issues/621)
+* complete plan — WGSL multi-light, static batching, SDK parity, set_object_static FFI ([611761f](https://github.com/aram-devdocs/GoudEngine/commit/611761fb66c64dbb369f721f0134ae52fa029248))
+* CPU skinning — animate models without GPU skinned shader ([545b738](https://github.com/aram-devdocs/GoudEngine/commit/545b738e8cc43fbf97a5e6602e2af2008187112b))
+* GPU skinning, storage buffers, instanced skinned rendering, character sandbox benchmark ([19e4915](https://github.com/aram-devdocs/GoudEngine/commit/19e4915d8d4bbcadbbbc6b8dd7fcbcae798b860f))
+* SDK wrappers for Render3DConfig + sandbox profiling toggles + stats overlay ([8ab9942](https://github.com/aram-devdocs/GoudEngine/commit/8ab99423aeb01b71dab0990baff19e5680852970))
+* WGSL 8-light parity, static batching, SDK parity, file splits for CI ([437709c](https://github.com/aram-devdocs/GoudEngine/commit/437709ce3dd2a389fc7071486078c24f67a0b850))
+
+
+### Bug Fixes
+
+* add character_sandbox to examples README table ([ef2be70](https://github.com/aram-devdocs/GoudEngine/commit/ef2be705f400553484daaa6a0e0470aa0b1e51ff))
+* add character_sandbox to showcase docs + TS SDK test coverage ([d2577d1](https://github.com/aram-devdocs/GoudEngine/commit/d2577d1c67ecb54db33890efbcef61fe68be17b2))
+* add character_sandbox to showcase manifest ([fa0976e](https://github.com/aram-devdocs/GoudEngine/commit/fa0976e7211bcd71ec163be7fb3e4d8425283944))
+* add TypeScript typecheck and Kotlin build to pre-push hook ([58080ac](https://github.com/aram-devdocs/GoudEngine/commit/58080ac338662cbf072eb19f6ac5839a3ea7313c))
+* add web WASM stubs for new 3D model/animation/scene methods ([6430c52](https://github.com/aram-devdocs/GoudEngine/commit/6430c52f7420611a72c2e3885db1ecc41f5212aa))
+* address Claude review warnings — logging, docs, context guards ([df78231](https://github.com/aram-devdocs/GoudEngine/commit/df7823138b7fe09b09609c52675c8b077795c65f))
+* cargo fmt on state.rs import ordering ([6bb8518](https://github.com/aram-devdocs/GoudEngine/commit/6bb85180100cc868d3fb7dc2da0588f7ab65a55a))
+* CI compliance — format fixes, file size exclusion, line counts ([320e9d8](https://github.com/aram-devdocs/GoudEngine/commit/320e9d831abf8ebd203e26ae73202b61b2247f2f))
+* clippy errors — useless format!, unused parameter in process_node ([bc1c806](https://github.com/aram-devdocs/GoudEngine/commit/bc1c8062dd7b21c52c7f7cd52fe41e91013fe6ce))
+* codegen buffer_protocol uses correct i32 cast for buffer length ([8b68007](https://github.com/aram-devdocs/GoudEngine/commit/8b680079484de9f5e73b947e134e7d7aedd6db8f))
+* complete web WASM stubs for all new animation/controller methods ([d5b0902](https://github.com/aram-devdocs/GoudEngine/commit/d5b090246f40f6915c8a17225d45dcb5d2824529))
+* compute face normals for glTF models without NORMAL attribute ([113e7f8](https://github.com/aram-devdocs/GoudEngine/commit/113e7f8292f645e0eb4c583e09aefc25e169ce7d))
+* correct 3 critical animation bugs + implement CPU skinning ([678286e](https://github.com/aram-devdocs/GoudEngine/commit/678286ef74500579ac7c474eb519b999390c7d0d))
+* correct model scale to 1.0 — Quaternius model is in meters ([4fc224c](https://github.com/aram-devdocs/GoudEngine/commit/4fc224c14c28720ea51377518965bb3240b77745))
+* delete dead gltf_parser module, fix missing_docs lint ([001027d](https://github.com/aram-devdocs/GoudEngine/commit/001027d597634b094df15f23ab86882b85a06ea1))
+* disable skinned path again, fix model scale to 0.01 ([fffacee](https://github.com/aram-devdocs/GoudEngine/commit/fffacee8d6ec7ccb77c673a20d2342e63792900d))
+* disable skinned render path until shader is debugged ([c628a65](https://github.com/aram-devdocs/GoudEngine/commit/c628a65c61160e1ba6e7d94a2258e0aa7bfca7db))
+* enable skinned rendering, shared GPU buffers, material colors ([13a34d4](https://github.com/aram-devdocs/GoudEngine/commit/13a34d49648aa5ae8ecfce5e26883999ef88d5f0))
+* hardening pass — purple joints, flicker, controls, fog/grid ([8b246f5](https://github.com/aram-devdocs/GoudEngine/commit/8b246f533c1e6f89fd80f65fbf09a617184d2e9b))
+* Kotlin missing import + TS web setObjectStatic stub + full codegen regen ([5b1a02e](https://github.com/aram-devdocs/GoudEngine/commit/5b1a02e49169814493cdaf35eba1bf920bb02a54))
+* multi-node scene support, external URIs, embedded images, test fixes ([9776350](https://github.com/aram-devdocs/GoudEngine/commit/97763501587827f2ee417a1715f3f15146a1a7e2))
+* pre-push drift check now uses check-generated-artifacts.sh ([9c9a183](https://github.com/aram-devdocs/GoudEngine/commit/9c9a183a643963ce738a64ce1a23edc4fb65c67f))
+* proper animation architecture — SQT slerp, inline bone extraction, validation ([e4d1075](https://github.com/aram-devdocs/GoudEngine/commit/e4d1075146708e5d2dd86330eb7bcc4ef301f84e))
+* proper indexed mesh loading + switch to Quaternius humanoid model ([57b8cbc](https://github.com/aram-devdocs/GoudEngine/commit/57b8cbcc350f85dba46c4a309175c778016784e7))
+* reduce light intensity and darken skybox in character sandbox ([6a4ca7c](https://github.com/aram-devdocs/GoudEngine/commit/6a4ca7cfd8feddb25c99ac3a25bc2e16a0974f2f))
+* regenerate all SDK codegen artifacts to pass drift check ([4f8bfe9](https://github.com/aram-devdocs/GoudEngine/commit/4f8bfe9096bc5f8b61cd98d1bc49336f5cd93401))
+* remove unused DrawOps import (clippy CI) ([76017b1](https://github.com/aram-devdocs/GoudEngine/commit/76017b1c0ddc6609b7a6f458a85bb690ed5e7932))
+* remove unused gltf parameter from process_node (clippy recursion lint) ([f0b8120](https://github.com/aram-devdocs/GoudEngine/commit/f0b8120469c1112d492c1634fa906c147b2499af))
+* remove unused VertexBufferBinding import (clippy CI) ([7776fa3](https://github.com/aram-devdocs/GoudEngine/commit/7776fa315d2d98b9878761e955211a1ad12d7146))
+* resolve CI failures — typedoc TS errors, Kotlin sourcesJar duplicate ([8af7ead](https://github.com/aram-devdocs/GoudEngine/commit/8af7eadd95f1eb2b8eb76e0334d45ef585cebaa0))
+* resolve layer violations — move shared types to core/ ([3dd9d31](https://github.com/aram-devdocs/GoudEngine/commit/3dd9d31932bff1a98d2f08dffe13190c1058cd35))
+* review pass — DRY refactor, div-by-zero guard, stale comments, dead code cleanup ([680dcdc](https://github.com/aram-devdocs/GoudEngine/commit/680dcdc48c9e270d42769b4338e213a58dee22bf))
+* rewrite GltfProvider to read mesh data directly from accessors ([c8d6e47](https://github.com/aram-devdocs/GoudEngine/commit/c8d6e474c606adf46ffc9bc3f4e7d22398e780ca))
+* setObjectStatic web stub returns boolean not number (TS2416) ([ee30bc8](https://github.com/aram-devdocs/GoudEngine/commit/ee30bc8b53f1889fb80871779d966d142b7c90ac))
+* split oversized Rust files to comply with 500-line CI limit ([0bec4c2](https://github.com/aram-devdocs/GoudEngine/commit/0bec4c24c9309d7c50e8fa468adadb40afab85e5))
+* support external buffer URIs + fix gltf test failures ([dd67508](https://github.com/aram-devdocs/GoudEngine/commit/dd67508eb8732e2f6ec2684dfbe70de3c3d11443))
+* trim core.rs to exactly 500 lines (CI limit) ([0646167](https://github.com/aram-devdocs/GoudEngine/commit/0646167f0d4a2a991b5c579158c407a3e9454ec3))
+* update tsconfig.typedoc codegen template to use Bundler resolution ([9097f4e](https://github.com/aram-devdocs/GoudEngine/commit/9097f4e277bb33de84353f655bc79bd5cf7538af))
+* use i32 for grounded out-param in character controller FFI ([f9e30af](https://github.com/aram-devdocs/GoudEngine/commit/f9e30af1ec3b5f40bf3b7c3c5a1ec3b6e753f671))
+* wire skinned vertex data and bone matrix upload for Model3D rendering ([c57a0d6](https://github.com/aram-devdocs/GoudEngine/commit/c57a0d6447a7cd41643f2ff3309cf5180ce5bb05))
+
+
+### Performance
+
+* 3D renderer optimization — backend hotfixes, memory layout, frustum culling, material sorting ([d4ad278](https://github.com/aram-devdocs/GoudEngine/commit/d4ad278e64a521b6b1bc7b28fa5b36765ce62f33))
+* BoneChannelMap, shared animation eval, animation LOD, render optimizations ([a4b42e1](https://github.com/aram-devdocs/GoudEngine/commit/a4b42e19bacea45b6948810f33200d56cee2e247))
+* eliminate animation clone + fix render.rs syntax + release build ([1f08618](https://github.com/aram-devdocs/GoudEngine/commit/1f08618858d1eaa0d5c2623b885051aaba2895c1))
+* eliminate per-frame allocations in animation and skinned rendering ([1e3d338](https://github.com/aram-devdocs/GoudEngine/commit/1e3d338bb28e0128fc56ad5881d427996c942f65))
+* fix FPS bottlenecks — indexed animation channels + shadow threshold ([dcb5027](https://github.com/aram-devdocs/GoudEngine/commit/dcb5027ff7f1aaca44a97e88e0581d1d663657a6))
+
 ## [0.0.836](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.835...v0.0.836) (2026-03-24)
 
 
