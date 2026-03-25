@@ -62,7 +62,7 @@ impl Renderer3D {
         }
         self.backend.clear_depth();
 
-        let aspect = self.window_width as f32 / self.window_height as f32;
+        let aspect = self.window_width as f32 / self.window_height.max(1) as f32;
         let projection: Matrix4<f32> = perspective(Deg(45.0), aspect, 0.1, 1000.0);
         let view = self.camera.view_matrix();
         let view_arr = mat4_to_array(&view);

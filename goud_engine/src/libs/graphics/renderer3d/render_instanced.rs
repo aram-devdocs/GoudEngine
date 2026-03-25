@@ -182,7 +182,13 @@ impl Renderer3D {
 
         // Snapshot groups to avoid borrow conflict with &mut self.
         let groups = self.static_batch_groups.clone();
-        let batch_buf = self.static_batch_buffer.unwrap(); // guarded by caller
+        let batch_buf = match self.static_batch_buffer {
+            Some(buf) => buf,
+            None => {
+                log::error!("static_batch_buffer is None despite has_static_batch being true");
+                return;
+            }
+        };
         let mut batch_last_tex = u32::MAX;
 
         for group in &groups {

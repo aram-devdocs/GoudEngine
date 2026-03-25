@@ -8,7 +8,6 @@ use crate::core::types::{KeyframeAnimation, MeshBounds, SkeletonData};
 /// A `Model3D` owns its GPU resources (buffers and materials) and is
 /// identified by a model handle returned from [`Renderer3D::load_model`].
 #[derive(Debug)]
-#[allow(dead_code)] // Fields used in Phase B (animation, skeleton).
 pub(in crate::libs::graphics::renderer3d) struct Model3D {
     /// Object IDs for each sub-mesh in the model.
     pub mesh_object_ids: Vec<u32>,
@@ -16,7 +15,8 @@ pub(in crate::libs::graphics::renderer3d) struct Model3D {
     pub mesh_material_ids: Vec<u32>,
     /// AABB bounds of the full model.
     pub bounds: MeshBounds,
-    /// Source file path this model was loaded from.
+    /// Source file path this model was loaded from (retained for diagnostics).
+    #[allow(dead_code)]
     pub source_path: String,
     /// Skeleton data for skinned animation (populated in Phase B).
     pub skeleton: Option<SkeletonData>,
@@ -42,6 +42,7 @@ pub(in crate::libs::graphics::renderer3d) struct Model3D {
     ///
     /// Built once at model load time to avoid per-frame `format!()` allocations
     /// in `compute_bone_matrices`.
+    #[allow(dead_code)]
     pub cached_bone_prop_names: Vec<BonePropertyNames>,
     /// Pre-computed channel index maps for each animation clip.
     ///

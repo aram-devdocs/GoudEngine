@@ -3,16 +3,15 @@
 //! Groups skinned instances by source model and draws with one instanced
 //! draw call per unique model per sub-mesh.
 //!
-//! Currently not called from the render loop (the per-instance draw path in
-//! `render_skinned_models` is faster at typical NPC counts). Retained for
-//! future use when instance counts justify the batching overhead.
+//! Falls back to a no-op when GPU skinning is unavailable; the per-instance
+//! draw path in `render_skinned_models` handles CPU-skinned models.
 
+use super::animation::IDENTITY_MAT4;
 use super::core::Renderer3D;
 use crate::libs::graphics::backend::PrimitiveTopology;
 
 impl Renderer3D {
     /// Render skinned models using instanced drawing, grouped by source model.
-    #[allow(dead_code)]
     pub(super) fn render_instanced_skinned_models(
         &mut self,
         view_arr: &[f32; 16],
@@ -117,17 +116,11 @@ impl Renderer3D {
                         packed_bones.extend_from_slice(mat);
                     }
                     for _ in player.bone_matrices.len()..gd.bone_count {
-                        packed_bones.extend_from_slice(&[
-                            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
-                            0.0, 1.0,
-                        ]);
+                        packed_bones.extend_from_slice(&IDENTITY_MAT4);
                     }
                 } else {
                     for _ in 0..gd.bone_count {
-                        packed_bones.extend_from_slice(&[
-                            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
-                            0.0, 1.0,
-                        ]);
+                        packed_bones.extend_from_slice(&IDENTITY_MAT4);
                     }
                 }
 
