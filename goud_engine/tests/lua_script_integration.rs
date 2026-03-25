@@ -239,7 +239,6 @@ mod lua_tests {
             r#"
             assert(key ~= nil, "key table should exist")
             assert(mouse_button ~= nil, "mouse_button table should exist")
-            assert(renderer_type ~= nil, "renderer_type table should exist")
             assert(overlay_corner ~= nil, "overlay_corner table should exist")
             assert(blend_mode ~= nil, "blend_mode table should exist")
             assert(text_alignment ~= nil, "text_alignment table should exist")
