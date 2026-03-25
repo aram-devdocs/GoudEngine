@@ -77,6 +77,84 @@ pub(crate) fn write_back_AudioCapabilities<'local>(env: &mut jni::JNIEnv<'local>
     set_AudioCapabilities_fields(env, obj, value)
 }
 
+pub(crate) fn set_BoundingBox3D_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: BoundingBox3D) -> crate::jni::helpers::JniCallResult<()> {
+    crate::jni::helpers::ensure_no_pending_exception(env)?;
+    crate::jni::helpers::set_float_field(env, obj, "minX", value.minX)?;
+    crate::jni::helpers::set_float_field(env, obj, "minY", value.minY)?;
+    crate::jni::helpers::set_float_field(env, obj, "minZ", value.minZ)?;
+    crate::jni::helpers::set_float_field(env, obj, "maxX", value.maxX)?;
+    crate::jni::helpers::set_float_field(env, obj, "maxY", value.maxY)?;
+    crate::jni::helpers::set_float_field(env, obj, "maxZ", value.maxZ)?;
+    Ok(())
+}
+
+pub(crate) fn new_BoundingBox3D<'local>(env: &mut jni::JNIEnv<'local>, value: BoundingBox3D) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/BoundingBox3D")?;
+    set_BoundingBox3D_fields(env, &obj, value)?;
+    Ok(obj)
+}
+
+pub(crate) fn read_BoundingBox3D<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<BoundingBox3D> {
+    if obj.is_null() {
+        crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
+        return Err(());
+    }
+    let field_minX = crate::jni::helpers::get_float_field(env, obj, "minX")? as _;
+    let field_minY = crate::jni::helpers::get_float_field(env, obj, "minY")? as _;
+    let field_minZ = crate::jni::helpers::get_float_field(env, obj, "minZ")? as _;
+    let field_maxX = crate::jni::helpers::get_float_field(env, obj, "maxX")? as _;
+    let field_maxY = crate::jni::helpers::get_float_field(env, obj, "maxY")? as _;
+    let field_maxZ = crate::jni::helpers::get_float_field(env, obj, "maxZ")? as _;
+    Ok(BoundingBox3D {
+        minX: field_minX,
+        minY: field_minY,
+        minZ: field_minZ,
+        maxX: field_maxX,
+        maxY: field_maxY,
+        maxZ: field_maxZ,
+    })
+}
+
+pub(crate) fn write_back_BoundingBox3D<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: BoundingBox3D) -> crate::jni::helpers::JniCallResult<()> {
+    set_BoundingBox3D_fields(env, obj, value)
+}
+
+pub(crate) fn set_CharacterMoveResult_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: CharacterMoveResult) -> crate::jni::helpers::JniCallResult<()> {
+    crate::jni::helpers::ensure_no_pending_exception(env)?;
+    crate::jni::helpers::set_float_field(env, obj, "x", value.x)?;
+    crate::jni::helpers::set_float_field(env, obj, "y", value.y)?;
+    crate::jni::helpers::set_float_field(env, obj, "z", value.z)?;
+    crate::jni::helpers::set_boolean_field(env, obj, "grounded", value.grounded)?;
+    Ok(())
+}
+
+pub(crate) fn new_CharacterMoveResult<'local>(env: &mut jni::JNIEnv<'local>, value: CharacterMoveResult) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/CharacterMoveResult")?;
+    set_CharacterMoveResult_fields(env, &obj, value)?;
+    Ok(obj)
+}
+
+pub(crate) fn read_CharacterMoveResult<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<CharacterMoveResult> {
+    if obj.is_null() {
+        crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
+        return Err(());
+    }
+    let field_x = crate::jni::helpers::get_float_field(env, obj, "x")? as _;
+    let field_y = crate::jni::helpers::get_float_field(env, obj, "y")? as _;
+    let field_z = crate::jni::helpers::get_float_field(env, obj, "z")? as _;
+    let field_grounded = crate::jni::helpers::get_boolean_field(env, obj, "grounded")?;
+    Ok(CharacterMoveResult {
+        x: field_x,
+        y: field_y,
+        z: field_z,
+        grounded: field_grounded,
+    })
+}
+
+pub(crate) fn write_back_CharacterMoveResult<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: CharacterMoveResult) -> crate::jni::helpers::JniCallResult<()> {
+    set_CharacterMoveResult_fields(env, obj, value)
+}
+
 pub(crate) fn set_Color_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::FfiColor) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
     crate::jni::helpers::set_float_field(env, obj, "r", value.r)?;
@@ -3007,6 +3085,27 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setObjectScal
 
 #[allow(non_snake_case)]
 #[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setObjectStatic<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    objectId: jni::sys::jint,
+    isStatic: jni::sys::jboolean,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_setObjectStatic", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_set_object_static(goud_context_id_from_jlong(contextId), objectId as _, isStatic != 0);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_set_object_static", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_destroyObject<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
@@ -3261,6 +3360,163 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setFogEnabled
                 return Err(());
             }
             Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setFrustumCullingEnabled<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    enabled: jni::sys::jboolean,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_setFrustumCullingEnabled", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_set_frustum_culling_enabled(goud_context_id_from_jlong(contextId), enabled != 0);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_set_frustum_culling_enabled", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setSkinningMode<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    mode: jni::sys::jint,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_setSkinningMode", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_set_skinning_mode(goud_context_id_from_jlong(contextId), mode as _);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_set_skinning_mode", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setMaterialSortingEnabled<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    enabled: jni::sys::jboolean,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_setMaterialSortingEnabled", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_set_material_sorting_enabled(goud_context_id_from_jlong(contextId), enabled != 0);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_set_material_sorting_enabled", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setAnimationLodEnabled<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    enabled: jni::sys::jboolean,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_setAnimationLodEnabled", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_set_animation_lod_enabled(goud_context_id_from_jlong(contextId), enabled != 0);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_set_animation_lod_enabled", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setSharedAnimationEval<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    enabled: jni::sys::jboolean,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_setSharedAnimationEval", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_set_shared_animation_eval(goud_context_id_from_jlong(contextId), enabled != 0);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_set_shared_animation_eval", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getDrawCalls<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_getDrawCalls", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_get_draw_calls(goud_context_id_from_jlong(contextId));
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_get_draw_calls", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getVisibleObjectCount<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_getVisibleObjectCount", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_get_visible_object_count(goud_context_id_from_jlong(contextId));
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_get_visible_object_count", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getCulledObjectCount<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_getCulledObjectCount", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_get_culled_object_count(goud_context_id_from_jlong(contextId));
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_get_culled_object_count", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
     })
 }
 
@@ -3589,6 +3845,650 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_postprocessPa
                 return Err(());
             }
             Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_loadModel<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    path: jni::objects::JString<'local>,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_loadModel", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let path_cstr = crate::jni::helpers::require_c_string(env, path, "path")?;
+            let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
+        crate::ffi::renderer3d::goud_renderer3d_load_model(goud_context_id_from_jlong(contextId), path_cstr.as_ptr())
+    };
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_load_model", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_destroyModel<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    modelId: jni::sys::jint,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_destroyModel", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_destroy_model(goud_context_id_from_jlong(contextId), modelId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_destroy_model", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_instantiateModel<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    sourceModelId: jni::sys::jint,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_instantiateModel", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_instantiate_model(goud_context_id_from_jlong(contextId), sourceModelId as _);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_instantiate_model", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setModelMaterial<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    modelId: jni::sys::jint,
+    meshIndex: jni::sys::jint,
+    materialId: jni::sys::jint,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_setModelMaterial", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_set_model_material(goud_context_id_from_jlong(contextId), modelId as _, meshIndex as _, materialId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_set_model_material", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getModelMeshCount<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    modelId: jni::sys::jint,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_getModelMeshCount", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_get_model_mesh_count(goud_context_id_from_jlong(contextId), modelId as _);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_get_model_mesh_count", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getModelBoundingBox<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    modelId: jni::sys::jint,
+) -> jni::sys::jobject {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_getModelBoundingBox", crate::jni::helpers::null_object(), |env| -> crate::jni::helpers::JniCallResult<jni::sys::jobject> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let mut out_minX: f32 = 0.0;
+            let mut out_minY: f32 = 0.0;
+            let mut out_minZ: f32 = 0.0;
+            let mut out_maxX: f32 = 0.0;
+            let mut out_maxY: f32 = 0.0;
+            let mut out_maxZ: f32 = 0.0;
+            let status = unsafe { // SAFETY: out-parameter storage and marshaled inputs remain valid for the duration of the FFI call.
+        crate::ffi::renderer3d::goud_renderer3d_get_model_bounding_box(goud_context_id_from_jlong(contextId), modelId as _, &mut out_minX as _, &mut out_minY as _, &mut out_minZ as _, &mut out_maxX as _, &mut out_maxY as _, &mut out_maxZ as _)
+    };
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_get_model_bounding_box", None);
+                return Err(());
+            }
+            let value = BoundingBox3D {
+                minX: out_minX,
+                minY: out_minY,
+                minZ: out_minZ,
+                maxX: out_maxX,
+                maxY: out_maxY,
+                maxZ: out_maxZ,
+            };
+            Ok(new_BoundingBox3D(env, value)?.into_raw())
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setModelPosition<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    modelId: jni::sys::jint,
+    x: jni::sys::jfloat,
+    y: jni::sys::jfloat,
+    z: jni::sys::jfloat,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_setModelPosition", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_set_model_position(goud_context_id_from_jlong(contextId), modelId as _, x as _, y as _, z as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_set_model_position", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setModelRotation<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    modelId: jni::sys::jint,
+    x: jni::sys::jfloat,
+    y: jni::sys::jfloat,
+    z: jni::sys::jfloat,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_setModelRotation", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_set_model_rotation(goud_context_id_from_jlong(contextId), modelId as _, x as _, y as _, z as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_set_model_rotation", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setModelScale<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    modelId: jni::sys::jint,
+    x: jni::sys::jfloat,
+    y: jni::sys::jfloat,
+    z: jni::sys::jfloat,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_setModelScale", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_set_model_scale(goud_context_id_from_jlong(contextId), modelId as _, x as _, y as _, z as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_set_model_scale", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getAnimationCount<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    modelId: jni::sys::jint,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_getAnimationCount", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_get_animation_count(goud_context_id_from_jlong(contextId), modelId as _);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_get_animation_count", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getAnimationName<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    modelId: jni::sys::jint,
+    animIndex: jni::sys::jint,
+) -> jni::sys::jstring {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_getAnimationName", crate::jni::helpers::null_string(), |env| -> crate::jni::helpers::JniCallResult<jni::sys::jstring> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let value = read_buffer_protocol_string(env, "goud_renderer3d_get_animation_name", |buf, len| unsafe { // SAFETY: the caller-provided buffer is valid for the duration of each FFI call.
+        crate::ffi::renderer3d::goud_renderer3d_get_animation_name(goud_context_id_from_jlong(contextId), modelId as _, animIndex as _, buf, len)
+    })?;
+            crate::jni::helpers::new_java_string(env, &value)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_playAnimation<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    instanceId: jni::sys::jint,
+    animIndex: jni::sys::jint,
+    looping: jni::sys::jboolean,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_playAnimation", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_play_animation(goud_context_id_from_jlong(contextId), instanceId as _, animIndex as _, looping != 0);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_play_animation", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_stopAnimation<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    instanceId: jni::sys::jint,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_stopAnimation", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_stop_animation(goud_context_id_from_jlong(contextId), instanceId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_stop_animation", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setAnimationSpeed<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    instanceId: jni::sys::jint,
+    speed: jni::sys::jfloat,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_setAnimationSpeed", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_set_animation_speed(goud_context_id_from_jlong(contextId), instanceId as _, speed as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_set_animation_speed", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_blendAnimations<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    instanceId: jni::sys::jint,
+    animA: jni::sys::jint,
+    animB: jni::sys::jint,
+    blendFactor: jni::sys::jfloat,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_blendAnimations", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_blend_animations(goud_context_id_from_jlong(contextId), instanceId as _, animA as _, animB as _, blendFactor as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_blend_animations", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_transitionAnimation<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    instanceId: jni::sys::jint,
+    targetAnim: jni::sys::jint,
+    duration: jni::sys::jfloat,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_transitionAnimation", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_transition_animation(goud_context_id_from_jlong(contextId), instanceId as _, targetAnim as _, duration as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_transition_animation", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_isAnimationPlaying<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    instanceId: jni::sys::jint,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_isAnimationPlaying", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_is_animation_playing(goud_context_id_from_jlong(contextId), instanceId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_is_animation_playing", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getAnimationProgress<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    instanceId: jni::sys::jint,
+) -> jni::sys::jfloat {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_getAnimationProgress", 0.0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jfloat> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_get_animation_progress(goud_context_id_from_jlong(contextId), instanceId as _);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_get_animation_progress", None);
+                return Err(());
+            }
+            Ok(result)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_updateAnimations<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    deltaTime: jni::sys::jfloat,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_updateAnimations", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_update_animations(goud_context_id_from_jlong(contextId), deltaTime as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_update_animations", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_createScene<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    name: jni::objects::JString<'local>,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_createScene", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let name_cstr = crate::jni::helpers::require_c_string(env, name, "name")?;
+            let result = unsafe { // SAFETY: JNI inputs are validated and temporary buffers stay alive across the FFI call.
+        crate::ffi::renderer3d::goud_renderer3d_create_scene(goud_context_id_from_jlong(contextId), name_cstr.as_ptr())
+    };
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_create_scene", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_destroyScene<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    sceneId: jni::sys::jint,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_destroyScene", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_destroy_scene(goud_context_id_from_jlong(contextId), sceneId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_destroy_scene", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_setCurrentScene<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    sceneId: jni::sys::jint,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_setCurrentScene", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_set_current_scene(goud_context_id_from_jlong(contextId), sceneId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_set_current_scene", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getCurrentScene<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_getCurrentScene", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_get_current_scene(goud_context_id_from_jlong(contextId));
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_get_current_scene", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_clearCurrentScene<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_clearCurrentScene", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_clear_current_scene(goud_context_id_from_jlong(contextId));
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_clear_current_scene", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_addObjectToScene<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    sceneId: jni::sys::jint,
+    objectId: jni::sys::jint,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_addObjectToScene", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_add_object_to_scene(goud_context_id_from_jlong(contextId), sceneId as _, objectId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_add_object_to_scene", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_removeObjectFromScene<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    sceneId: jni::sys::jint,
+    objectId: jni::sys::jint,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_removeObjectFromScene", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_remove_object_from_scene(goud_context_id_from_jlong(contextId), sceneId as _, objectId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_remove_object_from_scene", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_addModelToScene<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    sceneId: jni::sys::jint,
+    modelId: jni::sys::jint,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_addModelToScene", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_add_model_to_scene(goud_context_id_from_jlong(contextId), sceneId as _, modelId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_add_model_to_scene", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_removeModelFromScene<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    sceneId: jni::sys::jint,
+    modelId: jni::sys::jint,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_removeModelFromScene", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_remove_model_from_scene(goud_context_id_from_jlong(contextId), sceneId as _, modelId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_remove_model_from_scene", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_addLightToScene<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    sceneId: jni::sys::jint,
+    lightId: jni::sys::jint,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_addLightToScene", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_add_light_to_scene(goud_context_id_from_jlong(contextId), sceneId as _, lightId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_add_light_to_scene", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_removeLightFromScene<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    sceneId: jni::sys::jint,
+    lightId: jni::sys::jint,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_removeLightFromScene", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_remove_light_from_scene(goud_context_id_from_jlong(contextId), sceneId as _, lightId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_remove_light_from_scene", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
     })
 }
 
@@ -10847,6 +11747,218 @@ pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld3DNative_getTime
 ) -> jni::sys::jfloat {
     let _ = env.throw_new("java/lang/IllegalStateException", "This JNI export requires the `rapier3d` feature.");
     0.0
+}
+
+#[cfg(feature = "rapier3d")]
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld3DNative_createCharacterController<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    radius: jni::sys::jfloat,
+    halfHeight: jni::sys::jfloat,
+    x: jni::sys::jfloat,
+    y: jni::sys::jfloat,
+    z: jni::sys::jfloat,
+    maxSlopeAngle: jni::sys::jfloat,
+    stepHeight: jni::sys::jfloat,
+) -> jni::sys::jlong {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_PhysicsWorld3DNative_createCharacterController", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jlong> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::physics::physics3d::character_controller::goud_physics3d_create_character_controller(goud_context_id_from_jlong(contextId), radius as _, halfHeight as _, x as _, y as _, z as _, maxSlopeAngle as _, stepHeight as _);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_physics3d_create_character_controller", None);
+                return Err(());
+            }
+            Ok(result as i64)
+    })
+}
+
+#[cfg(not(feature = "rapier3d"))]
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld3DNative_createCharacterController<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    radius: jni::sys::jfloat,
+    halfHeight: jni::sys::jfloat,
+    x: jni::sys::jfloat,
+    y: jni::sys::jfloat,
+    z: jni::sys::jfloat,
+    maxSlopeAngle: jni::sys::jfloat,
+    stepHeight: jni::sys::jfloat,
+) -> jni::sys::jlong {
+    let _ = env.throw_new("java/lang/IllegalStateException", "This JNI export requires the `rapier3d` feature.");
+    0
+}
+
+#[cfg(feature = "rapier3d")]
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld3DNative_moveCharacter<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    controllerId: jni::sys::jlong,
+    dx: jni::sys::jfloat,
+    dy: jni::sys::jfloat,
+    dz: jni::sys::jfloat,
+    dt: jni::sys::jfloat,
+) -> jni::sys::jobject {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_PhysicsWorld3DNative_moveCharacter", crate::jni::helpers::null_object(), |env| -> crate::jni::helpers::JniCallResult<jni::sys::jobject> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let mut out_x: f32 = 0.0;
+            let mut out_y: f32 = 0.0;
+            let mut out_z: f32 = 0.0;
+            let mut out_grounded: i32 = 0;
+            let status = unsafe { // SAFETY: out-parameter storage and marshaled inputs remain valid for the duration of the FFI call.
+        crate::ffi::physics::physics3d::character_controller::goud_physics3d_move_character(goud_context_id_from_jlong(contextId), controllerId as _, dx as _, dy as _, dz as _, dt as _, &mut out_x as _, &mut out_y as _, &mut out_z as _, &mut out_grounded as _)
+    };
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_physics3d_move_character", None);
+                return Err(());
+            }
+            let value = CharacterMoveResult {
+                x: out_x,
+                y: out_y,
+                z: out_z,
+                grounded: out_grounded,
+            };
+            Ok(new_CharacterMoveResult(env, value)?.into_raw())
+    })
+}
+
+#[cfg(not(feature = "rapier3d"))]
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld3DNative_moveCharacter<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    controllerId: jni::sys::jlong,
+    dx: jni::sys::jfloat,
+    dy: jni::sys::jfloat,
+    dz: jni::sys::jfloat,
+    dt: jni::sys::jfloat,
+) -> jni::sys::jobject {
+    let _ = env.throw_new("java/lang/IllegalStateException", "This JNI export requires the `rapier3d` feature.");
+    crate::jni::helpers::null_object()
+}
+
+#[cfg(feature = "rapier3d")]
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld3DNative_getCharacterPosition<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    controllerId: jni::sys::jlong,
+) -> jni::sys::jobject {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_PhysicsWorld3DNative_getCharacterPosition", crate::jni::helpers::null_object(), |env| -> crate::jni::helpers::JniCallResult<jni::sys::jobject> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let mut out_x: f32 = 0.0;
+            let mut out_y: f32 = 0.0;
+            let mut out_z: f32 = 0.0;
+            let status = unsafe { // SAFETY: out-parameter storage and marshaled inputs remain valid for the duration of the FFI call.
+        crate::ffi::physics::physics3d::character_controller::goud_physics3d_get_character_position(goud_context_id_from_jlong(contextId), controllerId as _, &mut out_x as _, &mut out_y as _, &mut out_z as _)
+    };
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_physics3d_get_character_position", None);
+                return Err(());
+            }
+            let value = Vec3 {
+                x: out_x,
+                y: out_y,
+                z: out_z,
+            };
+            Ok(new_Vec3(env, value)?.into_raw())
+    })
+}
+
+#[cfg(not(feature = "rapier3d"))]
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld3DNative_getCharacterPosition<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    controllerId: jni::sys::jlong,
+) -> jni::sys::jobject {
+    let _ = env.throw_new("java/lang/IllegalStateException", "This JNI export requires the `rapier3d` feature.");
+    crate::jni::helpers::null_object()
+}
+
+#[cfg(feature = "rapier3d")]
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld3DNative_isCharacterGrounded<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    controllerId: jni::sys::jlong,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_PhysicsWorld3DNative_isCharacterGrounded", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::physics::physics3d::character_controller::goud_physics3d_is_character_grounded(goud_context_id_from_jlong(contextId), controllerId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_physics3d_is_character_grounded", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[cfg(not(feature = "rapier3d"))]
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld3DNative_isCharacterGrounded<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    controllerId: jni::sys::jlong,
+) -> jni::sys::jboolean {
+    let _ = env.throw_new("java/lang/IllegalStateException", "This JNI export requires the `rapier3d` feature.");
+    jni::sys::JNI_FALSE
+}
+
+#[cfg(feature = "rapier3d")]
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld3DNative_destroyCharacterController<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    controllerId: jni::sys::jlong,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_PhysicsWorld3DNative_destroyCharacterController", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::physics::physics3d::character_controller::goud_physics3d_destroy_character_controller(goud_context_id_from_jlong(contextId), controllerId as _);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_physics3d_destroy_character_controller", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[cfg(not(feature = "rapier3d"))]
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_PhysicsWorld3DNative_destroyCharacterController<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    controllerId: jni::sys::jlong,
+) -> jni::sys::jint {
+    let _ = env.throw_new("java/lang/IllegalStateException", "This JNI export requires the `rapier3d` feature.");
+    0
 }
 
 #[allow(non_snake_case)]

@@ -419,6 +419,11 @@ func (g *Game) SetObjectScale(objectId uint32, x float32, y float32, z float32) 
 	return false
 }
 
+// SetObjectStatic Marks a 3D object as static or dynamic for batching optimisation
+func (g *Game) SetObjectStatic(objectId uint32, isStatic bool) bool {
+	return false
+}
+
 // DestroyObject Destroys a 3D object
 func (g *Game) DestroyObject(objectId uint32) bool {
 	return false

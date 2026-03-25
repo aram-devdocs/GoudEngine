@@ -27,4 +27,9 @@ public final class PhysicsWorld3DNative {
     public static native float getColliderRestitution(long contextId, long handle);
     public static native int setTimestep(long contextId, float dt);
     public static native float getTimestep(long contextId);
+    public static native long createCharacterController(long contextId, float radius, float halfHeight, float x, float y, float z, float maxSlopeAngle, float stepHeight);
+    public static native CharacterMoveResult moveCharacter(long contextId, long controllerId, float dx, float dy, float dz, float dt);
+    public static native Vec3 getCharacterPosition(long contextId, long controllerId);
+    public static native boolean isCharacterGrounded(long contextId, long controllerId);
+    public static native int destroyCharacterController(long contextId, long controllerId);
 }

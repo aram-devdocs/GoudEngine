@@ -406,6 +406,10 @@ class GoudGame:
         """Sets a 3D object's scale"""
         return self._lib.goud_renderer3d_set_object_scale(self._ctx, object_id, x, y, z)
 
+    def set_object_static(self, object_id, is_static):
+        """Marks a 3D object as static or dynamic for batching optimisation"""
+        return self._lib.goud_renderer3d_set_object_static(self._ctx, object_id, is_static)
+
     def destroy_object(self, object_id):
         """Destroys a 3D object"""
         return self._lib.goud_renderer3d_destroy_object(self._ctx, object_id)

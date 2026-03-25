@@ -753,6 +753,10 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_set_object_static(GoudContextId context_id, uint object_id, [MarshalAs(UnmanagedType.U1)] bool is_static);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
         public static extern bool goud_renderer3d_destroy_object(GoudContextId context_id, uint object_id);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
