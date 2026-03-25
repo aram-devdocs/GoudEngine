@@ -1,5 +1,4 @@
 //! Core [`Renderer3D`] struct, constructor, and object/light/camera manipulation.
-
 use std::collections::HashMap;
 
 use super::config::Render3DConfig;
