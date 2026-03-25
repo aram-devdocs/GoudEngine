@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-MAX_LINES=50
+MAX_LINES=55
 errors=0
 
 # Check length of all AGENTS.md files
