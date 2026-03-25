@@ -4,11 +4,10 @@
 import Foundation
 import PackageDescription
 
-// Resolve the engine library search path.
-// Set GOUD_ENGINE_LIB_DIR to override (e.g. for CI or custom layouts).
-// Default: ../../target/release (relative to this Package.swift).
-let libSearchPath: String = ProcessInfo.processInfo.environment["GOUD_ENGINE_LIB_DIR"]
+let macLibSearchPath: String = ProcessInfo.processInfo.environment["GOUD_ENGINE_LIB_DIR"]
     ?? "../../target/release"
+let iosLibSearchPath: String = ProcessInfo.processInfo.environment["GOUD_ENGINE_IOS_LIB_DIR"]
+    ?? "../../platform/ios/build/simulator"
 
 let package = Package(
     name: "GoudEngine",
@@ -29,7 +28,8 @@ let package = Package(
             dependencies: ["CGoudEngine"],
             path: "Sources/GoudEngine",
             linkerSettings: [
-                .unsafeFlags(["-L", libSearchPath]),
+                .unsafeFlags(["-L", macLibSearchPath], .when(platforms: [.macOS])),
+                .unsafeFlags(["-L", iosLibSearchPath], .when(platforms: [.iOS])),
             ]
         ),
         .testTarget(
@@ -37,7 +37,7 @@ let package = Package(
             dependencies: ["GoudEngine"],
             path: "Tests/GoudEngineTests",
             linkerSettings: [
-                .unsafeFlags(["-L", libSearchPath]),
+                .unsafeFlags(["-L", macLibSearchPath]),
             ]
         ),
     ]

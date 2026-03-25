@@ -51,7 +51,7 @@ pub mod ecs;
 #[cfg(feature = "native")]
 pub mod ffi;
 /// JNI bridge used by the JVM-facing internal bindings.
-#[cfg(feature = "native")]
+#[cfg(feature = "jni-bridge")]
 pub mod jni;
 /// Low-level libraries for graphics, platform, and other systems.
 pub mod libs;

@@ -6,9 +6,9 @@ use super::types::{CapabilityStateV1, RuntimeRouteId, RuntimeSurfaceKind};
 use crate::core::context_id::GoudContextId;
 
 mod artifacts;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
 mod attach;
-#[cfg(target_arch = "wasm32")]
+#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
 #[path = "runtime/attach_wasm.rs"]
 mod attach;
 mod capture;
