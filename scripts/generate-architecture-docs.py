@@ -191,16 +191,16 @@ def collect_ffi_modules() -> str:
     ffi_dir = ROOT / "goud_engine" / "src" / "ffi"
     exclude = {"mod.rs", "AGENTS.md", "CLAUDE.md", "error.rs"}
 
-    modules: list[str] = []
-    for entry in sorted(ffi_dir.iterdir()):
+    modules: set[str] = set()
+    for entry in ffi_dir.iterdir():
         if entry.name in exclude:
             continue
         if entry.is_dir():
-            modules.append(entry.name)
+            modules.add(entry.name)
         elif entry.suffix == ".rs":
-            modules.append(entry.stem)
+            modules.add(entry.stem)
 
-    names = ", ".join(modules)
+    names = ", ".join(sorted(modules))
     return f"FFI modules (**{len(modules)} total**): {names}."
 
 
