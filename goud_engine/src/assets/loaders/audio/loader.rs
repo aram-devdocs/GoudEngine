@@ -8,20 +8,20 @@ use super::{
     settings::AudioSettings,
 };
 
-#[cfg(feature = "native")]
+#[cfg(feature = "desktop-native")]
 use rodio::{Decoder, Source};
-#[cfg(feature = "native")]
+#[cfg(feature = "desktop-native")]
 use std::io::Cursor;
-#[cfg(feature = "native")]
+#[cfg(feature = "desktop-native")]
 use std::path::PathBuf;
 
 /// Audio asset loader with rodio-based validation and metadata extraction.
 ///
-/// Under the `native` feature, this loader validates that bytes are decodable,
+/// Under the `desktop-native` feature, this loader validates that bytes are decodable,
 /// extracts sample rate, channel count, and duration, then stores the original
 /// encoded bytes (decoding happens at playback time in `AudioManager::play()`).
 ///
-/// Without the `native` feature, falls back to stub behavior.
+/// Without the `desktop-native` feature, falls back to stub behavior.
 ///
 /// # Supported Formats
 /// - WAV (.wav)
@@ -88,12 +88,12 @@ impl AssetLoader for AudioLoader {
             .map(AudioFormat::from_extension)
             .unwrap_or(AudioFormat::Unknown);
 
-        #[cfg(feature = "native")]
+        #[cfg(feature = "desktop-native")]
         {
             self.load_native(bytes, settings, format, context)
         }
 
-        #[cfg(not(feature = "native"))]
+        #[cfg(not(feature = "desktop-native"))]
         {
             let _ = (settings, context);
             Ok(AudioAsset::new(
@@ -107,7 +107,7 @@ impl AssetLoader for AudioLoader {
     }
 }
 
-#[cfg(feature = "native")]
+#[cfg(feature = "desktop-native")]
 impl AudioLoader {
     fn load_native(
         &self,

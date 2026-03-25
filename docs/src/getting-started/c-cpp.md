@@ -44,6 +44,10 @@ Download the tarball for your platform from the
 [GitHub Releases](https://github.com/aram-devdocs/GoudEngine/releases) page.
 Each tarball contains `lib/`, `include/`, and `cmake/` directories.
 
+Console partners should use the separate `goud-engine-console-v<version>-<rid>.tar.gz`
+archives described in the [Console Porting Guide](../guides/console-porting.md).
+Those archives contain only the static library and `goud_engine.h`.
+
 Extract and point CMake at the tarball root:
 
 ```bash

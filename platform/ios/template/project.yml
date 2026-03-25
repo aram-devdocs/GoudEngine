@@ -1,0 +1,34 @@
+name: MobileTemplate
+options:
+  minimumXcodeGenVersion: 2.38.0
+packages:
+  GoudEngine:
+    path: ../../../sdks/swift
+settings:
+  base:
+    SWIFT_VERSION: 5.9
+    PRODUCT_NAME: MobileTemplate
+    PRODUCT_BUNDLE_IDENTIFIER: io.github.aram-devdocs.MobileTemplate
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGNING_ALLOWED: NO
+targets:
+  MobileTemplate:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: MobileTemplate
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: MobileTemplate
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UIStatusBarStyle: UIStatusBarStyleDefault
+        TARGETED_DEVICE_FAMILY: "1,2"
+    dependencies:
+      - package: GoudEngine
+        product: GoudEngine
+    scheme:
+      testTargets: []

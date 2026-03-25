@@ -13,7 +13,7 @@ pub mod font;
 pub(crate) mod gltf_utils;
 pub mod material;
 pub mod mesh;
-#[cfg(feature = "native")]
+#[cfg(feature = "desktop-native")]
 mod rodio_integration;
 #[cfg(feature = "lua")]
 pub mod script;
