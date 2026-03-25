@@ -2344,6 +2344,11 @@ bool goud_renderer3d_set_object_rotation(struct GoudContextId context_id, uint32
 bool goud_renderer3d_set_object_scale(struct GoudContextId context_id, uint32_t object_id, float x, float y, float z);
 
 /**
+ * Marks a 3D object as static or dynamic.
+ */
+bool goud_renderer3d_set_object_static(struct GoudContextId context_id, uint32_t object_id, bool is_static);
+
+/**
  * Destroys a 3D object.
  */
 bool goud_renderer3d_destroy_object(struct GoudContextId context_id, uint32_t object_id);

@@ -450,6 +450,38 @@ class GoudGame:
         """Sets fog visibility"""
         return self._lib.goud_renderer3d_set_fog_enabled(self._ctx, enabled)
 
+    def set_frustum_culling_enabled(self, enabled):
+        """Enables or disables frustum culling"""
+        return self._lib.goud_renderer3d_set_frustum_culling_enabled(self._ctx, enabled)
+
+    def set_skinning_mode(self, mode):
+        """Sets the skinning mode (0=CPU, 1=GPU)"""
+        return self._lib.goud_renderer3d_set_skinning_mode(self._ctx, mode)
+
+    def set_material_sorting_enabled(self, enabled):
+        """Enables or disables material sorting"""
+        return self._lib.goud_renderer3d_set_material_sorting_enabled(self._ctx, enabled)
+
+    def set_animation_lod_enabled(self, enabled):
+        """Enables or disables animation LOD"""
+        return self._lib.goud_renderer3d_set_animation_lod_enabled(self._ctx, enabled)
+
+    def set_shared_animation_eval(self, enabled):
+        """Enables or disables shared animation evaluation"""
+        return self._lib.goud_renderer3d_set_shared_animation_eval(self._ctx, enabled)
+
+    def get_draw_calls(self):
+        """Returns the number of draw calls last frame"""
+        return self._lib.goud_renderer3d_get_draw_calls(self._ctx)
+
+    def get_visible_object_count(self):
+        """Returns the number of visible objects last frame"""
+        return self._lib.goud_renderer3d_get_visible_object_count(self._ctx)
+
+    def get_culled_object_count(self):
+        """Returns the number of culled objects last frame"""
+        return self._lib.goud_renderer3d_get_culled_object_count(self._ctx)
+
     def render3_d(self):
         """Renders all 3D objects"""
         return self._lib.goud_renderer3d_render(self._ctx)

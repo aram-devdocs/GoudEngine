@@ -4980,6 +4980,21 @@
           "returns": "bool"
         },
         {
+          "name": "setObjectStatic",
+          "doc": "Marks a 3D object as static or dynamic for batching optimisation",
+          "params": [
+            {
+              "name": "objectId",
+              "type": "u32"
+            },
+            {
+              "name": "isStatic",
+              "type": "bool"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
           "name": "destroyObject",
           "doc": "Destroys a 3D object",
           "params": [
@@ -12265,6 +12280,9 @@
         },
         "setObjectScale": {
           "ffi": "goud_renderer3d_set_object_scale"
+        },
+        "setObjectStatic": {
+          "ffi": "goud_renderer3d_set_object_static"
         },
         "destroyObject": {
           "ffi": "goud_renderer3d_destroy_object"

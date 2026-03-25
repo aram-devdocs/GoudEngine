@@ -474,6 +474,46 @@ func (g *Game) SetFogEnabled(enabled bool) bool {
 	return false
 }
 
+// SetFrustumCullingEnabled Enables or disables frustum culling
+func (g *Game) SetFrustumCullingEnabled(enabled bool) int32 {
+	return 0
+}
+
+// SetSkinningMode Sets the skinning mode (0=CPU, 1=GPU)
+func (g *Game) SetSkinningMode(mode uint32) int32 {
+	return 0
+}
+
+// SetMaterialSortingEnabled Enables or disables material sorting
+func (g *Game) SetMaterialSortingEnabled(enabled bool) int32 {
+	return 0
+}
+
+// SetAnimationLodEnabled Enables or disables animation LOD
+func (g *Game) SetAnimationLodEnabled(enabled bool) int32 {
+	return 0
+}
+
+// SetSharedAnimationEval Enables or disables shared animation evaluation
+func (g *Game) SetSharedAnimationEval(enabled bool) int32 {
+	return 0
+}
+
+// GetDrawCalls Returns the number of draw calls last frame
+func (g *Game) GetDrawCalls() int32 {
+	return 0
+}
+
+// GetVisibleObjectCount Returns the number of visible objects last frame
+func (g *Game) GetVisibleObjectCount() int32 {
+	return 0
+}
+
+// GetCulledObjectCount Returns the number of culled objects last frame
+func (g *Game) GetCulledObjectCount() int32 {
+	return 0
+}
+
 // Render3D Renders all 3D objects
 func (g *Game) Render3D() bool {
 	return false
@@ -557,6 +597,156 @@ func (g *Game) RemovePostprocessPass(index uint32) bool {
 // PostprocessPassCount Returns the number of post-processing passes
 func (g *Game) PostprocessPassCount() uint32 {
 	return 0
+}
+
+// LoadModel Loads a 3D model from a file (glTF, OBJ, FBX) and returns a model handle
+func (g *Game) LoadModel(path string) uint32 {
+	return 0
+}
+
+// DestroyModel Destroys a 3D model and frees its GPU resources
+func (g *Game) DestroyModel(modelId uint32) bool {
+	return false
+}
+
+// InstantiateModel Creates an independent instance of a source model
+func (g *Game) InstantiateModel(sourceModelId uint32) uint32 {
+	return 0
+}
+
+// SetModelMaterial Overrides the material on a specific sub-mesh of a model (-1 for all sub-meshes)
+func (g *Game) SetModelMaterial(modelId uint32, meshIndex int32, materialId uint32) bool {
+	return false
+}
+
+// GetModelMeshCount Returns the number of sub-meshes in a model
+func (g *Game) GetModelMeshCount(modelId uint32) int32 {
+	return 0
+}
+
+// GetModelBoundingBox Returns the axis-aligned bounding box of a model
+func (g *Game) GetModelBoundingBox(modelId uint32) BoundingBox3D {
+	return BoundingBox3D{}
+}
+
+// SetModelPosition Sets the position of a 3D model or instance
+func (g *Game) SetModelPosition(modelId uint32, x float32, y float32, z float32) bool {
+	return false
+}
+
+// SetModelRotation Sets the rotation of a 3D model or instance in degrees
+func (g *Game) SetModelRotation(modelId uint32, x float32, y float32, z float32) bool {
+	return false
+}
+
+// SetModelScale Sets the scale of a 3D model or instance
+func (g *Game) SetModelScale(modelId uint32, x float32, y float32, z float32) bool {
+	return false
+}
+
+// GetAnimationCount Returns the number of animations in a model
+func (g *Game) GetAnimationCount(modelId uint32) int32 {
+	return 0
+}
+
+// GetAnimationName Returns the name of an animation by index
+func (g *Game) GetAnimationName(modelId uint32, animIndex int32) string {
+	return ""
+}
+
+// PlayAnimation Starts playing an animation on a model instance
+func (g *Game) PlayAnimation(instanceId uint32, animIndex int32, looping bool) bool {
+	return false
+}
+
+// StopAnimation Stops animation playback on a model instance
+func (g *Game) StopAnimation(instanceId uint32) bool {
+	return false
+}
+
+// SetAnimationSpeed Sets the playback speed for a model instance's animation
+func (g *Game) SetAnimationSpeed(instanceId uint32, speed float32) bool {
+	return false
+}
+
+// BlendAnimations Sets up blending between two animation clips
+func (g *Game) BlendAnimations(instanceId uint32, animA int32, animB int32, blendFactor float32) bool {
+	return false
+}
+
+// TransitionAnimation Starts a timed transition to a target animation clip
+func (g *Game) TransitionAnimation(instanceId uint32, targetAnim int32, duration float32) bool {
+	return false
+}
+
+// IsAnimationPlaying Returns whether an animation is currently playing on a model instance
+func (g *Game) IsAnimationPlaying(instanceId uint32) bool {
+	return false
+}
+
+// GetAnimationProgress Returns the playback progress (0.0 to 1.0) of the primary animation
+func (g *Game) GetAnimationProgress(instanceId uint32) float32 {
+	return 0
+}
+
+// UpdateAnimations Advances all animation players by delta_time seconds (call once per frame)
+func (g *Game) UpdateAnimations(deltaTime float32) bool {
+	return false
+}
+
+// CreateScene Creates a new named 3D scene and returns its ID
+func (g *Game) CreateScene(name string) uint32 {
+	return 0
+}
+
+// DestroyScene Destroys a 3D scene by ID
+func (g *Game) DestroyScene(sceneId uint32) bool {
+	return false
+}
+
+// SetCurrentScene Sets the current active 3D scene
+func (g *Game) SetCurrentScene(sceneId uint32) bool {
+	return false
+}
+
+// GetCurrentScene Returns the current active 3D scene ID
+func (g *Game) GetCurrentScene() uint32 {
+	return 0
+}
+
+// ClearCurrentScene Clears the current active scene so all objects are rendered
+func (g *Game) ClearCurrentScene() bool {
+	return false
+}
+
+// AddObjectToScene Adds a 3D object to a scene
+func (g *Game) AddObjectToScene(sceneId uint32, objectId uint32) bool {
+	return false
+}
+
+// RemoveObjectFromScene Removes a 3D object from a scene
+func (g *Game) RemoveObjectFromScene(sceneId uint32, objectId uint32) bool {
+	return false
+}
+
+// AddModelToScene Adds a model to a 3D scene
+func (g *Game) AddModelToScene(sceneId uint32, modelId uint32) bool {
+	return false
+}
+
+// RemoveModelFromScene Removes a model from a 3D scene
+func (g *Game) RemoveModelFromScene(sceneId uint32, modelId uint32) bool {
+	return false
+}
+
+// AddLightToScene Adds a light to a 3D scene
+func (g *Game) AddLightToScene(sceneId uint32, lightId uint32) bool {
+	return false
+}
+
+// RemoveLightFromScene Removes a light from a 3D scene
+func (g *Game) RemoveLightFromScene(sceneId uint32, lightId uint32) bool {
+	return false
 }
 
 // DrawSpriteRect draws a sprite with a source rectangle.

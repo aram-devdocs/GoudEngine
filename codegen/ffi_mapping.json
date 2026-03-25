@@ -625,6 +625,7 @@
       "goud_renderer3d_set_object_position": {},
       "goud_renderer3d_set_object_rotation": {},
       "goud_renderer3d_set_object_scale": {},
+      "goud_renderer3d_set_object_static": {},
       "goud_renderer3d_destroy_object": {},
       "goud_renderer3d_add_light": {},
       "goud_renderer3d_update_light": {},
