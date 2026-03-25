@@ -1119,7 +1119,7 @@ def gen_web_wrapper():
     lines.append("  getDrawCalls(): number { return 0; }")
     lines.append("  getVisibleObjectCount(): number { return 0; }")
     lines.append("  getCulledObjectCount(): number { return 0; }")
-    lines.append("  setObjectStatic(_objectId: number, _isStatic: boolean): number { return 0; }")
+    lines.append("  setObjectStatic(_objectId: number, _isStatic: boolean): boolean { return false; }")
     lines.append("  createMaterial(_materialType: number, _r: number, _g: number, _b: number, _a: number, _shininess: number, _metallic: number, _roughness: number, _ao: number): number { return 0; }")
     lines.append("  updateMaterial(_materialId: number, _materialType: number, _r: number, _g: number, _b: number, _a: number, _shininess: number, _metallic: number, _roughness: number, _ao: number): boolean { return false; }")
     lines.append("  removeMaterial(_materialId: number): boolean { return false; }")
