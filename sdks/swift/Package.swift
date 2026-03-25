@@ -4,10 +4,14 @@
 import Foundation
 import PackageDescription
 
+let packageDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+let macDefaultLibSearchPath = packageDir.appendingPathComponent("../../target/release").standardizedFileURL.path
+let iosDefaultLibSearchPath = packageDir.appendingPathComponent("../../platform/ios/build/simulator").standardizedFileURL.path
+
 let macLibSearchPath: String = ProcessInfo.processInfo.environment["GOUD_ENGINE_LIB_DIR"]
-    ?? "../../target/release"
+    ?? macDefaultLibSearchPath
 let iosLibSearchPath: String = ProcessInfo.processInfo.environment["GOUD_ENGINE_IOS_LIB_DIR"]
-    ?? "../../platform/ios/build/simulator"
+    ?? iosDefaultLibSearchPath
 
 let package = Package(
     name: "GoudEngine",
