@@ -101,8 +101,10 @@ The `RenderBackend` trait abstracts the GPU backend. Both 2D (SpriteBatch) and 3
 <!-- gen:feature-flags -->
 | Feature | Dependencies |
 |---------|-------------|
-| `default` | `native` |
-| `native` | `wgpu-backend`, `rodio`, `notify`, `cc`, `bindgen`, `cbindgen`, `tiled`, `rayon`, `env_logger`, `toml`, `gltf`, `tobj`, `fbxcel`, `jni`, `net-udp`, `net-tcp`, `net-ws`, `rapier2d`, `rapier3d` |
+| `default` | `desktop-native` |
+| `native` | `wgpu-backend`, `cc`, `bindgen`, `cbindgen`, `tiled`, `rayon`, `env_logger`, `toml`, `gltf`, `tobj`, `fbxcel`, `net-udp`, `net-tcp`, `net-ws`, `rapier2d`, `rapier3d` |
+| `desktop-native` | `native`, `interprocess`, `notify`, `rodio` |
+| `jni-bridge` | `jni` |
 | `legacy-glfw-opengl` | `gl`, `glfw` |
 | `lua` | `mlua` |
 | `net-udp` | (empty) |
