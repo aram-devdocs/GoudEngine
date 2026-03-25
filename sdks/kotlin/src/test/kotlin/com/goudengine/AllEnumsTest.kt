@@ -2,7 +2,6 @@ package com.goudengine
 
 import com.goudengine.input.Key
 import com.goudengine.input.MouseButton
-import com.goudengine.core.RendererType
 import com.goudengine.core.OverlayCorner
 import com.goudengine.core.DebuggerStepKind
 import com.goudengine.animation.PlaybackMode
@@ -47,11 +46,6 @@ class AllEnumsTest {
     @Test
     fun testMouseButtonRoundTrip() {
         assertRoundTrip(MouseButton.entries.toTypedArray(), { it.value }, MouseButton::fromValue)
-    }
-
-    @Test
-    fun testRendererTypeRoundTrip() {
-        assertRoundTrip(RendererType.entries.toTypedArray(), { it.value }, RendererType::fromValue)
     }
 
     @Test
@@ -147,7 +141,6 @@ class AllEnumsTest {
     fun testAllEnumsNonEmpty() {
         assertTrue(Key.entries.isNotEmpty())
         assertTrue(MouseButton.entries.isNotEmpty())
-        assertTrue(RendererType.entries.isNotEmpty())
         assertTrue(OverlayCorner.entries.isNotEmpty())
         assertTrue(DebuggerStepKind.entries.isNotEmpty())
         assertTrue(PlaybackMode.entries.isNotEmpty())
