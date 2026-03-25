@@ -3,6 +3,11 @@ plugins {
     kotlin("android")
 }
 
+val repoRoot = providers.environmentVariable("GOUD_REPO_ROOT")
+    .map { file(it).canonicalFile }
+    .orElse(rootProject.projectDir.resolve("../../..").canonicalFile)
+    .get()
+
 android {
     namespace = "com.goudengine.mobile"
     compileSdk = 34
@@ -38,8 +43,8 @@ android {
         getByName("main") {
             java.srcDirs(
                 "src/main/java",
-                "../../../../sdks/kotlin/src/main/java",
-                "../../../../sdks/kotlin/src/main/kotlin",
+                repoRoot.resolve("sdks/kotlin/src/main/java"),
+                repoRoot.resolve("sdks/kotlin/src/main/kotlin"),
             )
             jniLibs.srcDir("src/main/jniLibs")
         }

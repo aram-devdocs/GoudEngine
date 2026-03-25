@@ -1306,7 +1306,7 @@ jobs:
         check_job "kotlin-sdk-test" "${{ needs.kotlin-sdk-test.result }}" "false" || FAIL=1
         check_job "go-sdk-check" "${{ needs.go-sdk-check.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
         check_job "swift-sdk-check" "${{ needs.swift-sdk-check.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
-        check_job "ios-build-pipeline" "${{ needs.ios-build-pipeline.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
+        check_job "ios-build-pipeline" "${{ needs.ios-build-pipeline.result }}" "false" || FAIL=1
         check_job "android-build-pipeline" "${{ needs.android-build-pipeline.result }}" "false" || FAIL=1
         check_job "c-sdk-check" "${{ needs.c-sdk-check.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
         check_job "lua-sdk-check" "${{ needs.lua-sdk-check.result }}" "false" || FAIL=1
