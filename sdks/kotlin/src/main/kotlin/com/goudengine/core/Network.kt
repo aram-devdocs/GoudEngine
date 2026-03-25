@@ -2,6 +2,8 @@
 package com.goudengine.core
 
 import com.goudengine.internal.NetworkNative
+import com.goudengine.types.BoundingBox3D
+import com.goudengine.types.CharacterMoveResult
 
 class Network(private val contextId: Long) {
 

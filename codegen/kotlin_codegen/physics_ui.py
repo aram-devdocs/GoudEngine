@@ -72,6 +72,8 @@ def _gen_sub_tool(tool_name: str):
         "package com.goudengine.core",
         "",
         f"import com.goudengine.internal.{native_cls}",
+        "import com.goudengine.types.BoundingBox3D",
+        "import com.goudengine.types.CharacterMoveResult",
         "",
         f"class {tool_name}(private val contextId: Long) {{",
         "",
@@ -154,12 +156,21 @@ def _gen_physics_tool(tool_name: str):
         f"{p['name']}: {kt_type(p['type'])}" for p in ctor_params
     )
 
+    # Collect type imports needed for return types.
+    type_imports = set()
+    for method in tool.get("methods", []):
+        ret = method.get("returns", "void")
+        if ret in schema.get("types", {}):
+            type_imports.add(ret)
+    import_lines = [f"import com.goudengine.types.{t}" for t in sorted(type_imports)]
+
     lines = [
         f"// {HEADER_COMMENT}",
         "package com.goudengine.core",
         "",
         f"import com.goudengine.internal.{native_cls}",
         "import com.goudengine.internal.GoudContextNative",
+    ] + import_lines + [
         "",
         f"class {tool_name} private constructor(private val contextId: Long) : AutoCloseable {{",
         "",
