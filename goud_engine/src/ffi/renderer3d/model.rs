@@ -81,7 +81,7 @@ pub unsafe extern "C" fn goud_renderer3d_load_model(
 
     // Parse via the model provider registry.
     #[cfg(feature = "native")]
-    let model_data = {
+    let (model_data, embedded_assets) = {
         use crate::assets::loaders::mesh::default_registry;
         use crate::assets::{AssetPath, LoadContext};
 
@@ -90,7 +90,15 @@ pub unsafe extern "C" fn goud_renderer3d_load_model(
         let mut load_ctx = LoadContext::new(asset_path);
 
         match registry.load(&ext, &bytes, &mut load_ctx) {
-            Ok(data) => data,
+            Ok(data) => {
+                // Capture embedded image data before load_ctx drops.
+                let embedded: Vec<(String, Vec<u8>)> = load_ctx
+                    .embedded_assets()
+                    .iter()
+                    .map(|a| (a.path.clone(), a.bytes.clone()))
+                    .collect();
+                (data, embedded)
+            }
             Err(e) => {
                 set_last_error(GoudError::ResourceLoadFailed(format!(
                     "Failed to parse model '{}': {}",
@@ -153,8 +161,15 @@ pub unsafe extern "C" fn goud_renderer3d_load_model(
         }
 
         // Load textures and bind them to the model's materials.
+        // Try embedded image data first (for GLB files), then fall back to filesystem.
         for (mesh_index, tex_path, tex_type) in &texture_loads {
-            let tex_id = load_texture_from_path(context_id, tex_path);
+            let tex_id = if let Some((_, img_bytes)) =
+                embedded_assets.iter().find(|(p, _)| tex_path.ends_with(p))
+            {
+                load_texture_from_bytes(context_id, img_bytes, tex_path)
+            } else {
+                load_texture_from_path(context_id, tex_path)
+            };
             if tex_id != 0 {
                 with_renderer(context_id, |renderer| match *tex_type {
                     "albedo" => {
@@ -211,6 +226,44 @@ fn load_texture_from_path(context_id: GoudContextId, path: &str) -> u32 {
             Ok(handle) => handle.index(),
             Err(e) => {
                 log::warn!("Failed to create GPU texture for '{}': {}", path, e);
+                0
+            }
+        }
+    })
+    .unwrap_or(0)
+}
+
+/// Internal helper: load a texture from in-memory image bytes (PNG/JPG).
+///
+/// Used for embedded GLB textures. Returns `0` if decoding fails.
+fn load_texture_from_bytes(context_id: GoudContextId, img_bytes: &[u8], label: &str) -> u32 {
+    let img = match image::load_from_memory(img_bytes) {
+        Ok(i) => i.to_rgba8(),
+        Err(e) => {
+            log::warn!("Failed to decode embedded texture '{}': {}", label, e);
+            return 0;
+        }
+    };
+
+    let width = img.width();
+    let height = img.height();
+    let data = img.into_raw();
+
+    crate::ffi::window::with_window_state(context_id, |state| {
+        use crate::libs::graphics::backend::types::{TextureFilter, TextureFormat, TextureWrap};
+        use crate::libs::graphics::backend::TextureOps;
+
+        match state.backend_mut().create_texture(
+            width,
+            height,
+            TextureFormat::RGBA8,
+            TextureFilter::Linear,
+            TextureWrap::ClampToEdge,
+            &data,
+        ) {
+            Ok(handle) => handle.index(),
+            Err(e) => {
+                log::warn!("Failed to create GPU texture for '{}': {}", label, e);
                 0
             }
         }
