@@ -369,13 +369,33 @@ impl Renderer3D {
             }
         }
 
+        // Collect source model's buffer handles so we can skip destroying
+        // shared buffers. GPU-skinned instances share the source model's
+        // vertex buffer; only the source model should destroy it.
+        let source_buffers: std::collections::HashSet<
+            crate::libs::graphics::backend::BufferHandle,
+        > = self
+            .models
+            .get(&inst.source_model_id)
+            .map(|m| {
+                m.mesh_object_ids
+                    .iter()
+                    .filter_map(|&oid| self.objects.get(&oid).map(|o| o.buffer))
+                    .collect()
+            })
+            .unwrap_or_default();
+
         for &obj_id in &inst.mesh_object_ids {
             self.skinned_object_ids.remove(&obj_id);
             if let Some(obj) = self.objects.remove(&obj_id) {
                 if obj.is_static {
                     self.static_batch_dirty = true;
                 }
-                self.backend.destroy_buffer(obj.buffer);
+                // Skip buffer destruction if this instance shares the source
+                // model's buffer (GPU-skinned instances do this).
+                if !source_buffers.contains(&obj.buffer) {
+                    self.backend.destroy_buffer(obj.buffer);
+                }
             }
             self.object_materials.remove(&obj_id);
         }

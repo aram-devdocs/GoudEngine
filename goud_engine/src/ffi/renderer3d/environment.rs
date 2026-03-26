@@ -359,6 +359,117 @@ pub extern "C" fn goud_renderer3d_set_shared_animation_eval(
     .unwrap_or(-1)
 }
 
+/// Sets the distance at which animation updates are half-rated (every other frame).
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_animation_lod_distance(
+    context_id: GoudContextId,
+    distance: f32,
+) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    with_renderer(context_id, |renderer| {
+        let mut config = renderer.render_config().clone();
+        config.skinning.animation_lod_distance = distance;
+        renderer.set_render_config(config);
+        0
+    })
+    .unwrap_or(-1)
+}
+
+/// Sets the distance at which animation updates are frozen entirely.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_animation_lod_skip_distance(
+    context_id: GoudContextId,
+    distance: f32,
+) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    with_renderer(context_id, |renderer| {
+        let mut config = renderer.render_config().clone();
+        config.skinning.animation_lod_skip_distance = distance;
+        renderer.set_render_config(config);
+        0
+    })
+    .unwrap_or(-1)
+}
+
+/// Returns the current animation LOD half-rate distance.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_get_animation_lod_distance(context_id: GoudContextId) -> f32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        return -1.0;
+    }
+
+    with_renderer(context_id, |renderer| {
+        renderer.render_config().skinning.animation_lod_distance
+    })
+    .unwrap_or(-1.0)
+}
+
+/// Returns the current animation LOD freeze distance.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_get_animation_lod_skip_distance(
+    context_id: GoudContextId,
+) -> f32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        return -1.0;
+    }
+
+    with_renderer(context_id, |renderer| {
+        renderer
+            .render_config()
+            .skinning
+            .animation_lod_skip_distance
+    })
+    .unwrap_or(-1.0)
+}
+
+/// Enables or disables static batching.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_static_batching_enabled(
+    context_id: GoudContextId,
+    enabled: bool,
+) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    with_renderer(context_id, |renderer| {
+        let mut config = renderer.render_config().clone();
+        config.batching.static_batching_enabled = enabled;
+        renderer.set_render_config(config);
+        0
+    })
+    .unwrap_or(-1)
+}
+
+/// Enables or disables instanced rendering.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_instancing_enabled(
+    context_id: GoudContextId,
+    enabled: bool,
+) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    with_renderer(context_id, |renderer| {
+        let mut config = renderer.render_config().clone();
+        config.batching.instancing_enabled = enabled;
+        renderer.set_render_config(config);
+        0
+    })
+    .unwrap_or(-1)
+}
+
 // ============================================================================
 // FFI: Stats
 // ============================================================================
