@@ -241,61 +241,97 @@ impl Renderer3D {
         model_id
     }
 
-    /// Destroy a model, removing all its owned objects and materials.
+    /// Destroy a model, removing all its owned objects, materials, scene
+    /// references, and orphaned instances.
     ///
     /// Returns `true` if the model existed and was removed.
     pub fn destroy_model(&mut self, model_id: u32) -> bool {
-        if self.models.contains_key(&model_id) {
-            self.static_model_ids.remove(&model_id);
-            let child_instance_ids: Vec<u32> = self
-                .model_instances
-                .iter()
-                .filter_map(|(&instance_id, instance)| {
-                    (instance.source_model_id == model_id).then_some(instance_id)
-                })
-                .collect();
-
-            for instance_id in child_instance_ids {
-                let _ = self.destroy_model(instance_id);
-            }
-
-            let Some(model) = self.models.remove(&model_id) else {
-                return false;
-            };
-            self.remove_model_from_all_scenes(model_id);
-
-            for &obj_id in &model.mesh_object_ids {
-                self.destroy_object_entry(obj_id, true);
-            }
-            for &mat_id in &model.mesh_material_ids {
-                self.materials.remove(&mat_id);
-            }
-
-            self.animation_players.remove(&model_id);
-            return true;
-        }
-
-        let Some(instance) = self.model_instances.remove(&model_id) else {
-            return false;
+        // Collect object IDs before removing the model entry so scene cleanup
+        // can reference them.
+        let model = match self.models.get(&model_id) {
+            Some(m) => m,
+            None => return false,
         };
-        self.static_model_ids.remove(&model_id);
-        self.remove_model_from_all_scenes(model_id);
+        let obj_ids: Vec<u32> = model.mesh_object_ids.clone();
 
-        let destroy_instance_buffers = self
-            .models
-            .get(&instance.source_model_id)
-            .is_some_and(|source| source.skeleton.is_some() && !source.is_skinned);
-
-        for &obj_id in &instance.mesh_object_ids {
-            self.destroy_object_entry(obj_id, destroy_instance_buffers);
-        }
-        for &mat_id in &instance.mesh_material_ids {
-            if mat_id != 0 {
-                self.materials.remove(&mat_id);
+        // Remove from all scenes that reference this model or its objects.
+        for scene in self.scenes.values_mut() {
+            scene.remove_model(model_id);
+            for &oid in &obj_ids {
+                scene.remove_object(oid);
             }
+        }
+
+        // Mark static batch dirty if any object was static.
+        for &oid in &obj_ids {
+            if self.objects.get(&oid).is_some_and(|o| o.is_static) {
+                self.static_batch_dirty = true;
+                break;
+            }
+        }
+
+        // Destroy orphaned instances whose source is this model.
+        let orphan_ids: Vec<u32> = self
+            .model_instances
+            .iter()
+            .filter(|(_, inst)| inst.source_model_id == model_id)
+            .map(|(&id, _)| id)
+            .collect();
+        for orphan_id in orphan_ids {
+            self.destroy_model_instance(orphan_id);
+        }
+
+        // Now remove the model entry itself.
+        let model = self.models.remove(&model_id).unwrap();
+
+        for &obj_id in &model.mesh_object_ids {
+            self.skinned_object_ids.remove(&obj_id);
+            if let Some(obj) = self.objects.remove(&obj_id) {
+                self.backend.destroy_buffer(obj.buffer);
+            }
+            self.object_materials.remove(&obj_id);
+        }
+        for &mat_id in &model.mesh_material_ids {
+            self.materials.remove(&mat_id);
         }
 
         self.animation_players.remove(&model_id);
+
+        true
+    }
+
+    /// Destroy a model instance, cleaning up its objects, materials, scene
+    /// references, and animation player.
+    fn destroy_model_instance(&mut self, instance_id: u32) -> bool {
+        let inst = match self.model_instances.remove(&instance_id) {
+            Some(i) => i,
+            None => return false,
+        };
+
+        // Remove from all scenes.
+        for scene in self.scenes.values_mut() {
+            scene.remove_model(instance_id);
+            for &oid in &inst.mesh_object_ids {
+                scene.remove_object(oid);
+            }
+        }
+
+        for &obj_id in &inst.mesh_object_ids {
+            self.skinned_object_ids.remove(&obj_id);
+            if let Some(obj) = self.objects.remove(&obj_id) {
+                if obj.is_static {
+                    self.static_batch_dirty = true;
+                }
+                self.backend.destroy_buffer(obj.buffer);
+            }
+            self.object_materials.remove(&obj_id);
+        }
+        for &mat_id in &inst.mesh_material_ids {
+            self.materials.remove(&mat_id);
+        }
+
+        self.animation_players.remove(&instance_id);
+
         true
     }
 
@@ -314,6 +350,21 @@ impl Renderer3D {
     /// Set scale on all sub-mesh objects of a model or instance.
     pub fn set_model_scale(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         self.set_model_transform(id, |obj| obj.scale = Vector3::new(x, y, z))
+    }
+
+    /// Mark all sub-mesh objects of a model or instance as static for batching.
+    pub fn set_model_static(&mut self, model_id: u32, is_static: bool) -> bool {
+        let obj_ids = self.collect_model_object_ids(model_id);
+        if obj_ids.is_empty() {
+            return false;
+        }
+        for &oid in &obj_ids {
+            if let Some(obj) = self.objects.get_mut(&oid) {
+                obj.is_static = is_static;
+            }
+        }
+        self.static_batch_dirty = true;
+        true
     }
 
     /// Override the material on a specific sub-mesh of a model or instance.
@@ -455,23 +506,11 @@ impl Renderer3D {
 
     /// Apply a mutation to all Object3D sub-meshes of a model or instance.
     fn set_model_transform(&mut self, id: u32, f: impl Fn(&mut Object3D)) -> bool {
-        let obj_ids_ptr = if let Some(model) = self.models.get(&id) {
-            &model.mesh_object_ids as *const Vec<u32>
-        } else if let Some(instance) = self.model_instances.get(&id) {
-            &instance.mesh_object_ids as *const Vec<u32>
-        } else {
-            return false;
-        };
-
-        // SAFETY: the object-id vector belongs to either `self.models` or
-        // `self.model_instances`. This method only mutates `self.objects`, so
-        // those vectors remain valid for the duration of the loop.
-        let obj_ids = unsafe { &*obj_ids_ptr };
+        let obj_ids = self.collect_model_object_ids(id);
         if obj_ids.is_empty() {
             return false;
         }
-
-        for &obj_id in obj_ids {
+        for obj_id in obj_ids {
             if let Some(obj) = self.objects.get_mut(&obj_id) {
                 f(obj);
             }

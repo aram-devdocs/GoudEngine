@@ -250,7 +250,7 @@ pub extern "C" fn goud_renderer3d_instantiate_model(
     .unwrap_or(GOUD_INVALID_MODEL)
 }
 
-/// Marks a loaded model or model instance as static or dynamic.
+/// Mark a model or instance as static for batching optimizations.
 #[no_mangle]
 pub extern "C" fn goud_renderer3d_set_model_static(
     context_id: GoudContextId,

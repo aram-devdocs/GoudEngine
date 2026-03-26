@@ -148,8 +148,6 @@ impl Renderer3D {
     /// and draws each sub-mesh with the skinned vertex layout.
     pub(super) fn render_skinned_models(
         &mut self,
-        frustum: Option<&super::frustum::Frustum>,
-        grouped_ids: &std::collections::HashSet<u32>,
         view_arr: &[f32; 16],
         proj_arr: &[f32; 16],
         shadow_matrix: &[f32; 16],
@@ -162,16 +160,12 @@ impl Renderer3D {
             .current_scene
             .and_then(|sid| self.scenes.get(&sid))
             .map(|s| &s.models);
-        let gpu_skinning = matches!(self.config.skinning.mode, super::config::SkinningMode::Gpu)
-            && self.backend.supports_storage_buffers();
 
         // Collect draw data using raw pointers to avoid cloning Vec data per frame.
         struct SkinnedDraw {
             obj_ids: *const Vec<u32>,
             mat_ids: *const Vec<u32>,
             bone_mats: *const Vec<[f32; 16]>,
-            bounds: crate::core::types::MeshBounds,
-            upload_key: Option<(u32, usize, u32)>,
         }
 
         let mut draws: Vec<SkinnedDraw> = Vec::new();
@@ -180,32 +174,16 @@ impl Renderer3D {
             if !model.is_skinned {
                 continue;
             }
-            if grouped_ids.contains(&model_id) {
-                continue;
-            }
             if let Some(filter) = scene_model_filter {
                 if !filter.contains(&model_id) {
                     continue;
                 }
             }
             if let Some(player) = self.animation_players.get(&model_id) {
-                let upload_key = if self.config.skinning.shared_animation_eval
-                    && player.transition.is_none()
-                    && player.blend_factor <= f32::EPSILON
-                {
-                    player.primary.as_ref().filter(|state| state.playing).map(|state| {
-                        let quantized_time = (state.time * 30.0).round() / 30.0;
-                        (model_id, state.clip_index, quantized_time.to_bits())
-                    })
-                } else {
-                    None
-                };
                 draws.push(SkinnedDraw {
                     obj_ids: &model.mesh_object_ids as *const _,
                     mat_ids: &model.mesh_material_ids as *const _,
                     bone_mats: &player.bone_matrices as *const _,
-                    bounds: model.bounds,
-                    upload_key,
                 });
             }
         }
@@ -218,32 +196,16 @@ impl Renderer3D {
             if !source.is_skinned {
                 continue;
             }
-            if grouped_ids.contains(&inst_id) {
-                continue;
-            }
             if let Some(filter) = scene_model_filter {
                 if !filter.contains(&inst_id) {
                     continue;
                 }
             }
             if let Some(player) = self.animation_players.get(&inst_id) {
-                let upload_key = if self.config.skinning.shared_animation_eval
-                    && player.transition.is_none()
-                    && player.blend_factor <= f32::EPSILON
-                {
-                    player.primary.as_ref().filter(|state| state.playing).map(|state| {
-                        let quantized_time = (state.time * 30.0).round() / 30.0;
-                        (inst.source_model_id, state.clip_index, quantized_time.to_bits())
-                    })
-                } else {
-                    None
-                };
                 draws.push(SkinnedDraw {
                     obj_ids: &inst.mesh_object_ids as *const _,
                     mat_ids: &inst.mesh_material_ids as *const _,
                     bone_mats: &player.bone_matrices as *const _,
-                    bounds: source.bounds,
-                    upload_key,
                 });
             }
         }
@@ -252,11 +214,8 @@ impl Renderer3D {
             return;
         }
 
-        draws.sort_by(|a, b| {
-            let a_key = a.upload_key.unwrap_or((u32::MAX, usize::MAX, u32::MAX));
-            let b_key = b.upload_key.unwrap_or((u32::MAX, usize::MAX, u32::MAX));
-            a_key.cmp(&b_key)
-        });
+        let gpu_skinning = matches!(self.config.skinning.mode, super::config::SkinningMode::Gpu)
+            && self.backend.supports_storage_buffers();
 
         let _ = self.backend.bind_shader(self.skinned_shader_handle);
         let skinned_unis = self.skinned_uniforms.clone();
@@ -270,81 +229,30 @@ impl Renderer3D {
             lights,
         );
 
-        let mut last_upload_key: Option<(u32, usize, u32)> = None;
-
         for draw in &draws {
             // SAFETY: self.models, self.model_instances, and self.animation_players
             // are not mutated during this draw loop -- only the backend receives calls.
             let obj_ids = unsafe { &*draw.obj_ids };
             let mat_ids = unsafe { &*draw.mat_ids };
             let bone_mats = unsafe { &*draw.bone_mats };
-            let Some(&anchor_obj_id) = obj_ids.first() else {
-                continue;
-            };
-            let Some(anchor_obj) = self.objects.get(&anchor_obj_id) else {
-                continue;
-            };
-
-            if let Some(frustum) = frustum {
-                let center = [
-                    (draw.bounds.min[0] + draw.bounds.max[0]) * 0.5,
-                    (draw.bounds.min[1] + draw.bounds.max[1]) * 0.5,
-                    (draw.bounds.min[2] + draw.bounds.max[2]) * 0.5,
-                ];
-                let extent = [
-                    draw.bounds.max[0] - center[0],
-                    draw.bounds.max[1] - center[1],
-                    draw.bounds.max[2] - center[2],
-                ];
-                let world_center = cgmath::Vector3::new(
-                    anchor_obj.position.x + center[0] * anchor_obj.scale.x.abs(),
-                    anchor_obj.position.y + center[1] * anchor_obj.scale.y.abs(),
-                    anchor_obj.position.z + center[2] * anchor_obj.scale.z.abs(),
-                );
-                let max_scale = anchor_obj
-                    .scale
-                    .x
-                    .abs()
-                    .max(anchor_obj.scale.y.abs())
-                    .max(anchor_obj.scale.z.abs());
-                let world_radius = (extent[0] * extent[0]
-                    + extent[1] * extent[1]
-                    + extent[2] * extent[2])
-                    .sqrt()
-                    * max_scale;
-                if !frustum.intersects_sphere(world_center, world_radius) {
-                    continue;
-                }
-            }
 
             self.stats.skinned_instances += 1;
-            self.stats.visible_objects = self
-                .stats
-                .visible_objects
-                .saturating_add(obj_ids.len() as u32);
-            self.stats.culled_objects = self
-                .stats
-                .culled_objects
-                .saturating_sub(obj_ids.len() as u32);
 
-            let should_upload_bones = draw.upload_key.is_none() || draw.upload_key != last_upload_key;
             if gpu_skinning {
                 // Upload bone matrices to a storage buffer for the GPU skinning shader.
                 let bone_data: &[u8] = bytemuck::cast_slice(bone_mats);
                 self.ensure_bone_storage_buffer(bone_data.len());
                 if let Some(storage_handle) = self.bone_storage_buffer {
-                    if should_upload_bones {
-                        if let Err(e) = self
-                            .backend
-                            .update_storage_buffer(storage_handle, 0, bone_data)
-                        {
-                            log::error!("Failed to upload bone matrices to storage buffer: {e}");
-                        }
-                        self.stats.bone_matrix_uploads += 1;
+                    if let Err(e) = self
+                        .backend
+                        .update_storage_buffer(storage_handle, 0, bone_data)
+                    {
+                        log::error!("Failed to upload bone matrices to storage buffer: {e}");
                     }
                     let _ = self.backend.bind_storage_buffer(storage_handle, 0);
                 }
-            } else if should_upload_bones {
+                self.stats.bone_matrix_uploads += 1;
+            } else {
                 // Upload bone matrices as individual uniforms (OpenGL/CPU path).
                 for (i, mat) in bone_mats.iter().enumerate() {
                     if i < skinned_unis.bone_matrices.len() {
@@ -354,7 +262,6 @@ impl Renderer3D {
                 }
                 self.stats.bone_matrix_uploads += 1;
             }
-            last_upload_key = draw.upload_key;
 
             for (sub_idx, &obj_id) in obj_ids.iter().enumerate() {
                 let (buffer, vc, pos, rot, scl, color, tid) = match self.objects.get(&obj_id) {

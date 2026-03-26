@@ -3163,35 +3163,11 @@
       "return_type": "bool",
       "is_unsafe": false
     },
-    "goud_renderer3d_get_active_instance_count": {
-      "source_file": "ffi/renderer3d/environment.rs",
-      "params": [
-        "context_id: GoudContextId"
-      ],
-      "return_type": "i32",
-      "is_unsafe": false
-    },
     "goud_renderer3d_get_animation_count": {
       "source_file": "ffi/renderer3d/animation.rs",
       "params": [
         "context_id: GoudContextId",
         "model_id: u32"
-      ],
-      "return_type": "i32",
-      "is_unsafe": false
-    },
-    "goud_renderer3d_get_animation_evaluation_count": {
-      "source_file": "ffi/renderer3d/environment.rs",
-      "params": [
-        "context_id: GoudContextId"
-      ],
-      "return_type": "i32",
-      "is_unsafe": false
-    },
-    "goud_renderer3d_get_animation_evaluation_saved_count": {
-      "source_file": "ffi/renderer3d/environment.rs",
-      "params": [
-        "context_id: GoudContextId"
       ],
       "return_type": "i32",
       "is_unsafe": false
@@ -3217,14 +3193,6 @@
       "return_type": "f32",
       "is_unsafe": false
     },
-    "goud_renderer3d_get_bone_matrix_upload_count": {
-      "source_file": "ffi/renderer3d/environment.rs",
-      "params": [
-        "context_id: GoudContextId"
-      ],
-      "return_type": "i32",
-      "is_unsafe": false
-    },
     "goud_renderer3d_get_culled_object_count": {
       "source_file": "ffi/renderer3d/environment.rs",
       "params": [
@@ -3242,14 +3210,6 @@
       "is_unsafe": false
     },
     "goud_renderer3d_get_draw_calls": {
-      "source_file": "ffi/renderer3d/environment.rs",
-      "params": [
-        "context_id: GoudContextId"
-      ],
-      "return_type": "i32",
-      "is_unsafe": false
-    },
-    "goud_renderer3d_get_instanced_draw_calls": {
       "source_file": "ffi/renderer3d/environment.rs",
       "params": [
         "context_id: GoudContextId"
@@ -5898,5 +5858,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 594
+  "total_count": 589
 }

@@ -204,14 +204,6 @@ impl GoudGame {
         }
     }
 
-    /// Marks a loaded model or model instance as static or dynamic.
-    pub fn set_model_static(&mut self, model_id: u32, is_static: bool) -> bool {
-        match &mut self.renderer_3d {
-            Some(renderer) => renderer.set_model_static(model_id, is_static),
-            None => false,
-        }
-    }
-
     /// Removes a 3D object from the scene.
     pub fn destroy_object(&mut self, object_id: u32) -> bool {
         match &mut self.renderer_3d {

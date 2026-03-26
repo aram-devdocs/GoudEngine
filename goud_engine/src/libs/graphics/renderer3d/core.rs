@@ -124,7 +124,6 @@ pub struct Renderer3D {
     /// Persistent GPU buffer for instanced skinned per-instance data (reused across frames).
     pub(super) instanced_skinned_instance_buffer: Option<BufferHandle>,
     /// Current allocated size in bytes of `instanced_skinned_instance_buffer`.
-    #[allow(dead_code)] // Reserved while instanced skinned rendering is corrected.
     pub(super) instanced_skinned_instance_buffer_size: usize,
     /// Pre-allocated buffer of visible object IDs, reused across frames to avoid
     /// per-frame Vec allocation during the render snapshot phase.
@@ -137,12 +136,6 @@ pub struct Renderer3D {
     pub(super) static_batch_groups: Vec<StaticBatchGroup>,
     /// Total vertex count in the static batch buffer.
     pub(super) static_batch_vertex_count: u32,
-    /// Model or model-instance handles that should render through the imported static path.
-    pub(super) static_model_ids: std::collections::HashSet<u32>,
-    /// Reusable instance buffer for imported static model groups.
-    pub(super) static_model_instance_buffer: Option<BufferHandle>,
-    /// Current allocated size in bytes of `static_model_instance_buffer`.
-    pub(super) static_model_instance_buffer_size: usize,
 }
 
 // StaticBatchGroup is defined in core_static_batch.rs
@@ -321,9 +314,6 @@ impl Renderer3D {
             static_batch_buffer: None,
             static_batch_groups: Vec::new(),
             static_batch_vertex_count: 0,
-            static_model_ids: std::collections::HashSet::new(),
-            static_model_instance_buffer: None,
-            static_model_instance_buffer_size: 0,
         })
     }
     pub fn set_object_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
@@ -360,7 +350,15 @@ impl Renderer3D {
     }
 
     pub fn remove_object(&mut self, id: u32) -> bool {
-        self.destroy_object_entry(id, true)
+        if let Some(obj) = self.objects.remove(&id) {
+            if obj.is_static {
+                self.static_batch_dirty = true;
+            }
+            self.backend.destroy_buffer(obj.buffer);
+            true
+        } else {
+            false
+        }
     }
 
     pub fn add_light(&mut self, light: Light) -> u32 {
@@ -403,48 +401,6 @@ impl Renderer3D {
 
     pub fn stats(&self) -> Renderer3DStats {
         self.stats
-    }
-
-    pub fn set_model_static(&mut self, id: u32, is_static: bool) -> bool {
-        if self.models.contains_key(&id) || self.model_instances.contains_key(&id) {
-            if is_static {
-                self.static_model_ids.insert(id);
-            } else {
-                self.static_model_ids.remove(&id);
-            }
-            true
-        } else {
-            false
-        }
-    }
-
-    pub(super) fn remove_object_from_all_scenes(&mut self, id: u32) {
-        for scene in self.scenes.values_mut() {
-            scene.remove_object(id);
-        }
-    }
-
-    pub(super) fn remove_model_from_all_scenes(&mut self, id: u32) {
-        for scene in self.scenes.values_mut() {
-            scene.remove_model(id);
-        }
-    }
-
-    pub(super) fn destroy_object_entry(&mut self, id: u32, destroy_buffer: bool) -> bool {
-        if let Some(obj) = self.objects.remove(&id) {
-            if obj.is_static {
-                self.static_batch_dirty = true;
-            }
-            self.remove_object_from_all_scenes(id);
-            self.skinned_object_ids.remove(&id);
-            self.object_materials.remove(&id);
-            if destroy_buffer {
-                self.backend.destroy_buffer(obj.buffer);
-            }
-            true
-        } else {
-            false
-        }
     }
 
     pub fn anti_aliasing_mode(&self) -> AntiAliasingMode {

@@ -20,11 +20,7 @@ impl Renderer3D {
         }
 
         self.frame_counter = self.frame_counter.wrapping_add(1);
-        let animation_evaluations = self.stats.animation_evaluations;
-        let animation_evaluations_saved = self.stats.animation_evaluations_saved;
         self.stats = Default::default();
-        self.stats.animation_evaluations = animation_evaluations;
-        self.stats.animation_evaluations_saved = animation_evaluations_saved;
         self.backend.set_viewport(
             self.viewport.0,
             self.viewport.1,
@@ -139,15 +135,11 @@ impl Renderer3D {
         let scene_obj_filter = self
             .current_scene
             .and_then(|sid| self.scenes.get(&sid))
-            .map(|s| s.objects.clone());
+            .map(|s| &s.objects);
         let scene_light_filter = self
             .current_scene
             .and_then(|sid| self.scenes.get(&sid))
-            .map(|s| s.lights.clone());
-        let scene_model_filter = self
-            .current_scene
-            .and_then(|sid| self.scenes.get(&sid))
-            .map(|s| s.models.clone());
+            .map(|s| &s.lights);
 
         // Build frustum for culling if enabled.
         let frustum = if self.config.frustum_culling.enabled {
@@ -158,7 +150,7 @@ impl Renderer3D {
 
         // Object IDs belonging to skinned models — excluded from the standard pass.
         // Uses the persistent set maintained incrementally by load_model/instantiate/destroy.
-        let skinned_obj_ids = self.skinned_object_ids.clone();
+        let skinned_obj_ids = &self.skinned_object_ids;
 
         // Track total object count before culling.
         self.stats.total_objects = self.objects.len() as u32;
@@ -168,42 +160,18 @@ impl Renderer3D {
         let has_static_batch =
             self.static_batch_buffer.is_some() && self.config.batching.static_batching_enabled;
 
-        // Snapshot filtered lights for uniform upload.
-        let filtered_lights: Vec<super::types::Light> = self
-            .lights
-            .iter()
-            .filter(|(&id, _)| {
-                scene_light_filter
-                    .as_ref()
-                    .is_none_or(|set| set.contains(&id))
-            })
-            .map(|(_, l)| l.clone())
-            .collect();
-
-        let static_model_object_ids = self.render_static_model_instances(
-            scene_model_filter.as_ref(),
-            frustum.as_ref(),
-            &view_arr,
-            &proj_arr,
-            &shadow_matrix,
-            shadow_map.is_some(),
-            &eff_fog,
-            &filtered_lights,
-            texture_manager,
-        );
-
         // Collect visible object IDs into the pre-allocated buffer (B3: avoids
         // per-frame Vec<DrawCmd> allocation for large scenes).
         self.visible_object_ids.clear();
         for (&id, obj) in &self.objects {
-            if skinned_obj_ids.contains(&id) || static_model_object_ids.contains(&id) {
+            if skinned_obj_ids.contains(&id) {
                 continue;
             }
             // Static objects are drawn via the batch buffer, skip them here.
             if has_static_batch && obj.is_static {
                 continue;
             }
-            if let Some(filter) = scene_obj_filter.as_ref() {
+            if let Some(filter) = scene_obj_filter {
                 if !filter.contains(&id) {
                     continue;
                 }
@@ -233,12 +201,19 @@ impl Renderer3D {
             });
         }
 
-        self.stats.visible_objects =
-            (self.visible_object_ids.len() + static_model_object_ids.len()) as u32;
+        self.stats.visible_objects = self.visible_object_ids.len() as u32;
         self.stats.culled_objects = self
             .stats
             .total_objects
             .saturating_sub(self.stats.visible_objects);
+
+        // Snapshot filtered lights for uniform upload.
+        let filtered_lights: Vec<super::types::Light> = self
+            .lights
+            .iter()
+            .filter(|(&id, _)| scene_light_filter.is_none_or(|set| set.contains(&id)))
+            .map(|(_, l)| l.clone())
+            .collect();
 
         let _ = self.backend.bind_shader(self.shader_handle);
         let uniforms = self.uniforms.clone();
@@ -407,8 +382,8 @@ impl Renderer3D {
             let _ = self.backend.bind_shader(self.shader_handle);
         }
 
-        let instanced_skinned_ids = self.render_instanced_skinned_models(
-            frustum.as_ref(),
+        // Single-instance skinned model rendering pass.
+        self.render_skinned_models(
             &view_arr,
             &proj_arr,
             &shadow_matrix,
@@ -418,10 +393,9 @@ impl Renderer3D {
             texture_manager,
         );
 
-        // Single-instance skinned model rendering pass.
-        self.render_skinned_models(
-            frustum.as_ref(),
-            &instanced_skinned_ids,
+        // Instanced skinned rendering: groups skinned instances by source model
+        // and draws with one instanced draw call per unique model.
+        self.render_instanced_skinned_models(
             &view_arr,
             &proj_arr,
             &shadow_matrix,

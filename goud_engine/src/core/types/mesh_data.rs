@@ -316,11 +316,6 @@ pub struct BoneData {
     pub name: String,
     /// Index of the parent bone, or -1 for root bones.
     pub parent_index: i32,
-    /// Local bind-pose transform in column-major form.
-    ///
-    /// The animation runtime uses this as the default local transform when an
-    /// animation clip omits one or more channels for the bone.
-    pub local_bind_transform: [f32; 16],
     /// Column-major 4x4 inverse bind matrix.
     pub inverse_bind_matrix: [f32; 16],
 }

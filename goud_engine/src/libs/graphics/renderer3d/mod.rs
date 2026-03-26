@@ -39,7 +39,6 @@ mod render_helpers;
 mod render_instanced;
 mod render_instanced_skinned;
 mod render_pass;
-mod render_static_models;
 pub mod scene;
 mod shaders;
 mod shadow;

@@ -2199,31 +2199,6 @@ int32_t goud_renderer3d_get_visible_object_count(struct GoudContextId context_id
 int32_t goud_renderer3d_get_culled_object_count(struct GoudContextId context_id);
 
 /**
- * Returns the number of instanced draw calls last frame, or -1 on error.
- */
-int32_t goud_renderer3d_get_instanced_draw_calls(struct GoudContextId context_id);
-
-/**
- * Returns the number of active instances submitted last frame, or -1 on error.
- */
-int32_t goud_renderer3d_get_active_instance_count(struct GoudContextId context_id);
-
-/**
- * Returns the number of bone matrix uploads last frame, or -1 on error.
- */
-int32_t goud_renderer3d_get_bone_matrix_upload_count(struct GoudContextId context_id);
-
-/**
- * Returns the number of animation evaluations last frame, or -1 on error.
- */
-int32_t goud_renderer3d_get_animation_evaluation_count(struct GoudContextId context_id);
-
-/**
- * Returns the number of animation evaluations skipped or reused last frame, or -1 on error.
- */
-int32_t goud_renderer3d_get_animation_evaluation_saved_count(struct GoudContextId context_id);
-
-/**
  * Adds a light to the scene.
  */
 uint32_t goud_renderer3d_add_light(struct GoudContextId context_id, int32_t light_type, float pos_x, float pos_y, float pos_z, float dir_x, float dir_y, float dir_z, float r, float g, float b, float intensity, float range, float spot_angle);
@@ -2279,7 +2254,7 @@ bool goud_renderer3d_destroy_model(struct GoudContextId context_id, uint32_t mod
 uint32_t goud_renderer3d_instantiate_model(struct GoudContextId context_id, uint32_t source_model_id);
 
 /**
- * Marks a loaded model or model instance as static or dynamic.
+ * Mark a model or instance as static for batching optimizations.
  */
 bool goud_renderer3d_set_model_static(struct GoudContextId context_id, uint32_t model_id, bool is_static);
 

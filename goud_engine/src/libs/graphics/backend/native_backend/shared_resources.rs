@@ -47,31 +47,6 @@ impl BufferOps for SharedNativeRenderBackend {
     fn unbind_buffer(&mut self, buffer_type: BufferType) {
         self.lock().unbind_buffer(buffer_type);
     }
-
-    fn supports_storage_buffers(&self) -> bool {
-        self.lock().supports_storage_buffers()
-    }
-
-    fn create_storage_buffer(&mut self, data: &[u8]) -> GoudResult<BufferHandle> {
-        self.lock().create_storage_buffer(data)
-    }
-
-    fn update_storage_buffer(
-        &mut self,
-        handle: BufferHandle,
-        offset: usize,
-        data: &[u8],
-    ) -> GoudResult<()> {
-        self.lock().update_storage_buffer(handle, offset, data)
-    }
-
-    fn bind_storage_buffer(&mut self, handle: BufferHandle, binding: u32) -> GoudResult<()> {
-        self.lock().bind_storage_buffer(handle, binding)
-    }
-
-    fn unbind_storage_buffer(&mut self) {
-        self.lock().unbind_storage_buffer();
-    }
 }
 
 impl TextureOps for SharedNativeRenderBackend {

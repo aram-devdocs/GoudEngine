@@ -80,9 +80,9 @@ pub struct SkinningConfig {
     ///
     /// When enabled, distant animated models update at reduced rates.
     pub animation_lod_enabled: bool,
-    /// Distance beyond which animation updates at half rate (default: `35.0`).
+    /// Distance beyond which animation updates at half rate (default: `50.0`).
     pub animation_lod_distance: f32,
-    /// Distance beyond which animation freezes (default: `75.0`).
+    /// Distance beyond which animation freezes (default: `100.0`).
     pub animation_lod_skip_distance: f32,
     /// Whether identical animation states are evaluated once and shared (default: `true`).
     pub shared_animation_eval: bool,
@@ -94,8 +94,8 @@ impl Default for SkinningConfig {
             mode: SkinningMode::Gpu,
             max_bones_per_mesh: 128,
             animation_lod_enabled: true,
-            animation_lod_distance: 35.0,
-            animation_lod_skip_distance: 75.0,
+            animation_lod_distance: 50.0,
+            animation_lod_skip_distance: 100.0,
             shared_animation_eval: true,
         }
     }

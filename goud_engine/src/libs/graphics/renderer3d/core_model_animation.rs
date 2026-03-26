@@ -4,11 +4,9 @@ use std::collections::HashMap;
 
 use super::animation::{AnimationPlayer, BoneChannelMap};
 use super::core::Renderer3D;
-use super::frustum::Frustum;
 use super::model::Model3D;
 use crate::core::types::{KeyframeAnimation, SkeletonData};
 use crate::libs::graphics::backend::BufferHandle;
-use cgmath::{perspective, Deg, Matrix4, Vector3};
 
 /// Per-sub-mesh data needed for CPU skinning after bone matrices are computed.
 struct SkinUpload {
@@ -77,9 +75,6 @@ impl Renderer3D {
     /// - **G6 (Animation LOD)**: Skips or half-rates animation updates for
     ///   models that are far from the camera.
     pub fn update_animations(&mut self, dt: f32) {
-        self.stats.animation_evaluations = 0;
-        self.stats.animation_evaluations_saved = 0;
-
         // Collect model IDs and instance IDs that have animation players.
         let player_ids: Vec<u32> = self.animation_players.keys().copied().collect();
 
@@ -123,20 +118,6 @@ impl Renderer3D {
         let lod_skip_dist = self.config.skinning.animation_lod_skip_distance;
         let camera_pos = self.camera.position;
         let frame_counter = self.frame_counter;
-        let frustum = if self.config.frustum_culling.enabled {
-            let aspect = self.window_width as f32 / self.window_height.max(1) as f32;
-            let projection: Matrix4<f32> = perspective(
-                Deg(self.config.frustum_culling.fov_degrees),
-                aspect,
-                self.config.frustum_culling.near_plane,
-                self.config.frustum_culling.far_plane,
-            );
-            Some(Frustum::from_view_projection(
-                &(projection * self.camera.view_matrix()),
-            ))
-        } else {
-            None
-        };
 
         // -- G5: Shared Animation Evaluation cache --
         // Key: (source_model_id, clip_index, quantized_time_bits)
@@ -147,42 +128,19 @@ impl Renderer3D {
         for &(player_id, source_model_id, skel_ptr, anims_ptr, maps_ptr) in &update_list {
             // -- G6: LOD distance check --
             if lod_enabled {
+                // Get the position of this model/instance's first mesh object.
                 let obj_pos = self
                     .models
                     .get(&player_id)
-                    .map(|model| {
-                        (
-                            model.mesh_object_ids.first().copied(),
-                            Some(model.bounds),
-                        )
-                    })
+                    .map(|m| &m.mesh_object_ids)
                     .or_else(|| {
-                        self.model_instances.get(&player_id).and_then(|instance| {
-                            self.models
-                                .get(&instance.source_model_id)
-                                .map(|source| (instance.mesh_object_ids.first().copied(), Some(source.bounds)))
-                        })
+                        self.model_instances
+                            .get(&player_id)
+                            .map(|i| &i.mesh_object_ids)
                     })
-                    .and_then(|(object_id, model_bounds)| {
-                        object_id
-                            .and_then(|oid| self.objects.get(&oid).map(|obj| (obj, model_bounds)))
-                    })
-                    .map(|(obj, model_bounds)| {
-                        if let Some(bounds) = model_bounds {
-                            let center = [
-                                (bounds.min[0] + bounds.max[0]) * 0.5,
-                                (bounds.min[1] + bounds.max[1]) * 0.5,
-                                (bounds.min[2] + bounds.max[2]) * 0.5,
-                            ];
-                            Vector3::new(
-                                obj.position.x + center[0] * obj.scale.x.abs(),
-                                obj.position.y + center[1] * obj.scale.y.abs(),
-                                obj.position.z + center[2] * obj.scale.z.abs(),
-                            )
-                        } else {
-                            obj.position
-                        }
-                    });
+                    .and_then(|ids| ids.first())
+                    .and_then(|&oid| self.objects.get(&oid))
+                    .map(|obj| obj.position);
 
                 if let Some(pos) = obj_pos {
                     let dx = camera_pos.x - pos.x;
@@ -191,14 +149,9 @@ impl Renderer3D {
                     let dist = (dx * dx + dy * dy + dz * dz).sqrt();
 
                     if dist > lod_skip_dist {
-                        if let Some(player) = self.animation_players.get_mut(&player_id) {
-                            // Advance time without recomputing bones so offscreen/far actors do
-                            // not snap when they come back into range.
-                            let animations = unsafe { &*anims_ptr };
-                            player.advance_only(dt, animations);
-                            self.stats.animation_evaluations_saved += 1;
-                            continue;
-                        }
+                        // Freeze: keep last pose, don't update at all.
+                        self.stats.animation_evaluations_saved += 1;
+                        continue;
                     }
                     if dist > lod_dist {
                         // Half rate: skip every other frame using player_id parity.
@@ -206,71 +159,9 @@ impl Renderer3D {
                             .wrapping_add(player_id as u64)
                             .is_multiple_of(2)
                         {
-                            if let Some(player) = self.animation_players.get_mut(&player_id) {
-                                let animations = unsafe { &*anims_ptr };
-                                player.advance_only(dt, animations);
-                                self.stats.animation_evaluations_saved += 1;
-                                continue;
-                            }
+                            self.stats.animation_evaluations_saved += 1;
+                            continue;
                         }
-                    }
-                }
-            }
-
-            if let Some(frustum) = frustum.as_ref() {
-                let mut culled_from_view = false;
-                if let Some((object_id, model_bounds)) = self
-                    .models
-                    .get(&player_id)
-                    .map(|model| (model.mesh_object_ids.first().copied(), model.bounds))
-                    .or_else(|| {
-                        self.model_instances.get(&player_id).and_then(|instance| {
-                            self.models
-                                .get(&instance.source_model_id)
-                                .map(|source| (instance.mesh_object_ids.first().copied(), source.bounds))
-                        })
-                    })
-                {
-                    if let Some(object_id) = object_id {
-                        if let Some(object) = self.objects.get(&object_id) {
-                            let center = [
-                                (model_bounds.min[0] + model_bounds.max[0]) * 0.5,
-                                (model_bounds.min[1] + model_bounds.max[1]) * 0.5,
-                                (model_bounds.min[2] + model_bounds.max[2]) * 0.5,
-                            ];
-                            let extent = [
-                                model_bounds.max[0] - center[0],
-                                model_bounds.max[1] - center[1],
-                                model_bounds.max[2] - center[2],
-                            ];
-                            let world_center = Vector3::new(
-                                object.position.x + center[0] * object.scale.x.abs(),
-                                object.position.y + center[1] * object.scale.y.abs(),
-                                object.position.z + center[2] * object.scale.z.abs(),
-                            );
-                            let max_scale = object
-                                .scale
-                                .x
-                                .abs()
-                                .max(object.scale.y.abs())
-                                .max(object.scale.z.abs());
-                            let world_radius = (extent[0] * extent[0]
-                                + extent[1] * extent[1]
-                                + extent[2] * extent[2])
-                                .sqrt()
-                                * max_scale;
-                            culled_from_view =
-                                !frustum.intersects_sphere(world_center, world_radius);
-                        }
-                    }
-                }
-
-                if culled_from_view {
-                    if let Some(player) = self.animation_players.get_mut(&player_id) {
-                        let animations = unsafe { &*anims_ptr };
-                        player.advance_only(dt, animations);
-                        self.stats.animation_evaluations_saved += 1;
-                        continue;
                     }
                 }
             }
@@ -293,7 +184,11 @@ impl Renderer3D {
 
                             if let Some(cached) = bone_cache.get(&cache_key) {
                                 // Advance time without recomputing matrices.
-                                player.advance_only(dt, animations);
+                                super::animation::advance_state_pub(
+                                    &mut player.primary,
+                                    dt,
+                                    animations,
+                                );
                                 // Copy cached bone matrices.
                                 let copy_len = cached.len().min(player.bone_matrices.len());
                                 player.bone_matrices[..copy_len]
