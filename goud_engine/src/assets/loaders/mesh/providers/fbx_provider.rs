@@ -274,10 +274,42 @@ fn extract_geometry(
             let raw_normals = find_layer_element_data(&geom_node, "LayerElementNormal", "Normals");
             let raw_uvs = find_layer_element_data(&geom_node, "LayerElementUV", "UV");
 
-            let base_vertex = vertices.len() as u32;
-            let start_index = indices.len() as u32;
+            // Read per-polygon material indices from LayerElementMaterial.
+            let poly_material_indices: Option<&[i32]> = geom_node
+                .first_child_by_name("LayerElementMaterial")
+                .and_then(|layer| find_i32_array(&layer, "Materials"));
+
+            // Collect all materials connected to this geometry's parent Model,
+            // preserving connection order (index 0, 1, 2...).
+            let connected_materials: Vec<Option<MeshMaterial>> = geom_obj_id
+                .and_then(|gid| {
+                    let model_ids = conns.parents_of.get(&gid)?;
+                    for &model_id in model_ids {
+                        if let Some(children) = conns.children_of.get(&model_id) {
+                            let mats: Vec<Option<MeshMaterial>> = children
+                                .iter()
+                                .filter(|cid| materials.contains_key(cid))
+                                .map(|cid| materials.get(cid).cloned())
+                                .collect();
+                            if !mats.is_empty() {
+                                return Some(mats);
+                            }
+                        }
+                    }
+                    None
+                })
+                .unwrap_or_default();
+
+            // Triangulate polygons and tag each triangle with its material index.
+            struct TriData {
+                vis: [usize; 3], // polygon-vertex indices for normal/UV lookup
+                cps: [usize; 3], // control point indices for position lookup
+                mat_idx: i32,
+            }
+            let mut triangles: Vec<TriData> = Vec::new();
             let mut polygon_vertex_idx: usize = 0;
             let mut polygon_start: usize = 0;
+            let mut polygon_count: usize = 0;
             let mut polygon_indices: Vec<usize> = Vec::new();
 
             for &raw_idx in raw_indices {
@@ -292,77 +324,99 @@ fn extract_geometry(
 
                 if is_end {
                     let poly_len = polygon_vertex_idx - polygon_start;
+                    let mat_idx = poly_material_indices
+                        .as_ref()
+                        .and_then(|arr| arr.get(polygon_count).copied())
+                        .unwrap_or(0);
+
                     if poly_len >= 3 {
                         let first = polygon_start;
                         for tri in 0..(poly_len - 2) {
-                            let i0 = first;
-                            let i1 = first + tri + 1;
-                            let i2 = first + tri + 2;
-
-                            for &vi in &[i0, i1, i2] {
-                                let cp = polygon_indices[vi];
-                                let pos = if cp < positions.len() {
-                                    positions[cp]
-                                } else {
-                                    [0.0, 0.0, 0.0]
-                                };
-                                let normal =
-                                    extract_vec3(raw_normals, vi).unwrap_or([0.0, 0.0, 1.0]);
-                                let uv = extract_vec2(raw_uvs, vi).unwrap_or([0.0, 0.0]);
-
-                                let vert_index = vertices.len() as u32;
-                                vertices.push(MeshVertex {
-                                    position: pos,
-                                    normal,
-                                    uv,
-                                });
-                                vertex_to_cp.push(cp);
-                                indices.push(vert_index);
-                            }
+                            triangles.push(TriData {
+                                vis: [first, first + tri + 1, first + tri + 2],
+                                cps: [
+                                    polygon_indices[first],
+                                    polygon_indices[first + tri + 1],
+                                    polygon_indices[first + tri + 2],
+                                ],
+                                mat_idx,
+                            });
                         }
                     }
                     polygon_start = polygon_vertex_idx;
+                    polygon_count += 1;
                 }
             }
 
-            let index_count = indices.len() as u32 - start_index;
-            let sub_positions: Vec<[f32; 3]> = vertices[base_vertex as usize..]
-                .iter()
-                .map(|v| v.position)
-                .collect();
-            let bounds = MeshBounds::from_positions(&sub_positions);
+            // Sort triangles by material index so we can create one sub-mesh
+            // per material group.
+            triangles.sort_by_key(|t| t.mat_idx);
 
-            if has_mesh_bounds {
-                mesh_bounds = mesh_bounds.union(bounds);
-            } else {
-                mesh_bounds = bounds;
-                has_mesh_bounds = true;
-            }
+            // Determine unique material groups.
+            let mat_groups: Vec<i32> = {
+                let mut g: Vec<i32> = triangles.iter().map(|t| t.mat_idx).collect();
+                g.dedup();
+                g
+            };
 
-            // Resolve material via the FBX connection graph:
-            // Geometry -> (parent) Model -> (child) Material.
-            let matched_material = geom_obj_id.and_then(|gid| {
-                let model_ids = conns.parents_of.get(&gid)?;
-                for &model_id in model_ids {
-                    if let Some(children) = conns.children_of.get(&model_id) {
-                        for &child_id in children {
-                            if let Some(mat) = materials.get(&child_id) {
-                                return Some(mat.clone());
-                            }
-                        }
+            for &mat_group in &mat_groups {
+                let base_vertex = vertices.len() as u32;
+                let start_index = indices.len() as u32;
+
+                for tri in triangles.iter().filter(|t| t.mat_idx == mat_group) {
+                    for k in 0..3 {
+                        let cp = tri.cps[k];
+                        let vi = tri.vis[k];
+                        let pos = if cp < positions.len() {
+                            positions[cp]
+                        } else {
+                            [0.0, 0.0, 0.0]
+                        };
+                        let normal = extract_vec3(raw_normals, vi).unwrap_or([0.0, 0.0, 1.0]);
+                        let uv = extract_vec2(raw_uvs, vi).unwrap_or([0.0, 0.0]);
+
+                        let vert_index = vertices.len() as u32;
+                        vertices.push(MeshVertex {
+                            position: pos,
+                            normal,
+                            uv,
+                        });
+                        vertex_to_cp.push(cp);
+                        indices.push(vert_index);
                     }
                 }
-                None
-            });
 
-            sub_meshes.push(SubMesh {
-                name: geom_name,
-                start_index,
-                index_count,
-                material_index: None,
-                material: matched_material,
-                bounds,
-            });
+                let index_count = indices.len() as u32 - start_index;
+                if index_count == 0 {
+                    continue;
+                }
+
+                let sub_positions: Vec<[f32; 3]> = vertices[base_vertex as usize..]
+                    .iter()
+                    .map(|v| v.position)
+                    .collect();
+                let bounds = MeshBounds::from_positions(&sub_positions);
+
+                if has_mesh_bounds {
+                    mesh_bounds = mesh_bounds.union(bounds);
+                } else {
+                    mesh_bounds = bounds;
+                    has_mesh_bounds = true;
+                }
+
+                let matched_material = connected_materials
+                    .get(mat_group as usize)
+                    .and_then(|m| m.clone());
+
+                sub_meshes.push(SubMesh {
+                    name: format!("{}_mat{}", geom_name, mat_group),
+                    start_index,
+                    index_count,
+                    material_index: None,
+                    material: matched_material,
+                    bounds,
+                });
+            }
         }
     }
 
