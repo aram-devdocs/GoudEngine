@@ -42,8 +42,9 @@ pub use animation::{
     goud_renderer3d_blend_animations, goud_renderer3d_get_animation_count,
     goud_renderer3d_get_animation_name, goud_renderer3d_get_animation_progress,
     goud_renderer3d_is_animation_playing, goud_renderer3d_play_animation,
-    goud_renderer3d_set_animation_speed, goud_renderer3d_stop_animation,
-    goud_renderer3d_transition_animation, goud_renderer3d_update_animations,
+    goud_renderer3d_set_animation_phase_lock, goud_renderer3d_set_animation_speed,
+    goud_renderer3d_stop_animation, goud_renderer3d_transition_animation,
+    goud_renderer3d_update_animations,
 };
 pub use camera::{goud_renderer3d_set_camera_position, goud_renderer3d_set_camera_rotation};
 pub use environment::{

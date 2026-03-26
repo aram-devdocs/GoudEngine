@@ -65,6 +65,20 @@ impl Renderer3D {
 
     /// Advance all animation players by `dt` seconds, compute bone matrices,
     /// and apply CPU skinning to deform vertex buffers.
+    /// Sets phase-lock mode for a model or instance's animation player.
+    ///
+    /// When phase-locked, the player uses a global shared clock instead of
+    /// per-instance time, guaranteeing G5 cache hits for all instances of
+    /// the same source model and clip.
+    pub fn set_animation_phase_lock(&mut self, model_id: u32, enabled: bool) -> bool {
+        if let Some(player) = self.animation_players.get_mut(&model_id) {
+            player.phase_locked = enabled;
+            true
+        } else {
+            false
+        }
+    }
+
     ///
     /// Includes three performance optimizations:
     /// - **G3 (BoneChannelMap)**: Uses pre-computed channel index maps to
@@ -75,6 +89,11 @@ impl Renderer3D {
     /// - **G6 (Animation LOD)**: Skips or half-rates animation updates for
     ///   models that are far from the camera.
     pub fn update_animations(&mut self, dt: f32) {
+        // Advance all phase-lock global clocks.
+        for clock in self.phase_lock_clocks.values_mut() {
+            *clock += dt;
+        }
+
         // Collect model IDs and instance IDs that have animation players.
         let player_ids: Vec<u32> = self.animation_players.keys().copied().collect();
 
@@ -171,6 +190,21 @@ impl Renderer3D {
                 let skeleton = unsafe { &*skel_ptr };
                 let animations = unsafe { &*anims_ptr };
                 let channel_maps = unsafe { &*maps_ptr };
+
+                // -- Phase-lock: override per-instance time with global clock --
+                if player.phase_locked {
+                    if let Some(ref mut state) = player.primary {
+                        if state.playing {
+                            let clock = self
+                                .phase_lock_clocks
+                                .entry((source_model_id, state.clip_index))
+                                .or_insert(0.0);
+                            // Advance global clock and use it for this player.
+                            // Only advance once per unique (model, clip) per frame.
+                            state.time = *clock;
+                        }
+                    }
+                }
 
                 // -- G5: Shared evaluation --
                 // Check if we can reuse a previously computed result.

@@ -277,3 +277,25 @@ pub extern "C" fn goud_renderer3d_update_animations(
     })
     .unwrap_or(false)
 }
+
+/// Enables or disables phase-locked animation for a model or instance.
+///
+/// When phase-locked, all instances of the same source model and clip share
+/// a single global animation clock, guaranteeing G5 cache hits regardless
+/// of spawn time.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_animation_phase_lock(
+    context_id: GoudContextId,
+    model_id: u32,
+    enabled: bool,
+) -> bool {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return false;
+    }
+
+    with_renderer(context_id, |renderer| {
+        renderer.set_animation_phase_lock(model_id, enabled)
+    })
+    .unwrap_or(false)
+}

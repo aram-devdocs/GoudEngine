@@ -121,6 +121,9 @@ pub struct Renderer3D {
     pub(super) skin_scratch_buffer: Vec<f32>,
     /// Monotonically increasing frame counter, used for animation LOD (half-rate skipping).
     pub(super) frame_counter: u64,
+    /// Global animation clocks for phase-locked playback.
+    /// Key: (source_model_id, clip_index). Value: elapsed time in seconds.
+    pub(super) phase_lock_clocks: HashMap<(u32, usize), f32>,
     /// Persistent GPU buffer for instanced skinned per-instance data (reused across frames).
     pub(super) instanced_skinned_instance_buffer: Option<BufferHandle>,
     /// Current allocated size in bytes of `instanced_skinned_instance_buffer`.
@@ -307,6 +310,7 @@ impl Renderer3D {
             config: Render3DConfig::default(),
             skin_scratch_buffer: Vec::new(),
             frame_counter: 0,
+            phase_lock_clocks: HashMap::new(),
             instanced_skinned_instance_buffer: None,
             instanced_skinned_instance_buffer_size: 0,
             visible_object_ids: Vec::with_capacity(1024),

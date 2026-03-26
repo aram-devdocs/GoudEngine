@@ -54,6 +54,9 @@ pub struct AnimationPlayer {
     pub scratch_local: Vec<[f32; 16]>,
     /// Pre-allocated scratch buffer for global transforms (avoids per-frame allocation).
     pub scratch_global: Vec<[f32; 16]>,
+    /// When true, this player uses a global shared clock instead of per-instance
+    /// time, guaranteeing G5 cache hits for all instances of the same model+clip.
+    pub phase_locked: bool,
 }
 
 impl AnimationPlayer {
@@ -67,6 +70,7 @@ impl AnimationPlayer {
             bone_matrices: vec![IDENTITY_MAT4; bone_count],
             scratch_local: vec![IDENTITY_MAT4; bone_count],
             scratch_global: vec![IDENTITY_MAT4; bone_count],
+            phase_locked: false,
         }
     }
 
