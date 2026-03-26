@@ -321,6 +321,7 @@ impl Renderer3D {
                 cgmath::Vector3<f32>,
                 cgmath::Vector3<f32>,
                 Vec<[f32; 16]>,
+                [f32; 4],
             )> = self
                 .skinned_meshes
                 .values()
@@ -332,6 +333,7 @@ impl Renderer3D {
                         sm.rotation,
                         sm.scale,
                         sm.bone_matrices.clone(),
+                        sm.color,
                     )
                 })
                 .collect();
@@ -341,7 +343,7 @@ impl Renderer3D {
             let mut bone_offsets: Vec<i32> = Vec::new();
             if gpu_skinning {
                 let mut packed_bones: Vec<f32> = Vec::new();
-                for (_buffer, _vc, _pos, _rot, _scl, bone_mats) in &skinned_snaps {
+                for (_buffer, _vc, _pos, _rot, _scl, bone_mats, _color) in &skinned_snaps {
                     bone_offsets.push((packed_bones.len() / 16) as i32);
                     for mat in bone_mats.iter() {
                         packed_bones.extend_from_slice(mat);
@@ -363,7 +365,7 @@ impl Renderer3D {
                 }
             }
 
-            for (snap_idx, (buffer, vc, pos, rot, scl, bone_mats)) in
+            for (snap_idx, (buffer, vc, pos, rot, scl, bone_mats, color)) in
                 skinned_snaps.iter().enumerate()
             {
                 let model = Self::create_model_matrix(*pos, *rot, *scl);
@@ -372,8 +374,13 @@ impl Renderer3D {
                     .set_uniform_mat4(skinned_unis.main.model, &model_arr);
                 self.backend
                     .set_uniform_int(skinned_unis.main.use_texture, 0);
-                self.backend
-                    .set_uniform_vec4(skinned_unis.main.object_color, 0.8, 0.8, 0.8, 1.0);
+                self.backend.set_uniform_vec4(
+                    skinned_unis.main.object_color,
+                    color[0],
+                    color[1],
+                    color[2],
+                    color[3],
+                );
 
                 self.stats.skinned_instances += 1;
 

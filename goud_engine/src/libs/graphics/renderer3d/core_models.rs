@@ -170,6 +170,35 @@ impl Renderer3D {
                 Material3D::default()
             };
 
+            // Load base color texture from the material metadata, if present.
+            if let Some(mesh_mat) = material_opt {
+                if let Some(ref tex_path) = mesh_mat.base_color_texture_path {
+                    let model_dir = std::path::Path::new(source_path)
+                        .parent()
+                        .unwrap_or(std::path::Path::new(""));
+                    let full_path = model_dir.join(tex_path);
+                    if let Ok(img) = image::open(&full_path) {
+                        let rgba = img.to_rgba8();
+                        let (w, h) = rgba.dimensions();
+                        use crate::libs::graphics::backend::types::{
+                            TextureFilter, TextureFormat, TextureWrap,
+                        };
+                        if let Ok(tex_handle) = self.backend.create_texture(
+                            w,
+                            h,
+                            TextureFormat::RGBA8,
+                            TextureFilter::Linear,
+                            TextureWrap::Repeat,
+                            rgba.as_raw(),
+                        ) {
+                            if let Some(obj) = self.objects.get_mut(&object_id) {
+                                obj.texture_id = tex_handle.index();
+                            }
+                        }
+                    }
+                }
+            }
+
             let material_id = self.next_material_id;
             self.next_material_id += 1;
             self.materials.insert(material_id, material);

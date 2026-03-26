@@ -67,4 +67,6 @@ pub struct SkinnedMesh3D {
     pub(in crate::libs::graphics::renderer3d) rotation: Vector3<f32>,
     /// Scale.
     pub(in crate::libs::graphics::renderer3d) scale: Vector3<f32>,
+    /// Base color for the skinned mesh (RGBA).
+    pub(in crate::libs::graphics::renderer3d) color: [f32; 4],
 }

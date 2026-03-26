@@ -7,7 +7,9 @@ use std::collections::HashMap;
 
 use crate::assets::loaders::animation::keyframe::{AnimationChannel, EasingFunction, Keyframe};
 use crate::assets::loaders::animation::KeyframeAnimation;
-use crate::assets::loaders::mesh::asset::{MeshAsset, MeshBounds, MeshVertex, SubMesh};
+use crate::assets::loaders::mesh::asset::{
+    MeshAsset, MeshBounds, MeshMaterial, MeshVertex, SubMesh,
+};
 use crate::assets::{AssetLoadError, LoadContext};
 
 use super::super::provider::{BoneData, ModelData, ModelProvider, SkeletonData};
@@ -52,7 +54,8 @@ impl ModelProvider for FbxProvider {
 
         let root = tree.root();
         let conns = parse_connections(&root);
-        let (mesh, vertex_to_cp, geom_id) = extract_geometry(&root)?;
+        let materials = extract_materials(&root);
+        let (mesh, vertex_to_cp, geom_id) = extract_geometry(&root, &conns, &materials)?;
         let skeleton = extract_skeleton(&root, &conns, geom_id, &vertex_to_cp, mesh.vertices.len());
         let animations = extract_animations(&root, &conns, &skeleton);
 
@@ -108,13 +111,105 @@ fn parse_connections(root: &NodeHandle) -> FbxConnections {
 }
 
 // ===========================================================================
+// Material extraction
+// ===========================================================================
+
+/// Extracts material definitions from FBX `Objects > Material` nodes.
+///
+/// Returns a map from FBX object ID to [`MeshMaterial`] for materials that
+/// contain at least a diffuse color property.
+fn extract_materials(root: &NodeHandle) -> HashMap<i64, MeshMaterial> {
+    let mut materials: HashMap<i64, MeshMaterial> = HashMap::new();
+
+    for objects_node in root.children_by_name("Objects") {
+        for mat_node in objects_node.children_by_name("Material") {
+            let attrs = mat_node.attributes();
+            let obj_id = match attrs.first().and_then(AttributeValue::get_i64) {
+                Some(id) => id,
+                None => continue,
+            };
+            let raw_name = attrs.get(1).and_then(|a| a.get_string()).unwrap_or("");
+            let material_name = strip_fbx_name(raw_name);
+
+            // Default color: opaque white.
+            let mut r: f64 = 1.0;
+            let mut g: f64 = 1.0;
+            let mut b: f64 = 1.0;
+            let mut alpha: f64 = 1.0;
+
+            // Look for Properties70 child and iterate P entries.
+            if let Some(props70) = mat_node.first_child_by_name("Properties70") {
+                for p_node in props70.children_by_name("P") {
+                    let p_attrs = p_node.attributes();
+                    let prop_name = match p_attrs.first().and_then(AttributeValue::get_string) {
+                        Some(n) => n,
+                        None => continue,
+                    };
+
+                    match prop_name {
+                        "DiffuseColor" | "Maya|baseColor" => {
+                            // P attributes: [name, type1, type2, flags, R, G, B]
+                            if let (Some(rv), Some(gv), Some(bv)) = (
+                                p_attrs.get(4).and_then(AttributeValue::get_f64),
+                                p_attrs.get(5).and_then(AttributeValue::get_f64),
+                                p_attrs.get(6).and_then(AttributeValue::get_f64),
+                            ) {
+                                r = rv;
+                                g = gv;
+                                b = bv;
+                            }
+                        }
+                        "Opacity" => {
+                            if let Some(val) = p_attrs.get(4).and_then(AttributeValue::get_f64) {
+                                alpha = val;
+                            }
+                        }
+                        "TransparencyFactor" => {
+                            // TransparencyFactor is the inverse: 0 = opaque, 1 = transparent.
+                            if let Some(val) = p_attrs.get(4).and_then(AttributeValue::get_f64) {
+                                alpha = 1.0 - val;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+
+            materials.insert(
+                obj_id,
+                MeshMaterial {
+                    name: Some(material_name),
+                    base_color_factor: [r as f32, g as f32, b as f32, alpha as f32],
+                    base_color_texture_path: None,
+                    normal_texture_path: None,
+                    metallic_roughness_texture_path: None,
+                    emissive_texture_path: None,
+                    emissive_factor: [0.0, 0.0, 0.0],
+                    metallic_factor: 0.0,
+                    roughness_factor: 0.5,
+                    alpha_cutoff: None,
+                    double_sided: false,
+                },
+            );
+        }
+    }
+
+    materials
+}
+
+// ===========================================================================
 // Geometry extraction
 // ===========================================================================
 
 /// Extracts mesh geometry, a per-vertex control point map, and the FBX
 /// object ID of the first Geometry node.
+///
+/// When material data is available, each sub-mesh is matched to its FBX
+/// material via the connection graph (Geometry -> Model -> Material).
 fn extract_geometry(
     root: &NodeHandle,
+    conns: &FbxConnections,
+    materials: &HashMap<i64, MeshMaterial>,
 ) -> Result<(MeshAsset, Vec<usize>, Option<i64>), AssetLoadError> {
     let mut vertices: Vec<MeshVertex> = Vec::new();
     let mut indices: Vec<u32> = Vec::new();
@@ -136,11 +231,13 @@ fn extract_geometry(
                 continue;
             }
 
+            let geom_obj_id = geom_node
+                .attributes()
+                .first()
+                .and_then(AttributeValue::get_i64);
+
             if first_geom_id.is_none() {
-                first_geom_id = geom_node
-                    .attributes()
-                    .first()
-                    .and_then(AttributeValue::get_i64);
+                first_geom_id = geom_obj_id;
             }
 
             let geom_name = geom_node
@@ -242,12 +339,28 @@ fn extract_geometry(
                 has_mesh_bounds = true;
             }
 
+            // Resolve material via the FBX connection graph:
+            // Geometry -> (parent) Model -> (child) Material.
+            let matched_material = geom_obj_id.and_then(|gid| {
+                let model_ids = conns.parents_of.get(&gid)?;
+                for &model_id in model_ids {
+                    if let Some(children) = conns.children_of.get(&model_id) {
+                        for &child_id in children {
+                            if let Some(mat) = materials.get(&child_id) {
+                                return Some(mat.clone());
+                            }
+                        }
+                    }
+                }
+                None
+            });
+
             sub_meshes.push(SubMesh {
                 name: geom_name,
                 start_index,
                 index_count,
                 material_index: None,
-                material: None,
+                material: matched_material,
                 bounds,
             });
         }
