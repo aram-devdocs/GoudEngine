@@ -155,6 +155,7 @@ impl Renderer3D {
         fog: &super::types::FogConfig,
         lights: &[super::types::Light],
         texture_manager: Option<&dyn super::texture::TextureManagerTrait>,
+        instanced_ids: &std::collections::HashSet<u32>,
     ) {
         let scene_model_filter = self
             .current_scene
@@ -171,7 +172,7 @@ impl Renderer3D {
         let mut draws: Vec<SkinnedDraw> = Vec::new();
 
         for (&model_id, model) in &self.models {
-            if !model.is_skinned {
+            if !model.is_skinned || instanced_ids.contains(&model_id) {
                 continue;
             }
             if let Some(filter) = scene_model_filter {
@@ -189,6 +190,9 @@ impl Renderer3D {
         }
 
         for (&inst_id, inst) in &self.model_instances {
+            if instanced_ids.contains(&inst_id) {
+                continue;
+            }
             let source = match self.models.get(&inst.source_model_id) {
                 Some(m) => m,
                 None => continue,

@@ -12,6 +12,9 @@ use crate::libs::graphics::backend::PrimitiveTopology;
 
 impl Renderer3D {
     /// Render skinned models using instanced drawing, grouped by source model.
+    ///
+    /// Returns the set of model/instance IDs that were rendered via instancing,
+    /// so the per-object skinned pass can skip them.
     pub(super) fn render_instanced_skinned_models(
         &mut self,
         view_arr: &[f32; 16],
@@ -21,12 +24,12 @@ impl Renderer3D {
         fog: &super::types::FogConfig,
         lights: &[super::types::Light],
         _texture_manager: Option<&dyn super::texture::TextureManagerTrait>,
-    ) {
+    ) -> std::collections::HashSet<u32> {
         let gpu_skinning = matches!(self.config.skinning.mode, super::config::SkinningMode::Gpu)
             && self.backend.supports_storage_buffers();
 
         if !gpu_skinning {
-            return;
+            return std::collections::HashSet::new();
         }
 
         // Group instances by source_model_id.
@@ -62,7 +65,15 @@ impl Renderer3D {
             .collect();
 
         if groups.is_empty() {
-            return;
+            return std::collections::HashSet::new();
+        }
+
+        // Collect all IDs that will be rendered via instancing.
+        let mut handled_ids: std::collections::HashSet<u32> = std::collections::HashSet::new();
+        for (_, ids) in &groups {
+            for &id in ids {
+                handled_ids.insert(id);
+            }
         }
 
         let _ = self
@@ -250,5 +261,7 @@ impl Renderer3D {
         }
 
         self.backend.unbind_shader();
+
+        handled_ids
     }
 }

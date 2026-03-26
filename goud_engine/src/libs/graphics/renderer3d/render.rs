@@ -20,7 +20,13 @@ impl Renderer3D {
         }
 
         self.frame_counter = self.frame_counter.wrapping_add(1);
+        // Preserve animation stats (set during update_animations which runs
+        // before render) — only reset render-specific counters.
+        let anim_evals = self.stats.animation_evaluations;
+        let anim_saved = self.stats.animation_evaluations_saved;
         self.stats = Default::default();
+        self.stats.animation_evaluations = anim_evals;
+        self.stats.animation_evaluations_saved = anim_saved;
         self.backend.set_viewport(
             self.viewport.0,
             self.viewport.1,
@@ -382,8 +388,11 @@ impl Renderer3D {
             let _ = self.backend.bind_shader(self.shader_handle);
         }
 
-        // Single-instance skinned model rendering pass.
-        self.render_skinned_models(
+        // Instanced skinned rendering first: groups skinned instances by source
+        // model and draws with one instanced draw call per unique model.
+        // Returns the set of model/instance IDs it handled so the per-object
+        // pass can skip them.
+        let instanced_skinned_ids = self.render_instanced_skinned_models(
             &view_arr,
             &proj_arr,
             &shadow_matrix,
@@ -393,9 +402,9 @@ impl Renderer3D {
             texture_manager,
         );
 
-        // Instanced skinned rendering: groups skinned instances by source model
-        // and draws with one instanced draw call per unique model.
-        self.render_instanced_skinned_models(
+        // Single-instance skinned model rendering pass — only for models not
+        // handled by the instanced path above.
+        self.render_skinned_models(
             &view_arr,
             &proj_arr,
             &shadow_matrix,
@@ -403,6 +412,7 @@ impl Renderer3D {
             &eff_fog,
             &filtered_lights,
             texture_manager,
+            &instanced_skinned_ids,
         );
 
         self.backend.unbind_shader();
