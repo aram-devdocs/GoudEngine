@@ -245,15 +245,18 @@ impl Renderer3D {
                     ),
                 ];
                 let _ = self.backend.set_vertex_bindings(&bindings);
-                let _ = self.backend.draw_arrays_instanced(
+                if let Err(e) = self.backend.draw_arrays_instanced(
                     PrimitiveTopology::Triangles,
                     0,
                     vc as u32,
                     instance_count,
-                );
+                ) {
+                    eprintln!("[INST] draw_arrays_instanced failed: {e}");
+                }
                 self.stats.draw_calls += 1;
                 self.stats.instanced_draw_calls += 1;
                 self.stats.active_instances += instance_count;
+                self.stats.skinned_instances += instance_count;
             }
 
             // Buffer is kept alive for reuse -- do not destroy.
