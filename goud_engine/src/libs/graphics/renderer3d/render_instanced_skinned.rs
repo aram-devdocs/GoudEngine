@@ -71,6 +71,9 @@ impl Renderer3D {
             }
         }
 
+        use crate::libs::graphics::backend::DepthFunc;
+        self.backend.set_depth_func(DepthFunc::LessEqual);
+
         let _ = self
             .backend
             .bind_shader(self.instanced_skinned_shader_handle);
@@ -314,6 +317,7 @@ impl Renderer3D {
         self.backend.unbind_storage_buffer();
 
         self.backend.unbind_shader();
+        self.backend.set_depth_func(DepthFunc::Less);
 
         handled_ids
     }

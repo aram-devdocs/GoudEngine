@@ -221,6 +221,12 @@ impl Renderer3D {
         let gpu_skinning = matches!(self.config.skinning.mode, super::config::SkinningMode::Gpu)
             && self.backend.supports_storage_buffers();
 
+        // Use LessEqual depth so sub-meshes at the same depth (same bone
+        // transforms) can overwrite each other — required for multi-material
+        // models where body + joints share overlapping geometry.
+        use crate::libs::graphics::backend::DepthFunc;
+        self.backend.set_depth_func(DepthFunc::LessEqual);
+
         let _ = self.backend.bind_shader(self.skinned_shader_handle);
         let skinned_unis = self.skinned_uniforms.clone();
         self.apply_main_uniforms(
@@ -322,7 +328,6 @@ impl Renderer3D {
                     color[2],
                     color[3],
                 );
-
                 let _ = self.backend.bind_buffer(buffer);
                 if gpu_skinning {
                     self.backend.set_vertex_attributes(&self.skinned_layout);
@@ -341,6 +346,7 @@ impl Renderer3D {
         }
 
         self.backend.unbind_shader();
+        self.backend.set_depth_func(DepthFunc::Less);
     }
 
     /// Ensure the bone storage buffer exists and is large enough for the given byte size.
