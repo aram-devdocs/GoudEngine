@@ -11,9 +11,12 @@ class PlayerController
 
     float _cameraPitch = 25f;
     float _cameraYaw = 0f;
-    const float CameraDistance = 12f;
+    float _cameraDistance = 12f;
     const float CameraHeight = 6f;
     const float CameraRotSpeed = 90f;
+    const float MinCameraDistance = 2f;
+    const float MaxCameraDistance = 50f;
+    const float ZoomSpeed = 15f;
 
     const float WalkSpeed = 4f;
     const float RunSpeed = 9f;
@@ -73,9 +76,9 @@ class PlayerController
         float yawRad = _cameraYaw * MathF.PI / 180f;
         float pitchRad = _cameraPitch * MathF.PI / 180f;
 
-        float camX = _x - MathF.Sin(yawRad) * MathF.Cos(pitchRad) * CameraDistance;
-        float camY = _y + MathF.Sin(pitchRad) * CameraDistance + CameraHeight;
-        float camZ = _z - MathF.Cos(yawRad) * MathF.Cos(pitchRad) * CameraDistance;
+        float camX = _x - MathF.Sin(yawRad) * MathF.Cos(pitchRad) * _cameraDistance;
+        float camY = _y + MathF.Sin(pitchRad) * _cameraDistance + CameraHeight;
+        float camZ = _z - MathF.Cos(yawRad) * MathF.Cos(pitchRad) * _cameraDistance;
 
         _game.SetCameraPosition3D(camX, camY, camZ);
 
@@ -101,6 +104,11 @@ class PlayerController
             _cameraPitch = Math.Clamp(_cameraPitch + CameraRotSpeed * dt, 5f, 80f);
         if (_game.IsKeyPressed(Keys.Down))
             _cameraPitch = Math.Clamp(_cameraPitch - CameraRotSpeed * dt, 5f, 80f);
+        // Q/E to zoom in/out
+        if (_game.IsKeyPressed(Keys.Q))
+            _cameraDistance = Math.Clamp(_cameraDistance - ZoomSpeed * dt, MinCameraDistance, MaxCameraDistance);
+        if (_game.IsKeyPressed(Keys.E))
+            _cameraDistance = Math.Clamp(_cameraDistance + ZoomSpeed * dt, MinCameraDistance, MaxCameraDistance);
     }
 
     (float mx, float mz, bool moving, bool running) HandleMovementInput()

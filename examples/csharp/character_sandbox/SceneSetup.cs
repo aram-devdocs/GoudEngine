@@ -64,9 +64,10 @@ static class SceneSetup
 
         if (game.IsKeyJustPressed(Keys.Digit2))
         {
-            _gpuSkinning = !_gpuSkinning;
-            game.SetSkinningMode(_gpuSkinning ? 1u : 0u);
-            Console.WriteLine($"Skinning: {(_gpuSkinning ? "GPU" : "CPU")}");
+            // Skinning mode cannot be toggled at runtime — models are loaded
+            // with GPU-specific vertex format and cannot switch to CPU mode
+            // without reloading.
+            Console.WriteLine($"Skinning: GPU (fixed at load time)");
         }
 
         if (game.IsKeyJustPressed(Keys.Digit3))
