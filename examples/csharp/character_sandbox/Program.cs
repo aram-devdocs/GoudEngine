@@ -44,6 +44,48 @@ class Program
         int propsPlaced = PlaceStaticModels(game, loader, catalog.Props, sceneId, rng, 30, isBuilding: false);
         Console.WriteLine($"Village: {buildingsPlaced} buildings, {propsPlaced} props");
 
+        // Profile mode: fixed camera, render N frames, dump stats, exit.
+        if (config.Profile)
+        {
+            // Fixed camera position for reproducible screenshots
+            game.SetCameraPosition3D(0f, 8f, 15f);
+            game.SetCameraRotation3D(-25f, 0f, 0f);
+
+            int profileFrames = 120;
+            float totalTime = 0f;
+            for (int f = 0; f < profileFrames && !game.ShouldClose(); f++)
+            {
+                float dt = game.DeltaTime;
+                totalTime += dt;
+                game.BeginFrame(0.1f, 0.1f, 0.15f, 1.0f);
+                crowd.Update(dt);
+                game.UpdateAnimations(dt);
+                game.Render3D();
+                game.EndFrame();
+            }
+
+            float avgFps = profileFrames / Math.Max(totalTime, 0.001f);
+            int draws = game.GetDrawCalls();
+            int visible = game.GetVisibleObjectCount();
+            int culled = game.GetCulledObjectCount();
+            int instanced = game.GetInstancedDrawCalls();
+            int animEval = game.GetAnimationEvaluationCount();
+            int animSaved = game.GetAnimationEvaluationSavedCount();
+
+            Console.WriteLine($"PROFILE: FPS={avgFps:F1} Draws={draws} " +
+                $"Visible={visible}/{visible + culled} Instanced={instanced} " +
+                $"AnimEval={animEval} Saved={animSaved} Agents={crowd.Count}");
+
+            // Write stats to file for automated comparison
+            System.IO.File.WriteAllText("/tmp/goud_profile_stats.txt",
+                $"fps={avgFps:F1}\ndraws={draws}\ninstanced={instanced}\n" +
+                $"agents={crowd.Count}\nanim_eval={animEval}\nanim_saved={animSaved}\n");
+
+            crowd.DestroyAll();
+            loader.DestroyAll();
+            return;
+        }
+
         // Phase-lock runtime toggle state
         bool phaseLockActive = config.PhaseLock;
 

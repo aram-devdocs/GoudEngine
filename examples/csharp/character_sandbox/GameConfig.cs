@@ -7,6 +7,7 @@ sealed class GameConfig
     public int Seed { get; init; } = 42;
     public bool VariedAnims { get; init; } = false;
     public bool PhaseLock { get; init; } = false;
+    public bool Profile { get; init; } = false;
 
     public static GameConfig Parse(string[] args)
     {
@@ -15,6 +16,7 @@ sealed class GameConfig
         int seed = 42;
         bool variedAnims = false;
         bool phaseLock = false;
+        bool profile = false;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -41,6 +43,10 @@ sealed class GameConfig
             {
                 phaseLock = true;
             }
+            else if (args[i] == "--profile")
+            {
+                profile = true;
+            }
         }
 
         return new GameConfig
@@ -50,6 +56,7 @@ sealed class GameConfig
             Seed = seed,
             VariedAnims = variedAnims,
             PhaseLock = phaseLock,
+            Profile = profile,
         };
     }
 }
