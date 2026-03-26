@@ -75,10 +75,17 @@ class Program
                 int draws = game.GetDrawCalls();
                 int visible = game.GetVisibleObjectCount();
                 int culled = game.GetCulledObjectCount();
+                int instanced = game.GetInstancedDrawCalls();
+                int activeInst = game.GetActiveInstanceCount();
+                int animEval = game.GetAnimationEvaluationCount();
+                int animSaved = game.GetAnimationEvaluationSavedCount();
+                int boneUploads = game.GetBoneMatrixUploadCount();
 
                 Console.Write(
                     $"\rFPS: {fpsFrames / fpsTimer:F1}  Agents: {crowd.Count}  " +
-                    $"Draws: {draws}  Visible: {visible}/{visible + culled}   "
+                    $"Draws: {draws}  Visible: {visible}/{visible + culled}  " +
+                    $"Instanced: {instanced}  Instances: {activeInst}  " +
+                    $"AnimEval: {animEval}  Saved: {animSaved}  Bones: {boneUploads}   "
                 );
 
                 fpsFrames = 0;

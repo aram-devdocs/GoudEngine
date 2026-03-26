@@ -246,12 +246,17 @@ impl Renderer3D {
     ///
     /// Returns `true` if the model existed and was removed.
     pub fn destroy_model(&mut self, model_id: u32) -> bool {
+        // If this ID is an instance (not a source model), delegate to instance cleanup.
+        if !self.models.contains_key(&model_id) {
+            if self.model_instances.contains_key(&model_id) {
+                return self.destroy_model_instance(model_id);
+            }
+            return false;
+        }
+
         // Collect object IDs before removing the model entry so scene cleanup
         // can reference them.
-        let model = match self.models.get(&model_id) {
-            Some(m) => m,
-            None => return false,
-        };
+        let model = self.models.get(&model_id).unwrap();
         let obj_ids: Vec<u32> = model.mesh_object_ids.clone();
 
         // Remove from all scenes that reference this model or its objects.
