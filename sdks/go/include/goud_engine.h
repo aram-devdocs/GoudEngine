@@ -2194,6 +2194,36 @@ int32_t goud_renderer3d_set_animation_lod_enabled(struct GoudContextId context_i
 int32_t goud_renderer3d_set_shared_animation_eval(struct GoudContextId context_id, bool enabled);
 
 /**
+ * Sets the distance at which animation updates are half-rated (every other frame).
+ */
+int32_t goud_renderer3d_set_animation_lod_distance(struct GoudContextId context_id, float distance);
+
+/**
+ * Sets the distance at which animation updates are frozen entirely.
+ */
+int32_t goud_renderer3d_set_animation_lod_skip_distance(struct GoudContextId context_id, float distance);
+
+/**
+ * Returns the current animation LOD half-rate distance.
+ */
+float goud_renderer3d_get_animation_lod_distance(struct GoudContextId context_id);
+
+/**
+ * Returns the current animation LOD freeze distance.
+ */
+float goud_renderer3d_get_animation_lod_skip_distance(struct GoudContextId context_id);
+
+/**
+ * Enables or disables static batching.
+ */
+int32_t goud_renderer3d_set_static_batching_enabled(struct GoudContextId context_id, bool enabled);
+
+/**
+ * Enables or disables instanced rendering.
+ */
+int32_t goud_renderer3d_set_instancing_enabled(struct GoudContextId context_id, bool enabled);
+
+/**
  * Returns the number of draw calls last frame, or -1 on error.
  */
 int32_t goud_renderer3d_get_draw_calls(struct GoudContextId context_id);

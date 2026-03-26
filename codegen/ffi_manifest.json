@@ -3207,6 +3207,22 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_renderer3d_get_animation_lod_distance": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_get_animation_lod_skip_distance": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
     "goud_renderer3d_get_animation_name": {
       "source_file": "ffi/renderer3d/animation.rs",
       "params": [
@@ -3458,11 +3474,29 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_renderer3d_set_animation_lod_distance": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "distance: f32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_renderer3d_set_animation_lod_enabled": {
       "source_file": "ffi/renderer3d/environment.rs",
       "params": [
         "context_id: GoudContextId",
         "enabled: bool"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_animation_lod_skip_distance": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "distance: f32"
       ],
       "return_type": "i32",
       "is_unsafe": false
@@ -3543,6 +3577,15 @@
         "enabled: bool"
       ],
       "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_instancing_enabled": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "enabled: bool"
+      ],
+      "return_type": "i32",
       "is_unsafe": false
     },
     "goud_renderer3d_set_material_sorting_enabled": {
@@ -3739,6 +3782,15 @@
       "params": [
         "context_id: GoudContextId",
         "mode: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_static_batching_enabled": {
+      "source_file": "ffi/renderer3d/environment.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "enabled: bool"
       ],
       "return_type": "i32",
       "is_unsafe": false
@@ -5951,5 +6003,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 599
+  "total_count": 605
 }
