@@ -89,6 +89,7 @@ impl Renderer3D {
         struct GroupData {
             bone_count: usize,
             mesh_object_ids: Vec<u32>,
+            mesh_material_ids: Vec<u32>,
             instance_ids: Vec<u32>,
         }
 
@@ -103,6 +104,7 @@ impl Renderer3D {
                 Some(GroupData {
                     bone_count,
                     mesh_object_ids: source.mesh_object_ids.clone(),
+                    mesh_material_ids: source.mesh_material_ids.clone(),
                     instance_ids: instance_ids.clone(),
                 })
             })
@@ -118,6 +120,7 @@ impl Renderer3D {
             instance_data: Vec<f32>,
             instance_count: u32,
             mesh_object_ids: Vec<u32>,
+            mesh_material_ids: Vec<u32>,
         }
 
         let mut all_packed_bones: Vec<f32> = Vec::new();
@@ -174,6 +177,7 @@ impl Renderer3D {
                 instance_data,
                 instance_count: gd.instance_ids.len() as u32,
                 mesh_object_ids: gd.mesh_object_ids.clone(),
+                mesh_material_ids: gd.mesh_material_ids.clone(),
             });
         }
 
@@ -229,10 +233,11 @@ impl Renderer3D {
                     self.backend.destroy_buffer(*handle);
                     let alloc_size = required_size.next_power_of_two().max(64);
                     let initial = vec![0u8; alloc_size];
-                    match self
-                        .backend
-                        .create_buffer(BufferType::Vertex, BufferUsage::Dynamic, &initial)
-                    {
+                    match self.backend.create_buffer(
+                        BufferType::Vertex,
+                        BufferUsage::Dynamic,
+                        &initial,
+                    ) {
                         Ok(h) => {
                             *handle = h;
                             *cap = alloc_size;
@@ -256,20 +261,31 @@ impl Renderer3D {
                     continue;
                 };
 
-            for &obj_id in &grd.mesh_object_ids {
-                let (buffer, vc) = match self.objects.get(&obj_id) {
-                    Some(obj) => (obj.buffer, obj.vertex_count),
+            for (sub_idx, &obj_id) in grd.mesh_object_ids.iter().enumerate() {
+                let (buffer, vc, texture_id) = match self.objects.get(&obj_id) {
+                    Some(obj) => (obj.buffer, obj.vertex_count, obj.texture_id),
                     None => continue,
                 };
 
-                self.backend
-                    .set_uniform_int(inst_skinned_unis.main.use_texture, 0);
+                // Look up sub-mesh material color (same pattern as regular object path).
+                let mat_color = grd
+                    .mesh_material_ids
+                    .get(sub_idx)
+                    .and_then(|&mid| self.materials.get(&mid))
+                    .map(|m| [m.color.x, m.color.y, m.color.z, m.color.w])
+                    .unwrap_or([0.8, 0.8, 0.8, 1.0]);
+
+                self.bind_or_skip_texture(
+                    texture_id,
+                    _texture_manager,
+                    inst_skinned_unis.main.use_texture,
+                );
                 self.backend.set_uniform_vec4(
                     inst_skinned_unis.main.object_color,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
+                    mat_color[0],
+                    mat_color[1],
+                    mat_color[2],
+                    mat_color[3],
                 );
 
                 let bindings = [
