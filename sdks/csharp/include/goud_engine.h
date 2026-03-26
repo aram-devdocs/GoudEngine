@@ -2114,6 +2114,11 @@ float goud_renderer3d_get_animation_progress(struct GoudContextId context_id, ui
 bool goud_renderer3d_update_animations(struct GoudContextId context_id, float delta_time);
 
 /**
+ * Enables or disables phase-locked animation for a model or instance.
+ */
+bool goud_renderer3d_set_animation_phase_lock(struct GoudContextId context_id, uint32_t model_id, bool enabled);
+
+/**
  * Sets the 3D camera position.
  */
 bool goud_renderer3d_set_camera_position(struct GoudContextId context_id, float x, float y, float z);
@@ -2197,6 +2202,31 @@ int32_t goud_renderer3d_get_visible_object_count(struct GoudContextId context_id
  * Returns the number of culled objects last frame, or -1 on error.
  */
 int32_t goud_renderer3d_get_culled_object_count(struct GoudContextId context_id);
+
+/**
+ * Returns the number of instanced draw calls last frame, or -1 on error.
+ */
+int32_t goud_renderer3d_get_instanced_draw_calls(struct GoudContextId context_id);
+
+/**
+ * Returns the number of active instances submitted last frame, or -1 on error.
+ */
+int32_t goud_renderer3d_get_active_instance_count(struct GoudContextId context_id);
+
+/**
+ * Returns the number of animation evaluations last frame, or -1 on error.
+ */
+int32_t goud_renderer3d_get_animation_evaluation_count(struct GoudContextId context_id);
+
+/**
+ * Returns the number of animation evaluations saved (cache hits + LOD skips)
+ */
+int32_t goud_renderer3d_get_animation_evaluation_saved_count(struct GoudContextId context_id);
+
+/**
+ * Returns the number of bone matrix uploads last frame, or -1 on error.
+ */
+int32_t goud_renderer3d_get_bone_matrix_upload_count(struct GoudContextId context_id);
 
 /**
  * Adds a light to the scene.

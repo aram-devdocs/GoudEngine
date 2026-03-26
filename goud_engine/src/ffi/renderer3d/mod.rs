@@ -70,11 +70,12 @@ pub use materials::{
     GOUD_MATERIAL_TYPE_PHONG, GOUD_MATERIAL_TYPE_UNLIT,
 };
 pub use model::{
-    goud_renderer3d_destroy_model, goud_renderer3d_get_model_bounding_box,
-    goud_renderer3d_get_model_mesh_count, goud_renderer3d_instantiate_model,
+    goud_renderer3d_add_models_to_scene_batch, goud_renderer3d_destroy_model,
+    goud_renderer3d_get_model_bounding_box, goud_renderer3d_get_model_mesh_count,
+    goud_renderer3d_instantiate_model, goud_renderer3d_instantiate_model_batch,
     goud_renderer3d_load_model, goud_renderer3d_set_model_material,
-    goud_renderer3d_set_model_position, goud_renderer3d_set_model_rotation,
-    goud_renderer3d_set_model_scale, GOUD_INVALID_MODEL,
+    goud_renderer3d_set_model_position, goud_renderer3d_set_model_positions_batch,
+    goud_renderer3d_set_model_rotation, goud_renderer3d_set_model_scale, GOUD_INVALID_MODEL,
 };
 pub use postprocess::{
     goud_renderer3d_add_bloom_pass, goud_renderer3d_add_blur_pass,

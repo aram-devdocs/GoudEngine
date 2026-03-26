@@ -33,13 +33,19 @@ class Program
         var player = new PlayerController(game, playerRig, sceneId);
 
         // Crowd
-        var crowd = new CrowdSystem(game, loader, catalog, sceneId, config.NpcCount, config.AnimalCount, config.Seed);
+        var crowd = new CrowdSystem(
+            game, loader, catalog, sceneId,
+            config.NpcCount, config.AnimalCount, config.Seed,
+            config.VariedAnims, config.PhaseLock);
 
         // Static geometry (buildings + props)
         var rng = new Random(config.Seed + 1000);
         int buildingsPlaced = PlaceStaticModels(game, loader, catalog.Buildings, sceneId, rng, 20);
         int propsPlaced = PlaceStaticModels(game, loader, catalog.Props, sceneId, rng, 30, isBuilding: false);
         Console.WriteLine($"Village: {buildingsPlaced} buildings, {propsPlaced} props");
+
+        // Phase-lock runtime toggle state
+        bool phaseLockActive = config.PhaseLock;
 
         // Stats display
         float fpsTimer = 0f;
@@ -58,6 +64,12 @@ class Program
                 crowd.SpawnMore(10);
             if (game.IsKeyJustPressed(Keys.Minus))
                 crowd.RemoveLast(10);
+            if (game.IsKeyJustPressed(Keys.Digit6))
+            {
+                phaseLockActive = !phaseLockActive;
+                crowd.SetPhaseLockAll(phaseLockActive);
+                Console.WriteLine($"\nPhase-lock: {(phaseLockActive ? "ON" : "OFF")}");
+            }
 
             player.Update(dt);
             crowd.Update(dt);
@@ -165,9 +177,12 @@ class Program
         Console.WriteLine("  F          Toggle fog");
         Console.WriteLine("  +/-        Spawn/remove 10 agents");
         Console.WriteLine("  1-5        Perf toggles (culling/skin/mat/lod/eval)");
+        Console.WriteLine("  6          Toggle animation phase-lock");
         Console.WriteLine("  ESC        Quit");
         Console.WriteLine("========================================");
         Console.WriteLine($"  NPCs: {config.NpcCount}  Animals: {config.AnimalCount}  Seed: {config.Seed}");
+        Console.WriteLine($"  VariedAnims: {config.VariedAnims}  PhaseLock: {config.PhaseLock}");
+        Console.WriteLine("  CLI: --npcs N --animals N --seed N --varied-anims --phase-lock");
         Console.WriteLine();
     }
 }
