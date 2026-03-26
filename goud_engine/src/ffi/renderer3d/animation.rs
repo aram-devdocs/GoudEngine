@@ -299,3 +299,28 @@ pub extern "C" fn goud_renderer3d_set_animation_phase_lock(
     })
     .unwrap_or(false)
 }
+
+/// Enables or disables the pre-baked animation cache for a model.
+///
+/// When enabled (the default for models with animations), the animation
+/// update loop uses a simple frame lookup + lerp instead of full
+/// per-frame keyframe evaluation. Disabling this forces the model to
+/// fall back to CPU evaluation.
+///
+/// `model_id` must be a source model ID (not an instance).
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_animation_baking_enabled(
+    context_id: GoudContextId,
+    model_id: u32,
+    enabled: bool,
+) -> bool {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return false;
+    }
+
+    with_renderer(context_id, |renderer| {
+        renderer.set_animation_baking_enabled(model_id, enabled)
+    })
+    .unwrap_or(false)
+}

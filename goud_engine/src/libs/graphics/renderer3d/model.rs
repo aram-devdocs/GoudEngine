@@ -1,6 +1,6 @@
 //! Model and model instance types for the 3D renderer.
 
-use super::animation::{BoneChannelMap, BonePropertyNames};
+use super::animation::{BakedAnimationData, BoneChannelMap, BonePropertyNames};
 use crate::core::types::{KeyframeAnimation, MeshBounds, SkeletonData};
 
 /// A loaded 3D model consisting of one or more sub-mesh objects and materials.
@@ -50,6 +50,12 @@ pub(in crate::libs::graphics::renderer3d) struct Model3D {
     /// that per-frame animation sampling uses direct array indexing instead of
     /// string-keyed HashMap lookups. See [`BoneChannelMap`].
     pub bone_channel_maps: Vec<BoneChannelMap>,
+    /// Pre-baked bone matrices for all animation clips.
+    ///
+    /// When present, the animation update loop uses a simple lookup + lerp
+    /// instead of full per-frame keyframe evaluation. Built at model load
+    /// time via [`bake_animations`](super::animation::bake_animations).
+    pub baked_animation: Option<BakedAnimationData>,
 }
 
 /// An instantiated copy of a [`Model3D`] with its own GPU resources.

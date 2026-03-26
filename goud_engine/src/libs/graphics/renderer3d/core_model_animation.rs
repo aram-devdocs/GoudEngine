@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use super::animation::{AnimationPlayer, BoneChannelMap};
+use super::animation::{AnimationPlayer, BakedAnimationData, BoneChannelMap};
 use super::core::Renderer3D;
 use super::model::Model3D;
 use crate::core::types::{KeyframeAnimation, SkeletonData};
@@ -79,6 +79,41 @@ impl Renderer3D {
         }
     }
 
+    /// Enables or disables the pre-baked animation cache for a model.
+    ///
+    /// When enabled (the default for models with animations), the animation
+    /// update loop uses a simple frame lookup + lerp instead of full
+    /// per-frame keyframe evaluation. Disabling this forces the model to
+    /// fall back to CPU evaluation (useful for debugging or quality
+    /// comparison).
+    ///
+    /// `model_id` must be a source model ID (not an instance).
+    pub fn set_animation_baking_enabled(&mut self, model_id: u32, enabled: bool) -> bool {
+        let model = match self.models.get_mut(&model_id) {
+            Some(m) => m,
+            None => return false,
+        };
+
+        if enabled {
+            // Re-bake if currently disabled.
+            if model.baked_animation.is_none() {
+                if let Some(ref skel) = model.skeleton {
+                    if !model.animations.is_empty() {
+                        model.baked_animation = Some(super::animation::bake_animations(
+                            skel,
+                            &model.animations,
+                            &model.bone_channel_maps,
+                            30.0,
+                        ));
+                    }
+                }
+            }
+        } else {
+            model.baked_animation = None;
+        }
+        true
+    }
+
     ///
     /// Includes three performance optimizations:
     /// - **G3 (BoneChannelMap)**: Uses pre-computed channel index maps to
@@ -104,11 +139,12 @@ impl Renderer3D {
         // SAFETY: the models HashMap is not mutated during this loop -- only
         // animation_players is mutated via get_mut.
         type UpdateItem = (
-            u32,                           // player ID
-            u32,                           // source model ID (for shared eval grouping)
-            *const SkeletonData,           // skeleton data
-            *const Vec<KeyframeAnimation>, // animations
-            *const Vec<BoneChannelMap>,    // channel maps (fast path)
+            u32,                               // player ID
+            u32,                               // source model ID (for shared eval grouping)
+            *const SkeletonData,               // skeleton data
+            *const Vec<KeyframeAnimation>,     // animations
+            *const Vec<BoneChannelMap>,        // channel maps (fast path)
+            Option<*const BakedAnimationData>, // pre-baked animation cache
         );
         let update_list: Vec<UpdateItem> = player_ids
             .iter()
@@ -120,12 +156,14 @@ impl Renderer3D {
                 };
                 let model = self.models.get(&source_id)?;
                 let skel = model.skeleton.as_ref()?;
+                let baked_ptr = model.baked_animation.as_ref().map(|b| b as *const _);
                 Some((
                     id,
                     source_id,
                     skel as *const SkeletonData,
                     &model.animations as *const _,
                     &model.bone_channel_maps as *const _,
+                    baked_ptr,
                 ))
             })
             .collect();
@@ -144,7 +182,8 @@ impl Renderer3D {
         let shared_eval = self.config.skinning.shared_animation_eval;
         let mut bone_cache: HashMap<(u32, usize, u32), Vec<[f32; 16]>> = HashMap::new();
 
-        for &(player_id, source_model_id, skel_ptr, anims_ptr, maps_ptr) in &update_list {
+        for &(player_id, source_model_id, skel_ptr, anims_ptr, maps_ptr, baked_ptr) in &update_list
+        {
             // -- G6: LOD distance check --
             if lod_enabled {
                 // Get the position of this model/instance's first mesh object.
@@ -202,6 +241,43 @@ impl Renderer3D {
                             // Advance global clock and use it for this player.
                             // Only advance once per unique (model, clip) per frame.
                             state.time = *clock;
+                        }
+                    }
+                }
+
+                // -- Baked animation fast path --
+                // When pre-baked data exists and the player has a simple
+                // primary animation (no transition, no blending), look up
+                // the baked frame instead of evaluating keyframes.  This
+                // turns O(bones x channels x keyframes) into O(bones).
+                if let Some(bp) = baked_ptr {
+                    if player.transition.is_none() && player.blend_factor <= f32::EPSILON {
+                        if let Some(ref state) = player.primary {
+                            if state.playing {
+                                // SAFETY: model is not mutated during this loop.
+                                let baked = unsafe { &*bp };
+                                // Ensure bone_matrices buffer is the right size.
+                                let bc = skeleton.bones.len();
+                                if player.bone_matrices.len() != bc {
+                                    player
+                                        .bone_matrices
+                                        .resize(bc, super::animation::IDENTITY_MAT4);
+                                }
+                                if baked.sample(
+                                    state.clip_index,
+                                    state.time,
+                                    &mut player.bone_matrices,
+                                ) {
+                                    // Advance animation clock without recomputing.
+                                    super::animation::advance_state_pub(
+                                        &mut player.primary,
+                                        dt,
+                                        animations,
+                                    );
+                                    self.stats.animation_evaluations_saved += 1;
+                                    continue;
+                                }
+                            }
                         }
                     }
                 }

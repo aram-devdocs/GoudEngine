@@ -2119,6 +2119,11 @@ bool goud_renderer3d_update_animations(struct GoudContextId context_id, float de
 bool goud_renderer3d_set_animation_phase_lock(struct GoudContextId context_id, uint32_t model_id, bool enabled);
 
 /**
+ * Enables or disables the pre-baked animation cache for a model.
+ */
+bool goud_renderer3d_set_animation_baking_enabled(struct GoudContextId context_id, uint32_t model_id, bool enabled);
+
+/**
  * Sets the 3D camera position.
  */
 bool goud_renderer3d_set_camera_position(struct GoudContextId context_id, float x, float y, float z);

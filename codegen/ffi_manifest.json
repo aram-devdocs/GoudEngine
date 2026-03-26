@@ -3448,6 +3448,16 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_renderer3d_set_animation_baking_enabled": {
+      "source_file": "ffi/renderer3d/animation.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "model_id: u32",
+        "enabled: bool"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
     "goud_renderer3d_set_animation_lod_enabled": {
       "source_file": "ffi/renderer3d/environment.rs",
       "params": [
@@ -5941,5 +5951,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 598
+  "total_count": 599
 }

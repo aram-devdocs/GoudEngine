@@ -2119,6 +2119,11 @@ bool goud_renderer3d_update_animations(struct GoudContextId context_id, float de
 bool goud_renderer3d_set_animation_phase_lock(struct GoudContextId context_id, uint32_t model_id, bool enabled);
 
 /**
+ * Enables or disables the pre-baked animation cache for a model.
+ */
+bool goud_renderer3d_set_animation_baking_enabled(struct GoudContextId context_id, uint32_t model_id, bool enabled);
+
+/**
  * Sets the 3D camera position.
  */
 bool goud_renderer3d_set_camera_position(struct GoudContextId context_id, float x, float y, float z);
@@ -2317,6 +2322,21 @@ bool goud_renderer3d_set_model_rotation(struct GoudContextId context_id, uint32_
  * Sets the scale of a 3D model or instance.
  */
 bool goud_renderer3d_set_model_scale(struct GoudContextId context_id, uint32_t model_id, float x, float y, float z);
+
+/**
+ * Creates multiple independent instances of a source model in one call.
+ */
+int32_t goud_renderer3d_instantiate_model_batch(struct GoudContextId context_id, uint32_t source_model_id, uint32_t count, uint32_t *out_ids);
+
+/**
+ * Sets positions for multiple models/instances in one call.
+ */
+int32_t goud_renderer3d_set_model_positions_batch(struct GoudContextId context_id, const uint32_t *model_ids, const float *positions, uint32_t count);
+
+/**
+ * Adds multiple models/instances to a scene in one call.
+ */
+int32_t goud_renderer3d_add_models_to_scene_batch(struct GoudContextId context_id, uint32_t scene_id, const uint32_t *model_ids, uint32_t count);
 
 /**
  * Adds a bloom pass to the post-processing pipeline. Returns the pass index.

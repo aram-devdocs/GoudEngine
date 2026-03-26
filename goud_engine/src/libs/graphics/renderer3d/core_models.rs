@@ -1,6 +1,6 @@
 //! Model loading and management methods for [`Renderer3D`].
 
-use super::animation::{AnimationPlayer, BoneChannelMap, BonePropertyNames};
+use super::animation::{bake_animations, AnimationPlayer, BoneChannelMap, BonePropertyNames};
 use super::core::Renderer3D;
 use super::mesh::upload_buffer;
 use super::model::Model3D;
@@ -212,6 +212,24 @@ impl Renderer3D {
             Vec::new()
         };
 
+        // Pre-bake bone matrices for all animation clips at 30fps so that
+        // the runtime update loop can use a simple lookup + lerp instead of
+        // full per-frame keyframe evaluation.
+        let baked_animation = if let Some(ref skel) = model_data.skeleton {
+            if !model_data.animations.is_empty() {
+                Some(bake_animations(
+                    skel,
+                    &model_data.animations,
+                    &bone_channel_maps,
+                    30.0,
+                ))
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
         self.models.insert(
             model_id,
             Model3D {
@@ -227,6 +245,7 @@ impl Renderer3D {
                 bind_pose_bone_weights,
                 cached_bone_prop_names,
                 bone_channel_maps,
+                baked_animation,
             },
         );
 
