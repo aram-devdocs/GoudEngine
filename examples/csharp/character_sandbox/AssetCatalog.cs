@@ -50,10 +50,10 @@ class AssetCatalog
 
         Animals = new[]
         {
-            Animal("horse.fbx",  2.35f, 4.5f),
-            Animal("deer.fbx",   1.9f,  4.5f),
-            Animal("wolf.fbx",   1.25f, 4.0f),
-            Animal("husky.fbx",  1.15f, 4.0f),
+            Animal("Horse.gltf",  2.35f, 4.5f),
+            Animal("Deer.gltf",   1.9f,  4.5f),
+            Animal("Wolf.gltf",   1.25f, 4.0f),
+            Animal("Husky.gltf",  1.15f, 4.0f),
         }.Where(e => File.Exists(e.FullPath)).ToList();
 
         Buildings = new[]
@@ -108,7 +108,7 @@ class AssetCatalog
         IsDynamic: true,
         TargetHeight: height,
         FallbackScale: 0.01f,
-        RotationX: -90f, RotationY: 0f, RotationZ: 0f,
+        RotationX: 0f, RotationY: 0f, RotationZ: 0f,
         GroundBias: 0.07f,
         MoveSpeed: speed,
         IdleClips: AnimalIdleClips,
