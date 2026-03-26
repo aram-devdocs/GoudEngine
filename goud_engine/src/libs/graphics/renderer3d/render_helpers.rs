@@ -233,18 +233,22 @@ impl Renderer3D {
             lights,
         );
 
-        for draw in &draws {
-            // SAFETY: self.models, self.model_instances, and self.animation_players
-            // are not mutated during this draw loop -- only the backend receives calls.
-            let obj_ids = unsafe { &*draw.obj_ids };
-            let mat_ids = unsafe { &*draw.mat_ids };
-            let bone_mats = unsafe { &*draw.bone_mats };
+        // GPU skinning: pack ALL models' bone matrices into one storage buffer
+        // with per-draw offsets so a single upload covers every model.
+        let mut bone_offsets: Vec<i32> = Vec::new();
+        if gpu_skinning {
+            let mut packed_bones: Vec<f32> = Vec::new();
+            for draw in &draws {
+                // SAFETY: animation_players is not mutated during this loop.
+                let bone_mats = unsafe { &*draw.bone_mats };
+                bone_offsets.push((packed_bones.len() / 16) as i32);
+                for mat in bone_mats.iter() {
+                    packed_bones.extend_from_slice(mat);
+                }
+            }
 
-            self.stats.skinned_instances += 1;
-
-            if gpu_skinning {
-                // Upload bone matrices to a storage buffer for the GPU skinning shader.
-                let bone_data: &[u8] = bytemuck::cast_slice(bone_mats);
+            if !packed_bones.is_empty() {
+                let bone_data: &[u8] = bytemuck::cast_slice(&packed_bones);
                 self.ensure_bone_storage_buffer(bone_data.len());
                 if let Some(storage_handle) = self.bone_storage_buffer {
                     if let Err(e) = self
@@ -256,6 +260,22 @@ impl Renderer3D {
                     let _ = self.backend.bind_storage_buffer(storage_handle, 0);
                 }
                 self.stats.bone_matrix_uploads += 1;
+            }
+        }
+
+        for (draw_idx, draw) in draws.iter().enumerate() {
+            // SAFETY: self.models, self.model_instances, and self.animation_players
+            // are not mutated during this draw loop -- only the backend receives calls.
+            let obj_ids = unsafe { &*draw.obj_ids };
+            let mat_ids = unsafe { &*draw.mat_ids };
+            let bone_mats = unsafe { &*draw.bone_mats };
+
+            self.stats.skinned_instances += 1;
+
+            if gpu_skinning {
+                // Set per-draw bone offset into the packed storage buffer.
+                self.backend
+                    .set_uniform_int(skinned_unis.bone_offset, bone_offsets[draw_idx]);
             } else {
                 // Upload bone matrices as individual uniforms (OpenGL/CPU path).
                 for (i, mat) in bone_mats.iter().enumerate() {
@@ -314,10 +334,10 @@ impl Renderer3D {
                     .draw_arrays(PrimitiveTopology::Triangles, 0, vc as u32);
                 self.stats.draw_calls += 1;
             }
+        }
 
-            if gpu_skinning {
-                self.backend.unbind_storage_buffer();
-            }
+        if gpu_skinning {
+            self.backend.unbind_storage_buffer();
         }
 
         self.backend.unbind_shader();
@@ -345,6 +365,30 @@ impl Renderer3D {
             }
             Err(e) => {
                 log::error!("Failed to create bone storage buffer: {e}");
+            }
+        }
+    }
+
+    /// Ensure the instanced bone storage buffer exists and is large enough.
+    pub(super) fn ensure_instanced_bone_storage_buffer(&mut self, required_bytes: usize) {
+        let current_size = self.instanced_bone_storage_buffer_size;
+        if self.instanced_bone_storage_buffer.is_some() && current_size >= required_bytes {
+            return;
+        }
+
+        if let Some(old) = self.instanced_bone_storage_buffer.take() {
+            self.backend.destroy_buffer(old);
+        }
+
+        let alloc_size = required_bytes.next_power_of_two().max(64);
+        let initial_data = vec![0u8; alloc_size];
+        match self.backend.create_storage_buffer(&initial_data) {
+            Ok(handle) => {
+                self.instanced_bone_storage_buffer = Some(handle);
+                self.instanced_bone_storage_buffer_size = alloc_size;
+            }
+            Err(e) => {
+                log::error!("Failed to create instanced bone storage buffer: {e}");
             }
         }
     }

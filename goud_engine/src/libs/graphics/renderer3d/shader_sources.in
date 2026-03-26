@@ -1047,13 +1047,15 @@ uniform mat4 view;
 uniform mat4 projection;
 uniform mat4 lightSpaceMatrix;
 uniform mat4 boneMatrices[128];
+uniform int boneOffset;
 
 void main() {
     ivec4 boneIdx = ivec4(aBoneIds);
-    mat4 skinMatrix = aBoneWeights.x * boneMatrices[boneIdx.x]
-                    + aBoneWeights.y * boneMatrices[boneIdx.y]
-                    + aBoneWeights.z * boneMatrices[boneIdx.z]
-                    + aBoneWeights.w * boneMatrices[boneIdx.w];
+    int base = boneOffset;
+    mat4 skinMatrix = aBoneWeights.x * boneMatrices[base + boneIdx.x]
+                    + aBoneWeights.y * boneMatrices[base + boneIdx.y]
+                    + aBoneWeights.z * boneMatrices[base + boneIdx.z]
+                    + aBoneWeights.w * boneMatrices[base + boneIdx.w];
     vec4 skinnedPos = skinMatrix * vec4(aPos, 1.0);
     FragPos = vec3(model * skinnedPos);
     Normal = mat3(transpose(inverse(model * skinMatrix))) * aNormal;
@@ -1092,7 +1094,7 @@ struct Uniforms {
     shadowsEnabled: i32,
     fogEnabled: i32,
     shadowBias: f32,
-    _pad1: f32,
+    boneOffset: i32,
     _pad2: f32,
     _pad3: f32,
     primaryLightDir: vec3<f32>,
@@ -1124,12 +1126,13 @@ struct VertexOutput {
 fn main(input: VertexInput) -> VertexOutput {
     let bone_idx = vec4<i32>(input.bone_ids);
     let w = input.bone_weights;
+    let base = uniforms.boneOffset;
 
     // Compute skinning matrix from weighted bone transforms.
-    var skin_matrix = w.x * boneMatrices[bone_idx.x]
-                    + w.y * boneMatrices[bone_idx.y]
-                    + w.z * boneMatrices[bone_idx.z]
-                    + w.w * boneMatrices[bone_idx.w];
+    var skin_matrix = w.x * boneMatrices[base + bone_idx.x]
+                    + w.y * boneMatrices[base + bone_idx.y]
+                    + w.z * boneMatrices[base + bone_idx.z]
+                    + w.w * boneMatrices[base + bone_idx.w];
 
     let skinned_pos = skin_matrix * vec4<f32>(input.position, 1.0);
     let world_pos = uniforms.model * skinned_pos;

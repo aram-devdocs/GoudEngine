@@ -48,15 +48,10 @@ impl Renderer3D {
             }
         }
 
-        // Also include the source model itself if it has an animation player.
-        for (&model_id, model) in &self.models {
-            if !model.is_skinned {
-                continue;
-            }
-            if self.animation_players.contains_key(&model_id) {
-                groups.entry(model_id).or_default().insert(0, model_id);
-            }
-        }
+        // Source models are NOT added to instanced groups — they are rendered
+        // by the per-object skinned path instead.  Including them here caused
+        // template models (sitting at the default position) to appear as
+        // T-pose ghosts at the origin.
 
         // Filter to groups with at least 2 entries (instanced rendering benefit).
         let groups: Vec<(u32, Vec<u32>)> = groups
@@ -113,25 +108,38 @@ impl Renderer3D {
             })
             .collect();
 
+        // Pack ALL groups' bone matrices into one storage buffer with
+        // per-group offsets so a single upload covers every group.
+        // Each instance's bone_offset in the instance data includes the
+        // group's base offset into the packed buffer.
+        #[allow(dead_code)]
+        struct GroupRenderData {
+            group_bone_offset: usize, // offset in matrices into the packed buffer
+            instance_data: Vec<f32>,
+            instance_count: u32,
+            mesh_object_ids: Vec<u32>,
+        }
+
+        let mut all_packed_bones: Vec<f32> = Vec::new();
+        let mut group_render_data: Vec<GroupRenderData> = Vec::new();
+
         for gd in &group_data {
-            // Pack all instances' bone matrices into one storage buffer.
-            let total_bones = gd.instance_ids.len() * gd.bone_count;
-            let mut packed_bones: Vec<f32> = Vec::with_capacity(total_bones * 16);
+            let group_bone_offset = all_packed_bones.len() / 16;
             let mut instance_data: Vec<f32> = Vec::new();
 
             for (inst_idx, &inst_id) in gd.instance_ids.iter().enumerate() {
-                let bone_offset = (inst_idx * gd.bone_count) as f32;
+                let bone_offset = (group_bone_offset + inst_idx * gd.bone_count) as f32;
 
                 if let Some(player) = self.animation_players.get(&inst_id) {
                     for mat in &player.bone_matrices {
-                        packed_bones.extend_from_slice(mat);
+                        all_packed_bones.extend_from_slice(mat);
                     }
                     for _ in player.bone_matrices.len()..gd.bone_count {
-                        packed_bones.extend_from_slice(&IDENTITY_MAT4);
+                        all_packed_bones.extend_from_slice(&IDENTITY_MAT4);
                     }
                 } else {
                     for _ in 0..gd.bone_count {
-                        packed_bones.extend_from_slice(&IDENTITY_MAT4);
+                        all_packed_bones.extend_from_slice(&IDENTITY_MAT4);
                     }
                 }
 
@@ -161,33 +169,41 @@ impl Renderer3D {
                 instance_data.extend_from_slice(&[1.0, 1.0, 1.0, 1.0]); // color
             }
 
-            // Upload bone matrices to storage buffer.
-            let bone_data: &[u8] = bytemuck::cast_slice(&packed_bones);
-            self.ensure_bone_storage_buffer(bone_data.len());
-            if let Some(storage_handle) = self.bone_storage_buffer {
+            group_render_data.push(GroupRenderData {
+                group_bone_offset,
+                instance_data,
+                instance_count: gd.instance_ids.len() as u32,
+                mesh_object_ids: gd.mesh_object_ids.clone(),
+            });
+        }
+
+        // Single upload of all groups' bone matrices to a dedicated instanced buffer.
+        if !all_packed_bones.is_empty() {
+            let bone_data: &[u8] = bytemuck::cast_slice(&all_packed_bones);
+            self.ensure_instanced_bone_storage_buffer(bone_data.len());
+            if let Some(storage_handle) = self.instanced_bone_storage_buffer {
                 if let Err(e) = self
                     .backend
                     .update_storage_buffer(storage_handle, 0, bone_data)
                 {
                     log::error!("Instanced skinning storage buffer upload failed: {e}");
-                    continue;
+                    return handled_ids;
                 }
                 let _ = self.backend.bind_storage_buffer(storage_handle, 0);
             }
+        }
 
-            let instance_bytes: &[u8] = bytemuck::cast_slice(&instance_data);
-            let instance_count = gd.instance_ids.len() as u32;
+        use crate::libs::graphics::backend::{BufferType, BufferUsage, VertexBufferBinding};
 
-            use crate::libs::graphics::backend::{BufferType, BufferUsage, VertexBufferBinding};
-
-            // Reuse persistent instance buffer; grow with next-power-of-two sizing.
+        // Each group needs its OWN instance buffer because wgpu stages
+        // write_buffer calls and only the last write to a given offset
+        // survives into the render pass.  Reuse a pool of per-group buffers.
+        for (group_idx, grd) in group_render_data.iter().enumerate() {
+            let instance_bytes: &[u8] = bytemuck::cast_slice(&grd.instance_data);
             let required_size = instance_bytes.len();
-            if self.instanced_skinned_instance_buffer.is_none()
-                || self.instanced_skinned_instance_buffer_size < required_size
-            {
-                if let Some(old) = self.instanced_skinned_instance_buffer.take() {
-                    self.backend.destroy_buffer(old);
-                }
+
+            // Grow the pool if needed.
+            while self.instanced_skinned_instance_buffers.len() <= group_idx {
                 let alloc_size = required_size.next_power_of_two().max(64);
                 let initial = vec![0u8; alloc_size];
                 match self
@@ -195,33 +211,52 @@ impl Renderer3D {
                     .create_buffer(BufferType::Vertex, BufferUsage::Dynamic, &initial)
                 {
                     Ok(h) => {
-                        self.instanced_skinned_instance_buffer = Some(h);
-                        self.instanced_skinned_instance_buffer_size = alloc_size;
+                        self.instanced_skinned_instance_buffers
+                            .push((h, alloc_size));
                     }
                     Err(e) => {
                         log::error!("Failed to create instanced skinned instance buffer: {e}");
-                        self.backend.unbind_storage_buffer();
-                        continue;
+                        break;
                     }
                 }
             }
 
-            let instance_buffer = match self.instanced_skinned_instance_buffer {
-                Some(h) => {
+            // Resize this slot if it's too small.
+            if let Some((ref mut handle, ref mut cap)) =
+                self.instanced_skinned_instance_buffers.get_mut(group_idx)
+            {
+                if *cap < required_size {
+                    self.backend.destroy_buffer(*handle);
+                    let alloc_size = required_size.next_power_of_two().max(64);
+                    let initial = vec![0u8; alloc_size];
+                    match self
+                        .backend
+                        .create_buffer(BufferType::Vertex, BufferUsage::Dynamic, &initial)
+                    {
+                        Ok(h) => {
+                            *handle = h;
+                            *cap = alloc_size;
+                        }
+                        Err(e) => {
+                            log::error!("Failed to resize instance buffer: {e}");
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            let instance_buffer =
+                if let Some(&(h, _)) = self.instanced_skinned_instance_buffers.get(group_idx) {
                     if let Err(e) = self.backend.update_buffer(h, 0, instance_bytes) {
                         log::error!("Failed to update instanced skinned instance buffer: {e}");
-                        self.backend.unbind_storage_buffer();
                         continue;
                     }
                     h
-                }
-                None => {
-                    self.backend.unbind_storage_buffer();
+                } else {
                     continue;
-                }
-            };
+                };
 
-            for &obj_id in &gd.mesh_object_ids {
+            for &obj_id in &grd.mesh_object_ids {
                 let (buffer, vc) = match self.objects.get(&obj_id) {
                     Some(obj) => (obj.buffer, obj.vertex_count),
                     None => continue,
@@ -249,19 +284,18 @@ impl Renderer3D {
                     PrimitiveTopology::Triangles,
                     0,
                     vc as u32,
-                    instance_count,
+                    grd.instance_count,
                 ) {
                     eprintln!("[INST] draw_arrays_instanced failed: {e}");
                 }
                 self.stats.draw_calls += 1;
                 self.stats.instanced_draw_calls += 1;
-                self.stats.active_instances += instance_count;
-                self.stats.skinned_instances += instance_count;
+                self.stats.active_instances += grd.instance_count;
+                self.stats.skinned_instances += grd.instance_count;
             }
-
-            // Buffer is kept alive for reuse -- do not destroy.
-            self.backend.unbind_storage_buffer();
         }
+
+        self.backend.unbind_storage_buffer();
 
         self.backend.unbind_shader();
 

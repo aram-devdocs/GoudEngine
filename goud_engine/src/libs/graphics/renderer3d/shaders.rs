@@ -123,6 +123,8 @@ pub(super) struct SkinnedUniforms {
     pub(super) main: MainUniforms,
     /// Uniform locations for `boneMatrices[i]` (one per bone slot).
     pub(super) bone_matrices: Vec<i32>,
+    /// Uniform location for the bone offset into the storage buffer.
+    pub(super) bone_offset: i32,
 }
 
 pub(super) fn resolve_skinned_uniforms(
@@ -137,9 +139,12 @@ pub(super) fn resolve_skinned_uniforms(
         bone_matrices.push(loc(&format!("boneMatrices[{i}]")));
     }
 
+    let bone_offset = loc("boneOffset");
+
     SkinnedUniforms {
         main,
         bone_matrices,
+        bone_offset,
     }
 }
 

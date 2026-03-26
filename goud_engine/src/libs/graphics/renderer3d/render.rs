@@ -336,7 +336,36 @@ impl Renderer3D {
                 })
                 .collect();
 
-            for (buffer, vc, pos, rot, scl, bone_mats) in &skinned_snaps {
+            // GPU skinning: pack ALL skinned meshes' bone matrices into one
+            // storage buffer with per-mesh offsets (single upload per frame).
+            let mut bone_offsets: Vec<i32> = Vec::new();
+            if gpu_skinning {
+                let mut packed_bones: Vec<f32> = Vec::new();
+                for (_buffer, _vc, _pos, _rot, _scl, bone_mats) in &skinned_snaps {
+                    bone_offsets.push((packed_bones.len() / 16) as i32);
+                    for mat in bone_mats.iter() {
+                        packed_bones.extend_from_slice(mat);
+                    }
+                }
+                if !packed_bones.is_empty() {
+                    let bone_data: &[u8] = bytemuck::cast_slice(&packed_bones);
+                    self.ensure_bone_storage_buffer(bone_data.len());
+                    if let Some(storage_handle) = self.bone_storage_buffer {
+                        if let Err(e) =
+                            self.backend
+                                .update_storage_buffer(storage_handle, 0, bone_data)
+                        {
+                            log::error!("Failed to upload bone matrices: {e}");
+                        }
+                        let _ = self.backend.bind_storage_buffer(storage_handle, 0);
+                    }
+                    self.stats.bone_matrix_uploads += 1;
+                }
+            }
+
+            for (snap_idx, (buffer, vc, pos, rot, scl, bone_mats)) in
+                skinned_snaps.iter().enumerate()
+            {
                 let model = Self::create_model_matrix(*pos, *rot, *scl);
                 let model_arr = mat4_to_array(&model);
                 self.backend
@@ -349,18 +378,8 @@ impl Renderer3D {
                 self.stats.skinned_instances += 1;
 
                 if gpu_skinning {
-                    let bone_data: &[u8] = bytemuck::cast_slice(bone_mats);
-                    self.ensure_bone_storage_buffer(bone_data.len());
-                    if let Some(storage_handle) = self.bone_storage_buffer {
-                        if let Err(e) =
-                            self.backend
-                                .update_storage_buffer(storage_handle, 0, bone_data)
-                        {
-                            log::error!("Failed to upload bone matrices: {e}");
-                        }
-                        let _ = self.backend.bind_storage_buffer(storage_handle, 0);
-                    }
-                    self.stats.bone_matrix_uploads += 1;
+                    self.backend
+                        .set_uniform_int(skinned_unis.bone_offset, bone_offsets[snap_idx]);
                 } else {
                     for (i, mat) in bone_mats.iter().enumerate() {
                         if i < skinned_unis.bone_matrices.len() {
@@ -377,10 +396,10 @@ impl Renderer3D {
                     .backend
                     .draw_arrays(PrimitiveTopology::Triangles, 0, *vc as u32);
                 self.stats.draw_calls += 1;
+            }
 
-                if gpu_skinning {
-                    self.backend.unbind_storage_buffer();
-                }
+            if gpu_skinning {
+                self.backend.unbind_storage_buffer();
             }
 
             self.backend.unbind_shader();

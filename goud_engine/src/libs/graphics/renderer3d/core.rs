@@ -98,11 +98,15 @@ pub struct Renderer3D {
     /// model_0..model_3 (4 x vec4) + bone_offset (f32) + color (vec4) = 84 bytes.
     #[allow(dead_code)]
     pub(super) instanced_skinned_instance_layout: VertexLayout,
-    /// Storage buffer handle for GPU skinning bone matrices.
+    /// Storage buffer handle for GPU skinning bone matrices (per-object path).
     pub(super) bone_storage_buffer: Option<BufferHandle>,
     /// Tracks allocated size of bone_storage_buffer in bytes.
     #[allow(dead_code)]
     pub(super) bone_storage_buffer_size: usize,
+    /// Separate storage buffer for the instanced skinned path.
+    pub(super) instanced_bone_storage_buffer: Option<BufferHandle>,
+    /// Tracks allocated size of instanced_bone_storage_buffer in bytes.
+    pub(super) instanced_bone_storage_buffer_size: usize,
     pub(super) postprocess_pipeline: PostProcessPipeline,
     pub(super) stats: Renderer3DStats,
     pub(super) anti_aliasing_mode: AntiAliasingMode,
@@ -124,10 +128,9 @@ pub struct Renderer3D {
     /// Global animation clocks for phase-locked playback.
     /// Key: (source_model_id, clip_index). Value: elapsed time in seconds.
     pub(super) phase_lock_clocks: HashMap<(u32, usize), f32>,
-    /// Persistent GPU buffer for instanced skinned per-instance data (reused across frames).
-    pub(super) instanced_skinned_instance_buffer: Option<BufferHandle>,
-    /// Current allocated size in bytes of `instanced_skinned_instance_buffer`.
-    pub(super) instanced_skinned_instance_buffer_size: usize,
+    /// Pool of per-group instance buffers for instanced skinned rendering.
+    /// Each group gets its own buffer to avoid wgpu write-staging overwrites.
+    pub(super) instanced_skinned_instance_buffers: Vec<(BufferHandle, usize)>,
     /// Pre-allocated buffer of visible object IDs, reused across frames to avoid
     /// per-frame Vec allocation during the render snapshot phase.
     pub(super) visible_object_ids: Vec<u32>,
@@ -298,6 +301,8 @@ impl Renderer3D {
             instanced_skinned_instance_layout: instanced_skinned_instance_layout(),
             bone_storage_buffer: None,
             bone_storage_buffer_size: 0,
+            instanced_bone_storage_buffer: None,
+            instanced_bone_storage_buffer_size: 0,
             postprocess_pipeline: PostProcessPipeline::new(),
             stats: Renderer3DStats::default(),
             anti_aliasing_mode: AntiAliasingMode::Off,
@@ -311,8 +316,7 @@ impl Renderer3D {
             skin_scratch_buffer: Vec::new(),
             frame_counter: 0,
             phase_lock_clocks: HashMap::new(),
-            instanced_skinned_instance_buffer: None,
-            instanced_skinned_instance_buffer_size: 0,
+            instanced_skinned_instance_buffers: Vec::new(),
             visible_object_ids: Vec::with_capacity(1024),
             static_batch_dirty: false,
             static_batch_buffer: None,
@@ -484,9 +488,13 @@ impl Drop for Renderer3D {
         if let Some(buf) = self.bone_storage_buffer {
             self.backend.destroy_buffer(buf);
         }
-        if let Some(buf) = self.instanced_skinned_instance_buffer {
+        if let Some(buf) = self.instanced_bone_storage_buffer {
             self.backend.destroy_buffer(buf);
         }
+        for (buf, _) in &self.instanced_skinned_instance_buffers {
+            self.backend.destroy_buffer(*buf);
+        }
+        self.instanced_skinned_instance_buffers.clear();
         if let Some(buf) = self.static_batch_buffer {
             self.backend.destroy_buffer(buf);
         }
