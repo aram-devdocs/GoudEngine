@@ -267,4 +267,3 @@ pub extern "C" fn goud_renderer3d_render(context_id: GoudContextId) -> bool {
 pub extern "C" fn goud_renderer3d_render_all(context_id: GoudContextId) -> bool {
     goud_renderer3d_render(context_id)
 }
-

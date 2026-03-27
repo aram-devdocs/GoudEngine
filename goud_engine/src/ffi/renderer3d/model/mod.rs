@@ -481,4 +481,3 @@ pub extern "C" fn goud_renderer3d_set_model_scale(
     })
     .unwrap_or(false)
 }
-

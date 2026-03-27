@@ -294,10 +294,7 @@ impl Renderer3D {
 
                 let bindings = [
                     VertexBufferBinding::per_vertex(buffer, skinned_layout.clone()),
-                    VertexBufferBinding::per_instance(
-                        instance_buffer,
-                        instance_layout.clone(),
-                    ),
+                    VertexBufferBinding::per_instance(instance_buffer, instance_layout.clone()),
                 ];
                 let _ = self.backend.set_vertex_bindings(&bindings);
                 if let Err(e) = self.backend.draw_arrays_instanced(
