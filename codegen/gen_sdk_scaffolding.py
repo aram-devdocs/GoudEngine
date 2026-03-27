@@ -271,7 +271,7 @@ def gen_typescript_scaffolding() -> None:
         "devDependencies": {
             "@napi-rs/cli": "^3.5.1",
             "@types/node": "^20.0.0",
-            "c8": "^10.1.3",
+            "c8": "^11.0.0",
             "istanbul-lib-coverage": "^3.2.2",
             "istanbul-lib-report": "^3.0.1",
             "istanbul-reports": "^3.1.7",
