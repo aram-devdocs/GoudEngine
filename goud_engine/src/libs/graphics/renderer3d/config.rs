@@ -5,7 +5,7 @@
 //! Defaults are sensible for the common case; everything is overridable.
 
 /// Top-level 3D renderer configuration.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Render3DConfig {
     /// Frustum culling settings.
     pub frustum_culling: FrustumCullingConfig,
@@ -15,10 +15,8 @@ pub struct Render3DConfig {
     pub skinning: SkinningConfig,
     /// Shadow mapping settings.
     pub shadows: ShadowConfig,
-    /// Level-of-detail settings.
-    pub lod: LodConfig,
-    /// Performance monitoring settings.
-    pub performance: PerformanceConfig,
+    /// Fallback RGBA color used when a mesh has no assigned material (default: light gray).
+    pub default_material_color: [f32; 4],
 }
 
 /// Frustum culling configuration.
@@ -56,6 +54,8 @@ pub struct BatchingConfig {
     pub material_sorting_enabled: bool,
     /// Maximum vertices in a single static batch (default: `50_000`).
     pub max_static_batch_vertices: usize,
+    /// Minimum instances required to use instanced rendering (default: `2`).
+    pub min_instances_for_batching: usize,
 }
 
 impl Default for BatchingConfig {
@@ -65,6 +65,7 @@ impl Default for BatchingConfig {
             instancing_enabled: true,
             material_sorting_enabled: true,
             max_static_batch_vertices: 50_000,
+            min_instances_for_batching: 2,
         }
     }
 }
@@ -86,6 +87,8 @@ pub struct SkinningConfig {
     pub animation_lod_skip_distance: f32,
     /// Whether identical animation states are evaluated once and shared (default: `true`).
     pub shared_animation_eval: bool,
+    /// Sample rate for pre-baked animation cache in frames per second (default: `30.0`).
+    pub baked_animation_sample_rate: f32,
 }
 
 impl Default for SkinningConfig {
@@ -97,6 +100,7 @@ impl Default for SkinningConfig {
             animation_lod_distance: 50.0,
             animation_lod_skip_distance: 100.0,
             shared_animation_eval: true,
+            baked_animation_sample_rate: 30.0,
         }
     }
 }
@@ -134,41 +138,162 @@ impl Default for ShadowConfig {
     }
 }
 
-/// Level-of-detail configuration.
-#[derive(Debug, Clone)]
-pub struct LodConfig {
-    /// Whether LOD is enabled (default: `false` — opt-in).
-    pub enabled: bool,
-    /// Game-defined distance thresholds for LOD transitions.
-    pub distance_thresholds: Vec<f32>,
-    /// Objects smaller than this pixel size are skipped (default: `2.0`).
-    pub pixel_size_threshold: f32,
-}
-
-impl Default for LodConfig {
+impl Default for Render3DConfig {
     fn default() -> Self {
         Self {
-            enabled: false,
-            distance_thresholds: Vec::new(),
-            pixel_size_threshold: 2.0,
+            frustum_culling: FrustumCullingConfig::default(),
+            batching: BatchingConfig::default(),
+            skinning: SkinningConfig::default(),
+            shadows: ShadowConfig::default(),
+            default_material_color: [0.8, 0.8, 0.8, 1.0],
         }
     }
 }
 
-/// Performance monitoring configuration.
-#[derive(Debug, Clone)]
-pub struct PerformanceConfig {
-    /// Whether render stats are collected (default: `true`).
-    pub stats_enabled: bool,
-    /// Optional cap on draw calls per frame (`None` = unlimited).
-    pub max_draw_calls_per_frame: Option<u32>,
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-impl Default for PerformanceConfig {
-    fn default() -> Self {
-        Self {
-            stats_enabled: true,
-            max_draw_calls_per_frame: None,
-        }
+    #[test]
+    fn test_default_render3d_config_values() {
+        let config = Render3DConfig::default();
+
+        // Frustum culling defaults
+        assert!(config.frustum_culling.enabled);
+        assert!(
+            (config.frustum_culling.fov_degrees - 45.0).abs() < f32::EPSILON,
+            "Default FOV should be 45.0"
+        );
+        assert!(
+            (config.frustum_culling.near_plane - 0.1).abs() < f32::EPSILON,
+            "Default near plane should be 0.1"
+        );
+        assert!(
+            (config.frustum_culling.far_plane - 1000.0).abs() < f32::EPSILON,
+            "Default far plane should be 1000.0"
+        );
+
+        // Batching defaults
+        assert!(config.batching.static_batching_enabled);
+        assert!(config.batching.instancing_enabled);
+        assert!(config.batching.material_sorting_enabled);
+        assert_eq!(config.batching.max_static_batch_vertices, 50_000);
+        assert_eq!(config.batching.min_instances_for_batching, 2);
+
+        // Skinning defaults
+        assert_eq!(config.skinning.mode, SkinningMode::Gpu);
+        assert_eq!(config.skinning.max_bones_per_mesh, 128);
+        assert!(config.skinning.animation_lod_enabled);
+        assert!(
+            (config.skinning.animation_lod_distance - 50.0).abs() < f32::EPSILON,
+            "Default animation LOD distance should be 50.0"
+        );
+        assert!(
+            (config.skinning.animation_lod_skip_distance - 100.0).abs() < f32::EPSILON,
+            "Default animation LOD skip distance should be 100.0"
+        );
+        assert!(config.skinning.shared_animation_eval);
+        assert!(
+            (config.skinning.baked_animation_sample_rate - 30.0).abs() < f32::EPSILON,
+            "Default baked animation sample rate should be 30.0"
+        );
+
+        // Shadow defaults
+        assert!(!config.shadows.enabled);
+        assert_eq!(config.shadows.map_size, 256);
+        assert!(
+            (config.shadows.bias - 0.005).abs() < f32::EPSILON,
+            "Default shadow bias should be 0.005"
+        );
+        assert_eq!(config.shadows.auto_disable_vertex_threshold, 10_000);
+
+        // Material color default
+        assert_eq!(config.default_material_color, [0.8, 0.8, 0.8, 1.0]);
+    }
+
+    #[test]
+    fn test_frustum_culling_config_default() {
+        let fc = FrustumCullingConfig::default();
+        assert!(fc.enabled);
+        assert!((fc.near_plane - 0.1).abs() < f32::EPSILON);
+        assert!((fc.far_plane - 1000.0).abs() < f32::EPSILON);
+        assert!((fc.fov_degrees - 45.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn test_batching_config_default() {
+        let bc = BatchingConfig::default();
+        assert!(bc.static_batching_enabled);
+        assert!(bc.instancing_enabled);
+        assert!(bc.material_sorting_enabled);
+        assert_eq!(bc.max_static_batch_vertices, 50_000);
+        assert_eq!(bc.min_instances_for_batching, 2);
+    }
+
+    #[test]
+    fn test_skinning_config_default() {
+        let sc = SkinningConfig::default();
+        assert_eq!(sc.mode, SkinningMode::Gpu);
+        assert_eq!(sc.max_bones_per_mesh, 128);
+        assert!(sc.animation_lod_enabled);
+        assert!((sc.animation_lod_distance - 50.0).abs() < f32::EPSILON);
+        assert!((sc.animation_lod_skip_distance - 100.0).abs() < f32::EPSILON);
+        assert!(sc.shared_animation_eval);
+        assert!((sc.baked_animation_sample_rate - 30.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn test_shadow_config_default() {
+        let sc = ShadowConfig::default();
+        assert!(!sc.enabled);
+        assert_eq!(sc.map_size, 256);
+        assert!((sc.bias - 0.005).abs() < f32::EPSILON);
+        assert_eq!(sc.auto_disable_vertex_threshold, 10_000);
+    }
+
+    #[test]
+    fn test_skinning_mode_equality() {
+        assert_eq!(SkinningMode::Cpu, SkinningMode::Cpu);
+        assert_eq!(SkinningMode::Gpu, SkinningMode::Gpu);
+        assert_ne!(SkinningMode::Cpu, SkinningMode::Gpu);
+    }
+
+    #[test]
+    fn test_render3d_config_clone() {
+        let config = Render3DConfig::default();
+        let cloned = config.clone();
+        assert_eq!(cloned.default_material_color, config.default_material_color);
+        assert_eq!(
+            cloned.frustum_culling.fov_degrees,
+            config.frustum_culling.fov_degrees
+        );
+        assert_eq!(
+            cloned.batching.min_instances_for_batching,
+            config.batching.min_instances_for_batching
+        );
+        assert_eq!(cloned.skinning.mode, config.skinning.mode);
+        assert_eq!(cloned.shadows.map_size, config.shadows.map_size);
+    }
+
+    #[test]
+    fn test_render3d_config_mutation() {
+        let mut config = Render3DConfig::default();
+
+        // Mutate and verify changes stick.
+        config.frustum_culling.enabled = false;
+        config.frustum_culling.fov_degrees = 90.0;
+        config.batching.min_instances_for_batching = 10;
+        config.skinning.mode = SkinningMode::Cpu;
+        config.shadows.enabled = true;
+        config.shadows.map_size = 2048;
+        config.default_material_color = [1.0, 0.0, 0.0, 1.0];
+
+        assert!(!config.frustum_culling.enabled);
+        assert!((config.frustum_culling.fov_degrees - 90.0).abs() < f32::EPSILON);
+        assert_eq!(config.batching.min_instances_for_batching, 10);
+        assert_eq!(config.skinning.mode, SkinningMode::Cpu);
+        assert!(config.shadows.enabled);
+        assert_eq!(config.shadows.map_size, 2048);
+        assert_eq!(config.default_material_color, [1.0, 0.0, 0.0, 1.0]);
     }
 }

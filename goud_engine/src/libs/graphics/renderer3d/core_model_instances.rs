@@ -59,7 +59,10 @@ impl Renderer3D {
             };
 
             let new_obj_id = self.next_object_id;
-            self.next_object_id += 1;
+            self.next_object_id = self.next_object_id.wrapping_add(1);
+            if self.next_object_id == 0 {
+                self.next_object_id = 1; // Skip 0 which may be used as invalid sentinel
+            }
             self.objects.insert(
                 new_obj_id,
                 Object3D {
@@ -99,7 +102,10 @@ impl Renderer3D {
         }
 
         let instance_id = self.next_model_id;
-        self.next_model_id += 1;
+        self.next_model_id = self.next_model_id.wrapping_add(1);
+        if self.next_model_id == 0 {
+            self.next_model_id = 1; // Skip 0 which may be used as invalid sentinel
+        }
 
         // Create animation player if the source model has a skeleton.
         if let Some(ref skeleton) = source.skeleton {

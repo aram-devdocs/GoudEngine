@@ -7,6 +7,11 @@ use cgmath::Vector3;
 // ============================================================================
 
 /// Maximum bones per skeleton for GPU skinning.
+///
+/// This constant must match the shader's `u_bones[128]` uniform array size.
+/// The runtime config field [`SkinningConfig::max_bones_per_mesh`] defaults to
+/// this value and is used for validation; changing it does NOT resize the
+/// shader array.
 pub const MAX_BONES: usize = 128;
 
 /// Maximum bone influences per vertex.
@@ -67,4 +72,6 @@ pub struct SkinnedMesh3D {
     pub(in crate::libs::graphics::renderer3d) rotation: Vector3<f32>,
     /// Scale.
     pub(in crate::libs::graphics::renderer3d) scale: Vector3<f32>,
+    /// Base color for the skinned mesh (RGBA).
+    pub(in crate::libs::graphics::renderer3d) color: [f32; 4],
 }

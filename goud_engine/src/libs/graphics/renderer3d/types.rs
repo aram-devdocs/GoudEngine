@@ -185,7 +185,6 @@ pub struct Renderer3DStats {
 
 /// Local-space bounding sphere for frustum culling.
 #[derive(Debug, Clone, Copy)]
-#[allow(dead_code)] // Fields used by frustum culling (Phase H)
 pub(in crate::libs::graphics::renderer3d) struct BoundingSphere {
     /// Center in object-local space (typically the AABB center).
     pub(in crate::libs::graphics::renderer3d) center: Vector3<f32>,
@@ -343,6 +342,8 @@ pub struct GridConfig {
     pub render_mode: GridRenderMode,
     /// Line color
     pub line_color: Vector3<f32>,
+    /// Grid line opacity (default: `0.4`).
+    pub alpha: f32,
 }
 
 impl Default for GridConfig {
@@ -356,6 +357,7 @@ impl Default for GridConfig {
             show_yz_plane: false,
             render_mode: GridRenderMode::Blend,
             line_color: Vector3::new(0.5, 0.5, 0.5),
+            alpha: 0.4,
         }
     }
 }

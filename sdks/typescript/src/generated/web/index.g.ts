@@ -1054,6 +1054,13 @@ export class GoudGame implements IGoudGame {
   addLightToScene(_sceneId: number, _lightId: number): boolean { return false; }
   removeLightFromScene(_sceneId: number, _lightId: number): boolean { return false; }
 
+  instantiateModelBatch(_sourceModelId: number, _count: number): number { return 0; }
+  setModelPositionsBatch(_count: number): number { return 0; }
+  addModelsToSceneBatch(_sceneId: number, _count: number): number { return 0; }
+  setModelStatic(_modelId: number, _isStatic: boolean): boolean { return false; }
+  setAnimationPhaseLock(_modelId: number, _enabled: boolean): boolean { return false; }
+  setAnimationBakingEnabled(_modelId: number, _enabled: boolean): boolean { return false; }
+
   setViewport(_x: number, _y: number, _width: number, _height: number): void {}
   enableDepthTest(): void {}
   disableDepthTest(): void {}
@@ -1159,6 +1166,45 @@ export class GoudGame implements IGoudGame {
       maxMessageSize: caps.max_message_size,
     };
   }
+
+  getActiveInstanceCount(): number { return 0; }
+  getAnimationEvaluationCount(): number { return 0; }
+  getAnimationEvaluationSavedCount(): number { return 0; }
+  getAnimationLodDistance(): number { return 0; }
+  getAnimationLodEnabled(): boolean { return false; }
+  getAnimationLodSkipDistance(): number { return 0; }
+  getBakedAnimationSampleRate(): number { return 30; }
+  getBoneMatrixUploadCount(): number { return 0; }
+  getFrustumCullingEnabled(): boolean { return false; }
+  getFrustumCullingFarPlane(): number { return 1000; }
+  getFrustumCullingFov(): number { return 60; }
+  getFrustumCullingNearPlane(): number { return 0.1; }
+  getGridAlpha(): number { return 1; }
+  getInstancedDrawCalls(): number { return 0; }
+  getInstancingEnabled(): boolean { return false; }
+  getMaterialSortingEnabled(): boolean { return false; }
+  getMinInstancesForBatching(): number { return 4; }
+  getShadowBias(): number { return 0.001; }
+  getShadowMapSize(): number { return 2048; }
+  getShadowsEnabled(): boolean { return false; }
+  getSharedAnimationEval(): boolean { return false; }
+  getSkinningMode(): number { return 0; }
+  getStaticBatchingEnabled(): boolean { return false; }
+
+  setAnimationLodDistance(_distance: number): number { return 0; }
+  setAnimationLodSkipDistance(_distance: number): number { return 0; }
+  setBakedAnimationSampleRate(_rate: number): number { return 0; }
+  setDefaultMaterialColor(_r: number, _g: number, _b: number, _a: number): number { return 0; }
+  setFrustumCullingFarPlane(_far: number): number { return 0; }
+  setFrustumCullingFov(_fovDegrees: number): number { return 0; }
+  setFrustumCullingNearPlane(_near: number): number { return 0; }
+  setGridAlpha(_alpha: number): number { return 0; }
+  setInstancingEnabled(_enabled: boolean): number { return 0; }
+  setMinInstancesForBatching(_count: number): number { return 0; }
+  setShadowBias(_bias: number): number { return 0; }
+  setShadowMapSize(_size: number): number { return 0; }
+  setShadowsEnabled(_enabled: boolean): number { return 0; }
+  setStaticBatchingEnabled(_enabled: boolean): number { return 0; }
 
   // TODO: wasm coordinate origin -- these stub methods satisfy the IGoudGame interface
   setCoordinateOrigin(_origin: number): boolean { return true; }

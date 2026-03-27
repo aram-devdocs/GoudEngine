@@ -600,6 +600,181 @@ export class GoudGame implements IGoudGame {
     return this.native.setSharedAnimationEval(enabled);
   }
 
+  /** Sets the distance at which animation updates are half-rated */
+  setAnimationLodDistance(distance: number): number {
+    return (this.native as any).setAnimationLodDistance(distance);
+  }
+
+  /** Sets the distance at which animation updates are frozen */
+  setAnimationLodSkipDistance(distance: number): number {
+    return (this.native as any).setAnimationLodSkipDistance(distance);
+  }
+
+  /** Returns the animation LOD half-rate distance */
+  getAnimationLodDistance(): number {
+    return (this.native as any).getAnimationLodDistance();
+  }
+
+  /** Returns the animation LOD freeze distance */
+  getAnimationLodSkipDistance(): number {
+    return (this.native as any).getAnimationLodSkipDistance();
+  }
+
+  /** Enables or disables static batching */
+  setStaticBatchingEnabled(enabled: boolean): number {
+    return (this.native as any).setStaticBatchingEnabled(enabled);
+  }
+
+  /** Enables or disables instanced rendering */
+  setInstancingEnabled(enabled: boolean): number {
+    return (this.native as any).setInstancingEnabled(enabled);
+  }
+
+  /** Returns whether frustum culling is enabled */
+  getFrustumCullingEnabled(): boolean {
+    return (this.native as any).getFrustumCullingEnabled();
+  }
+
+  /** Returns the skinning mode (0=CPU, 1=GPU) */
+  getSkinningMode(): number {
+    return (this.native as any).getSkinningMode();
+  }
+
+  /** Returns whether material sorting is enabled */
+  getMaterialSortingEnabled(): boolean {
+    return (this.native as any).getMaterialSortingEnabled();
+  }
+
+  /** Returns whether static batching is enabled */
+  getStaticBatchingEnabled(): boolean {
+    return (this.native as any).getStaticBatchingEnabled();
+  }
+
+  /** Returns whether instanced rendering is enabled */
+  getInstancingEnabled(): boolean {
+    return (this.native as any).getInstancingEnabled();
+  }
+
+  /** Returns whether animation LOD is enabled */
+  getAnimationLodEnabled(): boolean {
+    return (this.native as any).getAnimationLodEnabled();
+  }
+
+  /** Returns whether shared animation evaluation is enabled */
+  getSharedAnimationEval(): boolean {
+    return (this.native as any).getSharedAnimationEval();
+  }
+
+  /** Sets the baked animation sample rate in frames per second */
+  setBakedAnimationSampleRate(rate: number): number {
+    return (this.native as any).setBakedAnimationSampleRate(rate);
+  }
+
+  /** Returns the baked animation sample rate */
+  getBakedAnimationSampleRate(): number {
+    return (this.native as any).getBakedAnimationSampleRate();
+  }
+
+  /** Sets the minimum instance count for instanced rendering */
+  setMinInstancesForBatching(count: number): number {
+    return (this.native as any).setMinInstancesForBatching(count);
+  }
+
+  /** Returns the minimum instance count for batching */
+  getMinInstancesForBatching(): number {
+    return (this.native as any).getMinInstancesForBatching();
+  }
+
+  /** Sets the fallback material color for meshes without materials */
+  setDefaultMaterialColor(r: number, g: number, b: number, a: number): number {
+    return (this.native as any).setDefaultMaterialColor(r, g, b, a);
+  }
+
+  /** Sets the grid transparency alpha (0.0 invisible, 1.0 opaque) */
+  setGridAlpha(alpha: number): number {
+    return (this.native as any).setGridAlpha(alpha);
+  }
+
+  /** Returns the current grid transparency alpha */
+  getGridAlpha(): number {
+    return (this.native as any).getGridAlpha();
+  }
+
+  /** Sets the frustum culling FOV in degrees */
+  setFrustumCullingFov(fovDegrees: number): number {
+    return (this.native as any).setFrustumCullingFov(fovDegrees);
+  }
+
+  /** Returns the frustum culling FOV in degrees */
+  getFrustumCullingFov(): number {
+    return (this.native as any).getFrustumCullingFov();
+  }
+
+  /** Sets the near clipping plane for frustum culling */
+  setFrustumCullingNearPlane(near: number): number {
+    return (this.native as any).setFrustumCullingNearPlane(near);
+  }
+
+  /** Returns the frustum culling near plane distance */
+  getFrustumCullingNearPlane(): number {
+    return (this.native as any).getFrustumCullingNearPlane();
+  }
+
+  /** Sets the far clipping plane for frustum culling */
+  setFrustumCullingFarPlane(far: number): number {
+    return (this.native as any).setFrustumCullingFarPlane(far);
+  }
+
+  /** Returns the frustum culling far plane distance */
+  getFrustumCullingFarPlane(): number {
+    return (this.native as any).getFrustumCullingFarPlane();
+  }
+
+  /** Enables or disables shadow mapping */
+  setShadowsEnabled(enabled: boolean): number {
+    return (this.native as any).setShadowsEnabled(enabled);
+  }
+
+  /** Returns whether shadows are enabled */
+  getShadowsEnabled(): boolean {
+    return (this.native as any).getShadowsEnabled();
+  }
+
+  /** Sets the shadow map resolution */
+  setShadowMapSize(size: number): number {
+    return (this.native as any).setShadowMapSize(size);
+  }
+
+  /** Returns the shadow map resolution */
+  getShadowMapSize(): number {
+    return (this.native as any).getShadowMapSize();
+  }
+
+  /** Sets the shadow depth bias */
+  setShadowBias(bias: number): number {
+    return (this.native as any).setShadowBias(bias);
+  }
+
+  /** Returns the shadow depth bias */
+  getShadowBias(): number {
+    return (this.native as any).getShadowBias();
+  }
+
+  /** Creates multiple instances of a model in one call */
+  instantiateModelBatch(sourceModelId: number, count: number): number {
+    return (this.native as any).instantiateModelBatch(sourceModelId, count);
+  }
+
+  /** Sets positions for multiple models in one call */
+  setModelPositionsBatch(count: number): number {
+    return (this.native as any).setModelPositionsBatch(count);
+  }
+
+  /** Adds multiple models to a scene in one call */
+  addModelsToSceneBatch(sceneId: number, count: number): number {
+    return (this.native as any).addModelsToSceneBatch(sceneId, count);
+  }
+
   /** Returns the number of draw calls last frame */
   getDrawCalls(): number {
     return this.native.getDrawCalls();
@@ -613,6 +788,31 @@ export class GoudGame implements IGoudGame {
   /** Returns the number of culled objects last frame */
   getCulledObjectCount(): number {
     return this.native.getCulledObjectCount();
+  }
+
+  /** Returns the number of instanced draw calls last frame */
+  getInstancedDrawCalls(): number {
+    return (this.native as any).getInstancedDrawCalls();
+  }
+
+  /** Returns the number of active instances submitted last frame */
+  getActiveInstanceCount(): number {
+    return (this.native as any).getActiveInstanceCount();
+  }
+
+  /** Returns the number of uploaded bone matrices last frame */
+  getBoneMatrixUploadCount(): number {
+    return (this.native as any).getBoneMatrixUploadCount();
+  }
+
+  /** Returns the number of animation evaluations last frame */
+  getAnimationEvaluationCount(): number {
+    return (this.native as any).getAnimationEvaluationCount();
+  }
+
+  /** Returns the number of animation evaluations avoided last frame */
+  getAnimationEvaluationSavedCount(): number {
+    return (this.native as any).getAnimationEvaluationSavedCount();
   }
 
   /** Renders all 3D objects */
@@ -715,6 +915,11 @@ export class GoudGame implements IGoudGame {
     return (this.native as any).instantiateModel(sourceModelId);
   }
 
+  /** Marks a model as static or dynamic for renderer-side batching */
+  setModelStatic(modelId: number, isStatic: boolean): boolean {
+    return (this.native as any).setModelStatic(modelId, isStatic);
+  }
+
   /** Overrides the material on a specific sub-mesh of a model (-1 for all sub-meshes) */
   setModelMaterial(modelId: number, meshIndex: number, materialId: number): boolean {
     return (this.native as any).setModelMaterial(modelId, meshIndex, materialId);
@@ -768,6 +973,16 @@ export class GoudGame implements IGoudGame {
   /** Sets the playback speed for a model instance's animation */
   setAnimationSpeed(instanceId: number, speed: number): boolean {
     return (this.native as any).setAnimationSpeed(instanceId, speed);
+  }
+
+  /** Enables or disables animation baking for a model */
+  setAnimationBakingEnabled(modelId: number, enabled: boolean): boolean {
+    return (this.native as any).setAnimationBakingEnabled(modelId, enabled);
+  }
+
+  /** Enables or disables animation phase lock for a model */
+  setAnimationPhaseLock(modelId: number, enabled: boolean): boolean {
+    return (this.native as any).setAnimationPhaseLock(modelId, enabled);
   }
 
   /** Sets up blending between two animation clips */

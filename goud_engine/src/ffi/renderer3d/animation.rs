@@ -74,6 +74,8 @@ pub unsafe extern "C" fn goud_renderer3d_get_animation_name(
             // Copy the name into the buffer.
             let copy_len = name_bytes.len().min((buf_len as usize) - 1);
             // SAFETY: Caller guarantees out_buf points to buf_len writable bytes.
+            // copy_len <= buf_len - 1 (bounded by min on line above), so both the
+            // copy and the null terminator write at out_buf.add(copy_len) are in bounds.
             std::ptr::copy_nonoverlapping(name_bytes.as_ptr(), out_buf as *mut u8, copy_len);
             *out_buf.add(copy_len) = 0; // Null terminate.
             name_bytes.len() as i32
@@ -274,6 +276,53 @@ pub extern "C" fn goud_renderer3d_update_animations(
     with_renderer(context_id, |renderer| {
         renderer.update_animations(delta_time);
         true
+    })
+    .unwrap_or(false)
+}
+
+/// Enables or disables phase-locked animation for a model or instance.
+///
+/// When phase-locked, all instances of the same source model and clip share
+/// a single global animation clock, guaranteeing G5 cache hits regardless
+/// of spawn time.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_animation_phase_lock(
+    context_id: GoudContextId,
+    model_id: u32,
+    enabled: bool,
+) -> bool {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return false;
+    }
+
+    with_renderer(context_id, |renderer| {
+        renderer.set_animation_phase_lock(model_id, enabled)
+    })
+    .unwrap_or(false)
+}
+
+/// Enables or disables the pre-baked animation cache for a model.
+///
+/// When enabled (the default for models with animations), the animation
+/// update loop uses a simple frame lookup + lerp instead of full
+/// per-frame keyframe evaluation. Disabling this forces the model to
+/// fall back to CPU evaluation.
+///
+/// `model_id` must be a source model ID (not an instance).
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_animation_baking_enabled(
+    context_id: GoudContextId,
+    model_id: u32,
+    enabled: bool,
+) -> bool {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return false;
+    }
+
+    with_renderer(context_id, |renderer| {
+        renderer.set_animation_baking_enabled(model_id, enabled)
     })
     .unwrap_or(false)
 }

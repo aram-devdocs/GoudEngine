@@ -30,7 +30,10 @@ impl Renderer3D {
         };
 
         let id = self.next_object_id;
-        self.next_object_id += 1;
+        self.next_object_id = self.next_object_id.wrapping_add(1);
+        if self.next_object_id == 0 {
+            self.next_object_id = 1; // Skip 0 which may be used as invalid sentinel
+        }
 
         let bounds = compute_bounding_sphere(&vertices);
         self.objects.insert(

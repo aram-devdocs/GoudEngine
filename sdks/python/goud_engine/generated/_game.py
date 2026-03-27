@@ -474,6 +474,146 @@ class GoudGame:
         """Enables or disables shared animation evaluation"""
         return self._lib.goud_renderer3d_set_shared_animation_eval(self._ctx, enabled)
 
+    def set_animation_lod_distance(self, distance):
+        """Sets the distance at which animation updates are half-rated"""
+        return self._lib.goud_renderer3d_set_animation_lod_distance(self._ctx, distance)
+
+    def set_animation_lod_skip_distance(self, distance):
+        """Sets the distance at which animation updates are frozen"""
+        return self._lib.goud_renderer3d_set_animation_lod_skip_distance(self._ctx, distance)
+
+    def get_animation_lod_distance(self):
+        """Returns the animation LOD half-rate distance"""
+        return self._lib.goud_renderer3d_get_animation_lod_distance(self._ctx)
+
+    def get_animation_lod_skip_distance(self):
+        """Returns the animation LOD freeze distance"""
+        return self._lib.goud_renderer3d_get_animation_lod_skip_distance(self._ctx)
+
+    def set_static_batching_enabled(self, enabled):
+        """Enables or disables static batching"""
+        return self._lib.goud_renderer3d_set_static_batching_enabled(self._ctx, enabled)
+
+    def set_instancing_enabled(self, enabled):
+        """Enables or disables instanced rendering"""
+        return self._lib.goud_renderer3d_set_instancing_enabled(self._ctx, enabled)
+
+    def get_frustum_culling_enabled(self):
+        """Returns whether frustum culling is enabled"""
+        return self._lib.goud_renderer3d_get_frustum_culling_enabled(self._ctx)
+
+    def get_skinning_mode(self):
+        """Returns the skinning mode (0=CPU, 1=GPU)"""
+        return self._lib.goud_renderer3d_get_skinning_mode(self._ctx)
+
+    def get_material_sorting_enabled(self):
+        """Returns whether material sorting is enabled"""
+        return self._lib.goud_renderer3d_get_material_sorting_enabled(self._ctx)
+
+    def get_static_batching_enabled(self):
+        """Returns whether static batching is enabled"""
+        return self._lib.goud_renderer3d_get_static_batching_enabled(self._ctx)
+
+    def get_instancing_enabled(self):
+        """Returns whether instanced rendering is enabled"""
+        return self._lib.goud_renderer3d_get_instancing_enabled(self._ctx)
+
+    def get_animation_lod_enabled(self):
+        """Returns whether animation LOD is enabled"""
+        return self._lib.goud_renderer3d_get_animation_lod_enabled(self._ctx)
+
+    def get_shared_animation_eval(self):
+        """Returns whether shared animation evaluation is enabled"""
+        return self._lib.goud_renderer3d_get_shared_animation_eval(self._ctx)
+
+    def set_baked_animation_sample_rate(self, rate):
+        """Sets the baked animation sample rate in frames per second"""
+        return self._lib.goud_renderer3d_set_baked_animation_sample_rate(self._ctx, rate)
+
+    def get_baked_animation_sample_rate(self):
+        """Returns the baked animation sample rate"""
+        return self._lib.goud_renderer3d_get_baked_animation_sample_rate(self._ctx)
+
+    def set_min_instances_for_batching(self, count):
+        """Sets the minimum instance count for instanced rendering"""
+        return self._lib.goud_renderer3d_set_min_instances_for_batching(self._ctx, count)
+
+    def get_min_instances_for_batching(self):
+        """Returns the minimum instance count for batching"""
+        return self._lib.goud_renderer3d_get_min_instances_for_batching(self._ctx)
+
+    def set_default_material_color(self, r, g, b, a):
+        """Sets the fallback material color for meshes without materials"""
+        return self._lib.goud_renderer3d_set_default_material_color(self._ctx, r, g, b, a)
+
+    def set_grid_alpha(self, alpha):
+        """Sets the grid transparency alpha (0.0 invisible, 1.0 opaque)"""
+        return self._lib.goud_renderer3d_set_grid_alpha(self._ctx, alpha)
+
+    def get_grid_alpha(self):
+        """Returns the current grid transparency alpha"""
+        return self._lib.goud_renderer3d_get_grid_alpha(self._ctx)
+
+    def set_frustum_culling_fov(self, fov_degrees):
+        """Sets the frustum culling FOV in degrees"""
+        return self._lib.goud_renderer3d_set_frustum_culling_fov(self._ctx, fov_degrees)
+
+    def get_frustum_culling_fov(self):
+        """Returns the frustum culling FOV in degrees"""
+        return self._lib.goud_renderer3d_get_frustum_culling_fov(self._ctx)
+
+    def set_frustum_culling_near_plane(self, near):
+        """Sets the near clipping plane for frustum culling"""
+        return self._lib.goud_renderer3d_set_frustum_culling_near_plane(self._ctx, near)
+
+    def get_frustum_culling_near_plane(self):
+        """Returns the frustum culling near plane distance"""
+        return self._lib.goud_renderer3d_get_frustum_culling_near_plane(self._ctx)
+
+    def set_frustum_culling_far_plane(self, far):
+        """Sets the far clipping plane for frustum culling"""
+        return self._lib.goud_renderer3d_set_frustum_culling_far_plane(self._ctx, far)
+
+    def get_frustum_culling_far_plane(self):
+        """Returns the frustum culling far plane distance"""
+        return self._lib.goud_renderer3d_get_frustum_culling_far_plane(self._ctx)
+
+    def set_shadows_enabled(self, enabled):
+        """Enables or disables shadow mapping"""
+        return self._lib.goud_renderer3d_set_shadows_enabled(self._ctx, enabled)
+
+    def get_shadows_enabled(self):
+        """Returns whether shadows are enabled"""
+        return self._lib.goud_renderer3d_get_shadows_enabled(self._ctx)
+
+    def set_shadow_map_size(self, size):
+        """Sets the shadow map resolution"""
+        return self._lib.goud_renderer3d_set_shadow_map_size(self._ctx, size)
+
+    def get_shadow_map_size(self):
+        """Returns the shadow map resolution"""
+        return self._lib.goud_renderer3d_get_shadow_map_size(self._ctx)
+
+    def set_shadow_bias(self, bias):
+        """Sets the shadow depth bias"""
+        return self._lib.goud_renderer3d_set_shadow_bias(self._ctx, bias)
+
+    def get_shadow_bias(self):
+        """Returns the shadow depth bias"""
+        return self._lib.goud_renderer3d_get_shadow_bias(self._ctx)
+
+    def instantiate_model_batch(self, source_model_id, count):
+        """Creates multiple instances of a model in one call"""
+        return self._lib.goud_renderer3d_instantiate_model_batch(self._ctx, source_model_id, count)
+
+    def set_model_positions_batch(self, count):
+        """Sets positions for multiple models in one call"""
+        return self._lib.goud_renderer3d_set_model_positions_batch(self._ctx, count)
+
+    def add_models_to_scene_batch(self, scene_id, count):
+        """Adds multiple models to a scene in one call"""
+        return self._lib.goud_renderer3d_add_models_to_scene_batch(self._ctx, scene_id, count)
+
     def get_draw_calls(self):
         """Returns the number of draw calls last frame"""
         return self._lib.goud_renderer3d_get_draw_calls(self._ctx)
@@ -485,6 +625,26 @@ class GoudGame:
     def get_culled_object_count(self):
         """Returns the number of culled objects last frame"""
         return self._lib.goud_renderer3d_get_culled_object_count(self._ctx)
+
+    def get_instanced_draw_calls(self):
+        """Returns the number of instanced draw calls last frame"""
+        return self._lib.goud_renderer3d_get_instanced_draw_calls(self._ctx)
+
+    def get_active_instance_count(self):
+        """Returns the number of active instances submitted last frame"""
+        return self._lib.goud_renderer3d_get_active_instance_count(self._ctx)
+
+    def get_bone_matrix_upload_count(self):
+        """Returns the number of uploaded bone matrices last frame"""
+        return self._lib.goud_renderer3d_get_bone_matrix_upload_count(self._ctx)
+
+    def get_animation_evaluation_count(self):
+        """Returns the number of animation evaluations last frame"""
+        return self._lib.goud_renderer3d_get_animation_evaluation_count(self._ctx)
+
+    def get_animation_evaluation_saved_count(self):
+        """Returns the number of animation evaluations avoided last frame"""
+        return self._lib.goud_renderer3d_get_animation_evaluation_saved_count(self._ctx)
 
     def render3_d(self):
         """Renders all 3D objects"""
@@ -566,6 +726,10 @@ class GoudGame:
         """Creates an independent instance of a source model"""
         return self._lib.goud_renderer3d_instantiate_model(self._ctx, source_model_id)
 
+    def set_model_static(self, model_id, is_static):
+        """Marks a model as static or dynamic for renderer-side batching"""
+        return self._lib.goud_renderer3d_set_model_static(self._ctx, model_id, is_static)
+
     def set_model_material(self, model_id, mesh_index, material_id):
         """Overrides the material on a specific sub-mesh of a model (-1 for all sub-meshes)"""
         return self._lib.goud_renderer3d_set_model_material(self._ctx, model_id, mesh_index, material_id)
@@ -618,6 +782,14 @@ class GoudGame:
     def set_animation_speed(self, instance_id, speed):
         """Sets the playback speed for a model instance's animation"""
         return self._lib.goud_renderer3d_set_animation_speed(self._ctx, instance_id, speed)
+
+    def set_animation_baking_enabled(self, model_id, enabled):
+        """Enables or disables animation baking for a model"""
+        return self._lib.goud_renderer3d_set_animation_baking_enabled(self._ctx, model_id, enabled)
+
+    def set_animation_phase_lock(self, model_id, enabled):
+        """Enables or disables animation phase lock for a model"""
+        return self._lib.goud_renderer3d_set_animation_phase_lock(self._ctx, model_id, enabled)
 
     def blend_animations(self, instance_id, anim_a, anim_b, blend_factor):
         """Sets up blending between two animation clips"""

@@ -1,6 +1,6 @@
 //! Model and model instance types for the 3D renderer.
 
-use super::animation::{BoneChannelMap, BonePropertyNames};
+use super::animation::{BakedAnimationData, BoneChannelMap};
 use crate::core::types::{KeyframeAnimation, MeshBounds, SkeletonData};
 
 /// A loaded 3D model consisting of one or more sub-mesh objects and materials.
@@ -15,8 +15,7 @@ pub(in crate::libs::graphics::renderer3d) struct Model3D {
     pub mesh_material_ids: Vec<u32>,
     /// AABB bounds of the full model.
     pub bounds: MeshBounds,
-    /// Source file path this model was loaded from (retained for diagnostics).
-    #[allow(dead_code)]
+    /// Source file path this model was loaded from.
     pub source_path: String,
     /// Skeleton data for skinned animation (populated in Phase B).
     pub skeleton: Option<SkeletonData>,
@@ -38,18 +37,18 @@ pub(in crate::libs::graphics::renderer3d) struct Model3D {
     /// Per-sub-mesh, per-vertex bone weights (4 per vertex), parallel to
     /// `bind_pose_vertices`.
     pub bind_pose_bone_weights: Vec<Vec<[f32; 4]>>,
-    /// Cached bone property name strings for animation sampling.
-    ///
-    /// Built once at model load time to avoid per-frame `format!()` allocations
-    /// in `compute_bone_matrices`.
-    #[allow(dead_code)]
-    pub cached_bone_prop_names: Vec<BonePropertyNames>,
     /// Pre-computed channel index maps for each animation clip.
     ///
     /// One entry per animation in `animations`. Built at model load time so
     /// that per-frame animation sampling uses direct array indexing instead of
     /// string-keyed HashMap lookups. See [`BoneChannelMap`].
     pub bone_channel_maps: Vec<BoneChannelMap>,
+    /// Pre-baked bone matrices for all animation clips.
+    ///
+    /// When present, the animation update loop uses a simple lookup + lerp
+    /// instead of full per-frame keyframe evaluation. Built at model load
+    /// time via [`bake_animations`](super::animation::bake_animations).
+    pub baked_animation: Option<BakedAnimationData>,
 }
 
 /// An instantiated copy of a [`Model3D`] with its own GPU resources.

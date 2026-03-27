@@ -253,6 +253,8 @@ def gen_game() -> None:
         "run", "runWithFixedUpdate",
         # Batch array types not supported in Swift codegen yet
         "drawSpriteBatch", "drawTextBatch",
+        # Renderer3D batch APIs with pointer params — need hand-written wrappers
+        "instantiateModelBatch", "setModelPositionsBatch", "addModelsToSceneBatch",
     }
 
     for m in methods:

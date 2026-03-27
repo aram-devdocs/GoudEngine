@@ -82,6 +82,56 @@ impl BufferOps for NativeRenderBackend {
             Self::Wgpu(backend) => backend.unbind_buffer(buffer_type),
         }
     }
+
+    fn supports_storage_buffers(&self) -> bool {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(backend) => backend.supports_storage_buffers(),
+            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            Self::Wgpu(backend) => backend.supports_storage_buffers(),
+        }
+    }
+
+    fn create_storage_buffer(&mut self, data: &[u8]) -> GoudResult<BufferHandle> {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(backend) => backend.create_storage_buffer(data),
+            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            Self::Wgpu(backend) => backend.create_storage_buffer(data),
+        }
+    }
+
+    fn update_storage_buffer(
+        &mut self,
+        handle: BufferHandle,
+        offset: usize,
+        data: &[u8],
+    ) -> GoudResult<()> {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(backend) => backend.update_storage_buffer(handle, offset, data),
+            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            Self::Wgpu(backend) => backend.update_storage_buffer(handle, offset, data),
+        }
+    }
+
+    fn bind_storage_buffer(&mut self, handle: BufferHandle, binding: u32) -> GoudResult<()> {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(backend) => backend.bind_storage_buffer(handle, binding),
+            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            Self::Wgpu(backend) => backend.bind_storage_buffer(handle, binding),
+        }
+    }
+
+    fn unbind_storage_buffer(&mut self) {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(backend) => backend.unbind_storage_buffer(),
+            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            Self::Wgpu(backend) => backend.unbind_storage_buffer(),
+        }
+    }
 }
 
 impl TextureOps for NativeRenderBackend {

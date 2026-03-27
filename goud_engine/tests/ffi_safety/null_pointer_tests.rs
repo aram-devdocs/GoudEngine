@@ -21,6 +21,10 @@ use goud_engine::ffi::entity::{
 use goud_engine::ffi::error::{
     goud_clear_last_error, goud_last_error_code, goud_last_error_message,
 };
+use goud_engine::ffi::renderer3d::{
+    goud_renderer3d_add_models_to_scene_batch, goud_renderer3d_instantiate_model_batch,
+    goud_renderer3d_set_model_positions_batch,
+};
 
 // ===========================================================================
 // Builder null-pointer tests
@@ -265,4 +269,164 @@ fn test_component_remove_invalid_context_returns_error() {
         result.is_err(),
         "component_remove with INVALID_CONTEXT should fail"
     );
+}
+
+// ===========================================================================
+// 3D renderer batch operations with null pointers / invalid context
+// ===========================================================================
+
+#[test]
+fn test_instantiate_model_batch_null_out_ids() {
+    // SAFETY: Passing null output pointer -- function should return -1.
+    let result = unsafe {
+        goud_renderer3d_instantiate_model_batch(GOUD_INVALID_CONTEXT_ID, 1, 5, std::ptr::null_mut())
+    };
+    assert_eq!(
+        result, -1,
+        "instantiate_model_batch with INVALID_CONTEXT should return -1"
+    );
+}
+
+#[test]
+fn test_set_model_positions_batch_null_positions() {
+    // SAFETY: Passing null pointers -- function should return -1.
+    let result = unsafe {
+        goud_renderer3d_set_model_positions_batch(
+            GOUD_INVALID_CONTEXT_ID,
+            std::ptr::null(),
+            std::ptr::null(),
+            5,
+        )
+    };
+    assert_eq!(
+        result, -1,
+        "set_model_positions_batch with INVALID_CONTEXT should return -1"
+    );
+}
+
+#[test]
+fn test_add_models_to_scene_batch_null_model_ids() {
+    // SAFETY: Passing null pointer -- function should return -1.
+    let result = unsafe {
+        goud_renderer3d_add_models_to_scene_batch(GOUD_INVALID_CONTEXT_ID, 1, std::ptr::null(), 5)
+    };
+    assert_eq!(
+        result, -1,
+        "add_models_to_scene_batch with INVALID_CONTEXT should return -1"
+    );
+}
+
+#[test]
+fn test_batch_apis_zero_count() {
+    // instantiate_model_batch with count=0 should return 0 even with invalid context
+    // (but invalid context check runs first, returning -1).
+    // With a valid-looking but non-existent context the null/count checks happen after
+    // the context check. We test the invalid-context path here.
+    let mut out = [0u32; 1];
+    // SAFETY: Buffer is valid, count is 0, context is invalid.
+    let result = unsafe {
+        goud_renderer3d_instantiate_model_batch(GOUD_INVALID_CONTEXT_ID, 1, 0, out.as_mut_ptr())
+    };
+    // Invalid context check fires before count==0 short-circuit.
+    assert_eq!(
+        result, -1,
+        "instantiate_model_batch(INVALID_CONTEXT, count=0) should return -1"
+    );
+
+    let ids = [1u32];
+    let pos = [0.0f32; 3];
+    // SAFETY: Buffers are valid, count is 0, context is invalid.
+    let result = unsafe {
+        goud_renderer3d_set_model_positions_batch(
+            GOUD_INVALID_CONTEXT_ID,
+            ids.as_ptr(),
+            pos.as_ptr(),
+            0,
+        )
+    };
+    assert_eq!(
+        result, -1,
+        "set_model_positions_batch(INVALID_CONTEXT, count=0) should return -1"
+    );
+
+    // SAFETY: Buffer is valid, count is 0, context is invalid.
+    let result = unsafe {
+        goud_renderer3d_add_models_to_scene_batch(GOUD_INVALID_CONTEXT_ID, 1, ids.as_ptr(), 0)
+    };
+    assert_eq!(
+        result, -1,
+        "add_models_to_scene_batch(INVALID_CONTEXT, count=0) should return -1"
+    );
+}
+
+#[test]
+fn test_instantiate_model_batch_valid_context_null_out_ids() {
+    let ctx = create_test_context();
+    // SAFETY: Null output pointer with valid context -- function should return -1.
+    let result =
+        unsafe { goud_renderer3d_instantiate_model_batch(ctx, 1, 5, std::ptr::null_mut()) };
+    assert_eq!(
+        result, -1,
+        "instantiate_model_batch with null out_ids should return -1"
+    );
+    cleanup_context(ctx);
+}
+
+#[test]
+fn test_set_model_positions_batch_valid_context_null_ptrs() {
+    let ctx = create_test_context();
+    // SAFETY: Null pointers with valid context -- function should return -1.
+    let result = unsafe {
+        goud_renderer3d_set_model_positions_batch(ctx, std::ptr::null(), std::ptr::null(), 5)
+    };
+    assert_eq!(
+        result, -1,
+        "set_model_positions_batch with null pointers should return -1"
+    );
+    cleanup_context(ctx);
+}
+
+#[test]
+fn test_add_models_to_scene_batch_valid_context_null_ids() {
+    let ctx = create_test_context();
+    // SAFETY: Null pointer with valid context -- function should return -1.
+    let result = unsafe { goud_renderer3d_add_models_to_scene_batch(ctx, 1, std::ptr::null(), 5) };
+    assert_eq!(
+        result, -1,
+        "add_models_to_scene_batch with null model_ids should return -1"
+    );
+    cleanup_context(ctx);
+}
+
+#[test]
+fn test_batch_apis_zero_count_valid_context() {
+    let ctx = create_test_context();
+
+    // instantiate_model_batch with count=0 should return 0.
+    let mut out = [0u32; 1];
+    // SAFETY: Buffer is valid, count is 0.
+    let result = unsafe { goud_renderer3d_instantiate_model_batch(ctx, 1, 0, out.as_mut_ptr()) };
+    assert_eq!(
+        result, 0,
+        "instantiate_model_batch(count=0) should return 0"
+    );
+
+    let ids = [1u32];
+    let pos = [0.0f32; 3];
+    // SAFETY: Buffers are valid, count is 0.
+    let result =
+        unsafe { goud_renderer3d_set_model_positions_batch(ctx, ids.as_ptr(), pos.as_ptr(), 0) };
+    assert_eq!(
+        result, 0,
+        "set_model_positions_batch(count=0) should return 0"
+    );
+
+    // SAFETY: Buffer is valid, count is 0.
+    let result = unsafe { goud_renderer3d_add_models_to_scene_batch(ctx, 1, ids.as_ptr(), 0) };
+    assert_eq!(
+        result, 0,
+        "add_models_to_scene_batch(count=0) should return 0"
+    );
+
+    cleanup_context(ctx);
 }

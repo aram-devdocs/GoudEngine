@@ -8,7 +8,7 @@ using System.Text.Json;
 namespace GoudEngine
 {
     /// <summary>Headless engine context for CI tests and non-windowed entity management.</summary>
-    public class GoudContext : IDisposable
+    public partial class GoudContext : IDisposable
     {
         private GoudContextId _ctx;
         private bool _disposed;

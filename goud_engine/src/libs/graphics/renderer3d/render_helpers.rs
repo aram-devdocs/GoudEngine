@@ -155,6 +155,7 @@ impl Renderer3D {
         fog: &super::types::FogConfig,
         lights: &[super::types::Light],
         texture_manager: Option<&dyn super::texture::TextureManagerTrait>,
+        instanced_ids: &std::collections::HashSet<u32>,
     ) {
         let scene_model_filter = self
             .current_scene
@@ -171,7 +172,7 @@ impl Renderer3D {
         let mut draws: Vec<SkinnedDraw> = Vec::new();
 
         for (&model_id, model) in &self.models {
-            if !model.is_skinned {
+            if !model.is_skinned || instanced_ids.contains(&model_id) {
                 continue;
             }
             if let Some(filter) = scene_model_filter {
@@ -189,6 +190,9 @@ impl Renderer3D {
         }
 
         for (&inst_id, inst) in &self.model_instances {
+            if instanced_ids.contains(&inst_id) {
+                continue;
+            }
             let source = match self.models.get(&inst.source_model_id) {
                 Some(m) => m,
                 None => continue,
@@ -217,6 +221,12 @@ impl Renderer3D {
         let gpu_skinning = matches!(self.config.skinning.mode, super::config::SkinningMode::Gpu)
             && self.backend.supports_storage_buffers();
 
+        // Use LessEqual depth so sub-meshes at the same depth (same bone
+        // transforms) can overwrite each other — required for multi-material
+        // models where body + joints share overlapping geometry.
+        use crate::libs::graphics::backend::DepthFunc;
+        self.backend.set_depth_func(DepthFunc::LessEqual);
+
         let _ = self.backend.bind_shader(self.skinned_shader_handle);
         let skinned_unis = self.skinned_uniforms.clone();
         self.apply_main_uniforms(
@@ -229,18 +239,22 @@ impl Renderer3D {
             lights,
         );
 
-        for draw in &draws {
-            // SAFETY: self.models, self.model_instances, and self.animation_players
-            // are not mutated during this draw loop -- only the backend receives calls.
-            let obj_ids = unsafe { &*draw.obj_ids };
-            let mat_ids = unsafe { &*draw.mat_ids };
-            let bone_mats = unsafe { &*draw.bone_mats };
+        // GPU skinning: pack ALL models' bone matrices into one storage buffer
+        // with per-draw offsets so a single upload covers every model.
+        let mut bone_offsets: Vec<i32> = Vec::new();
+        if gpu_skinning {
+            let mut packed_bones: Vec<f32> = Vec::new();
+            for draw in &draws {
+                // SAFETY: animation_players is not mutated during this loop.
+                let bone_mats = unsafe { &*draw.bone_mats };
+                bone_offsets.push((packed_bones.len() / 16) as i32);
+                for mat in bone_mats.iter() {
+                    packed_bones.extend_from_slice(mat);
+                }
+            }
 
-            self.stats.skinned_instances += 1;
-
-            if gpu_skinning {
-                // Upload bone matrices to a storage buffer for the GPU skinning shader.
-                let bone_data: &[u8] = bytemuck::cast_slice(bone_mats);
+            if !packed_bones.is_empty() {
+                let bone_data: &[u8] = bytemuck::cast_slice(&packed_bones);
                 self.ensure_bone_storage_buffer(bone_data.len());
                 if let Some(storage_handle) = self.bone_storage_buffer {
                     if let Err(e) = self
@@ -252,6 +266,22 @@ impl Renderer3D {
                     let _ = self.backend.bind_storage_buffer(storage_handle, 0);
                 }
                 self.stats.bone_matrix_uploads += 1;
+            }
+        }
+
+        for (draw_idx, draw) in draws.iter().enumerate() {
+            // SAFETY: self.models, self.model_instances, and self.animation_players
+            // are not mutated during this draw loop -- only the backend receives calls.
+            let obj_ids = unsafe { &*draw.obj_ids };
+            let mat_ids = unsafe { &*draw.mat_ids };
+            let bone_mats = unsafe { &*draw.bone_mats };
+
+            self.stats.skinned_instances += 1;
+
+            if gpu_skinning {
+                // Set per-draw bone offset into the packed storage buffer.
+                self.backend
+                    .set_uniform_int(skinned_unis.bone_offset, bone_offsets[draw_idx]);
             } else {
                 // Upload bone matrices as individual uniforms (OpenGL/CPU path).
                 for (i, mat) in bone_mats.iter().enumerate() {
@@ -270,7 +300,7 @@ impl Renderer3D {
                             .get(sub_idx)
                             .and_then(|mid| self.materials.get(mid))
                             .map(|m| [m.color.x, m.color.y, m.color.z, m.color.w])
-                            .unwrap_or([0.8, 0.8, 0.8, 1.0]);
+                            .unwrap_or(self.config.default_material_color);
                         (
                             obj.buffer,
                             obj.vertex_count,
@@ -298,7 +328,6 @@ impl Renderer3D {
                     color[2],
                     color[3],
                 );
-
                 let _ = self.backend.bind_buffer(buffer);
                 if gpu_skinning {
                     self.backend.set_vertex_attributes(&self.skinned_layout);
@@ -310,13 +339,14 @@ impl Renderer3D {
                     .draw_arrays(PrimitiveTopology::Triangles, 0, vc as u32);
                 self.stats.draw_calls += 1;
             }
+        }
 
-            if gpu_skinning {
-                self.backend.unbind_storage_buffer();
-            }
+        if gpu_skinning {
+            self.backend.unbind_storage_buffer();
         }
 
         self.backend.unbind_shader();
+        self.backend.set_depth_func(DepthFunc::Less);
     }
 
     /// Ensure the bone storage buffer exists and is large enough for the given byte size.
@@ -341,6 +371,30 @@ impl Renderer3D {
             }
             Err(e) => {
                 log::error!("Failed to create bone storage buffer: {e}");
+            }
+        }
+    }
+
+    /// Ensure the instanced bone storage buffer exists and is large enough.
+    pub(super) fn ensure_instanced_bone_storage_buffer(&mut self, required_bytes: usize) {
+        let current_size = self.instanced_bone_storage_buffer_size;
+        if self.instanced_bone_storage_buffer.is_some() && current_size >= required_bytes {
+            return;
+        }
+
+        if let Some(old) = self.instanced_bone_storage_buffer.take() {
+            self.backend.destroy_buffer(old);
+        }
+
+        let alloc_size = required_bytes.next_power_of_two().max(64);
+        let initial_data = vec![0u8; alloc_size];
+        match self.backend.create_storage_buffer(&initial_data) {
+            Ok(handle) => {
+                self.instanced_bone_storage_buffer = Some(handle);
+                self.instanced_bone_storage_buffer_size = alloc_size;
+            }
+            Err(e) => {
+                log::error!("Failed to create instanced bone storage buffer: {e}");
             }
         }
     }
@@ -411,9 +465,9 @@ impl Renderer3D {
         self.backend
             .set_uniform_int(uniforms.shadows_enabled, i32::from(shadows_enabled));
         self.backend
-            .set_uniform_float(uniforms.shadow_bias, self.shadow_bias);
-        let texel = if self.shadow_map_size > 0 {
-            1.0 / self.shadow_map_size as f32
+            .set_uniform_float(uniforms.shadow_bias, self.config.shadows.bias);
+        let texel = if self.config.shadows.map_size > 0 {
+            1.0 / self.config.shadows.map_size as f32
         } else {
             0.0
         };

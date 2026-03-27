@@ -1,6 +1,13 @@
 //! Skeletal animation playback, blending, and transitions for the 3D renderer.
 
+mod baked;
+
 use crate::core::types::{KeyframeAnimation, SkeletonData};
+
+pub use baked::{bake_animations, BakedAnimationData};
+// BakedClip is used by animation_tests
+#[allow(unused_imports)]
+pub use baked::BakedClip;
 
 // ============================================================================
 // Animation state types
@@ -54,6 +61,9 @@ pub struct AnimationPlayer {
     pub scratch_local: Vec<[f32; 16]>,
     /// Pre-allocated scratch buffer for global transforms (avoids per-frame allocation).
     pub scratch_global: Vec<[f32; 16]>,
+    /// When true, this player uses a global shared clock instead of per-instance
+    /// time, guaranteeing G5 cache hits for all instances of the same model+clip.
+    pub phase_locked: bool,
 }
 
 impl AnimationPlayer {
@@ -67,6 +77,7 @@ impl AnimationPlayer {
             bone_matrices: vec![IDENTITY_MAT4; bone_count],
             scratch_local: vec![IDENTITY_MAT4; bone_count],
             scratch_global: vec![IDENTITY_MAT4; bone_count],
+            phase_locked: false,
         }
     }
 
@@ -352,7 +363,7 @@ impl AnimationPlayer {
 // ============================================================================
 
 /// Public wrapper for `advance_state` used by `core_model_animation` for
-/// shared evaluation (G5) — advances the animation clock without recomputing
+/// shared evaluation (G5) -- advances the animation clock without recomputing
 /// bone matrices.
 pub(in crate::libs::graphics::renderer3d) fn advance_state_pub(
     state: &mut Option<AnimationState>,

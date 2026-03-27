@@ -39,7 +39,7 @@ namespace GoudEngine
     }
 
     /// <summary>Main game engine instance. Creates a window, manages rendering, input, and ECS.</summary>
-    public class GoudGame : IDisposable
+    public partial class GoudGame : IDisposable
     {
         private GoudContextId _ctx;
         private bool _disposed;
@@ -750,6 +750,198 @@ namespace GoudEngine
             return NativeMethods.goud_renderer3d_set_shared_animation_eval(_ctx, enabled);
         }
 
+        /// <summary>Sets the distance at which animation updates are half-rated</summary>
+        public int SetAnimationLodDistance(float distance)
+        {
+            return NativeMethods.goud_renderer3d_set_animation_lod_distance(_ctx, distance);
+        }
+
+        /// <summary>Sets the distance at which animation updates are frozen</summary>
+        public int SetAnimationLodSkipDistance(float distance)
+        {
+            return NativeMethods.goud_renderer3d_set_animation_lod_skip_distance(_ctx, distance);
+        }
+
+        /// <summary>Returns the animation LOD half-rate distance</summary>
+        public float GetAnimationLodDistance()
+        {
+            return NativeMethods.goud_renderer3d_get_animation_lod_distance(_ctx);
+        }
+
+        /// <summary>Returns the animation LOD freeze distance</summary>
+        public float GetAnimationLodSkipDistance()
+        {
+            return NativeMethods.goud_renderer3d_get_animation_lod_skip_distance(_ctx);
+        }
+
+        /// <summary>Enables or disables static batching</summary>
+        public int SetStaticBatchingEnabled(bool enabled)
+        {
+            return NativeMethods.goud_renderer3d_set_static_batching_enabled(_ctx, enabled);
+        }
+
+        /// <summary>Enables or disables instanced rendering</summary>
+        public int SetInstancingEnabled(bool enabled)
+        {
+            return NativeMethods.goud_renderer3d_set_instancing_enabled(_ctx, enabled);
+        }
+
+        /// <summary>Returns whether frustum culling is enabled</summary>
+        public bool GetFrustumCullingEnabled()
+        {
+            return NativeMethods.goud_renderer3d_get_frustum_culling_enabled(_ctx);
+        }
+
+        /// <summary>Returns the skinning mode (0=CPU, 1=GPU)</summary>
+        public int GetSkinningMode()
+        {
+            return NativeMethods.goud_renderer3d_get_skinning_mode(_ctx);
+        }
+
+        /// <summary>Returns whether material sorting is enabled</summary>
+        public bool GetMaterialSortingEnabled()
+        {
+            return NativeMethods.goud_renderer3d_get_material_sorting_enabled(_ctx);
+        }
+
+        /// <summary>Returns whether static batching is enabled</summary>
+        public bool GetStaticBatchingEnabled()
+        {
+            return NativeMethods.goud_renderer3d_get_static_batching_enabled(_ctx);
+        }
+
+        /// <summary>Returns whether instanced rendering is enabled</summary>
+        public bool GetInstancingEnabled()
+        {
+            return NativeMethods.goud_renderer3d_get_instancing_enabled(_ctx);
+        }
+
+        /// <summary>Returns whether animation LOD is enabled</summary>
+        public bool GetAnimationLodEnabled()
+        {
+            return NativeMethods.goud_renderer3d_get_animation_lod_enabled(_ctx);
+        }
+
+        /// <summary>Returns whether shared animation evaluation is enabled</summary>
+        public bool GetSharedAnimationEval()
+        {
+            return NativeMethods.goud_renderer3d_get_shared_animation_eval(_ctx);
+        }
+
+        /// <summary>Sets the baked animation sample rate in frames per second</summary>
+        public int SetBakedAnimationSampleRate(float rate)
+        {
+            return NativeMethods.goud_renderer3d_set_baked_animation_sample_rate(_ctx, rate);
+        }
+
+        /// <summary>Returns the baked animation sample rate</summary>
+        public float GetBakedAnimationSampleRate()
+        {
+            return NativeMethods.goud_renderer3d_get_baked_animation_sample_rate(_ctx);
+        }
+
+        /// <summary>Sets the minimum instance count for instanced rendering</summary>
+        public int SetMinInstancesForBatching(uint count)
+        {
+            return NativeMethods.goud_renderer3d_set_min_instances_for_batching(_ctx, count);
+        }
+
+        /// <summary>Returns the minimum instance count for batching</summary>
+        public int GetMinInstancesForBatching()
+        {
+            return NativeMethods.goud_renderer3d_get_min_instances_for_batching(_ctx);
+        }
+
+        /// <summary>Sets the fallback material color for meshes without materials</summary>
+        public int SetDefaultMaterialColor(float r, float g, float b, float a)
+        {
+            return NativeMethods.goud_renderer3d_set_default_material_color(_ctx, r, g, b, a);
+        }
+
+        /// <summary>Sets the grid transparency alpha (0.0 invisible, 1.0 opaque)</summary>
+        public int SetGridAlpha(float alpha)
+        {
+            return NativeMethods.goud_renderer3d_set_grid_alpha(_ctx, alpha);
+        }
+
+        /// <summary>Returns the current grid transparency alpha</summary>
+        public float GetGridAlpha()
+        {
+            return NativeMethods.goud_renderer3d_get_grid_alpha(_ctx);
+        }
+
+        /// <summary>Sets the frustum culling FOV in degrees</summary>
+        public int SetFrustumCullingFov(float fovDegrees)
+        {
+            return NativeMethods.goud_renderer3d_set_frustum_culling_fov(_ctx, fovDegrees);
+        }
+
+        /// <summary>Returns the frustum culling FOV in degrees</summary>
+        public float GetFrustumCullingFov()
+        {
+            return NativeMethods.goud_renderer3d_get_frustum_culling_fov(_ctx);
+        }
+
+        /// <summary>Sets the near clipping plane for frustum culling</summary>
+        public int SetFrustumCullingNearPlane(float near)
+        {
+            return NativeMethods.goud_renderer3d_set_frustum_culling_near_plane(_ctx, near);
+        }
+
+        /// <summary>Returns the frustum culling near plane distance</summary>
+        public float GetFrustumCullingNearPlane()
+        {
+            return NativeMethods.goud_renderer3d_get_frustum_culling_near_plane(_ctx);
+        }
+
+        /// <summary>Sets the far clipping plane for frustum culling</summary>
+        public int SetFrustumCullingFarPlane(float far)
+        {
+            return NativeMethods.goud_renderer3d_set_frustum_culling_far_plane(_ctx, far);
+        }
+
+        /// <summary>Returns the frustum culling far plane distance</summary>
+        public float GetFrustumCullingFarPlane()
+        {
+            return NativeMethods.goud_renderer3d_get_frustum_culling_far_plane(_ctx);
+        }
+
+        /// <summary>Enables or disables shadow mapping</summary>
+        public int SetShadowsEnabled(bool enabled)
+        {
+            return NativeMethods.goud_renderer3d_set_shadows_enabled(_ctx, enabled);
+        }
+
+        /// <summary>Returns whether shadows are enabled</summary>
+        public bool GetShadowsEnabled()
+        {
+            return NativeMethods.goud_renderer3d_get_shadows_enabled(_ctx);
+        }
+
+        /// <summary>Sets the shadow map resolution</summary>
+        public int SetShadowMapSize(uint size)
+        {
+            return NativeMethods.goud_renderer3d_set_shadow_map_size(_ctx, size);
+        }
+
+        /// <summary>Returns the shadow map resolution</summary>
+        public int GetShadowMapSize()
+        {
+            return NativeMethods.goud_renderer3d_get_shadow_map_size(_ctx);
+        }
+
+        /// <summary>Sets the shadow depth bias</summary>
+        public int SetShadowBias(float bias)
+        {
+            return NativeMethods.goud_renderer3d_set_shadow_bias(_ctx, bias);
+        }
+
+        /// <summary>Returns the shadow depth bias</summary>
+        public float GetShadowBias()
+        {
+            return NativeMethods.goud_renderer3d_get_shadow_bias(_ctx);
+        }
+
         /// <summary>Returns the number of draw calls last frame</summary>
         public int GetDrawCalls()
         {
@@ -766,6 +958,36 @@ namespace GoudEngine
         public int GetCulledObjectCount()
         {
             return NativeMethods.goud_renderer3d_get_culled_object_count(_ctx);
+        }
+
+        /// <summary>Returns the number of instanced draw calls last frame</summary>
+        public int GetInstancedDrawCalls()
+        {
+            return NativeMethods.goud_renderer3d_get_instanced_draw_calls(_ctx);
+        }
+
+        /// <summary>Returns the number of active instances submitted last frame</summary>
+        public int GetActiveInstanceCount()
+        {
+            return NativeMethods.goud_renderer3d_get_active_instance_count(_ctx);
+        }
+
+        /// <summary>Returns the number of uploaded bone matrices last frame</summary>
+        public int GetBoneMatrixUploadCount()
+        {
+            return NativeMethods.goud_renderer3d_get_bone_matrix_upload_count(_ctx);
+        }
+
+        /// <summary>Returns the number of animation evaluations last frame</summary>
+        public int GetAnimationEvaluationCount()
+        {
+            return NativeMethods.goud_renderer3d_get_animation_evaluation_count(_ctx);
+        }
+
+        /// <summary>Returns the number of animation evaluations avoided last frame</summary>
+        public int GetAnimationEvaluationSavedCount()
+        {
+            return NativeMethods.goud_renderer3d_get_animation_evaluation_saved_count(_ctx);
         }
 
         /// <summary>Renders all 3D objects</summary>
@@ -888,6 +1110,12 @@ namespace GoudEngine
             return NativeMethods.goud_renderer3d_instantiate_model(_ctx, sourceModelId);
         }
 
+        /// <summary>Marks a model as static or dynamic for renderer-side batching</summary>
+        public bool SetModelStatic(uint modelId, bool isStatic)
+        {
+            return NativeMethods.goud_renderer3d_set_model_static(_ctx, modelId, isStatic);
+        }
+
         /// <summary>Overrides the material on a specific sub-mesh of a model (-1 for all sub-meshes)</summary>
         public bool SetModelMaterial(uint modelId, int meshIndex, uint materialId)
         {
@@ -991,6 +1219,18 @@ namespace GoudEngine
         public bool SetAnimationSpeed(uint instanceId, float speed)
         {
             return NativeMethods.goud_renderer3d_set_animation_speed(_ctx, instanceId, speed);
+        }
+
+        /// <summary>Enables or disables animation baking for a model</summary>
+        public bool SetAnimationBakingEnabled(uint modelId, bool enabled)
+        {
+            return NativeMethods.goud_renderer3d_set_animation_baking_enabled(_ctx, modelId, enabled);
+        }
+
+        /// <summary>Enables or disables animation phase lock for a model</summary>
+        public bool SetAnimationPhaseLock(uint modelId, bool enabled)
+        {
+            return NativeMethods.goud_renderer3d_set_animation_phase_lock(_ctx, modelId, enabled);
         }
 
         /// <summary>Sets up blending between two animation clips</summary>

@@ -1,5 +1,18 @@
 //! FFI functions for environment features: grid, skybox, fog, and the render call.
 
+pub mod config_getters;
+pub mod config_setters;
+pub mod stats;
+#[cfg(test)]
+mod tests;
+
+#[allow(unused_imports)]
+pub use config_getters::*;
+#[allow(unused_imports)]
+pub use config_setters::*;
+#[allow(unused_imports)]
+pub use stats::*;
+
 use super::state::{ensure_renderer3d_state, with_renderer};
 use crate::core::debugger;
 use crate::core::error::{set_last_error, GoudError};
@@ -253,218 +266,4 @@ pub extern "C" fn goud_renderer3d_render(context_id: GoudContextId) -> bool {
 #[no_mangle]
 pub extern "C" fn goud_renderer3d_render_all(context_id: GoudContextId) -> bool {
     goud_renderer3d_render(context_id)
-}
-
-// ============================================================================
-// FFI: Render Config
-// ============================================================================
-
-/// Enables or disables frustum culling.
-#[no_mangle]
-pub extern "C" fn goud_renderer3d_set_frustum_culling_enabled(
-    context_id: GoudContextId,
-    enabled: bool,
-) -> i32 {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return -1;
-    }
-
-    with_renderer(context_id, |renderer| {
-        let mut config = renderer.render_config().clone();
-        config.frustum_culling.enabled = enabled;
-        renderer.set_render_config(config);
-        0
-    })
-    .unwrap_or(-1)
-}
-
-/// Sets the skinning mode (0 = CPU, 1 = GPU).
-#[no_mangle]
-pub extern "C" fn goud_renderer3d_set_skinning_mode(context_id: GoudContextId, mode: u32) -> i32 {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return -1;
-    }
-
-    with_renderer(context_id, |renderer| {
-        let mut config = renderer.render_config().clone();
-        config.skinning.mode = match mode {
-            0 => crate::libs::graphics::renderer3d::config::SkinningMode::Cpu,
-            _ => crate::libs::graphics::renderer3d::config::SkinningMode::Gpu,
-        };
-        renderer.set_render_config(config);
-        0
-    })
-    .unwrap_or(-1)
-}
-
-/// Enables or disables material sorting.
-#[no_mangle]
-pub extern "C" fn goud_renderer3d_set_material_sorting_enabled(
-    context_id: GoudContextId,
-    enabled: bool,
-) -> i32 {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return -1;
-    }
-
-    with_renderer(context_id, |renderer| {
-        let mut config = renderer.render_config().clone();
-        config.batching.material_sorting_enabled = enabled;
-        renderer.set_render_config(config);
-        0
-    })
-    .unwrap_or(-1)
-}
-
-/// Enables or disables animation LOD (distance-based update throttling).
-#[no_mangle]
-pub extern "C" fn goud_renderer3d_set_animation_lod_enabled(
-    context_id: GoudContextId,
-    enabled: bool,
-) -> i32 {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return -1;
-    }
-
-    with_renderer(context_id, |renderer| {
-        let mut config = renderer.render_config().clone();
-        config.skinning.animation_lod_enabled = enabled;
-        renderer.set_render_config(config);
-        0
-    })
-    .unwrap_or(-1)
-}
-
-/// Enables or disables shared animation evaluation (cache identical poses).
-#[no_mangle]
-pub extern "C" fn goud_renderer3d_set_shared_animation_eval(
-    context_id: GoudContextId,
-    enabled: bool,
-) -> i32 {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return -1;
-    }
-
-    with_renderer(context_id, |renderer| {
-        let mut config = renderer.render_config().clone();
-        config.skinning.shared_animation_eval = enabled;
-        renderer.set_render_config(config);
-        0
-    })
-    .unwrap_or(-1)
-}
-
-// ============================================================================
-// FFI: Stats
-// ============================================================================
-
-/// Returns the number of draw calls last frame, or -1 on error.
-#[no_mangle]
-pub extern "C" fn goud_renderer3d_get_draw_calls(context_id: GoudContextId) -> i32 {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return -1;
-    }
-
-    with_renderer(context_id, |renderer| renderer.stats().draw_calls as i32).unwrap_or(-1)
-}
-
-/// Returns the number of visible objects last frame, or -1 on error.
-#[no_mangle]
-pub extern "C" fn goud_renderer3d_get_visible_object_count(context_id: GoudContextId) -> i32 {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return -1;
-    }
-
-    with_renderer(context_id, |renderer| {
-        renderer.stats().visible_objects as i32
-    })
-    .unwrap_or(-1)
-}
-
-/// Returns the number of culled objects last frame, or -1 on error.
-#[no_mangle]
-pub extern "C" fn goud_renderer3d_get_culled_object_count(context_id: GoudContextId) -> i32 {
-    if context_id == GOUD_INVALID_CONTEXT_ID {
-        set_last_error(GoudError::InvalidContext);
-        return -1;
-    }
-
-    with_renderer(context_id, |renderer| {
-        renderer.stats().culled_objects as i32
-    })
-    .unwrap_or(-1)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::resolved_runtime_debug_draw_shapes;
-    use crate::core::debugger::{
-        self, dispatch_request_json_for_route, register_context, DebuggerConfig, RuntimeSurfaceKind,
-    };
-    use crate::ffi::context::GoudContextId;
-    #[cfg(feature = "rapier3d")]
-    use crate::ffi::physics::{
-        goud_physics3d_add_collider, goud_physics3d_add_rigid_body, goud_physics3d_create,
-        goud_physics3d_destroy,
-    };
-    use serde_json::json;
-
-    #[test]
-    fn resolved_runtime_debug_draw_shapes_returns_empty_until_debug_draw_enabled() {
-        let _guard = debugger::test_lock();
-        debugger::reset_for_tests();
-
-        let context_id = GoudContextId::new(761, 1);
-        let route = register_context(
-            context_id,
-            RuntimeSurfaceKind::HeadlessContext,
-            &DebuggerConfig {
-                enabled: true,
-                publish_local_attach: true,
-                route_label: Some("renderer3d-debug-draw".to_string()),
-            },
-        );
-
-        #[cfg(feature = "rapier3d")]
-        {
-            assert_eq!(goud_physics3d_create(context_id, 0.0, -9.8, 0.0), 0);
-            let body = goud_physics3d_add_rigid_body(context_id, 1, 0.0, 0.0, 0.0, 1.0);
-            assert!(body > 0);
-            let collider = goud_physics3d_add_collider(
-                context_id,
-                body as u64,
-                1,
-                1.0,
-                1.0,
-                1.0,
-                0.0,
-                0.5,
-                0.0,
-            );
-            assert!(collider > 0);
-        }
-
-        assert!(resolved_runtime_debug_draw_shapes(context_id).is_empty());
-
-        let response = dispatch_request_json_for_route(
-            &route,
-            &json!({ "verb": "set_debug_draw_enabled", "enabled": true }).to_string(),
-        )
-        .expect("dispatcher should return JSON");
-        assert_eq!(response["ok"], true);
-
-        #[cfg(feature = "rapier3d")]
-        assert_eq!(resolved_runtime_debug_draw_shapes(context_id).len(), 1);
-        #[cfg(not(feature = "rapier3d"))]
-        assert!(resolved_runtime_debug_draw_shapes(context_id).is_empty());
-        #[cfg(feature = "rapier3d")]
-        assert_eq!(goud_physics3d_destroy(context_id), 0);
-    }
 }

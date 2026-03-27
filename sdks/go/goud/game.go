@@ -504,6 +504,181 @@ func (g *Game) SetSharedAnimationEval(enabled bool) int32 {
 	return 0
 }
 
+// SetAnimationLodDistance Sets the distance at which animation updates are half-rated
+func (g *Game) SetAnimationLodDistance(distance float32) int32 {
+	return 0
+}
+
+// SetAnimationLodSkipDistance Sets the distance at which animation updates are frozen
+func (g *Game) SetAnimationLodSkipDistance(distance float32) int32 {
+	return 0
+}
+
+// GetAnimationLodDistance Returns the animation LOD half-rate distance
+func (g *Game) GetAnimationLodDistance() float32 {
+	return 0
+}
+
+// GetAnimationLodSkipDistance Returns the animation LOD freeze distance
+func (g *Game) GetAnimationLodSkipDistance() float32 {
+	return 0
+}
+
+// SetStaticBatchingEnabled Enables or disables static batching
+func (g *Game) SetStaticBatchingEnabled(enabled bool) int32 {
+	return 0
+}
+
+// SetInstancingEnabled Enables or disables instanced rendering
+func (g *Game) SetInstancingEnabled(enabled bool) int32 {
+	return 0
+}
+
+// GetFrustumCullingEnabled Returns whether frustum culling is enabled
+func (g *Game) GetFrustumCullingEnabled() bool {
+	return false
+}
+
+// GetSkinningMode Returns the skinning mode (0=CPU, 1=GPU)
+func (g *Game) GetSkinningMode() int32 {
+	return 0
+}
+
+// GetMaterialSortingEnabled Returns whether material sorting is enabled
+func (g *Game) GetMaterialSortingEnabled() bool {
+	return false
+}
+
+// GetStaticBatchingEnabled Returns whether static batching is enabled
+func (g *Game) GetStaticBatchingEnabled() bool {
+	return false
+}
+
+// GetInstancingEnabled Returns whether instanced rendering is enabled
+func (g *Game) GetInstancingEnabled() bool {
+	return false
+}
+
+// GetAnimationLodEnabled Returns whether animation LOD is enabled
+func (g *Game) GetAnimationLodEnabled() bool {
+	return false
+}
+
+// GetSharedAnimationEval Returns whether shared animation evaluation is enabled
+func (g *Game) GetSharedAnimationEval() bool {
+	return false
+}
+
+// SetBakedAnimationSampleRate Sets the baked animation sample rate in frames per second
+func (g *Game) SetBakedAnimationSampleRate(rate float32) int32 {
+	return 0
+}
+
+// GetBakedAnimationSampleRate Returns the baked animation sample rate
+func (g *Game) GetBakedAnimationSampleRate() float32 {
+	return 0
+}
+
+// SetMinInstancesForBatching Sets the minimum instance count for instanced rendering
+func (g *Game) SetMinInstancesForBatching(count uint32) int32 {
+	return 0
+}
+
+// GetMinInstancesForBatching Returns the minimum instance count for batching
+func (g *Game) GetMinInstancesForBatching() int32 {
+	return 0
+}
+
+// SetDefaultMaterialColor Sets the fallback material color for meshes without materials
+func (g *Game) SetDefaultMaterialColor(r float32, gVal float32, b float32, a float32) int32 {
+	return 0
+}
+
+// SetGridAlpha Sets the grid transparency alpha (0.0 invisible, 1.0 opaque)
+func (g *Game) SetGridAlpha(alpha float32) int32 {
+	return 0
+}
+
+// GetGridAlpha Returns the current grid transparency alpha
+func (g *Game) GetGridAlpha() float32 {
+	return 0
+}
+
+// SetFrustumCullingFov Sets the frustum culling FOV in degrees
+func (g *Game) SetFrustumCullingFov(fovDegrees float32) int32 {
+	return 0
+}
+
+// GetFrustumCullingFov Returns the frustum culling FOV in degrees
+func (g *Game) GetFrustumCullingFov() float32 {
+	return 0
+}
+
+// SetFrustumCullingNearPlane Sets the near clipping plane for frustum culling
+func (g *Game) SetFrustumCullingNearPlane(near float32) int32 {
+	return 0
+}
+
+// GetFrustumCullingNearPlane Returns the frustum culling near plane distance
+func (g *Game) GetFrustumCullingNearPlane() float32 {
+	return 0
+}
+
+// SetFrustumCullingFarPlane Sets the far clipping plane for frustum culling
+func (g *Game) SetFrustumCullingFarPlane(far float32) int32 {
+	return 0
+}
+
+// GetFrustumCullingFarPlane Returns the frustum culling far plane distance
+func (g *Game) GetFrustumCullingFarPlane() float32 {
+	return 0
+}
+
+// SetShadowsEnabled Enables or disables shadow mapping
+func (g *Game) SetShadowsEnabled(enabled bool) int32 {
+	return 0
+}
+
+// GetShadowsEnabled Returns whether shadows are enabled
+func (g *Game) GetShadowsEnabled() bool {
+	return false
+}
+
+// SetShadowMapSize Sets the shadow map resolution
+func (g *Game) SetShadowMapSize(size uint32) int32 {
+	return 0
+}
+
+// GetShadowMapSize Returns the shadow map resolution
+func (g *Game) GetShadowMapSize() int32 {
+	return 0
+}
+
+// SetShadowBias Sets the shadow depth bias
+func (g *Game) SetShadowBias(bias float32) int32 {
+	return 0
+}
+
+// GetShadowBias Returns the shadow depth bias
+func (g *Game) GetShadowBias() float32 {
+	return 0
+}
+
+// InstantiateModelBatch Creates multiple instances of a model in one call
+func (g *Game) InstantiateModelBatch(sourceModelId uint32, count uint32) int32 {
+	return 0
+}
+
+// SetModelPositionsBatch Sets positions for multiple models in one call
+func (g *Game) SetModelPositionsBatch(count uint32) int32 {
+	return 0
+}
+
+// AddModelsToSceneBatch Adds multiple models to a scene in one call
+func (g *Game) AddModelsToSceneBatch(sceneId uint32, count uint32) int32 {
+	return 0
+}
+
 // GetDrawCalls Returns the number of draw calls last frame
 func (g *Game) GetDrawCalls() int32 {
 	return 0
@@ -516,6 +691,31 @@ func (g *Game) GetVisibleObjectCount() int32 {
 
 // GetCulledObjectCount Returns the number of culled objects last frame
 func (g *Game) GetCulledObjectCount() int32 {
+	return 0
+}
+
+// GetInstancedDrawCalls Returns the number of instanced draw calls last frame
+func (g *Game) GetInstancedDrawCalls() int32 {
+	return 0
+}
+
+// GetActiveInstanceCount Returns the number of active instances submitted last frame
+func (g *Game) GetActiveInstanceCount() int32 {
+	return 0
+}
+
+// GetBoneMatrixUploadCount Returns the number of uploaded bone matrices last frame
+func (g *Game) GetBoneMatrixUploadCount() int32 {
+	return 0
+}
+
+// GetAnimationEvaluationCount Returns the number of animation evaluations last frame
+func (g *Game) GetAnimationEvaluationCount() int32 {
+	return 0
+}
+
+// GetAnimationEvaluationSavedCount Returns the number of animation evaluations avoided last frame
+func (g *Game) GetAnimationEvaluationSavedCount() int32 {
 	return 0
 }
 
@@ -619,6 +819,11 @@ func (g *Game) InstantiateModel(sourceModelId uint32) uint32 {
 	return 0
 }
 
+// SetModelStatic Marks a model as static or dynamic for renderer-side batching
+func (g *Game) SetModelStatic(modelId uint32, isStatic bool) bool {
+	return false
+}
+
 // SetModelMaterial Overrides the material on a specific sub-mesh of a model (-1 for all sub-meshes)
 func (g *Game) SetModelMaterial(modelId uint32, meshIndex int32, materialId uint32) bool {
 	return false
@@ -671,6 +876,16 @@ func (g *Game) StopAnimation(instanceId uint32) bool {
 
 // SetAnimationSpeed Sets the playback speed for a model instance's animation
 func (g *Game) SetAnimationSpeed(instanceId uint32, speed float32) bool {
+	return false
+}
+
+// SetAnimationBakingEnabled Enables or disables animation baking for a model
+func (g *Game) SetAnimationBakingEnabled(modelId uint32, enabled bool) bool {
+	return false
+}
+
+// SetAnimationPhaseLock Enables or disables animation phase lock for a model
+func (g *Game) SetAnimationPhaseLock(modelId uint32, enabled bool) bool {
 	return false
 }
 

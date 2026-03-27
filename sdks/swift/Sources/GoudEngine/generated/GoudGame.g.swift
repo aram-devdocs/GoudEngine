@@ -288,6 +288,166 @@ public final class GoudGame {
         return goud_renderer3d_set_shared_animation_eval(_ctx, enabled)
     }
 
+    /// Sets the distance at which animation updates are half-rated
+    public func setAnimationLodDistance(distance: Float) -> Int32 {
+        return goud_renderer3d_set_animation_lod_distance(_ctx, distance)
+    }
+
+    /// Sets the distance at which animation updates are frozen
+    public func setAnimationLodSkipDistance(distance: Float) -> Int32 {
+        return goud_renderer3d_set_animation_lod_skip_distance(_ctx, distance)
+    }
+
+    /// Returns the animation LOD half-rate distance
+    public func getAnimationLodDistance() -> Float {
+        return goud_renderer3d_get_animation_lod_distance(_ctx)
+    }
+
+    /// Returns the animation LOD freeze distance
+    public func getAnimationLodSkipDistance() -> Float {
+        return goud_renderer3d_get_animation_lod_skip_distance(_ctx)
+    }
+
+    /// Enables or disables static batching
+    public func setStaticBatchingEnabled(enabled: Bool) -> Int32 {
+        return goud_renderer3d_set_static_batching_enabled(_ctx, enabled)
+    }
+
+    /// Enables or disables instanced rendering
+    public func setInstancingEnabled(enabled: Bool) -> Int32 {
+        return goud_renderer3d_set_instancing_enabled(_ctx, enabled)
+    }
+
+    /// Returns whether frustum culling is enabled
+    public func getFrustumCullingEnabled() -> Bool {
+        return goud_renderer3d_get_frustum_culling_enabled(_ctx)
+    }
+
+    /// Returns the skinning mode (0=CPU, 1=GPU)
+    public func getSkinningMode() -> Int32 {
+        return goud_renderer3d_get_skinning_mode(_ctx)
+    }
+
+    /// Returns whether material sorting is enabled
+    public func getMaterialSortingEnabled() -> Bool {
+        return goud_renderer3d_get_material_sorting_enabled(_ctx)
+    }
+
+    /// Returns whether static batching is enabled
+    public func getStaticBatchingEnabled() -> Bool {
+        return goud_renderer3d_get_static_batching_enabled(_ctx)
+    }
+
+    /// Returns whether instanced rendering is enabled
+    public func getInstancingEnabled() -> Bool {
+        return goud_renderer3d_get_instancing_enabled(_ctx)
+    }
+
+    /// Returns whether animation LOD is enabled
+    public func getAnimationLodEnabled() -> Bool {
+        return goud_renderer3d_get_animation_lod_enabled(_ctx)
+    }
+
+    /// Returns whether shared animation evaluation is enabled
+    public func getSharedAnimationEval() -> Bool {
+        return goud_renderer3d_get_shared_animation_eval(_ctx)
+    }
+
+    /// Sets the baked animation sample rate in frames per second
+    public func setBakedAnimationSampleRate(rate: Float) -> Int32 {
+        return goud_renderer3d_set_baked_animation_sample_rate(_ctx, rate)
+    }
+
+    /// Returns the baked animation sample rate
+    public func getBakedAnimationSampleRate() -> Float {
+        return goud_renderer3d_get_baked_animation_sample_rate(_ctx)
+    }
+
+    /// Sets the minimum instance count for instanced rendering
+    public func setMinInstancesForBatching(count: UInt32) -> Int32 {
+        return goud_renderer3d_set_min_instances_for_batching(_ctx, count)
+    }
+
+    /// Returns the minimum instance count for batching
+    public func getMinInstancesForBatching() -> Int32 {
+        return goud_renderer3d_get_min_instances_for_batching(_ctx)
+    }
+
+    /// Sets the fallback material color for meshes without materials
+    public func setDefaultMaterialColor(r: Float, g: Float, b: Float, a: Float) -> Int32 {
+        return goud_renderer3d_set_default_material_color(_ctx, r, g, b, a)
+    }
+
+    /// Sets the grid transparency alpha (0.0 invisible, 1.0 opaque)
+    public func setGridAlpha(alpha: Float) -> Int32 {
+        return goud_renderer3d_set_grid_alpha(_ctx, alpha)
+    }
+
+    /// Returns the current grid transparency alpha
+    public func getGridAlpha() -> Float {
+        return goud_renderer3d_get_grid_alpha(_ctx)
+    }
+
+    /// Sets the frustum culling FOV in degrees
+    public func setFrustumCullingFov(fovDegrees: Float) -> Int32 {
+        return goud_renderer3d_set_frustum_culling_fov(_ctx, fovDegrees)
+    }
+
+    /// Returns the frustum culling FOV in degrees
+    public func getFrustumCullingFov() -> Float {
+        return goud_renderer3d_get_frustum_culling_fov(_ctx)
+    }
+
+    /// Sets the near clipping plane for frustum culling
+    public func setFrustumCullingNearPlane(near: Float) -> Int32 {
+        return goud_renderer3d_set_frustum_culling_near_plane(_ctx, near)
+    }
+
+    /// Returns the frustum culling near plane distance
+    public func getFrustumCullingNearPlane() -> Float {
+        return goud_renderer3d_get_frustum_culling_near_plane(_ctx)
+    }
+
+    /// Sets the far clipping plane for frustum culling
+    public func setFrustumCullingFarPlane(far: Float) -> Int32 {
+        return goud_renderer3d_set_frustum_culling_far_plane(_ctx, far)
+    }
+
+    /// Returns the frustum culling far plane distance
+    public func getFrustumCullingFarPlane() -> Float {
+        return goud_renderer3d_get_frustum_culling_far_plane(_ctx)
+    }
+
+    /// Enables or disables shadow mapping
+    public func setShadowsEnabled(enabled: Bool) -> Int32 {
+        return goud_renderer3d_set_shadows_enabled(_ctx, enabled)
+    }
+
+    /// Returns whether shadows are enabled
+    public func getShadowsEnabled() -> Bool {
+        return goud_renderer3d_get_shadows_enabled(_ctx)
+    }
+
+    /// Sets the shadow map resolution
+    public func setShadowMapSize(size: UInt32) -> Int32 {
+        return goud_renderer3d_set_shadow_map_size(_ctx, size)
+    }
+
+    /// Returns the shadow map resolution
+    public func getShadowMapSize() -> Int32 {
+        return goud_renderer3d_get_shadow_map_size(_ctx)
+    }
+
+    /// Sets the shadow depth bias
+    public func setShadowBias(bias: Float) -> Int32 {
+        return goud_renderer3d_set_shadow_bias(_ctx, bias)
+    }
+
+    /// Returns the shadow depth bias
+    public func getShadowBias() -> Float {
+        return goud_renderer3d_get_shadow_bias(_ctx)
+    }
+
     /// Returns the number of draw calls last frame
     public func getDrawCalls() -> Int32 {
         return goud_renderer3d_get_draw_calls(_ctx)
@@ -301,6 +461,31 @@ public final class GoudGame {
     /// Returns the number of culled objects last frame
     public func getCulledObjectCount() -> Int32 {
         return goud_renderer3d_get_culled_object_count(_ctx)
+    }
+
+    /// Returns the number of instanced draw calls last frame
+    public func getInstancedDrawCalls() -> Int32 {
+        return goud_renderer3d_get_instanced_draw_calls(_ctx)
+    }
+
+    /// Returns the number of active instances submitted last frame
+    public func getActiveInstanceCount() -> Int32 {
+        return goud_renderer3d_get_active_instance_count(_ctx)
+    }
+
+    /// Returns the number of uploaded bone matrices last frame
+    public func getBoneMatrixUploadCount() -> Int32 {
+        return goud_renderer3d_get_bone_matrix_upload_count(_ctx)
+    }
+
+    /// Returns the number of animation evaluations last frame
+    public func getAnimationEvaluationCount() -> Int32 {
+        return goud_renderer3d_get_animation_evaluation_count(_ctx)
+    }
+
+    /// Returns the number of animation evaluations avoided last frame
+    public func getAnimationEvaluationSavedCount() -> Int32 {
+        return goud_renderer3d_get_animation_evaluation_saved_count(_ctx)
     }
 
     /// Renders all 3D objects
@@ -395,6 +580,11 @@ public final class GoudGame {
         return goud_renderer3d_instantiate_model(_ctx, sourceModelId)
     }
 
+    /// Marks a model as static or dynamic for renderer-side batching
+    public func setModelStatic(modelId: UInt32, isStatic: Bool) -> Bool {
+        return goud_renderer3d_set_model_static(_ctx, modelId, isStatic)
+    }
+
     /// Overrides the material on a specific sub-mesh of a model (-1 for all sub-meshes)
     public func setModelMaterial(modelId: UInt32, meshIndex: Int32, materialId: UInt32) -> Bool {
         return goud_renderer3d_set_model_material(_ctx, modelId, meshIndex, materialId)
@@ -438,6 +628,16 @@ public final class GoudGame {
     /// Sets the playback speed for a model instance's animation
     public func setAnimationSpeed(instanceId: UInt32, speed: Float) -> Bool {
         return goud_renderer3d_set_animation_speed(_ctx, instanceId, speed)
+    }
+
+    /// Enables or disables animation baking for a model
+    public func setAnimationBakingEnabled(modelId: UInt32, enabled: Bool) -> Bool {
+        return goud_renderer3d_set_animation_baking_enabled(_ctx, modelId, enabled)
+    }
+
+    /// Enables or disables animation phase lock for a model
+    public func setAnimationPhaseLock(modelId: UInt32, enabled: Bool) -> Bool {
+        return goud_renderer3d_set_animation_phase_lock(_ctx, modelId, enabled)
     }
 
     /// Sets up blending between two animation clips

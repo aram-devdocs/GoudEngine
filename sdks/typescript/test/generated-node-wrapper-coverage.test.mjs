@@ -398,6 +398,63 @@ describe('Generated node wrappers runtime coverage (fake native)', () => {
     assert.equal(game.getAnimationProgress(1), 0);
     assert.equal(game.updateAnimations(0.016), 0);
 
+    // Renderer3D config setters/getters
+    assert.equal(game.setFrustumCullingEnabled(true), 0);
+    assert.equal(game.getFrustumCullingEnabled(), 0);
+    assert.equal(game.setSkinningMode(1), 0);
+    assert.equal(game.getSkinningMode(), 0);
+    assert.equal(game.setMaterialSortingEnabled(true), 0);
+    assert.equal(game.getMaterialSortingEnabled(), 0);
+    assert.equal(game.setAnimationLodEnabled(true), 0);
+    assert.equal(game.getAnimationLodEnabled(), 0);
+    assert.equal(game.setAnimationLodDistance(50.0), 0);
+    assert.equal(game.getAnimationLodDistance(), 0);
+    assert.equal(game.setAnimationLodSkipDistance(100.0), 0);
+    assert.equal(game.getAnimationLodSkipDistance(), 0);
+    assert.equal(game.setSharedAnimationEval(true), 0);
+    assert.equal(game.getSharedAnimationEval(), 0);
+    assert.equal(game.setInstancingEnabled(true), 0);
+    assert.equal(game.getInstancingEnabled(), 0);
+    assert.equal(game.setStaticBatchingEnabled(true), 0);
+    assert.equal(game.getStaticBatchingEnabled(), 0);
+    assert.equal(game.setFrustumCullingFov(60.0), 0);
+    assert.equal(game.getFrustumCullingFov(), 0);
+    assert.equal(game.setFrustumCullingNearPlane(0.1), 0);
+    assert.equal(game.getFrustumCullingNearPlane(), 0);
+    assert.equal(game.setFrustumCullingFarPlane(500.0), 0);
+    assert.equal(game.getFrustumCullingFarPlane(), 0);
+    assert.equal(game.setShadowsEnabled(true), 0);
+    assert.equal(game.getShadowsEnabled(), 0);
+    assert.equal(game.setShadowMapSize(512), 0);
+    assert.equal(game.getShadowMapSize(), 0);
+    assert.equal(game.setShadowBias(0.005), 0);
+    assert.equal(game.getShadowBias(), 0);
+    assert.equal(game.setBakedAnimationSampleRate(30.0), 0);
+    assert.equal(game.getBakedAnimationSampleRate(), 0);
+    assert.equal(game.setMinInstancesForBatching(2), 0);
+    assert.equal(game.getMinInstancesForBatching(), 0);
+    assert.equal(game.setDefaultMaterialColor(0.8, 0.8, 0.8, 1.0), 0);
+    assert.equal(game.setGridAlpha(0.4), 0);
+    assert.equal(game.getGridAlpha(), 0);
+
+    // Renderer3D batch APIs
+    assert.equal(game.instantiateModelBatch(1, 5), 0);
+    assert.equal(game.setModelPositionsBatch(1, 5), 0);
+    assert.equal(game.addModelsToSceneBatch(1, 5), 0);
+    assert.equal(game.setModelStatic(1, true), 0);
+    assert.equal(game.setAnimationPhaseLock(1, true), 0);
+    assert.equal(game.setAnimationBakingEnabled(1, true), 0);
+
+    // Renderer3D stats
+    assert.equal(game.getDrawCalls(), 0);
+    assert.equal(game.getVisibleObjectCount(), 0);
+    assert.equal(game.getCulledObjectCount(), 0);
+    assert.equal(game.getInstancedDrawCalls(), 0);
+    assert.equal(game.getActiveInstanceCount(), 0);
+    assert.equal(game.getAnimationEvaluationCount(), 0);
+    assert.equal(game.getAnimationEvaluationSavedCount(), 0);
+    assert.equal(game.getBoneMatrixUploadCount(), 0);
+
     // Scene methods
     assert.equal(game.createScene('mainScene'), 0);
     assert.equal(game.destroyScene(1), 0);

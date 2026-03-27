@@ -38,23 +38,11 @@ pub use primitives::{
 
 // FFI functions are `#[no_mangle] extern "C"` and therefore globally visible; the
 // `pub use` below makes them importable via the module path as well.
-pub use animation::{
-    goud_renderer3d_blend_animations, goud_renderer3d_get_animation_count,
-    goud_renderer3d_get_animation_name, goud_renderer3d_get_animation_progress,
-    goud_renderer3d_is_animation_playing, goud_renderer3d_play_animation,
-    goud_renderer3d_set_animation_speed, goud_renderer3d_stop_animation,
-    goud_renderer3d_transition_animation, goud_renderer3d_update_animations,
-};
+#[allow(unused_imports)]
+pub use animation::*;
 pub use camera::{goud_renderer3d_set_camera_position, goud_renderer3d_set_camera_rotation};
-pub use environment::{
-    goud_renderer3d_configure_fog, goud_renderer3d_configure_grid,
-    goud_renderer3d_configure_skybox, goud_renderer3d_get_culled_object_count,
-    goud_renderer3d_get_draw_calls, goud_renderer3d_get_visible_object_count,
-    goud_renderer3d_render, goud_renderer3d_render_all, goud_renderer3d_set_animation_lod_enabled,
-    goud_renderer3d_set_fog_enabled, goud_renderer3d_set_frustum_culling_enabled,
-    goud_renderer3d_set_grid_enabled, goud_renderer3d_set_material_sorting_enabled,
-    goud_renderer3d_set_shared_animation_eval, goud_renderer3d_set_skinning_mode,
-};
+#[allow(unused_imports)]
+pub use environment::*;
 pub use lighting::{
     goud_renderer3d_add_light, goud_renderer3d_remove_light, goud_renderer3d_update_light,
 };
@@ -64,13 +52,8 @@ pub use materials::{
     goud_renderer3d_update_material, GOUD_INVALID_MATERIAL, GOUD_MATERIAL_TYPE_PBR,
     GOUD_MATERIAL_TYPE_PHONG, GOUD_MATERIAL_TYPE_UNLIT,
 };
-pub use model::{
-    goud_renderer3d_destroy_model, goud_renderer3d_get_model_bounding_box,
-    goud_renderer3d_get_model_mesh_count, goud_renderer3d_instantiate_model,
-    goud_renderer3d_load_model, goud_renderer3d_set_model_material,
-    goud_renderer3d_set_model_position, goud_renderer3d_set_model_rotation,
-    goud_renderer3d_set_model_scale, GOUD_INVALID_MODEL,
-};
+#[allow(unused_imports)]
+pub use model::*;
 pub use postprocess::{
     goud_renderer3d_add_bloom_pass, goud_renderer3d_add_blur_pass,
     goud_renderer3d_add_color_grade_pass, goud_renderer3d_postprocess_pass_count,

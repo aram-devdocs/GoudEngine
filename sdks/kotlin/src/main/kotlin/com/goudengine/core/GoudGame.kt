@@ -279,6 +279,102 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
     fun setSharedAnimationEval(enabled: Boolean): Int =
         GoudGameNative.setSharedAnimationEval(contextId, enabled)
 
+    fun setAnimationLodDistance(distance: Float): Int =
+        GoudGameNative.setAnimationLodDistance(contextId, distance)
+
+    fun setAnimationLodSkipDistance(distance: Float): Int =
+        GoudGameNative.setAnimationLodSkipDistance(contextId, distance)
+
+    fun getAnimationLodDistance(): Float =
+        GoudGameNative.getAnimationLodDistance(contextId)
+
+    fun getAnimationLodSkipDistance(): Float =
+        GoudGameNative.getAnimationLodSkipDistance(contextId)
+
+    fun setStaticBatchingEnabled(enabled: Boolean): Int =
+        GoudGameNative.setStaticBatchingEnabled(contextId, enabled)
+
+    fun setInstancingEnabled(enabled: Boolean): Int =
+        GoudGameNative.setInstancingEnabled(contextId, enabled)
+
+    fun getFrustumCullingEnabled(): Boolean =
+        GoudGameNative.getFrustumCullingEnabled(contextId)
+
+    fun getSkinningMode(): Int =
+        GoudGameNative.getSkinningMode(contextId)
+
+    fun getMaterialSortingEnabled(): Boolean =
+        GoudGameNative.getMaterialSortingEnabled(contextId)
+
+    fun getStaticBatchingEnabled(): Boolean =
+        GoudGameNative.getStaticBatchingEnabled(contextId)
+
+    fun getInstancingEnabled(): Boolean =
+        GoudGameNative.getInstancingEnabled(contextId)
+
+    fun getAnimationLodEnabled(): Boolean =
+        GoudGameNative.getAnimationLodEnabled(contextId)
+
+    fun getSharedAnimationEval(): Boolean =
+        GoudGameNative.getSharedAnimationEval(contextId)
+
+    fun setBakedAnimationSampleRate(rate: Float): Int =
+        GoudGameNative.setBakedAnimationSampleRate(contextId, rate)
+
+    fun getBakedAnimationSampleRate(): Float =
+        GoudGameNative.getBakedAnimationSampleRate(contextId)
+
+    fun setMinInstancesForBatching(count: Int): Int =
+        GoudGameNative.setMinInstancesForBatching(contextId, count)
+
+    fun getMinInstancesForBatching(): Int =
+        GoudGameNative.getMinInstancesForBatching(contextId)
+
+    fun setDefaultMaterialColor(r: Float, g: Float, b: Float, a: Float): Int =
+        GoudGameNative.setDefaultMaterialColor(contextId, r, g, b, a)
+
+    fun setGridAlpha(alpha: Float): Int =
+        GoudGameNative.setGridAlpha(contextId, alpha)
+
+    fun getGridAlpha(): Float =
+        GoudGameNative.getGridAlpha(contextId)
+
+    fun setFrustumCullingFov(fovDegrees: Float): Int =
+        GoudGameNative.setFrustumCullingFov(contextId, fovDegrees)
+
+    fun getFrustumCullingFov(): Float =
+        GoudGameNative.getFrustumCullingFov(contextId)
+
+    fun setFrustumCullingNearPlane(near: Float): Int =
+        GoudGameNative.setFrustumCullingNearPlane(contextId, near)
+
+    fun getFrustumCullingNearPlane(): Float =
+        GoudGameNative.getFrustumCullingNearPlane(contextId)
+
+    fun setFrustumCullingFarPlane(far: Float): Int =
+        GoudGameNative.setFrustumCullingFarPlane(contextId, far)
+
+    fun getFrustumCullingFarPlane(): Float =
+        GoudGameNative.getFrustumCullingFarPlane(contextId)
+
+    fun setShadowsEnabled(enabled: Boolean): Int =
+        GoudGameNative.setShadowsEnabled(contextId, enabled)
+
+    fun getShadowsEnabled(): Boolean =
+        GoudGameNative.getShadowsEnabled(contextId)
+
+    fun setShadowMapSize(size: Int): Int =
+        GoudGameNative.setShadowMapSize(contextId, size)
+
+    fun getShadowMapSize(): Int =
+        GoudGameNative.getShadowMapSize(contextId)
+
+    fun setShadowBias(bias: Float): Int =
+        GoudGameNative.setShadowBias(contextId, bias)
+
+    fun getShadowBias(): Float =
+        GoudGameNative.getShadowBias(contextId)
+
     fun getDrawCalls(): Int =
         GoudGameNative.getDrawCalls(contextId)
 
@@ -287,6 +383,21 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
 
     fun getCulledObjectCount(): Int =
         GoudGameNative.getCulledObjectCount(contextId)
+
+    fun getInstancedDrawCalls(): Int =
+        GoudGameNative.getInstancedDrawCalls(contextId)
+
+    fun getActiveInstanceCount(): Int =
+        GoudGameNative.getActiveInstanceCount(contextId)
+
+    fun getBoneMatrixUploadCount(): Int =
+        GoudGameNative.getBoneMatrixUploadCount(contextId)
+
+    fun getAnimationEvaluationCount(): Int =
+        GoudGameNative.getAnimationEvaluationCount(contextId)
+
+    fun getAnimationEvaluationSavedCount(): Int =
+        GoudGameNative.getAnimationEvaluationSavedCount(contextId)
 
     fun render3D(): Boolean =
         GoudGameNative.render3D(contextId)
@@ -342,6 +453,9 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
     fun instantiateModel(sourceModelId: Int): Int =
         GoudGameNative.instantiateModel(contextId, sourceModelId)
 
+    fun setModelStatic(modelId: Int, isStatic: Boolean): Boolean =
+        GoudGameNative.setModelStatic(contextId, modelId, isStatic)
+
     fun setModelMaterial(modelId: Int, meshIndex: Int, materialId: Int): Boolean =
         GoudGameNative.setModelMaterial(contextId, modelId, meshIndex, materialId)
 
@@ -373,6 +487,12 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
 
     fun setAnimationSpeed(instanceId: Int, speed: Float): Boolean =
         GoudGameNative.setAnimationSpeed(contextId, instanceId, speed)
+
+    fun setAnimationBakingEnabled(modelId: Int, enabled: Boolean): Boolean =
+        GoudGameNative.setAnimationBakingEnabled(contextId, modelId, enabled)
+
+    fun setAnimationPhaseLock(modelId: Int, enabled: Boolean): Boolean =
+        GoudGameNative.setAnimationPhaseLock(contextId, modelId, enabled)
 
     fun blendAnimations(instanceId: Int, animA: Int, animB: Int, blendFactor: Float): Boolean =
         GoudGameNative.blendAnimations(contextId, instanceId, animA, animB, blendFactor)
