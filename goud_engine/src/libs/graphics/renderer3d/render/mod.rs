@@ -1,4 +1,7 @@
 //! Frame rendering logic for [`Renderer3D`].
+
+mod util;
+
 use super::core::Renderer3D;
 use super::frustum::Frustum;
 use super::shadow::build_directional_shadow_map;
@@ -7,6 +10,8 @@ use crate::libs::graphics::backend::{
     types::TextureHandle, BlendFactor, CullFace, DepthFunc, FrontFace, PrimitiveTopology,
 };
 use cgmath::{perspective, Deg, Matrix4};
+
+pub(super) use util::mat4_to_array;
 
 impl Renderer3D {
     ///
@@ -20,8 +25,6 @@ impl Renderer3D {
         }
 
         self.frame_counter = self.frame_counter.wrapping_add(1);
-        // Preserve animation stats (set during update_animations which runs
-        // before render) — only reset render-specific counters.
         let anim_evals = self.stats.animation_evaluations;
         let anim_saved = self.stats.animation_evaluations_saved;
         self.stats = Default::default();
@@ -39,7 +42,6 @@ impl Renderer3D {
         self.backend.set_cull_face(CullFace::Back);
         self.backend.set_front_face(FrontFace::Ccw);
 
-        // Resolve effective environment configs from the active scene (or renderer defaults).
         let (eff_fog, eff_skybox, eff_grid) = if let Some(scene_id) = self.current_scene {
             if let Some(scene) = self.scenes.get(&scene_id) {
                 (scene.fog.clone(), scene.skybox.clone(), scene.grid.clone())
@@ -142,7 +144,6 @@ impl Renderer3D {
             self.backend.unbind_shader();
         }
 
-        // Resolve the scene filter set for objects and lights.
         let scene_obj_filter = self
             .current_scene
             .and_then(|sid| self.scenes.get(&sid))
@@ -152,33 +153,24 @@ impl Renderer3D {
             .and_then(|sid| self.scenes.get(&sid))
             .map(|s| &s.lights);
 
-        // Build frustum for culling if enabled.
         let frustum = if self.config.frustum_culling.enabled {
             Some(Frustum::from_view_projection(&(projection * view)))
         } else {
             None
         };
 
-        // Object IDs belonging to skinned models — excluded from the standard pass.
-        // Uses the persistent set maintained incrementally by load_model/instantiate/destroy.
         let skinned_obj_ids = &self.skinned_object_ids;
 
-        // Track total object count before culling.
         self.stats.total_objects = self.objects.len() as u32;
 
-        // Whether static objects are covered by the batch and should be skipped
-        // in the per-object draw loop.
         let has_static_batch =
             self.static_batch_buffer.is_some() && self.config.batching.static_batching_enabled;
 
-        // Collect visible object IDs into the pre-allocated buffer (B3: avoids
-        // per-frame Vec<DrawCmd> allocation for large scenes).
         self.visible_object_ids.clear();
         for (&id, obj) in &self.objects {
             if skinned_obj_ids.contains(&id) {
                 continue;
             }
-            // Static objects are drawn via the batch buffer, skip them here.
             if has_static_batch && obj.is_static {
                 continue;
             }
@@ -198,7 +190,6 @@ impl Renderer3D {
             self.visible_object_ids.push(id);
         }
 
-        // Sort by material and texture to minimize GPU state changes.
         let material_sorting = self.config.batching.material_sorting_enabled;
         if material_sorting {
             let objects = &self.objects;
@@ -218,7 +209,6 @@ impl Renderer3D {
             .total_objects
             .saturating_sub(self.stats.visible_objects);
 
-        // Snapshot filtered lights for uniform upload.
         let filtered_lights: Vec<super::types::Light> = self
             .lights
             .iter()
@@ -238,13 +228,11 @@ impl Renderer3D {
             &filtered_lights,
         );
 
-        // Draw static batch groups before the per-object loop.
         if has_static_batch {
             self.render_static_batch(texture_manager);
         }
 
         let mut last_texture_id = u32::MAX;
-        // Draw loop: look up object data inline from the pre-collected IDs.
         for i in 0..self.visible_object_ids.len() {
             let obj_id = self.visible_object_ids[i];
             let obj = match self.objects.get(&obj_id) {
@@ -301,7 +289,7 @@ impl Renderer3D {
             self.stats.draw_calls += 1;
         }
 
-        // Skinned mesh rendering pass — uses dedicated skinned shader with bone uniforms.
+        // Skinned mesh rendering pass.
         if !self.skinned_meshes.is_empty() {
             let gpu_skinning =
                 matches!(self.config.skinning.mode, super::config::SkinningMode::Gpu)
@@ -319,12 +307,6 @@ impl Renderer3D {
                 &filtered_lights,
             );
 
-            // NOTE: bone_matrices.clone() is required here because the rendering
-            // loop below mutates `self` (backend calls, storage buffer uploads),
-            // which conflicts with holding an immutable borrow on
-            // `self.skinned_meshes`. The clone cost (~8KB per skinned mesh) is
-            // acceptable for the legacy SkinnedMesh3D path; the model-based
-            // instanced skinned path avoids this.
             let skinned_snaps: Vec<(
                 crate::libs::graphics::backend::BufferHandle,
                 i32,
@@ -349,8 +331,6 @@ impl Renderer3D {
                 })
                 .collect();
 
-            // GPU skinning: pack ALL skinned meshes' bone matrices into one
-            // storage buffer with per-mesh offsets (single upload per frame).
             let mut bone_offsets: Vec<i32> = Vec::new();
             if gpu_skinning {
                 let mut packed_bones: Vec<f32> = Vec::new();
@@ -392,7 +372,6 @@ impl Renderer3D {
                     color[2],
                     color[3],
                 );
-
                 self.stats.skinned_instances += 1;
 
                 if gpu_skinning {
@@ -419,16 +398,10 @@ impl Renderer3D {
             if gpu_skinning {
                 self.backend.unbind_storage_buffer();
             }
-
             self.backend.unbind_shader();
-            // Re-bind main shader for subsequent rendering.
             let _ = self.backend.bind_shader(self.shader_handle);
         }
 
-        // Instanced skinned rendering first: groups skinned instances by source
-        // model and draws with one instanced draw call per unique model.
-        // Returns the set of model/instance IDs it handled so the per-object
-        // pass can skip them.
         let instanced_skinned_ids = self.render_instanced_skinned_models(
             &view_arr,
             &proj_arr,
@@ -439,8 +412,6 @@ impl Renderer3D {
             texture_manager,
         );
 
-        // Single-instance skinned model rendering pass — only for models not
-        // handled by the instanced path above.
         self.render_skinned_models(
             &view_arr,
             &proj_arr,
@@ -454,7 +425,6 @@ impl Renderer3D {
 
         self.backend.unbind_shader();
 
-        // Instanced mesh and particle rendering.
         self.render_instanced_and_particles(
             &view_arr,
             &proj_arr,
@@ -465,7 +435,6 @@ impl Renderer3D {
             texture_manager,
         );
 
-        // Post-processing pipeline.
         if self.postprocess_pipeline.pass_count() > 0 {
             self.apply_postprocess_pipeline();
         }
@@ -474,35 +443,7 @@ impl Renderer3D {
             self.apply_fxaa_pass();
         }
 
-        // Debug draw pass.
         self.render_debug_draw(&view_arr, &proj_arr, &eff_fog);
         self.backend.disable_culling();
     }
-
-    /// Build a TRS (translate-rotate-scale) model matrix from object components.
-    pub(super) fn create_model_matrix(
-        position: cgmath::Vector3<f32>,
-        rotation: cgmath::Vector3<f32>,
-        scale: cgmath::Vector3<f32>,
-    ) -> Matrix4<f32> {
-        let translation = Matrix4::from_translation(position);
-        let rot_x = Matrix4::from_angle_x(Deg(rotation.x));
-        let rot_y = Matrix4::from_angle_y(Deg(rotation.y));
-        let rot_z = Matrix4::from_angle_z(Deg(rotation.z));
-        let rotation_matrix = rot_z * rot_y * rot_x;
-        let scale_matrix = Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z);
-        translation * rotation_matrix * scale_matrix
-    }
-}
-
-/// Convert a cgmath [`Matrix4`] to a column-major `[f32; 16]` array.
-///
-/// cgmath matrices are already column-major, which matches the backend expectation.
-pub(super) fn mat4_to_array(m: &Matrix4<f32>) -> [f32; 16] {
-    let cols: &[[f32; 4]; 4] = m.as_ref();
-    [
-        cols[0][0], cols[0][1], cols[0][2], cols[0][3], cols[1][0], cols[1][1], cols[1][2],
-        cols[1][3], cols[2][0], cols[2][1], cols[2][2], cols[2][3], cols[3][0], cols[3][1],
-        cols[3][2], cols[3][3],
-    ]
 }

@@ -1,4 +1,7 @@
 //! Core [`Renderer3D`] struct, constructor, and object/light/camera manipulation.
+
+mod drop;
+
 use std::collections::HashMap;
 
 use super::config::Render3DConfig;
@@ -35,111 +38,115 @@ use cgmath::Vector3;
 /// Core 3D renderer. All GPU operations go through the backend trait; no direct
 /// graphics API calls are made outside the backend.
 pub struct Renderer3D {
-    pub(super) backend: Box<dyn RenderBackend>,
-    pub(super) shader_handle: ShaderHandle,
-    pub(super) instanced_shader_handle: ShaderHandle,
-    pub(super) grid_shader_handle: ShaderHandle,
-    pub(super) postprocess_shader_handle: ShaderHandle,
-    pub(super) grid_buffer: BufferHandle,
-    pub(super) grid_vertex_count: i32,
-    pub(super) axis_buffer: BufferHandle,
-    pub(super) axis_vertex_count: i32,
-    pub(super) debug_draw_buffer: BufferHandle,
-    pub(super) debug_draw_buffer_capacity_bytes: usize,
-    pub(super) debug_draw_vertex_count: i32,
-    pub(super) objects: HashMap<u32, Object3D>,
-    pub(super) instanced_meshes: HashMap<u32, InstancedMesh>,
-    pub(super) particle_emitters: HashMap<u32, ParticleEmitter>,
-    pub(super) lights: HashMap<u32, Light>,
-    pub(super) next_object_id: u32,
-    pub(super) next_instanced_mesh_id: u32,
-    pub(super) next_light_id: u32,
-    pub(super) next_particle_emitter_id: u32,
-    pub(super) camera: Camera3D,
-    pub(super) window_width: u32,
-    pub(super) window_height: u32,
-    pub(super) viewport: (i32, i32, u32, u32),
-    pub(super) grid_config: GridConfig,
-    pub(super) skybox_config: SkyboxConfig,
-    pub(super) fog_config: FogConfig,
-    pub(super) uniforms: MainUniforms,
-    pub(super) instanced_uniforms: MainUniforms,
-    pub(super) grid_uniforms: GridUniforms,
-    pub(super) object_layout: VertexLayout,
-    pub(super) instance_layout: VertexLayout,
-    pub(super) grid_layout: VertexLayout,
-    pub(super) particle_quad_buffer: BufferHandle,
-    pub(super) particle_quad_vertex_count: u32,
-    pub(super) postprocess_quad_buffer: BufferHandle,
-    pub(super) postprocess_layout: VertexLayout,
-    pub(super) postprocess_texture: Option<crate::libs::graphics::backend::TextureHandle>,
-    pub(super) postprocess_texture_size: (u32, u32),
-    pub(super) shadow_texture: Option<crate::libs::graphics::backend::TextureHandle>,
-    pub(super) materials: HashMap<u32, Material3D>,
-    pub(super) object_materials: HashMap<u32, u32>,
-    pub(super) next_material_id: u32,
-    pub(super) skinned_meshes: HashMap<u32, SkinnedMesh3D>,
-    pub(super) next_skinned_mesh_id: u32,
-    pub(super) skinned_shader_handle: ShaderHandle,
-    pub(super) skinned_uniforms: SkinnedUniforms,
-    pub(super) skinned_layout: VertexLayout,
-    pub(super) models: HashMap<u32, Model3D>,
-    pub(super) model_instances: HashMap<u32, ModelInstance3D>,
-    pub(super) next_model_id: u32,
-    pub(super) animation_players: HashMap<u32, AnimationPlayer>,
+    pub(in crate::libs::graphics::renderer3d) backend: Box<dyn RenderBackend>,
+    pub(in crate::libs::graphics::renderer3d) shader_handle: ShaderHandle,
+    pub(in crate::libs::graphics::renderer3d) instanced_shader_handle: ShaderHandle,
+    pub(in crate::libs::graphics::renderer3d) grid_shader_handle: ShaderHandle,
+    pub(in crate::libs::graphics::renderer3d) postprocess_shader_handle: ShaderHandle,
+    pub(in crate::libs::graphics::renderer3d) grid_buffer: BufferHandle,
+    pub(in crate::libs::graphics::renderer3d) grid_vertex_count: i32,
+    pub(in crate::libs::graphics::renderer3d) axis_buffer: BufferHandle,
+    pub(in crate::libs::graphics::renderer3d) axis_vertex_count: i32,
+    pub(in crate::libs::graphics::renderer3d) debug_draw_buffer: BufferHandle,
+    pub(in crate::libs::graphics::renderer3d) debug_draw_buffer_capacity_bytes: usize,
+    pub(in crate::libs::graphics::renderer3d) debug_draw_vertex_count: i32,
+    pub(in crate::libs::graphics::renderer3d) objects: HashMap<u32, Object3D>,
+    pub(in crate::libs::graphics::renderer3d) instanced_meshes: HashMap<u32, InstancedMesh>,
+    pub(in crate::libs::graphics::renderer3d) particle_emitters: HashMap<u32, ParticleEmitter>,
+    pub(in crate::libs::graphics::renderer3d) lights: HashMap<u32, Light>,
+    pub(in crate::libs::graphics::renderer3d) next_object_id: u32,
+    pub(in crate::libs::graphics::renderer3d) next_instanced_mesh_id: u32,
+    pub(in crate::libs::graphics::renderer3d) next_light_id: u32,
+    pub(in crate::libs::graphics::renderer3d) next_particle_emitter_id: u32,
+    pub(in crate::libs::graphics::renderer3d) camera: Camera3D,
+    pub(in crate::libs::graphics::renderer3d) window_width: u32,
+    pub(in crate::libs::graphics::renderer3d) window_height: u32,
+    pub(in crate::libs::graphics::renderer3d) viewport: (i32, i32, u32, u32),
+    pub(in crate::libs::graphics::renderer3d) grid_config: GridConfig,
+    pub(in crate::libs::graphics::renderer3d) skybox_config: SkyboxConfig,
+    pub(in crate::libs::graphics::renderer3d) fog_config: FogConfig,
+    pub(in crate::libs::graphics::renderer3d) uniforms: MainUniforms,
+    pub(in crate::libs::graphics::renderer3d) instanced_uniforms: MainUniforms,
+    pub(in crate::libs::graphics::renderer3d) grid_uniforms: GridUniforms,
+    pub(in crate::libs::graphics::renderer3d) object_layout: VertexLayout,
+    pub(in crate::libs::graphics::renderer3d) instance_layout: VertexLayout,
+    pub(in crate::libs::graphics::renderer3d) grid_layout: VertexLayout,
+    pub(in crate::libs::graphics::renderer3d) particle_quad_buffer: BufferHandle,
+    pub(in crate::libs::graphics::renderer3d) particle_quad_vertex_count: u32,
+    pub(in crate::libs::graphics::renderer3d) postprocess_quad_buffer: BufferHandle,
+    pub(in crate::libs::graphics::renderer3d) postprocess_layout: VertexLayout,
+    pub(in crate::libs::graphics::renderer3d) postprocess_texture:
+        Option<crate::libs::graphics::backend::TextureHandle>,
+    pub(in crate::libs::graphics::renderer3d) postprocess_texture_size: (u32, u32),
+    pub(in crate::libs::graphics::renderer3d) shadow_texture:
+        Option<crate::libs::graphics::backend::TextureHandle>,
+    pub(in crate::libs::graphics::renderer3d) materials: HashMap<u32, Material3D>,
+    pub(in crate::libs::graphics::renderer3d) object_materials: HashMap<u32, u32>,
+    pub(in crate::libs::graphics::renderer3d) next_material_id: u32,
+    pub(in crate::libs::graphics::renderer3d) skinned_meshes: HashMap<u32, SkinnedMesh3D>,
+    pub(in crate::libs::graphics::renderer3d) next_skinned_mesh_id: u32,
+    pub(in crate::libs::graphics::renderer3d) skinned_shader_handle: ShaderHandle,
+    pub(in crate::libs::graphics::renderer3d) skinned_uniforms: SkinnedUniforms,
+    pub(in crate::libs::graphics::renderer3d) skinned_layout: VertexLayout,
+    pub(in crate::libs::graphics::renderer3d) models: HashMap<u32, Model3D>,
+    pub(in crate::libs::graphics::renderer3d) model_instances: HashMap<u32, ModelInstance3D>,
+    pub(in crate::libs::graphics::renderer3d) next_model_id: u32,
+    pub(in crate::libs::graphics::renderer3d) animation_players: HashMap<u32, AnimationPlayer>,
     /// Shader and uniforms for instanced skinned rendering.
-    pub(super) instanced_skinned_shader_handle: ShaderHandle,
-    pub(super) instanced_skinned_uniforms: InstancedSkinnedUniforms,
+    pub(in crate::libs::graphics::renderer3d) instanced_skinned_shader_handle: ShaderHandle,
+    pub(in crate::libs::graphics::renderer3d) instanced_skinned_uniforms: InstancedSkinnedUniforms,
     /// Per-instance vertex layout for instanced skinned rendering:
     /// model_0..model_3 (4 x vec4) + bone_offset (f32) + color (vec4) = 84 bytes.
-    pub(super) instanced_skinned_instance_layout: VertexLayout,
+    pub(in crate::libs::graphics::renderer3d) instanced_skinned_instance_layout: VertexLayout,
     /// Storage buffer handle for GPU skinning bone matrices (per-object path).
-    pub(super) bone_storage_buffer: Option<BufferHandle>,
+    pub(in crate::libs::graphics::renderer3d) bone_storage_buffer: Option<BufferHandle>,
     /// Tracks allocated size of bone_storage_buffer in bytes.
-    pub(super) bone_storage_buffer_size: usize,
+    pub(in crate::libs::graphics::renderer3d) bone_storage_buffer_size: usize,
     /// Separate storage buffer for the instanced skinned path.
-    pub(super) instanced_bone_storage_buffer: Option<BufferHandle>,
+    pub(in crate::libs::graphics::renderer3d) instanced_bone_storage_buffer: Option<BufferHandle>,
     /// Tracks allocated size of instanced_bone_storage_buffer in bytes.
-    pub(super) instanced_bone_storage_buffer_size: usize,
-    pub(super) postprocess_pipeline: PostProcessPipeline,
-    pub(super) stats: Renderer3DStats,
-    pub(super) anti_aliasing_mode: AntiAliasingMode,
-    pub(super) msaa_samples: u32,
-    pub(super) scenes: HashMap<u32, Scene3D>,
-    pub(super) next_scene_id: u32,
-    pub(super) current_scene: Option<u32>,
-    /// Object IDs belonging to skinned models/instances — maintained
+    pub(in crate::libs::graphics::renderer3d) instanced_bone_storage_buffer_size: usize,
+    pub(in crate::libs::graphics::renderer3d) postprocess_pipeline: PostProcessPipeline,
+    pub(in crate::libs::graphics::renderer3d) stats: Renderer3DStats,
+    pub(in crate::libs::graphics::renderer3d) anti_aliasing_mode: AntiAliasingMode,
+    pub(in crate::libs::graphics::renderer3d) msaa_samples: u32,
+    pub(in crate::libs::graphics::renderer3d) scenes: HashMap<u32, Scene3D>,
+    pub(in crate::libs::graphics::renderer3d) next_scene_id: u32,
+    pub(in crate::libs::graphics::renderer3d) current_scene: Option<u32>,
+    /// Object IDs belonging to skinned models/instances -- maintained
     /// incrementally to avoid per-frame recomputation.
-    pub(super) skinned_object_ids: std::collections::HashSet<u32>,
+    pub(in crate::libs::graphics::renderer3d) skinned_object_ids: std::collections::HashSet<u32>,
     /// Game-developer-controlled configuration for the 3D renderer.
-    pub(super) config: Render3DConfig,
+    pub(in crate::libs::graphics::renderer3d) config: Render3DConfig,
     /// Reusable scratch buffer for CPU skinning output (avoids per-submesh allocation).
-    pub(super) skin_scratch_buffer: Vec<f32>,
+    pub(in crate::libs::graphics::renderer3d) skin_scratch_buffer: Vec<f32>,
     /// Monotonically increasing frame counter, used for animation LOD (half-rate skipping).
-    pub(super) frame_counter: u64,
+    pub(in crate::libs::graphics::renderer3d) frame_counter: u64,
     /// Global animation clocks for phase-locked playback.
     /// Key: (source_model_id, clip_index). Value: elapsed time in seconds.
-    pub(super) phase_lock_clocks: HashMap<(u32, usize), f32>,
+    pub(in crate::libs::graphics::renderer3d) phase_lock_clocks: HashMap<(u32, usize), f32>,
     /// Pool of per-group instance buffers for instanced skinned rendering.
     /// Each group gets its own buffer to avoid wgpu write-staging overwrites.
-    pub(super) instanced_skinned_instance_buffers: Vec<(BufferHandle, usize)>,
+    pub(in crate::libs::graphics::renderer3d) instanced_skinned_instance_buffers:
+        Vec<(BufferHandle, usize)>,
     /// Reusable G5 shared animation evaluation cache -- cleared each frame.
-    pub(super) bone_eval_cache: HashMap<(u32, usize, u32), Vec<[f32; 16]>>,
+    pub(in crate::libs::graphics::renderer3d) bone_eval_cache:
+        HashMap<(u32, usize, u32), Vec<[f32; 16]>>,
     /// Pre-allocated buffer of visible object IDs, reused across frames to avoid
     /// per-frame Vec allocation during the render snapshot phase.
-    pub(super) visible_object_ids: Vec<u32>,
+    pub(in crate::libs::graphics::renderer3d) visible_object_ids: Vec<u32>,
     /// Whether the static batch VBO needs rebuilding (set when `set_object_static` changes).
-    pub(super) static_batch_dirty: bool,
+    pub(in crate::libs::graphics::renderer3d) static_batch_dirty: bool,
     /// Pre-baked VBO containing all static objects' transformed vertices.
-    pub(super) static_batch_buffer: Option<BufferHandle>,
+    pub(in crate::libs::graphics::renderer3d) static_batch_buffer: Option<BufferHandle>,
     /// Material/texture groups within the static batch buffer.
-    pub(super) static_batch_groups: Vec<StaticBatchGroup>,
+    pub(in crate::libs::graphics::renderer3d) static_batch_groups: Vec<StaticBatchGroup>,
     /// Total vertex count in the static batch buffer.
-    pub(super) static_batch_vertex_count: u32,
+    pub(in crate::libs::graphics::renderer3d) static_batch_vertex_count: u32,
 }
 
 // StaticBatchGroup is defined in core_static_batch.rs
-pub(super) use super::core_static_batch::StaticBatchGroup;
+pub(in crate::libs::graphics::renderer3d) use super::core_static_batch::StaticBatchGroup;
 
 #[allow(missing_docs)]
 impl Renderer3D {
@@ -446,59 +453,5 @@ impl Renderer3D {
 
     pub fn set_render_config(&mut self, config: Render3DConfig) {
         self.config = config;
-    }
-}
-
-impl Drop for Renderer3D {
-    fn drop(&mut self) {
-        for obj in self.objects.values() {
-            self.backend.destroy_buffer(obj.buffer);
-        }
-        for mesh in self.instanced_meshes.values() {
-            self.backend.destroy_buffer(mesh.mesh_buffer);
-            self.backend.destroy_buffer(mesh.instance_buffer);
-        }
-        for e in self.particle_emitters.values() {
-            self.backend.destroy_buffer(e.instance_buffer);
-        }
-        for m in self.skinned_meshes.values() {
-            self.backend.destroy_buffer(m.buffer);
-        }
-        self.backend.destroy_buffer(self.grid_buffer);
-        self.backend.destroy_buffer(self.axis_buffer);
-        self.backend.destroy_buffer(self.particle_quad_buffer);
-        self.backend.destroy_buffer(self.postprocess_quad_buffer);
-        for tex in [self.postprocess_texture.take(), self.shadow_texture.take()]
-            .into_iter()
-            .flatten()
-        {
-            self.backend.destroy_texture(tex);
-        }
-        if self.backend.is_buffer_valid(self.debug_draw_buffer) {
-            self.backend.destroy_buffer(self.debug_draw_buffer);
-        }
-        if let Some(buf) = self.bone_storage_buffer {
-            self.backend.destroy_buffer(buf);
-        }
-        if let Some(buf) = self.instanced_bone_storage_buffer {
-            self.backend.destroy_buffer(buf);
-        }
-        for (buf, _) in &self.instanced_skinned_instance_buffers {
-            self.backend.destroy_buffer(*buf);
-        }
-        self.instanced_skinned_instance_buffers.clear();
-        if let Some(buf) = self.static_batch_buffer {
-            self.backend.destroy_buffer(buf);
-        }
-        for &sh in &[
-            self.shader_handle,
-            self.instanced_shader_handle,
-            self.grid_shader_handle,
-            self.postprocess_shader_handle,
-            self.skinned_shader_handle,
-            self.instanced_skinned_shader_handle,
-        ] {
-            self.backend.destroy_shader(sh);
-        }
     }
 }

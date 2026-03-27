@@ -2169,61 +2169,6 @@ bool goud_renderer3d_render(struct GoudContextId context_id);
 bool goud_renderer3d_render_all(struct GoudContextId context_id);
 
 /**
- * Enables or disables frustum culling.
- */
-int32_t goud_renderer3d_set_frustum_culling_enabled(struct GoudContextId context_id, bool enabled);
-
-/**
- * Sets the skinning mode (0 = CPU, 1 = GPU).
- */
-int32_t goud_renderer3d_set_skinning_mode(struct GoudContextId context_id, uint32_t mode);
-
-/**
- * Enables or disables material sorting.
- */
-int32_t goud_renderer3d_set_material_sorting_enabled(struct GoudContextId context_id, bool enabled);
-
-/**
- * Enables or disables animation LOD (distance-based update throttling).
- */
-int32_t goud_renderer3d_set_animation_lod_enabled(struct GoudContextId context_id, bool enabled);
-
-/**
- * Enables or disables shared animation evaluation (cache identical poses).
- */
-int32_t goud_renderer3d_set_shared_animation_eval(struct GoudContextId context_id, bool enabled);
-
-/**
- * Sets the distance at which animation updates are half-rated (every other frame).
- */
-int32_t goud_renderer3d_set_animation_lod_distance(struct GoudContextId context_id, float distance);
-
-/**
- * Sets the distance at which animation updates are frozen entirely.
- */
-int32_t goud_renderer3d_set_animation_lod_skip_distance(struct GoudContextId context_id, float distance);
-
-/**
- * Returns the current animation LOD half-rate distance.
- */
-float goud_renderer3d_get_animation_lod_distance(struct GoudContextId context_id);
-
-/**
- * Returns the current animation LOD freeze distance.
- */
-float goud_renderer3d_get_animation_lod_skip_distance(struct GoudContextId context_id);
-
-/**
- * Enables or disables static batching.
- */
-int32_t goud_renderer3d_set_static_batching_enabled(struct GoudContextId context_id, bool enabled);
-
-/**
- * Enables or disables instanced rendering.
- */
-int32_t goud_renderer3d_set_instancing_enabled(struct GoudContextId context_id, bool enabled);
-
-/**
  * Returns whether frustum culling is enabled.
  */
 bool goud_renderer3d_get_frustum_culling_enabled(struct GoudContextId context_id);
@@ -2259,9 +2204,14 @@ bool goud_renderer3d_get_animation_lod_enabled(struct GoudContextId context_id);
 bool goud_renderer3d_get_shared_animation_eval(struct GoudContextId context_id);
 
 /**
- * Sets the baked animation sample rate in frames per second.
+ * Returns the current animation LOD half-rate distance.
  */
-int32_t goud_renderer3d_set_baked_animation_sample_rate(struct GoudContextId context_id, float rate);
+float goud_renderer3d_get_animation_lod_distance(struct GoudContextId context_id);
+
+/**
+ * Returns the current animation LOD freeze distance.
+ */
+float goud_renderer3d_get_animation_lod_skip_distance(struct GoudContextId context_id);
 
 /**
  * Returns the baked animation sample rate, or -1.0 on error.
@@ -2269,14 +2219,99 @@ int32_t goud_renderer3d_set_baked_animation_sample_rate(struct GoudContextId con
 float goud_renderer3d_get_baked_animation_sample_rate(struct GoudContextId context_id);
 
 /**
- * Sets the minimum instance count required for instanced rendering.
- */
-int32_t goud_renderer3d_set_min_instances_for_batching(struct GoudContextId context_id, uint32_t count);
-
-/**
  * Returns the minimum instance count for batching, or -1 on error.
  */
 int32_t goud_renderer3d_get_min_instances_for_batching(struct GoudContextId context_id);
+
+/**
+ * Returns the current grid transparency alpha.
+ */
+float goud_renderer3d_get_grid_alpha(struct GoudContextId context_id);
+
+/**
+ * Returns the frustum culling FOV in degrees, or -1.0 on error.
+ */
+float goud_renderer3d_get_frustum_culling_fov(struct GoudContextId context_id);
+
+/**
+ * Returns the frustum culling near plane distance, or -1.0 on error.
+ */
+float goud_renderer3d_get_frustum_culling_near_plane(struct GoudContextId context_id);
+
+/**
+ * Returns the frustum culling far plane distance, or -1.0 on error.
+ */
+float goud_renderer3d_get_frustum_culling_far_plane(struct GoudContextId context_id);
+
+/**
+ * Returns whether shadows are enabled.
+ */
+bool goud_renderer3d_get_shadows_enabled(struct GoudContextId context_id);
+
+/**
+ * Returns the shadow map resolution, or -1 on error.
+ */
+int32_t goud_renderer3d_get_shadow_map_size(struct GoudContextId context_id);
+
+/**
+ * Returns the shadow depth bias, or -1.0 on error.
+ */
+float goud_renderer3d_get_shadow_bias(struct GoudContextId context_id);
+
+/**
+ * Enables or disables frustum culling.
+ */
+int32_t goud_renderer3d_set_frustum_culling_enabled(struct GoudContextId context_id, bool enabled);
+
+/**
+ * Sets the skinning mode (0 = CPU, 1 = GPU).
+ */
+int32_t goud_renderer3d_set_skinning_mode(struct GoudContextId context_id, uint32_t mode);
+
+/**
+ * Enables or disables material sorting.
+ */
+int32_t goud_renderer3d_set_material_sorting_enabled(struct GoudContextId context_id, bool enabled);
+
+/**
+ * Enables or disables animation LOD (distance-based update throttling).
+ */
+int32_t goud_renderer3d_set_animation_lod_enabled(struct GoudContextId context_id, bool enabled);
+
+/**
+ * Enables or disables shared animation evaluation (cache identical poses).
+ */
+int32_t goud_renderer3d_set_shared_animation_eval(struct GoudContextId context_id, bool enabled);
+
+/**
+ * Sets the distance at which animation updates are half-rated (every other frame).
+ */
+int32_t goud_renderer3d_set_animation_lod_distance(struct GoudContextId context_id, float distance);
+
+/**
+ * Sets the distance at which animation updates are frozen entirely.
+ */
+int32_t goud_renderer3d_set_animation_lod_skip_distance(struct GoudContextId context_id, float distance);
+
+/**
+ * Enables or disables static batching.
+ */
+int32_t goud_renderer3d_set_static_batching_enabled(struct GoudContextId context_id, bool enabled);
+
+/**
+ * Enables or disables instanced rendering.
+ */
+int32_t goud_renderer3d_set_instancing_enabled(struct GoudContextId context_id, bool enabled);
+
+/**
+ * Sets the baked animation sample rate in frames per second.
+ */
+int32_t goud_renderer3d_set_baked_animation_sample_rate(struct GoudContextId context_id, float rate);
+
+/**
+ * Sets the minimum instance count required for instanced rendering.
+ */
+int32_t goud_renderer3d_set_min_instances_for_batching(struct GoudContextId context_id, uint32_t count);
 
 /**
  * Sets the fallback material color used when a mesh has no assigned material.
@@ -2294,19 +2329,9 @@ int32_t goud_renderer3d_get_default_material_color(struct GoudContextId context_
 int32_t goud_renderer3d_set_grid_alpha(struct GoudContextId context_id, float alpha);
 
 /**
- * Returns the current grid transparency alpha.
- */
-float goud_renderer3d_get_grid_alpha(struct GoudContextId context_id);
-
-/**
  * Sets the vertical field of view for frustum culling, in degrees.
  */
 int32_t goud_renderer3d_set_frustum_culling_fov(struct GoudContextId context_id, float fov_degrees);
-
-/**
- * Returns the frustum culling FOV in degrees, or -1.0 on error.
- */
-float goud_renderer3d_get_frustum_culling_fov(struct GoudContextId context_id);
 
 /**
  * Sets the near clipping plane for frustum culling.
@@ -2314,19 +2339,9 @@ float goud_renderer3d_get_frustum_culling_fov(struct GoudContextId context_id);
 int32_t goud_renderer3d_set_frustum_culling_near_plane(struct GoudContextId context_id, float near);
 
 /**
- * Returns the frustum culling near plane distance, or -1.0 on error.
- */
-float goud_renderer3d_get_frustum_culling_near_plane(struct GoudContextId context_id);
-
-/**
  * Sets the far clipping plane for frustum culling.
  */
 int32_t goud_renderer3d_set_frustum_culling_far_plane(struct GoudContextId context_id, float far);
-
-/**
- * Returns the frustum culling far plane distance, or -1.0 on error.
- */
-float goud_renderer3d_get_frustum_culling_far_plane(struct GoudContextId context_id);
 
 /**
  * Enables or disables shadow mapping.
@@ -2334,29 +2349,14 @@ float goud_renderer3d_get_frustum_culling_far_plane(struct GoudContextId context
 int32_t goud_renderer3d_set_shadows_enabled(struct GoudContextId context_id, bool enabled);
 
 /**
- * Returns whether shadows are enabled.
- */
-bool goud_renderer3d_get_shadows_enabled(struct GoudContextId context_id);
-
-/**
  * Sets the shadow map resolution.
  */
 int32_t goud_renderer3d_set_shadow_map_size(struct GoudContextId context_id, uint32_t size);
 
 /**
- * Returns the shadow map resolution, or -1 on error.
- */
-int32_t goud_renderer3d_get_shadow_map_size(struct GoudContextId context_id);
-
-/**
  * Sets the shadow depth bias.
  */
 int32_t goud_renderer3d_set_shadow_bias(struct GoudContextId context_id, float bias);
-
-/**
- * Returns the shadow depth bias, or -1.0 on error.
- */
-float goud_renderer3d_get_shadow_bias(struct GoudContextId context_id);
 
 /**
  * Returns the number of draw calls issued during the last `render()` call.

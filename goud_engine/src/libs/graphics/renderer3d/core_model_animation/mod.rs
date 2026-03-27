@@ -1,10 +1,14 @@
 //! Animation-related methods for [`Renderer3D`].
 
+mod cpu_skinning;
+
 use super::animation::{AnimationPlayer, BakedAnimationData, BoneChannelMap};
 use super::core::Renderer3D;
 use super::model::Model3D;
 use crate::core::types::{KeyframeAnimation, SkeletonData};
 use crate::libs::graphics::backend::BufferHandle;
+
+pub(super) use cpu_skinning::cpu_skin_submesh;
 
 /// Per-sub-mesh data needed for CPU skinning after bone matrices are computed.
 ///
@@ -180,7 +184,6 @@ impl Renderer3D {
             .collect();
 
         // -- G6: Animation LOD --
-        // Determine which players to skip or half-rate based on camera distance.
         let lod_enabled = self.config.skinning.animation_lod_enabled;
         let lod_dist = self.config.skinning.animation_lod_distance;
         let lod_skip_dist = self.config.skinning.animation_lod_skip_distance;
@@ -188,8 +191,6 @@ impl Renderer3D {
         let frame_counter = self.frame_counter;
 
         // -- G5: Shared Animation Evaluation cache --
-        // Key: (source_model_id, clip_index, quantized_time_bits)
-        // Value: computed bone matrices
         let shared_eval = self.config.skinning.shared_animation_eval;
         let mut bone_cache = std::mem::take(&mut self.bone_eval_cache);
         bone_cache.clear();
@@ -198,7 +199,6 @@ impl Renderer3D {
         {
             // -- G6: LOD distance check --
             if lod_enabled {
-                // Get the position of this model/instance's first mesh object.
                 let obj_pos = self
                     .models
                     .get(&player_id)
@@ -219,19 +219,16 @@ impl Renderer3D {
                     let dist = (dx * dx + dy * dy + dz * dz).sqrt();
 
                     if dist > lod_skip_dist {
-                        // Freeze: keep last pose, don't update at all.
                         self.stats.animation_evaluations_saved += 1;
                         continue;
                     }
-                    if dist > lod_dist {
-                        // Half rate: skip every other frame using player_id parity.
-                        if !frame_counter
+                    if dist > lod_dist
+                        && !frame_counter
                             .wrapping_add(player_id as u64)
                             .is_multiple_of(2)
-                        {
-                            self.stats.animation_evaluations_saved += 1;
-                            continue;
-                        }
+                    {
+                        self.stats.animation_evaluations_saved += 1;
+                        continue;
                     }
                 }
             }
@@ -250,25 +247,18 @@ impl Renderer3D {
                                 .phase_lock_clocks
                                 .entry((source_model_id, state.clip_index))
                                 .or_insert(0.0);
-                            // Advance global clock and use it for this player.
-                            // Only advance once per unique (model, clip) per frame.
                             state.time = *clock;
                         }
                     }
                 }
 
                 // -- Baked animation fast path --
-                // When pre-baked data exists and the player has a simple
-                // primary animation (no transition, no blending), look up
-                // the baked frame instead of evaluating keyframes.  This
-                // turns O(bones x channels x keyframes) into O(bones).
                 if let Some(bp) = baked_ptr {
                     if player.transition.is_none() && player.blend_factor <= f32::EPSILON {
                         if let Some(ref state) = player.primary {
                             if state.playing {
                                 // SAFETY: model is not mutated during this loop.
                                 let baked = unsafe { &*bp };
-                                // Ensure bone_matrices buffer is the right size.
                                 let bc = skeleton.bones.len();
                                 if player.bone_matrices.len() != bc {
                                     player
@@ -280,7 +270,6 @@ impl Renderer3D {
                                     state.time,
                                     &mut player.bone_matrices,
                                 ) {
-                                    // Advance animation clock without recomputing.
                                     super::animation::advance_state_pub(
                                         &mut player.primary,
                                         dt,
@@ -295,7 +284,6 @@ impl Renderer3D {
                 }
 
                 // -- G5: Shared evaluation --
-                // Check if we can reuse a previously computed result.
                 if shared_eval && player.transition.is_none() && player.blend_factor <= f32::EPSILON
                 {
                     if let Some(ref state) = player.primary {
@@ -305,13 +293,11 @@ impl Renderer3D {
                                 (source_model_id, state.clip_index, quantized_time.to_bits());
 
                             if let Some(cached) = bone_cache.get(&cache_key) {
-                                // Advance time without recomputing matrices.
                                 super::animation::advance_state_pub(
                                     &mut player.primary,
                                     dt,
                                     animations,
                                 );
-                                // Copy cached bone matrices.
                                 let copy_len = cached.len().min(player.bone_matrices.len());
                                 player.bone_matrices[..copy_len]
                                     .copy_from_slice(&cached[..copy_len]);
@@ -326,8 +312,6 @@ impl Renderer3D {
                 if !channel_maps.is_empty() {
                     player.update_with_channel_maps(dt, skeleton, animations, channel_maps);
                 } else {
-                    // Fallback to string-based path (should not happen if model
-                    // was loaded through load_model, but handle gracefully).
                     player.update(dt, skeleton, animations);
                 }
                 self.stats.animation_evaluations += 1;
@@ -350,11 +334,7 @@ impl Renderer3D {
         // Return the cache to self so it can be reused next frame.
         self.bone_eval_cache = bone_cache;
 
-        // Phase 2: CPU skinning -- deform bind-pose vertices using bone
-        // matrices and re-upload each sub-mesh buffer.
-        //
-        // Skipped when GPU skinning is active (bone matrices are uploaded to a
-        // storage buffer instead, and the vertex shader performs the deformation).
+        // Phase 2: CPU skinning
         let gpu_skinning = matches!(self.config.skinning.mode, super::config::SkinningMode::Gpu)
             && self.backend.supports_storage_buffers();
 
@@ -372,7 +352,6 @@ impl Renderer3D {
                     _ => continue,
                 };
 
-                // Resolve the object IDs that belong to this player (model or instance).
                 let obj_ids: &[u32] = if let Some(m) = self.models.get(&id) {
                     &m.mesh_object_ids
                 } else if let Some(inst) = self.model_instances.get(&id) {
@@ -397,15 +376,10 @@ impl Renderer3D {
                 };
 
                 for upload in &item.uploads {
-                    // SAFETY: `bind_verts`, `bone_indices`, and `bone_weights` point into
-                    // `self.models` HashMap values captured by `gather_skin_uploads`.
-                    // The `models` HashMap is not mutated during this skinning pass
-                    // (only the backend receives buffer uploads), so the pointers remain valid.
+                    // SAFETY: see SkinUpload doc comment.
                     let bind_verts = unsafe { &*upload.bind_verts };
                     let bi = unsafe { &*upload.bone_indices };
                     let bw = unsafe { &*upload.bone_weights };
-                    // SAFETY: `bone_matrices` points into `self.animation_players` which is
-                    // not mutated during this skinning loop (only read via immutable borrow).
                     let bone_mats = unsafe { &*bone_matrices };
 
                     cpu_skin_submesh(bind_verts, bi, bw, bone_mats, &mut self.skin_scratch_buffer);
@@ -447,121 +421,5 @@ impl Renderer3D {
     ) -> Option<&[crate::assets::loaders::animation::KeyframeAnimation]> {
         self.resolve_source_model(id)
             .map(|m| m.animations.as_slice())
-    }
-}
-
-// ============================================================================
-// CPU skinning
-// ============================================================================
-
-/// Minimum individual bone weight to contribute to skinning.
-///
-/// Bones with weight below this threshold are skipped, saving unnecessary
-/// matrix multiplications for near-zero influences.
-const WEIGHT_EPSILON: f32 = 0.001;
-
-/// Minimum accumulated bone weight for a vertex to be skinned.
-///
-/// Vertices with total weight below this threshold retain their original
-/// bind-pose position and normal instead of collapsing to the origin.
-const SKIN_WEIGHT_EPSILON: f32 = 1e-6;
-
-/// Apply skeletal deformation to a bind-pose sub-mesh on the CPU.
-///
-/// The bind-pose buffer uses the standard 8-float layout per vertex:
-/// `[pos.x, pos.y, pos.z, norm.x, norm.y, norm.z, uv.u, uv.v]`.
-///
-/// Writes deformed positions and normals into `out`, which is resized and
-/// populated from `bind_verts` as needed. Reusing a caller-owned scratch
-/// buffer across frames avoids per-call allocation.
-fn cpu_skin_submesh(
-    bind_verts: &[f32],
-    bone_indices: &[[u32; 4]],
-    bone_weights: &[[f32; 4]],
-    bone_matrices: &[[f32; 16]],
-    out: &mut Vec<f32>,
-) {
-    const FPV: usize = 8; // floats per vertex
-    let vert_count = bind_verts.len() / FPV;
-    out.resize(bind_verts.len(), 0.0);
-    out.copy_from_slice(bind_verts);
-
-    for v in 0..vert_count {
-        let base = v * FPV;
-        let pos = [bind_verts[base], bind_verts[base + 1], bind_verts[base + 2]];
-        let nrm = [
-            bind_verts[base + 3],
-            bind_verts[base + 4],
-            bind_verts[base + 5],
-        ];
-
-        let bi = if v < bone_indices.len() {
-            bone_indices[v]
-        } else {
-            [0; 4]
-        };
-        let bw = if v < bone_weights.len() {
-            bone_weights[v]
-        } else {
-            [0.0; 4]
-        };
-
-        let mut sp = [0.0f32; 3];
-        let mut sn = [0.0f32; 3];
-        let mut total_weight = 0.0f32;
-
-        for i in 0..4 {
-            let w = bw[i];
-            if w < WEIGHT_EPSILON {
-                continue;
-            }
-            let idx = bi[i] as usize;
-            if idx >= bone_matrices.len() {
-                continue;
-            }
-            total_weight += w;
-            let m = &bone_matrices[idx]; // column-major [f32; 16]
-                                         // Transform position: M * [pos, 1]
-            sp[0] += w * (m[0] * pos[0] + m[4] * pos[1] + m[8] * pos[2] + m[12]);
-            sp[1] += w * (m[1] * pos[0] + m[5] * pos[1] + m[9] * pos[2] + m[13]);
-            sp[2] += w * (m[2] * pos[0] + m[6] * pos[1] + m[10] * pos[2] + m[14]);
-            // Transform normal: upper-left 3x3 of M (no translation)
-            sn[0] += w * (m[0] * nrm[0] + m[4] * nrm[1] + m[8] * nrm[2]);
-            sn[1] += w * (m[1] * nrm[0] + m[5] * nrm[1] + m[9] * nrm[2]);
-            sn[2] += w * (m[2] * nrm[0] + m[6] * nrm[1] + m[10] * nrm[2]);
-        }
-
-        // When total weight is zero the vertex has no bone influence -- keep the
-        // original bind-pose position and normal so it does not collapse to the origin.
-        if total_weight < SKIN_WEIGHT_EPSILON {
-            continue;
-        }
-
-        // Normalize the accumulated result when total weight is not 1.0.
-        if (total_weight - 1.0).abs() > SKIN_WEIGHT_EPSILON {
-            let inv_w = 1.0 / total_weight;
-            sp[0] *= inv_w;
-            sp[1] *= inv_w;
-            sp[2] *= inv_w;
-            sn[0] *= inv_w;
-            sn[1] *= inv_w;
-            sn[2] *= inv_w;
-        }
-
-        // Normalize the skinned normal.
-        let len = (sn[0] * sn[0] + sn[1] * sn[1] + sn[2] * sn[2]).sqrt();
-        if len > SKIN_WEIGHT_EPSILON {
-            sn[0] /= len;
-            sn[1] /= len;
-            sn[2] /= len;
-        }
-
-        out[base] = sp[0];
-        out[base + 1] = sp[1];
-        out[base + 2] = sp[2];
-        out[base + 3] = sn[0];
-        out[base + 4] = sn[1];
-        out[base + 5] = sn[2];
-        // UV (base+6, base+7) unchanged.
     }
 }
