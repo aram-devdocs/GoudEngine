@@ -310,4 +310,45 @@ mod tests {
         // 16 * 4 bytes = 64 bytes per vertex
         assert_eq!(16 * std::mem::size_of::<f32>(), 64);
     }
+
+    /// Tests the animation LOD half-rate formula used in `update_animations`.
+    ///
+    /// The formula `!frame_counter.wrapping_add(player_id as u64).is_multiple_of(2)`
+    /// skips evaluation when `(frame_counter + player_id)` is odd.  Different
+    /// player IDs produce staggered skip patterns so not all models skip the
+    /// same frame.
+    #[test]
+    fn test_animation_lod_half_rate_alternation() {
+        let player_id: u32 = 42;
+        let mut evaluated = Vec::new();
+        for frame in 0u64..10 {
+            let should_skip = !frame.wrapping_add(player_id as u64).is_multiple_of(2);
+            evaluated.push(!should_skip);
+        }
+        // player_id 42 is even, so (frame + 42) parity matches frame parity.
+        // frame 0 -> even -> evaluated, frame 1 -> odd -> skipped, ...
+        assert_eq!(
+            evaluated,
+            vec![true, false, true, false, true, false, true, false, true, false]
+        );
+    }
+
+    /// Verifies that different player IDs produce staggered half-rate patterns,
+    /// so the engine does not skip every model on the same frame.
+    #[test]
+    fn test_animation_lod_half_rate_stagger() {
+        let mut pattern_even = Vec::new();
+        let mut pattern_odd = Vec::new();
+        let even_id: u32 = 10;
+        let odd_id: u32 = 11;
+        for frame in 0u64..6 {
+            let skip_even = !frame.wrapping_add(even_id as u64).is_multiple_of(2);
+            let skip_odd = !frame.wrapping_add(odd_id as u64).is_multiple_of(2);
+            pattern_even.push(!skip_even);
+            pattern_odd.push(!skip_odd);
+        }
+        // Even and odd player IDs should produce opposite patterns.
+        assert_eq!(pattern_even, vec![true, false, true, false, true, false]);
+        assert_eq!(pattern_odd, vec![false, true, false, true, false, true]);
+    }
 }

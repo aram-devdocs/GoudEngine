@@ -199,6 +199,10 @@ impl Renderer3D {
 
         use crate::libs::graphics::backend::{BufferType, BufferUsage, VertexBufferBinding};
 
+        // Clone layouts once outside the per-draw loop to avoid per-mesh-per-frame allocations.
+        let skinned_layout = self.skinned_layout.clone();
+        let instance_layout = self.instanced_skinned_instance_layout.clone();
+
         // Each group needs its OWN instance buffer because wgpu stages
         // write_buffer calls and only the last write to a given offset
         // survives into the render pass.  Reuse a pool of per-group buffers.
@@ -289,10 +293,10 @@ impl Renderer3D {
                 );
 
                 let bindings = [
-                    VertexBufferBinding::per_vertex(buffer, self.skinned_layout.clone()),
+                    VertexBufferBinding::per_vertex(buffer, skinned_layout.clone()),
                     VertexBufferBinding::per_instance(
                         instance_buffer,
-                        self.instanced_skinned_instance_layout.clone(),
+                        instance_layout.clone(),
                     ),
                 ];
                 let _ = self.backend.set_vertex_bindings(&bindings);

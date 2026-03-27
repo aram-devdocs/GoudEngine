@@ -16,6 +16,9 @@ _CSHARP_SKIP_METHODS = {
     "rpcCall",           # has call_id_out (*mut u64) out param not in schema
     "rpcReceiveResponse",  # out_buffer template doesn't match FFI signature
     "rpcDrainOne",       # same out_buffer pattern issue as rpcReceiveResponse
+    "instantiateModelBatch",     # manual pointer marshalling in GoudGameBatchExtensions.cs
+    "setModelPositionsBatch",    # manual pointer marshalling in GoudGameBatchExtensions.cs
+    "addModelsToSceneBatch",     # manual pointer marshalling in GoudGameBatchExtensions.cs
 }
 
 
@@ -117,7 +120,7 @@ def _gen_tool_class(tool_name: str, tm: dict, out_path, is_windowed: bool = Fals
         ]
     lines += [
         f"    /// <summary>{tool.get('doc', class_name)}</summary>",
-        f"    public class {class_name} : IDisposable", "    {",
+        f"    public partial class {class_name} : IDisposable", "    {",
         "        private GoudContextId _ctx;",
         "        private bool _disposed;",
         *extra, "",

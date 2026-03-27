@@ -378,8 +378,9 @@ pub(super) fn lerp_curve_at(t: f32, curve: &[(f32, f32)]) -> f32 {
     if curve.len() == 1 || t <= curve[0].0 {
         return curve[0].1;
     }
-    if t >= curve.last().unwrap().0 {
-        return curve.last().unwrap().1;
+    let last = curve.last().unwrap();
+    if t >= last.0 {
+        return last.1;
     }
     // Binary search for the bracketing keyframes.
     let idx = curve.partition_point(|&(ct, _)| ct < t);

@@ -39,7 +39,7 @@ namespace GoudEngine
     }
 
     /// <summary>Main game engine instance. Creates a window, manages rendering, input, and ECS.</summary>
-    public class GoudGame : IDisposable
+    public partial class GoudGame : IDisposable
     {
         private GoudContextId _ctx;
         private bool _disposed;
@@ -940,40 +940,6 @@ namespace GoudEngine
         public float GetShadowBias()
         {
             return NativeMethods.goud_renderer3d_get_shadow_bias(_ctx);
-        }
-
-        /// <summary>Creates multiple instances of a model in one call</summary>
-        public uint[] InstantiateModelBatch(uint sourceModelId, uint count)
-        {
-            var buf = new uint[count];
-            int created = NativeMethods.goud_renderer3d_instantiate_model_batch(_ctx, sourceModelId, count, ref buf[0]);
-            if (created < 0) return System.Array.Empty<uint>();
-            var result = new uint[created];
-            System.Array.Copy(buf, result, created);
-            return result;
-        }
-
-        /// <summary>Sets positions for multiple models in one call</summary>
-        public unsafe int SetModelPositionsBatch(uint[] modelIds, float[] positions)
-        {
-            if (modelIds == null || positions == null) return -1;
-            uint count = (uint)modelIds.Length;
-            fixed (uint* idp = modelIds)
-            fixed (float* posp = positions)
-            {
-                return NativeMethods.goud_renderer3d_set_model_positions_batch(_ctx, (System.IntPtr)idp, (System.IntPtr)posp, count);
-            }
-        }
-
-        /// <summary>Adds multiple models to a scene in one call</summary>
-        public unsafe int AddModelsToSceneBatch(uint sceneId, uint[] modelIds)
-        {
-            if (modelIds == null) return -1;
-            uint count = (uint)modelIds.Length;
-            fixed (uint* p = modelIds)
-            {
-                return NativeMethods.goud_renderer3d_add_models_to_scene_batch(_ctx, sceneId, (System.IntPtr)p, count);
-            }
         }
 
         /// <summary>Returns the number of draw calls last frame</summary>

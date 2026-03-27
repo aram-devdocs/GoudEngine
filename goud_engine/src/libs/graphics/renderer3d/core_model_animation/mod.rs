@@ -151,8 +151,11 @@ impl Renderer3D {
         //
         // We collect raw pointers to skeleton/animation/channel-map data to
         // avoid cloning.
-        // SAFETY: the models HashMap is not mutated during this loop -- only
-        // animation_players is mutated via get_mut.
+        // SAFETY: Raw pointers into `self.models` and `self.animation_players` are safe because:
+        // 1. `self.models` is not mutated (no insert/remove) during Phase 1 -- only
+        //    `self.animation_players` entries are mutated via `get_mut`.
+        // 2. `self.models` and `self.animation_players` are separate HashMap fields,
+        //    so mutable access to one does not invalidate references to the other.
         type UpdateItem = (
             u32,                               // player ID
             u32,                               // source model ID (for shared eval grouping)
@@ -234,7 +237,7 @@ impl Renderer3D {
             }
 
             if let Some(player) = self.animation_players.get_mut(&player_id) {
-                // SAFETY: models HashMap is not mutated during this loop.
+                // SAFETY: `self.models` is not mutated (no insert/remove) during Phase 1.
                 let skeleton = unsafe { &*skel_ptr };
                 let animations = unsafe { &*anims_ptr };
                 let channel_maps = unsafe { &*maps_ptr };
