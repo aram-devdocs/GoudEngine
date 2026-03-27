@@ -251,6 +251,9 @@ pub extern "C" fn goud_renderer3d_set_default_material_color(
 ///
 /// Writes four `f32` values to `out_r`, `out_g`, `out_b`, `out_a`.
 /// Returns `0` on success, `-1` on invalid context or null pointer.
+///
+/// # Safety
+/// `out_r`, `out_g`, `out_b`, `out_a` must each point to a valid, writable `f32`.
 #[no_mangle]
 pub unsafe extern "C" fn goud_renderer3d_get_default_material_color(
     context_id: GoudContextId,

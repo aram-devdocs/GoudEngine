@@ -1,10 +1,17 @@
 //! FFI functions for environment features: grid, skybox, fog, and the render call.
 
-mod config_getters;
-mod config_setters;
-mod stats;
+pub mod config_getters;
+pub mod config_setters;
+pub mod stats;
 #[cfg(test)]
 mod tests;
+
+#[allow(unused_imports)]
+pub use config_getters::*;
+#[allow(unused_imports)]
+pub use config_setters::*;
+#[allow(unused_imports)]
+pub use stats::*;
 
 use super::state::{ensure_renderer3d_state, with_renderer};
 use crate::core::debugger;
@@ -261,10 +268,3 @@ pub extern "C" fn goud_renderer3d_render_all(context_id: GoudContextId) -> bool 
     goud_renderer3d_render(context_id)
 }
 
-// Re-export all public FFI functions from submodules.
-// These are `#[no_mangle] extern "C"` so they are globally visible, but the
-// wildcard re-exports ensure they are also reachable via the module path.
-#[allow(unused_imports)]
-pub use config_getters::*;
-pub use config_setters::*;
-pub use stats::*;

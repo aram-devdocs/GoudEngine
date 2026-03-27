@@ -1,6 +1,8 @@
 //! FFI functions for 3D model loading and manipulation.
 
-mod batch;
+pub mod batch;
+#[allow(unused_imports)]
+pub use batch::*;
 
 use super::state::{ensure_renderer3d_state, with_renderer};
 use crate::core::error::{set_last_error, GoudError};
@@ -480,5 +482,3 @@ pub extern "C" fn goud_renderer3d_set_model_scale(
     .unwrap_or(false)
 }
 
-// Re-export batch functions.
-pub use batch::*;

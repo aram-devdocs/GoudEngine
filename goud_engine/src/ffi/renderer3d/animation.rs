@@ -74,6 +74,8 @@ pub unsafe extern "C" fn goud_renderer3d_get_animation_name(
             // Copy the name into the buffer.
             let copy_len = name_bytes.len().min((buf_len as usize) - 1);
             // SAFETY: Caller guarantees out_buf points to buf_len writable bytes.
+            // copy_len <= buf_len - 1 (bounded by min on line above), so both the
+            // copy and the null terminator write at out_buf.add(copy_len) are in bounds.
             std::ptr::copy_nonoverlapping(name_bytes.as_ptr(), out_buf as *mut u8, copy_len);
             *out_buf.add(copy_len) = 0; // Null terminate.
             name_bytes.len() as i32
