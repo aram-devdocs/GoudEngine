@@ -375,15 +375,6 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
     fun getShadowBias(): Float =
         GoudGameNative.getShadowBias(contextId)
 
-    fun instantiateModelBatch(sourceModelId: Int, count: Int): Int =
-        GoudGameNative.instantiateModelBatch(contextId, sourceModelId, count)
-
-    fun setModelPositionsBatch(count: Int): Int =
-        GoudGameNative.setModelPositionsBatch(contextId, count)
-
-    fun addModelsToSceneBatch(sceneId: Int, count: Int): Int =
-        GoudGameNative.addModelsToSceneBatch(contextId, sceneId, count)
-
     fun getDrawCalls(): Int =
         GoudGameNative.getDrawCalls(contextId)
 

@@ -230,6 +230,10 @@ def _should_skip_method(method: dict, ffi_entry: dict, ffi_methods: dict, java_m
     if mn == "destroy":
         return True
 
+    # Skip renderer3d batch APIs with pointer params (need hand-written wrappers)
+    if mn in ("instantiateModelBatch", "setModelPositionsBatch", "addModelsToSceneBatch"):
+        return True
+
     # Skip if uses unsupported types
     if _uses_unsupported(method):
         return True

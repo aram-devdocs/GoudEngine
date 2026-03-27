@@ -448,21 +448,6 @@ public final class GoudGame {
         return goud_renderer3d_get_shadow_bias(_ctx)
     }
 
-    /// Creates multiple instances of a model in one call
-    public func instantiateModelBatch(sourceModelId: UInt32, count: UInt32) -> Int32 {
-        return goud_renderer3d_instantiate_model_batch(_ctx, sourceModelId, count)
-    }
-
-    /// Sets positions for multiple models in one call
-    public func setModelPositionsBatch(count: UInt32) -> Int32 {
-        return goud_renderer3d_set_model_positions_batch(_ctx, count)
-    }
-
-    /// Adds multiple models to a scene in one call
-    public func addModelsToSceneBatch(sceneId: UInt32, count: UInt32) -> Int32 {
-        return goud_renderer3d_add_models_to_scene_batch(_ctx, sceneId, count)
-    }
-
     /// Returns the number of draw calls last frame
     public func getDrawCalls() -> Int32 {
         return goud_renderer3d_get_draw_calls(_ctx)
