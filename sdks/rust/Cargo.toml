@@ -1,6 +1,6 @@
 [package]
 name = "goud-engine"
-version = "0.0.837" # x-release-please-version
+version = "0.0.838" # x-release-please-version
 edition = "2021"
 description = "GoudEngine — build 2D and 3D games in Rust with zero FFI overhead"
 license = "MIT"
@@ -20,4 +20,4 @@ default = ["native"]
 native = ["goud-engine-core/native"]
 
 [dependencies]
-goud-engine-core = { version = "=0.0.837", path = "../../goud_engine", default-features = false } # x-release-please-version
+goud-engine-core = { version = "=0.0.838", path = "../../goud_engine", default-features = false } # x-release-please-version

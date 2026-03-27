@@ -1,6 +1,6 @@
 [package]
 name = "goud-engine-core"
-version = "0.0.837" # x-release-please-version
+version = "0.0.838" # x-release-please-version
 edition = "2021"
 license = "MIT"
 description = "GoudEngine core — internal implementation crate. Use goud-engine for the public API."
@@ -61,7 +61,7 @@ gltf = { version = "1.4", optional = true }
 tobj = { version = "4.0", optional = true, features = ["ahash"] }
 fbxcel = { version = "0.9", optional = true, features = ["tree"] }
 bytemuck = "1.14"
-goud_engine_macros = { version = "=0.0.837", path = "../goud_engine_macros" } # x-release-please-version
+goud_engine_macros = { version = "=0.0.838", path = "../goud_engine_macros" } # x-release-please-version
 wgpu = { version = "28", optional = true }
 winit = { version = "0.30", optional = true, features = ["android-native-activity"] }
 naga = { version = "28", optional = true, features = ["glsl-in", "wgsl-out"] }

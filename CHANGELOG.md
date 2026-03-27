@@ -1,5 +1,57 @@
 # Changelog
 
+## [0.0.838](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.837...v0.0.838) (2026-03-27)
+
+
+### Features
+
+* add --profile mode for automated benchmarking ([3b49ee8](https://github.com/aram-devdocs/GoudEngine/commit/3b49ee8a84e88d1c0ddc6d50cb6d654a7c95fdcf))
+* animation phase-locking for crowd performance ([de93fcb](https://github.com/aram-devdocs/GoudEngine/commit/de93fcbb683c307b6275ec6b99ad82ba912f5ca0))
+* apply material colors to instanced skinned rendering ([9e032c7](https://github.com/aram-devdocs/GoudEngine/commit/9e032c7c6e443fa1fa3f32d39cb9eb941eccdcc9))
+* batch FFI APIs + stress test sandbox enhancements ([c5e4b65](https://github.com/aram-devdocs/GoudEngine/commit/c5e4b652aa0f4d282708a06945c6a512ca02b868))
+* enable instanced skinned crowds for stress scenes ([e34776c](https://github.com/aram-devdocs/GoudEngine/commit/e34776cf616ddfd3b9cb3fa8d227e7bee1514d11))
+* FBX material extraction, texture loading, legacy skinned mesh cleanup ([a436d86](https://github.com/aram-devdocs/GoudEngine/commit/a436d86adadc66d17bf90b114c2d0c2c31e634c2))
+* FBX skeleton/animation extraction, DestroyModel leak fix, modular village sandbox ([4810bfb](https://github.com/aram-devdocs/GoudEngine/commit/4810bfb2385fd63956a7e1c446b700f77f190c4a))
+* harden model rendering and stress sandbox ([ba55ca5](https://github.com/aram-devdocs/GoudEngine/commit/ba55ca5c74d8f612739defb2845fc303d1a6a579))
+* pre-baked animation cache for CPU-free bone evaluation ([4e9404e](https://github.com/aram-devdocs/GoudEngine/commit/4e9404e0255fd06ecf0d781a5d8d67d8539399d7))
+* split FBX geometry by LayerElementMaterial for multi-color buildings ([f35c43d](https://github.com/aram-devdocs/GoudEngine/commit/f35c43d8009b01b7d03882d1bf1293e5cf30a008))
+
+
+### Bug Fixes
+
+* add missing TS web SDK stubs for renderer3d interface compliance ([61b9c9d](https://github.com/aram-devdocs/GoudEngine/commit/61b9c9dc6cf1a932e0da8c64a613524514cfd1f9))
+* add Q/E camera zoom + prevent crash on skinning mode toggle ([b0c89e3](https://github.com/aram-devdocs/GoudEngine/commit/b0c89e321645d85e238a3c614f5824e18ab7c3e0))
+* add TS SDK coverage tests for new renderer3d config/batch/stats APIs ([3797569](https://github.com/aram-devdocs/GoudEngine/commit/3797569117c632e75a12b202c156991f460156df))
+* address all Claude code review findings — B1, W1-W6 ([7172198](https://github.com/aram-devdocs/GoudEngine/commit/71721987c50cbbc66f5dfd721f47ee84c7ed4665))
+* address Claude code review blockers and warnings ([3289784](https://github.com/aram-devdocs/GoudEngine/commit/32897843f92db955491874e968e389244105391c))
+* comprehensive renderer scalability cleanup — safety, SDK parity, tests, docs ([ccdb9aa](https://github.com/aram-devdocs/GoudEngine/commit/ccdb9aa2366a62c5f506697ed5e590f6230e3a42))
+* crash on instance removal + expose animation LOD settings via FFI ([006d276](https://github.com/aram-devdocs/GoudEngine/commit/006d27638f0d974083cb077b29d589edfc9625d0))
+* deduplicate FFI module listing in architecture doc generator ([77750d0](https://github.com/aram-devdocs/GoudEngine/commit/77750d0961c00365fb1dc166540cb25aa660aa4a))
+* delegate storage buffer ops through NativeRenderBackend wrapper ([eca5d70](https://github.com/aram-devdocs/GoudEngine/commit/eca5d708c385fb76f6b677babeaafd7b69d77d12))
+* DestroyModel handles instances + expose full stats FFI ([cee3f63](https://github.com/aram-devdocs/GoudEngine/commit/cee3f63e3203fc3be22caa8dcd457a925329c72d))
+* GPU skinning via storage buffers — bone offset packing + per-group instance buffers ([60665a5](https://github.com/aram-devdocs/GoudEngine/commit/60665a57db10e89e12c747430fb1272c6632d2b1))
+* load embedded GLB textures for model materials ([fda400e](https://github.com/aram-devdocs/GoudEngine/commit/fda400ef865f4a9ccf02441cfca8811493b985ce))
+* move doc validation before codegen in CI preflight ([0ef11a5](https://github.com/aram-devdocs/GoudEngine/commit/0ef11a5d6b2688440b42eb9ea79270f3c0d9229c))
+* multi-material rendering via LessEqual depth for skinned models ([279bee1](https://github.com/aram-devdocs/GoudEngine/commit/279bee13bf10e455dec0bfd592c00e87affeb796))
+* preserve animation stats across render reset + coordinate skinned render passes ([ceef518](https://github.com/aram-devdocs/GoudEngine/commit/ceef5186d529fed6a003db569f1f2463ec4c9216))
+* regenerate ARCHITECTURE.md after merging main ([3fc2c9f](https://github.com/aram-devdocs/GoudEngine/commit/3fc2c9f2253a713ee587aeac2be0d34d7e00d6b8))
+* remove all remaining RendererType references from tests and codegen ([62b04a9](https://github.com/aram-devdocs/GoudEngine/commit/62b04a9467521cb55b99b3f8f260370fae07adfd))
+* remove stale RendererType generated files and Lua test assertion ([1f52aff](https://github.com/aram-devdocs/GoudEngine/commit/1f52aff70c808ba92c9b602037f4e5065618fd12))
+* replace FBX animals with glTF for correct skeleton rendering ([d5388d0](https://github.com/aram-devdocs/GoudEngine/commit/d5388d084b6a1dea40dd6a0bf890f060a9f0bb1e))
+* resolve CI failures — re-export paths, clippy warnings, Safety docs ([fc1aa71](https://github.com/aram-devdocs/GoudEngine/commit/fc1aa7159a59412d5d32fe97b4302d9026808817))
+* resolve npm audit vulnerabilities — upgrade c8 to 11.0.0 ([bd00037](https://github.com/aram-devdocs/GoudEngine/commit/bd00037f9fdde5aee9a62d8b4bab92ea6d3c5dcc))
+* restore dispatch table in AGENTS.md for CI validation ([4e8b76b](https://github.com/aram-devdocs/GoudEngine/commit/4e8b76b094fe5958933c94d53fcdb3bf3d0c2e7b))
+* restore FBX diagnostics and skinned visibility accounting ([a97ca22](https://github.com/aram-devdocs/GoudEngine/commit/a97ca2234d0d1fdf673817d29b009eef13e9d4fb))
+* restore rules files as regular files, fix markdown lint ([852713f](https://github.com/aram-devdocs/GoudEngine/commit/852713f8a7c0dc123dfc98b8e1b7f76121ce0c19))
+* skip batch API stubs in Swift/Kotlin codegen (pointer params unsupported) ([cf1f1ac](https://github.com/aram-devdocs/GoudEngine/commit/cf1f1aca6d64c1481a017dc7afcae128c914b428))
+* split oversized files under 500-line CI limit, remove unused russimp dep ([651a40c](https://github.com/aram-devdocs/GoudEngine/commit/651a40cbe8fcf1fc75f2c012225bf6b4c16cf6ef))
+* update c8 version in codegen template to match npm audit fix ([cc373d5](https://github.com/aram-devdocs/GoudEngine/commit/cc373d54c7eedc5d9b1b2afafbbcf832230651e0))
+
+
+### Performance
+
+* reuse shared skinned bone uploads ([8353f03](https://github.com/aram-devdocs/GoudEngine/commit/8353f031f728acbc0ae6ce3d1bf2610e4eb82b90))
+
 ## [0.0.837](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.836...v0.0.837) (2026-03-25)
 
 

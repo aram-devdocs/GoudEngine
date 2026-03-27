@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "io.github.aram-devdocs"
-version = "0.0.837" // x-release-please-version
+version = "0.0.838" // x-release-please-version
 
 repositories {
     mavenCentral()
