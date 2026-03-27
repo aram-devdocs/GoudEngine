@@ -37,6 +37,19 @@ impl Renderer3D {
         }
     }
 
+    pub fn set_grid_alpha(&mut self, alpha: f32) {
+        self.grid_config.alpha = alpha;
+        if let Some(scene_id) = self.current_scene {
+            if let Some(scene) = self.scenes.get_mut(&scene_id) {
+                scene.grid.alpha = alpha;
+            }
+        }
+    }
+
+    pub fn grid_alpha(&self) -> f32 {
+        self.grid_config.alpha
+    }
+
     pub fn configure_skybox(&mut self, config: SkyboxConfig) {
         self.skybox_config = config.clone();
         if let Some(scene_id) = self.current_scene {

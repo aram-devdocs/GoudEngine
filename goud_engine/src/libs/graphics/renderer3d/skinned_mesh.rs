@@ -7,6 +7,11 @@ use cgmath::Vector3;
 // ============================================================================
 
 /// Maximum bones per skeleton for GPU skinning.
+///
+/// This constant must match the shader's `u_bones[128]` uniform array size.
+/// The runtime config field [`SkinningConfig::max_bones_per_mesh`] defaults to
+/// this value and is used for validation; changing it does NOT resize the
+/// shader array.
 pub const MAX_BONES: usize = 128;
 
 /// Maximum bone influences per vertex.

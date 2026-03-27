@@ -2224,42 +2224,177 @@ int32_t goud_renderer3d_set_static_batching_enabled(struct GoudContextId context
 int32_t goud_renderer3d_set_instancing_enabled(struct GoudContextId context_id, bool enabled);
 
 /**
- * Returns the number of draw calls last frame, or -1 on error.
+ * Returns whether frustum culling is enabled.
+ */
+bool goud_renderer3d_get_frustum_culling_enabled(struct GoudContextId context_id);
+
+/**
+ * Returns the skinning mode (0 = CPU, 1 = GPU), or -1 on error.
+ */
+int32_t goud_renderer3d_get_skinning_mode(struct GoudContextId context_id);
+
+/**
+ * Returns whether material sorting is enabled.
+ */
+bool goud_renderer3d_get_material_sorting_enabled(struct GoudContextId context_id);
+
+/**
+ * Returns whether static batching is enabled.
+ */
+bool goud_renderer3d_get_static_batching_enabled(struct GoudContextId context_id);
+
+/**
+ * Returns whether instanced rendering is enabled.
+ */
+bool goud_renderer3d_get_instancing_enabled(struct GoudContextId context_id);
+
+/**
+ * Returns whether animation LOD is enabled.
+ */
+bool goud_renderer3d_get_animation_lod_enabled(struct GoudContextId context_id);
+
+/**
+ * Returns whether shared animation evaluation is enabled.
+ */
+bool goud_renderer3d_get_shared_animation_eval(struct GoudContextId context_id);
+
+/**
+ * Sets the baked animation sample rate in frames per second.
+ */
+int32_t goud_renderer3d_set_baked_animation_sample_rate(struct GoudContextId context_id, float rate);
+
+/**
+ * Returns the baked animation sample rate, or -1.0 on error.
+ */
+float goud_renderer3d_get_baked_animation_sample_rate(struct GoudContextId context_id);
+
+/**
+ * Sets the minimum instance count required for instanced rendering.
+ */
+int32_t goud_renderer3d_set_min_instances_for_batching(struct GoudContextId context_id, uint32_t count);
+
+/**
+ * Returns the minimum instance count for batching, or -1 on error.
+ */
+int32_t goud_renderer3d_get_min_instances_for_batching(struct GoudContextId context_id);
+
+/**
+ * Sets the fallback material color used when a mesh has no assigned material.
+ */
+int32_t goud_renderer3d_set_default_material_color(struct GoudContextId context_id, float r, float g, float b, float a);
+
+/**
+ * Returns the fallback material color as four RGBA floats packed into an array.
+ */
+int32_t goud_renderer3d_get_default_material_color(struct GoudContextId context_id, float *out_r, float *out_g, float *out_b, float *out_a);
+
+/**
+ * Sets the grid transparency alpha (0.0 = invisible, 1.0 = opaque).
+ */
+int32_t goud_renderer3d_set_grid_alpha(struct GoudContextId context_id, float alpha);
+
+/**
+ * Returns the current grid transparency alpha.
+ */
+float goud_renderer3d_get_grid_alpha(struct GoudContextId context_id);
+
+/**
+ * Sets the vertical field of view for frustum culling, in degrees.
+ */
+int32_t goud_renderer3d_set_frustum_culling_fov(struct GoudContextId context_id, float fov_degrees);
+
+/**
+ * Returns the frustum culling FOV in degrees, or -1.0 on error.
+ */
+float goud_renderer3d_get_frustum_culling_fov(struct GoudContextId context_id);
+
+/**
+ * Sets the near clipping plane for frustum culling.
+ */
+int32_t goud_renderer3d_set_frustum_culling_near_plane(struct GoudContextId context_id, float near);
+
+/**
+ * Returns the frustum culling near plane distance, or -1.0 on error.
+ */
+float goud_renderer3d_get_frustum_culling_near_plane(struct GoudContextId context_id);
+
+/**
+ * Sets the far clipping plane for frustum culling.
+ */
+int32_t goud_renderer3d_set_frustum_culling_far_plane(struct GoudContextId context_id, float far);
+
+/**
+ * Returns the frustum culling far plane distance, or -1.0 on error.
+ */
+float goud_renderer3d_get_frustum_culling_far_plane(struct GoudContextId context_id);
+
+/**
+ * Enables or disables shadow mapping.
+ */
+int32_t goud_renderer3d_set_shadows_enabled(struct GoudContextId context_id, bool enabled);
+
+/**
+ * Returns whether shadows are enabled.
+ */
+bool goud_renderer3d_get_shadows_enabled(struct GoudContextId context_id);
+
+/**
+ * Sets the shadow map resolution.
+ */
+int32_t goud_renderer3d_set_shadow_map_size(struct GoudContextId context_id, uint32_t size);
+
+/**
+ * Returns the shadow map resolution, or -1 on error.
+ */
+int32_t goud_renderer3d_get_shadow_map_size(struct GoudContextId context_id);
+
+/**
+ * Sets the shadow depth bias.
+ */
+int32_t goud_renderer3d_set_shadow_bias(struct GoudContextId context_id, float bias);
+
+/**
+ * Returns the shadow depth bias, or -1.0 on error.
+ */
+float goud_renderer3d_get_shadow_bias(struct GoudContextId context_id);
+
+/**
+ * Returns the number of draw calls issued during the last `render()` call.
  */
 int32_t goud_renderer3d_get_draw_calls(struct GoudContextId context_id);
 
 /**
- * Returns the number of visible objects last frame, or -1 on error.
+ * Returns the number of objects that passed frustum culling during the last
  */
 int32_t goud_renderer3d_get_visible_object_count(struct GoudContextId context_id);
 
 /**
- * Returns the number of culled objects last frame, or -1 on error.
+ * Returns the number of objects rejected by frustum culling during the last
  */
 int32_t goud_renderer3d_get_culled_object_count(struct GoudContextId context_id);
 
 /**
- * Returns the number of instanced draw calls last frame, or -1 on error.
+ * Returns the number of instanced draw calls issued during the last
  */
 int32_t goud_renderer3d_get_instanced_draw_calls(struct GoudContextId context_id);
 
 /**
- * Returns the number of active instances submitted last frame, or -1 on error.
+ * Returns the total number of instances submitted via instanced draw calls
  */
 int32_t goud_renderer3d_get_active_instance_count(struct GoudContextId context_id);
 
 /**
- * Returns the number of animation evaluations last frame, or -1 on error.
+ * Returns the number of animation players that were fully evaluated (bone
  */
 int32_t goud_renderer3d_get_animation_evaluation_count(struct GoudContextId context_id);
 
 /**
- * Returns the number of animation evaluations saved (cache hits + LOD skips)
+ * Returns the number of animation evaluations that were skipped during the
  */
 int32_t goud_renderer3d_get_animation_evaluation_saved_count(struct GoudContextId context_id);
 
 /**
- * Returns the number of bone matrix uploads last frame, or -1 on error.
+ * Returns the number of bone matrix buffer uploads performed during the last
  */
 int32_t goud_renderer3d_get_bone_matrix_upload_count(struct GoudContextId context_id);
 

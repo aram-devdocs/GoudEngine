@@ -324,12 +324,92 @@ export interface IGoudGame {
   setAnimationLodEnabled(enabled: boolean): number;
   /** Enables or disables shared animation evaluation */
   setSharedAnimationEval(enabled: boolean): number;
+  /** Sets the distance at which animation updates are half-rated */
+  setAnimationLodDistance(distance: number): number;
+  /** Sets the distance at which animation updates are frozen */
+  setAnimationLodSkipDistance(distance: number): number;
+  /** Returns the animation LOD half-rate distance */
+  getAnimationLodDistance(): number;
+  /** Returns the animation LOD freeze distance */
+  getAnimationLodSkipDistance(): number;
+  /** Enables or disables static batching */
+  setStaticBatchingEnabled(enabled: boolean): number;
+  /** Enables or disables instanced rendering */
+  setInstancingEnabled(enabled: boolean): number;
+  /** Returns whether frustum culling is enabled */
+  getFrustumCullingEnabled(): boolean;
+  /** Returns the skinning mode (0=CPU, 1=GPU) */
+  getSkinningMode(): number;
+  /** Returns whether material sorting is enabled */
+  getMaterialSortingEnabled(): boolean;
+  /** Returns whether static batching is enabled */
+  getStaticBatchingEnabled(): boolean;
+  /** Returns whether instanced rendering is enabled */
+  getInstancingEnabled(): boolean;
+  /** Returns whether animation LOD is enabled */
+  getAnimationLodEnabled(): boolean;
+  /** Returns whether shared animation evaluation is enabled */
+  getSharedAnimationEval(): boolean;
+  /** Sets the baked animation sample rate in frames per second */
+  setBakedAnimationSampleRate(rate: number): number;
+  /** Returns the baked animation sample rate */
+  getBakedAnimationSampleRate(): number;
+  /** Sets the minimum instance count for instanced rendering */
+  setMinInstancesForBatching(count: number): number;
+  /** Returns the minimum instance count for batching */
+  getMinInstancesForBatching(): number;
+  /** Sets the fallback material color for meshes without materials */
+  setDefaultMaterialColor(r: number, g: number, b: number, a: number): number;
+  /** Sets the grid transparency alpha (0.0 invisible, 1.0 opaque) */
+  setGridAlpha(alpha: number): number;
+  /** Returns the current grid transparency alpha */
+  getGridAlpha(): number;
+  /** Sets the frustum culling FOV in degrees */
+  setFrustumCullingFov(fovDegrees: number): number;
+  /** Returns the frustum culling FOV in degrees */
+  getFrustumCullingFov(): number;
+  /** Sets the near clipping plane for frustum culling */
+  setFrustumCullingNearPlane(near: number): number;
+  /** Returns the frustum culling near plane distance */
+  getFrustumCullingNearPlane(): number;
+  /** Sets the far clipping plane for frustum culling */
+  setFrustumCullingFarPlane(far: number): number;
+  /** Returns the frustum culling far plane distance */
+  getFrustumCullingFarPlane(): number;
+  /** Enables or disables shadow mapping */
+  setShadowsEnabled(enabled: boolean): number;
+  /** Returns whether shadows are enabled */
+  getShadowsEnabled(): boolean;
+  /** Sets the shadow map resolution */
+  setShadowMapSize(size: number): number;
+  /** Returns the shadow map resolution */
+  getShadowMapSize(): number;
+  /** Sets the shadow depth bias */
+  setShadowBias(bias: number): number;
+  /** Returns the shadow depth bias */
+  getShadowBias(): number;
+  /** Creates multiple instances of a model in one call */
+  instantiateModelBatch(sourceModelId: number, count: number): number;
+  /** Sets positions for multiple models in one call */
+  setModelPositionsBatch(count: number): number;
+  /** Adds multiple models to a scene in one call */
+  addModelsToSceneBatch(sceneId: number, count: number): number;
   /** Returns the number of draw calls last frame */
   getDrawCalls(): number;
   /** Returns the number of visible objects last frame */
   getVisibleObjectCount(): number;
   /** Returns the number of culled objects last frame */
   getCulledObjectCount(): number;
+  /** Returns the number of instanced draw calls last frame */
+  getInstancedDrawCalls(): number;
+  /** Returns the number of active instances submitted last frame */
+  getActiveInstanceCount(): number;
+  /** Returns the number of uploaded bone matrices last frame */
+  getBoneMatrixUploadCount(): number;
+  /** Returns the number of animation evaluations last frame */
+  getAnimationEvaluationCount(): number;
+  /** Returns the number of animation evaluations avoided last frame */
+  getAnimationEvaluationSavedCount(): number;
   /** Renders all 3D objects */
   render3D(): boolean;
   /** Creates a 3D material */
@@ -370,6 +450,8 @@ export interface IGoudGame {
   destroyModel(modelId: number): boolean;
   /** Creates an independent instance of a source model */
   instantiateModel(sourceModelId: number): number;
+  /** Marks a model as static or dynamic for renderer-side batching */
+  setModelStatic(modelId: number, isStatic: boolean): boolean;
   /** Overrides the material on a specific sub-mesh of a model (-1 for all sub-meshes) */
   setModelMaterial(modelId: number, meshIndex: number, materialId: number): boolean;
   /** Returns the number of sub-meshes in a model */
@@ -392,6 +474,10 @@ export interface IGoudGame {
   stopAnimation(instanceId: number): boolean;
   /** Sets the playback speed for a model instance's animation */
   setAnimationSpeed(instanceId: number, speed: number): boolean;
+  /** Enables or disables animation baking for a model */
+  setAnimationBakingEnabled(modelId: number, enabled: boolean): boolean;
+  /** Enables or disables animation phase lock for a model */
+  setAnimationPhaseLock(modelId: number, enabled: boolean): boolean;
   /** Sets up blending between two animation clips */
   blendAnimations(instanceId: number, animA: number, animB: number, blendFactor: number): boolean;
   /** Starts a timed transition to a target animation clip */

@@ -23,6 +23,9 @@ const FBX_TICKS_PER_SECOND: f64 = 46_186_158_000.0;
 /// Maximum bone influences per vertex.
 const MAX_INFLUENCES: usize = 4;
 
+/// Default roughness for FBX materials that don't specify one.
+const DEFAULT_FBX_ROUGHNESS: f32 = 0.5;
+
 /// FBX model provider backed by the `fbxcel` crate.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct FbxProvider;
@@ -82,6 +85,8 @@ struct FbxConnections {
     properties: HashMap<(i64, i64), String>,
 }
 
+/// Parses the `Connections` section of the FBX tree into a bidirectional
+/// graph of source/destination object IDs, including OP property names.
 fn parse_connections(root: &NodeHandle) -> FbxConnections {
     let mut conns = FbxConnections::default();
     for section in root.children_by_name("Connections") {
@@ -186,7 +191,7 @@ fn extract_materials(root: &NodeHandle) -> HashMap<i64, MeshMaterial> {
                     emissive_texture_path: None,
                     emissive_factor: [0.0, 0.0, 0.0],
                     metallic_factor: 0.0,
-                    roughness_factor: 0.5,
+                    roughness_factor: DEFAULT_FBX_ROUGHNESS,
                     alpha_cutoff: None,
                     double_sided: false,
                 },
@@ -332,6 +337,9 @@ fn extract_geometry(
                     if poly_len >= 3 {
                         let first = polygon_start;
                         for tri in 0..(poly_len - 2) {
+                            if first + tri + 2 >= polygon_indices.len() {
+                                break;
+                            }
                             triangles.push(TriData {
                                 vis: [first, first + tri + 1, first + tri + 2],
                                 cps: [
@@ -404,9 +412,13 @@ fn extract_geometry(
                     has_mesh_bounds = true;
                 }
 
-                let matched_material = connected_materials
-                    .get(mat_group as usize)
-                    .and_then(|m| m.clone());
+                let matched_material = if mat_group < 0 {
+                    None
+                } else {
+                    connected_materials
+                        .get(mat_group as usize)
+                        .and_then(|m| m.clone())
+                };
 
                 sub_meshes.push(SubMesh {
                     name: format!("{}_mat{}", geom_name, mat_group),
@@ -451,6 +463,10 @@ struct ClusterInfo {
     inverse_bind_matrix: [f32; 16],
 }
 
+/// Extracts the skeleton hierarchy, inverse bind matrices, and per-vertex
+/// bone weights from FBX Deformer/Cluster nodes connected to the geometry.
+///
+/// Returns `None` when the geometry has no skin deformer or no valid clusters.
 fn extract_skeleton(
     root: &NodeHandle,
     conns: &FbxConnections,
@@ -554,7 +570,11 @@ fn extract_skeleton(
     let bone_count = bone_ids_ordered.len();
     if bone_count > 128 {
         log::warn!("FBX skeleton has {bone_count} bones; clamping to 128");
+        bone_ids_ordered.truncate(128);
+        // Rebuild bone_id_to_index to only include the first 128 bones.
+        bone_id_to_index.retain(|_, idx| *idx < 128);
     }
+    let bone_count = bone_ids_ordered.len(); // re-bind after truncation
 
     // Build parent hierarchy from Model->Model connections.
     let mut bones: Vec<BoneData> = Vec::with_capacity(bone_count);
@@ -660,6 +680,12 @@ fn extract_skeleton(
 // Animation extraction
 // ===========================================================================
 
+/// Extracts keyframe animations from FBX AnimationStack/AnimationLayer nodes.
+///
+/// Walks the AnimationStack -> AnimationLayer -> AnimationCurveNode ->
+/// AnimationCurve hierarchy, mapping each curve to a bone index via the
+/// connection graph. Euler rotation curves are converted to quaternion
+/// channels. Returns an empty `Vec` when no skeleton is present.
 fn extract_animations(
     root: &NodeHandle,
     conns: &FbxConnections,
@@ -1389,5 +1415,66 @@ mod tests {
         assert!(is_connected(200, 100, &conns));
         assert!(is_connected(100, 200, &conns));
         assert!(!is_connected(300, 100, &conns));
+    }
+
+    #[test]
+    fn test_fbx_provider_extensions() {
+        let provider = FbxProvider;
+        let exts = provider.extensions();
+        assert!(
+            exts.contains(&"fbx"),
+            "FbxProvider should support the 'fbx' extension"
+        );
+        assert!(
+            !exts.contains(&"obj"),
+            "FbxProvider should not support 'obj'"
+        );
+    }
+
+    #[test]
+    fn test_fbx_provider_name() {
+        let provider = FbxProvider;
+        assert_eq!(provider.name(), "FBX");
+    }
+
+    #[test]
+    fn test_fbx_provider_empty_input() {
+        let provider = FbxProvider;
+        let mut ctx = LoadContext::new(crate::assets::AssetPath::new("test.fbx").into_owned());
+        let result = provider.load(&[], &mut ctx);
+        assert!(
+            result.is_err(),
+            "Loading empty bytes should return an error"
+        );
+    }
+
+    #[test]
+    fn test_fbx_provider_invalid_magic() {
+        let provider = FbxProvider;
+        let mut ctx = LoadContext::new(crate::assets::AssetPath::new("test.fbx").into_owned());
+        let result = provider.load(b"not a valid fbx file", &mut ctx);
+        assert!(
+            result.is_err(),
+            "Loading invalid FBX magic bytes should return an error"
+        );
+    }
+
+    #[test]
+    fn test_default_fbx_roughness_constant() {
+        assert!(
+            (DEFAULT_FBX_ROUGHNESS - 0.5).abs() < f32::EPSILON,
+            "DEFAULT_FBX_ROUGHNESS should be 0.5"
+        );
+    }
+
+    #[test]
+    fn test_extract_vec2_out_of_bounds() {
+        let data = [1.0];
+        assert_eq!(extract_vec2(Some(&data), 0), None);
+    }
+
+    #[test]
+    fn test_extract_vec2_none() {
+        assert_eq!(extract_vec2(None, 0), None);
     }
 }

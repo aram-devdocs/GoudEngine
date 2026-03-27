@@ -69,12 +69,17 @@ impl Renderer3D {
         self.backend.clear_depth();
 
         let aspect = self.window_width as f32 / self.window_height.max(1) as f32;
-        let projection: Matrix4<f32> = perspective(Deg(45.0), aspect, 0.1, 1000.0);
+        let projection: Matrix4<f32> = perspective(
+            Deg(self.config.frustum_culling.fov_degrees),
+            aspect,
+            self.config.frustum_culling.near_plane,
+            self.config.frustum_culling.far_plane,
+        );
         let view = self.camera.view_matrix();
         let view_arr = mat4_to_array(&view);
         let proj_arr = mat4_to_array(&projection);
-        let shadow_map = if self.config.shadows.enabled && self.shadows_enabled {
-            build_directional_shadow_map(&self.objects, &self.lights, self.shadow_map_size)
+        let shadow_map = if self.config.shadows.enabled {
+            build_directional_shadow_map(&self.objects, &self.lights, self.config.shadows.map_size)
         } else {
             None
         };
@@ -99,7 +104,7 @@ impl Renderer3D {
                 self.camera.position.z,
             );
             self.backend
-                .set_uniform_float(self.grid_uniforms.alpha, 0.4);
+                .set_uniform_float(self.grid_uniforms.alpha, eff_grid.alpha);
             self.backend
                 .set_uniform_int(self.grid_uniforms.fog_enabled, i32::from(eff_fog.enabled));
             self.backend.set_uniform_vec3(
@@ -259,7 +264,7 @@ impl Renderer3D {
             } else if texture_id > 0 {
                 [1.0, 1.0, 1.0, 1.0]
             } else {
-                [0.8, 0.8, 0.8, 1.0]
+                self.config.default_material_color
             };
 
             let model = Self::create_model_matrix(position, rotation, scale);
@@ -314,6 +319,12 @@ impl Renderer3D {
                 &filtered_lights,
             );
 
+            // NOTE: bone_matrices.clone() is required here because the rendering
+            // loop below mutates `self` (backend calls, storage buffer uploads),
+            // which conflicts with holding an immutable borrow on
+            // `self.skinned_meshes`. The clone cost (~8KB per skinned mesh) is
+            // acceptable for the legacy SkinnedMesh3D path; the model-based
+            // instanced skinned path avoids this.
             let skinned_snaps: Vec<(
                 crate::libs::graphics::backend::BufferHandle,
                 i32,

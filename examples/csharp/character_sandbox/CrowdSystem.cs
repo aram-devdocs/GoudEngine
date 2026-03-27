@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
-using System.Runtime.InteropServices;
 using GoudEngine;
 
 struct CrowdAgent
@@ -21,14 +19,7 @@ struct CrowdAgent
 
 class CrowdSystem
 {
-    // Local P/Invoke for phase-lock (not yet in generated NativeMethods).
-    [DllImport("goud_engine", CallingConvention = CallingConvention.Cdecl)]
-    [return: MarshalAs(UnmanagedType.U1)]
-    static extern bool goud_renderer3d_set_animation_phase_lock(
-        GoudContextId context_id, uint model_id, [MarshalAs(UnmanagedType.U1)] bool enabled);
-
     readonly GoudGame _game;
-    readonly GoudContextId _contextId;
     readonly List<CrowdAgent> _agents = new();
     readonly List<LoadedRig> _humanoidRigs = new();
     readonly List<LoadedRig> _animalRigs = new();
@@ -47,7 +38,6 @@ class CrowdSystem
         bool variedAnims = false, bool phaseLock = false)
     {
         _game = game;
-        _contextId = GetContextId(game);
         _rng = new Random(seed);
         _sceneId = sceneId;
         _variedAnims = variedAnims;
@@ -76,15 +66,6 @@ class CrowdSystem
             (_variedAnims ? " [varied-anims]" : "") +
             (_phaseLock ? " [phase-lock]" : "")
         );
-    }
-
-    /// Extract GoudContextId from GoudGame via reflection (field is private).
-    static GoudContextId GetContextId(GoudGame game)
-    {
-        var field = typeof(GoudGame).GetField("_ctx", BindingFlags.NonPublic | BindingFlags.Instance);
-        if (field == null)
-            throw new InvalidOperationException("Cannot find _ctx field on GoudGame");
-        return (GoudContextId)field.GetValue(game)!;
     }
 
     public void Update(float dt)
@@ -189,7 +170,7 @@ class CrowdSystem
     public void SetPhaseLockAll(bool enabled)
     {
         foreach (var agent in _agents)
-            goud_renderer3d_set_animation_phase_lock(_contextId, agent.ModelId, enabled);
+            _game.SetAnimationPhaseLock(agent.ModelId, enabled);
     }
 
     void SpawnAgent(LoadedRig rig, int index, bool isAnimal)
@@ -237,22 +218,11 @@ class CrowdSystem
                 _game.PlayAnimation(modelId, startAnim, true);
                 _game.SetAnimationSpeed(modelId, agent.SpeedMultiplier);
 
-                // Varied-anims: offset each NPC's animation time so they
-                // don't all start in lockstep. We advance the global clock by
-                // a tiny delta at high speed so this instance jumps ahead by
-                // a random amount. Note: this also nudges already-spawned
-                // agents slightly, which is acceptable for stress testing.
-                if (_variedAnims)
-                {
-                    float randomOffset = (float)(_rng.NextDouble() * 2.0);
-                    _game.SetAnimationSpeed(modelId, 1000f);
-                    _game.UpdateAnimations(randomOffset / 1000f);
-                    _game.SetAnimationSpeed(modelId, agent.SpeedMultiplier);
-                }
-
+                // Phase-lock uses a global shared clock so all instances
+                // of the same model and clip produce identical bone matrices.
                 if (_phaseLock)
                 {
-                    goud_renderer3d_set_animation_phase_lock(_contextId, modelId, true);
+                    _game.SetAnimationPhaseLock(modelId, true);
                 }
             }
         }

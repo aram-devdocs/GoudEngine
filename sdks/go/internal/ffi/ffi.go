@@ -1917,6 +1917,14 @@ func GoudRenderer3dAddModelToScene(context_id C.GoudContextId, scene_id uint32, 
 	return bool(C.goud_renderer3d_add_model_to_scene(context_id, C.uint32_t(scene_id), C.uint32_t(model_id)))
 }
 
+// GoudRenderer3dAddModelsToSceneBatch wraps goud_renderer3d_add_models_to_scene_batch.
+func GoudRenderer3dAddModelsToSceneBatch(context_id C.GoudContextId, scene_id uint32, model_ids *C.uint32_t, count uint32) int32 {
+	if model_ids == nil {
+		return -1
+	}
+	return int32(C.goud_renderer3d_add_models_to_scene_batch(context_id, C.uint32_t(scene_id), model_ids, C.uint32_t(count)))
+}
+
 // GoudRenderer3dAddObjectToScene wraps goud_renderer3d_add_object_to_scene.
 func GoudRenderer3dAddObjectToScene(context_id C.GoudContextId, scene_id uint32, object_id uint32) bool {
 	return bool(C.goud_renderer3d_add_object_to_scene(context_id, C.uint32_t(scene_id), C.uint32_t(object_id)))
@@ -2003,9 +2011,39 @@ func GoudRenderer3dDestroyScene(context_id C.GoudContextId, scene_id uint32) boo
 	return bool(C.goud_renderer3d_destroy_scene(context_id, C.uint32_t(scene_id)))
 }
 
+// GoudRenderer3dGetActiveInstanceCount wraps goud_renderer3d_get_active_instance_count.
+func GoudRenderer3dGetActiveInstanceCount(context_id C.GoudContextId) int32 {
+	return int32(C.goud_renderer3d_get_active_instance_count(context_id))
+}
+
 // GoudRenderer3dGetAnimationCount wraps goud_renderer3d_get_animation_count.
 func GoudRenderer3dGetAnimationCount(context_id C.GoudContextId, model_id uint32) int32 {
 	return int32(C.goud_renderer3d_get_animation_count(context_id, C.uint32_t(model_id)))
+}
+
+// GoudRenderer3dGetAnimationEvaluationCount wraps goud_renderer3d_get_animation_evaluation_count.
+func GoudRenderer3dGetAnimationEvaluationCount(context_id C.GoudContextId) int32 {
+	return int32(C.goud_renderer3d_get_animation_evaluation_count(context_id))
+}
+
+// GoudRenderer3dGetAnimationEvaluationSavedCount wraps goud_renderer3d_get_animation_evaluation_saved_count.
+func GoudRenderer3dGetAnimationEvaluationSavedCount(context_id C.GoudContextId) int32 {
+	return int32(C.goud_renderer3d_get_animation_evaluation_saved_count(context_id))
+}
+
+// GoudRenderer3dGetAnimationLodDistance wraps goud_renderer3d_get_animation_lod_distance.
+func GoudRenderer3dGetAnimationLodDistance(context_id C.GoudContextId) float32 {
+	return float32(C.goud_renderer3d_get_animation_lod_distance(context_id))
+}
+
+// GoudRenderer3dGetAnimationLodEnabled wraps goud_renderer3d_get_animation_lod_enabled.
+func GoudRenderer3dGetAnimationLodEnabled(context_id C.GoudContextId) bool {
+	return bool(C.goud_renderer3d_get_animation_lod_enabled(context_id))
+}
+
+// GoudRenderer3dGetAnimationLodSkipDistance wraps goud_renderer3d_get_animation_lod_skip_distance.
+func GoudRenderer3dGetAnimationLodSkipDistance(context_id C.GoudContextId) float32 {
+	return float32(C.goud_renderer3d_get_animation_lod_skip_distance(context_id))
 }
 
 // GoudRenderer3dGetAnimationName wraps goud_renderer3d_get_animation_name.
@@ -2021,6 +2059,16 @@ func GoudRenderer3dGetAnimationProgress(context_id C.GoudContextId, instance_id 
 	return float32(C.goud_renderer3d_get_animation_progress(context_id, C.uint32_t(instance_id)))
 }
 
+// GoudRenderer3dGetBakedAnimationSampleRate wraps goud_renderer3d_get_baked_animation_sample_rate.
+func GoudRenderer3dGetBakedAnimationSampleRate(context_id C.GoudContextId) float32 {
+	return float32(C.goud_renderer3d_get_baked_animation_sample_rate(context_id))
+}
+
+// GoudRenderer3dGetBoneMatrixUploadCount wraps goud_renderer3d_get_bone_matrix_upload_count.
+func GoudRenderer3dGetBoneMatrixUploadCount(context_id C.GoudContextId) int32 {
+	return int32(C.goud_renderer3d_get_bone_matrix_upload_count(context_id))
+}
+
 // GoudRenderer3dGetCulledObjectCount wraps goud_renderer3d_get_culled_object_count.
 func GoudRenderer3dGetCulledObjectCount(context_id C.GoudContextId) int32 {
 	return int32(C.goud_renderer3d_get_culled_object_count(context_id))
@@ -2031,9 +2079,71 @@ func GoudRenderer3dGetCurrentScene(context_id C.GoudContextId) uint32 {
 	return uint32(C.goud_renderer3d_get_current_scene(context_id))
 }
 
+// GoudRenderer3dGetDefaultMaterialColor wraps goud_renderer3d_get_default_material_color.
+func GoudRenderer3dGetDefaultMaterialColor(context_id C.GoudContextId, out_r *C.float, out_g *C.float, out_b *C.float, out_a *C.float) int32 {
+	if out_r == nil {
+		return -1
+	}
+	if out_g == nil {
+		return -1
+	}
+	if out_b == nil {
+		return -1
+	}
+	if out_a == nil {
+		return -1
+	}
+	return int32(C.goud_renderer3d_get_default_material_color(context_id, out_r, out_g, out_b, out_a))
+}
+
 // GoudRenderer3dGetDrawCalls wraps goud_renderer3d_get_draw_calls.
 func GoudRenderer3dGetDrawCalls(context_id C.GoudContextId) int32 {
 	return int32(C.goud_renderer3d_get_draw_calls(context_id))
+}
+
+// GoudRenderer3dGetFrustumCullingEnabled wraps goud_renderer3d_get_frustum_culling_enabled.
+func GoudRenderer3dGetFrustumCullingEnabled(context_id C.GoudContextId) bool {
+	return bool(C.goud_renderer3d_get_frustum_culling_enabled(context_id))
+}
+
+// GoudRenderer3dGetFrustumCullingFarPlane wraps goud_renderer3d_get_frustum_culling_far_plane.
+func GoudRenderer3dGetFrustumCullingFarPlane(context_id C.GoudContextId) float32 {
+	return float32(C.goud_renderer3d_get_frustum_culling_far_plane(context_id))
+}
+
+// GoudRenderer3dGetFrustumCullingFov wraps goud_renderer3d_get_frustum_culling_fov.
+func GoudRenderer3dGetFrustumCullingFov(context_id C.GoudContextId) float32 {
+	return float32(C.goud_renderer3d_get_frustum_culling_fov(context_id))
+}
+
+// GoudRenderer3dGetFrustumCullingNearPlane wraps goud_renderer3d_get_frustum_culling_near_plane.
+func GoudRenderer3dGetFrustumCullingNearPlane(context_id C.GoudContextId) float32 {
+	return float32(C.goud_renderer3d_get_frustum_culling_near_plane(context_id))
+}
+
+// GoudRenderer3dGetGridAlpha wraps goud_renderer3d_get_grid_alpha.
+func GoudRenderer3dGetGridAlpha(context_id C.GoudContextId) float32 {
+	return float32(C.goud_renderer3d_get_grid_alpha(context_id))
+}
+
+// GoudRenderer3dGetInstancedDrawCalls wraps goud_renderer3d_get_instanced_draw_calls.
+func GoudRenderer3dGetInstancedDrawCalls(context_id C.GoudContextId) int32 {
+	return int32(C.goud_renderer3d_get_instanced_draw_calls(context_id))
+}
+
+// GoudRenderer3dGetInstancingEnabled wraps goud_renderer3d_get_instancing_enabled.
+func GoudRenderer3dGetInstancingEnabled(context_id C.GoudContextId) bool {
+	return bool(C.goud_renderer3d_get_instancing_enabled(context_id))
+}
+
+// GoudRenderer3dGetMaterialSortingEnabled wraps goud_renderer3d_get_material_sorting_enabled.
+func GoudRenderer3dGetMaterialSortingEnabled(context_id C.GoudContextId) bool {
+	return bool(C.goud_renderer3d_get_material_sorting_enabled(context_id))
+}
+
+// GoudRenderer3dGetMinInstancesForBatching wraps goud_renderer3d_get_min_instances_for_batching.
+func GoudRenderer3dGetMinInstancesForBatching(context_id C.GoudContextId) int32 {
+	return int32(C.goud_renderer3d_get_min_instances_for_batching(context_id))
 }
 
 // GoudRenderer3dGetModelBoundingBox wraps goud_renderer3d_get_model_bounding_box.
@@ -2069,6 +2179,36 @@ func GoudRenderer3dGetObjectMaterial(context_id C.GoudContextId, object_id uint3
 	return uint32(C.goud_renderer3d_get_object_material(context_id, C.uint32_t(object_id)))
 }
 
+// GoudRenderer3dGetShadowBias wraps goud_renderer3d_get_shadow_bias.
+func GoudRenderer3dGetShadowBias(context_id C.GoudContextId) float32 {
+	return float32(C.goud_renderer3d_get_shadow_bias(context_id))
+}
+
+// GoudRenderer3dGetShadowMapSize wraps goud_renderer3d_get_shadow_map_size.
+func GoudRenderer3dGetShadowMapSize(context_id C.GoudContextId) int32 {
+	return int32(C.goud_renderer3d_get_shadow_map_size(context_id))
+}
+
+// GoudRenderer3dGetShadowsEnabled wraps goud_renderer3d_get_shadows_enabled.
+func GoudRenderer3dGetShadowsEnabled(context_id C.GoudContextId) bool {
+	return bool(C.goud_renderer3d_get_shadows_enabled(context_id))
+}
+
+// GoudRenderer3dGetSharedAnimationEval wraps goud_renderer3d_get_shared_animation_eval.
+func GoudRenderer3dGetSharedAnimationEval(context_id C.GoudContextId) bool {
+	return bool(C.goud_renderer3d_get_shared_animation_eval(context_id))
+}
+
+// GoudRenderer3dGetSkinningMode wraps goud_renderer3d_get_skinning_mode.
+func GoudRenderer3dGetSkinningMode(context_id C.GoudContextId) int32 {
+	return int32(C.goud_renderer3d_get_skinning_mode(context_id))
+}
+
+// GoudRenderer3dGetStaticBatchingEnabled wraps goud_renderer3d_get_static_batching_enabled.
+func GoudRenderer3dGetStaticBatchingEnabled(context_id C.GoudContextId) bool {
+	return bool(C.goud_renderer3d_get_static_batching_enabled(context_id))
+}
+
 // GoudRenderer3dGetVisibleObjectCount wraps goud_renderer3d_get_visible_object_count.
 func GoudRenderer3dGetVisibleObjectCount(context_id C.GoudContextId) int32 {
 	return int32(C.goud_renderer3d_get_visible_object_count(context_id))
@@ -2077,6 +2217,14 @@ func GoudRenderer3dGetVisibleObjectCount(context_id C.GoudContextId) int32 {
 // GoudRenderer3dInstantiateModel wraps goud_renderer3d_instantiate_model.
 func GoudRenderer3dInstantiateModel(context_id C.GoudContextId, source_model_id uint32) uint32 {
 	return uint32(C.goud_renderer3d_instantiate_model(context_id, C.uint32_t(source_model_id)))
+}
+
+// GoudRenderer3dInstantiateModelBatch wraps goud_renderer3d_instantiate_model_batch.
+func GoudRenderer3dInstantiateModelBatch(context_id C.GoudContextId, source_model_id uint32, count uint32, out_ids *C.uint32_t) int32 {
+	if out_ids == nil {
+		return -1
+	}
+	return int32(C.goud_renderer3d_instantiate_model_batch(context_id, C.uint32_t(source_model_id), C.uint32_t(count), out_ids))
 }
 
 // GoudRenderer3dIsAnimationPlaying wraps goud_renderer3d_is_animation_playing.
@@ -2147,14 +2295,39 @@ func GoudRenderer3dRenderAll(context_id C.GoudContextId) bool {
 	return bool(C.goud_renderer3d_render_all(context_id))
 }
 
+// GoudRenderer3dSetAnimationBakingEnabled wraps goud_renderer3d_set_animation_baking_enabled.
+func GoudRenderer3dSetAnimationBakingEnabled(context_id C.GoudContextId, model_id uint32, enabled bool) bool {
+	return bool(C.goud_renderer3d_set_animation_baking_enabled(context_id, C.uint32_t(model_id), C._Bool(enabled)))
+}
+
+// GoudRenderer3dSetAnimationLodDistance wraps goud_renderer3d_set_animation_lod_distance.
+func GoudRenderer3dSetAnimationLodDistance(context_id C.GoudContextId, distance float32) int32 {
+	return int32(C.goud_renderer3d_set_animation_lod_distance(context_id, C.float(distance)))
+}
+
 // GoudRenderer3dSetAnimationLodEnabled wraps goud_renderer3d_set_animation_lod_enabled.
 func GoudRenderer3dSetAnimationLodEnabled(context_id C.GoudContextId, enabled bool) int32 {
 	return int32(C.goud_renderer3d_set_animation_lod_enabled(context_id, C._Bool(enabled)))
 }
 
+// GoudRenderer3dSetAnimationLodSkipDistance wraps goud_renderer3d_set_animation_lod_skip_distance.
+func GoudRenderer3dSetAnimationLodSkipDistance(context_id C.GoudContextId, distance float32) int32 {
+	return int32(C.goud_renderer3d_set_animation_lod_skip_distance(context_id, C.float(distance)))
+}
+
+// GoudRenderer3dSetAnimationPhaseLock wraps goud_renderer3d_set_animation_phase_lock.
+func GoudRenderer3dSetAnimationPhaseLock(context_id C.GoudContextId, model_id uint32, enabled bool) bool {
+	return bool(C.goud_renderer3d_set_animation_phase_lock(context_id, C.uint32_t(model_id), C._Bool(enabled)))
+}
+
 // GoudRenderer3dSetAnimationSpeed wraps goud_renderer3d_set_animation_speed.
 func GoudRenderer3dSetAnimationSpeed(context_id C.GoudContextId, instance_id uint32, speed float32) bool {
 	return bool(C.goud_renderer3d_set_animation_speed(context_id, C.uint32_t(instance_id), C.float(speed)))
+}
+
+// GoudRenderer3dSetBakedAnimationSampleRate wraps goud_renderer3d_set_baked_animation_sample_rate.
+func GoudRenderer3dSetBakedAnimationSampleRate(context_id C.GoudContextId, rate float32) int32 {
+	return int32(C.goud_renderer3d_set_baked_animation_sample_rate(context_id, C.float(rate)))
 }
 
 // GoudRenderer3dSetCameraPosition wraps goud_renderer3d_set_camera_position.
@@ -2172,6 +2345,11 @@ func GoudRenderer3dSetCurrentScene(context_id C.GoudContextId, scene_id uint32) 
 	return bool(C.goud_renderer3d_set_current_scene(context_id, C.uint32_t(scene_id)))
 }
 
+// GoudRenderer3dSetDefaultMaterialColor wraps goud_renderer3d_set_default_material_color.
+func GoudRenderer3dSetDefaultMaterialColor(context_id C.GoudContextId, r float32, g float32, b float32, a float32) int32 {
+	return int32(C.goud_renderer3d_set_default_material_color(context_id, C.float(r), C.float(g), C.float(b), C.float(a)))
+}
+
 // GoudRenderer3dSetFogEnabled wraps goud_renderer3d_set_fog_enabled.
 func GoudRenderer3dSetFogEnabled(context_id C.GoudContextId, enabled bool) bool {
 	return bool(C.goud_renderer3d_set_fog_enabled(context_id, C._Bool(enabled)))
@@ -2182,14 +2360,44 @@ func GoudRenderer3dSetFrustumCullingEnabled(context_id C.GoudContextId, enabled 
 	return int32(C.goud_renderer3d_set_frustum_culling_enabled(context_id, C._Bool(enabled)))
 }
 
+// GoudRenderer3dSetFrustumCullingFarPlane wraps goud_renderer3d_set_frustum_culling_far_plane.
+func GoudRenderer3dSetFrustumCullingFarPlane(context_id C.GoudContextId, far float32) int32 {
+	return int32(C.goud_renderer3d_set_frustum_culling_far_plane(context_id, C.float(far)))
+}
+
+// GoudRenderer3dSetFrustumCullingFov wraps goud_renderer3d_set_frustum_culling_fov.
+func GoudRenderer3dSetFrustumCullingFov(context_id C.GoudContextId, fov_degrees float32) int32 {
+	return int32(C.goud_renderer3d_set_frustum_culling_fov(context_id, C.float(fov_degrees)))
+}
+
+// GoudRenderer3dSetFrustumCullingNearPlane wraps goud_renderer3d_set_frustum_culling_near_plane.
+func GoudRenderer3dSetFrustumCullingNearPlane(context_id C.GoudContextId, near float32) int32 {
+	return int32(C.goud_renderer3d_set_frustum_culling_near_plane(context_id, C.float(near)))
+}
+
+// GoudRenderer3dSetGridAlpha wraps goud_renderer3d_set_grid_alpha.
+func GoudRenderer3dSetGridAlpha(context_id C.GoudContextId, alpha float32) int32 {
+	return int32(C.goud_renderer3d_set_grid_alpha(context_id, C.float(alpha)))
+}
+
 // GoudRenderer3dSetGridEnabled wraps goud_renderer3d_set_grid_enabled.
 func GoudRenderer3dSetGridEnabled(context_id C.GoudContextId, enabled bool) bool {
 	return bool(C.goud_renderer3d_set_grid_enabled(context_id, C._Bool(enabled)))
 }
 
+// GoudRenderer3dSetInstancingEnabled wraps goud_renderer3d_set_instancing_enabled.
+func GoudRenderer3dSetInstancingEnabled(context_id C.GoudContextId, enabled bool) int32 {
+	return int32(C.goud_renderer3d_set_instancing_enabled(context_id, C._Bool(enabled)))
+}
+
 // GoudRenderer3dSetMaterialSortingEnabled wraps goud_renderer3d_set_material_sorting_enabled.
 func GoudRenderer3dSetMaterialSortingEnabled(context_id C.GoudContextId, enabled bool) int32 {
 	return int32(C.goud_renderer3d_set_material_sorting_enabled(context_id, C._Bool(enabled)))
+}
+
+// GoudRenderer3dSetMinInstancesForBatching wraps goud_renderer3d_set_min_instances_for_batching.
+func GoudRenderer3dSetMinInstancesForBatching(context_id C.GoudContextId, count uint32) int32 {
+	return int32(C.goud_renderer3d_set_min_instances_for_batching(context_id, C.uint32_t(count)))
 }
 
 // GoudRenderer3dSetModelMaterial wraps goud_renderer3d_set_model_material.
@@ -2202,6 +2410,17 @@ func GoudRenderer3dSetModelPosition(context_id C.GoudContextId, model_id uint32,
 	return bool(C.goud_renderer3d_set_model_position(context_id, C.uint32_t(model_id), C.float(x), C.float(y), C.float(z)))
 }
 
+// GoudRenderer3dSetModelPositionsBatch wraps goud_renderer3d_set_model_positions_batch.
+func GoudRenderer3dSetModelPositionsBatch(context_id C.GoudContextId, model_ids *C.uint32_t, positions *C.float, count uint32) int32 {
+	if model_ids == nil {
+		return -1
+	}
+	if positions == nil {
+		return -1
+	}
+	return int32(C.goud_renderer3d_set_model_positions_batch(context_id, model_ids, positions, C.uint32_t(count)))
+}
+
 // GoudRenderer3dSetModelRotation wraps goud_renderer3d_set_model_rotation.
 func GoudRenderer3dSetModelRotation(context_id C.GoudContextId, model_id uint32, x float32, y float32, z float32) bool {
 	return bool(C.goud_renderer3d_set_model_rotation(context_id, C.uint32_t(model_id), C.float(x), C.float(y), C.float(z)))
@@ -2210,6 +2429,11 @@ func GoudRenderer3dSetModelRotation(context_id C.GoudContextId, model_id uint32,
 // GoudRenderer3dSetModelScale wraps goud_renderer3d_set_model_scale.
 func GoudRenderer3dSetModelScale(context_id C.GoudContextId, model_id uint32, x float32, y float32, z float32) bool {
 	return bool(C.goud_renderer3d_set_model_scale(context_id, C.uint32_t(model_id), C.float(x), C.float(y), C.float(z)))
+}
+
+// GoudRenderer3dSetModelStatic wraps goud_renderer3d_set_model_static.
+func GoudRenderer3dSetModelStatic(context_id C.GoudContextId, model_id uint32, is_static bool) bool {
+	return bool(C.goud_renderer3d_set_model_static(context_id, C.uint32_t(model_id), C._Bool(is_static)))
 }
 
 // GoudRenderer3dSetObjectMaterial wraps goud_renderer3d_set_object_material.
@@ -2235,6 +2459,21 @@ func GoudRenderer3dSetObjectScale(context_id C.GoudContextId, object_id uint32, 
 // GoudRenderer3dSetObjectStatic wraps goud_renderer3d_set_object_static.
 func GoudRenderer3dSetObjectStatic(context_id C.GoudContextId, object_id uint32, is_static bool) bool {
 	return bool(C.goud_renderer3d_set_object_static(context_id, C.uint32_t(object_id), C._Bool(is_static)))
+}
+
+// GoudRenderer3dSetShadowBias wraps goud_renderer3d_set_shadow_bias.
+func GoudRenderer3dSetShadowBias(context_id C.GoudContextId, bias float32) int32 {
+	return int32(C.goud_renderer3d_set_shadow_bias(context_id, C.float(bias)))
+}
+
+// GoudRenderer3dSetShadowMapSize wraps goud_renderer3d_set_shadow_map_size.
+func GoudRenderer3dSetShadowMapSize(context_id C.GoudContextId, size uint32) int32 {
+	return int32(C.goud_renderer3d_set_shadow_map_size(context_id, C.uint32_t(size)))
+}
+
+// GoudRenderer3dSetShadowsEnabled wraps goud_renderer3d_set_shadows_enabled.
+func GoudRenderer3dSetShadowsEnabled(context_id C.GoudContextId, enabled bool) int32 {
+	return int32(C.goud_renderer3d_set_shadows_enabled(context_id, C._Bool(enabled)))
 }
 
 // GoudRenderer3dSetSharedAnimationEval wraps goud_renderer3d_set_shared_animation_eval.
@@ -2268,6 +2507,11 @@ func GoudRenderer3dSetSkinnedMeshScale(context_id C.GoudContextId, mesh_id uint3
 // GoudRenderer3dSetSkinningMode wraps goud_renderer3d_set_skinning_mode.
 func GoudRenderer3dSetSkinningMode(context_id C.GoudContextId, mode uint32) int32 {
 	return int32(C.goud_renderer3d_set_skinning_mode(context_id, C.uint32_t(mode)))
+}
+
+// GoudRenderer3dSetStaticBatchingEnabled wraps goud_renderer3d_set_static_batching_enabled.
+func GoudRenderer3dSetStaticBatchingEnabled(context_id C.GoudContextId, enabled bool) int32 {
+	return int32(C.goud_renderer3d_set_static_batching_enabled(context_id, C._Bool(enabled)))
 }
 
 // GoudRenderer3dStopAnimation wraps goud_renderer3d_stop_animation.

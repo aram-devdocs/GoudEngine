@@ -7,10 +7,7 @@ use crate::libs::graphics::backend::{BufferType, BufferUsage};
 
 /// A contiguous range of vertices in the static batch buffer sharing material and texture.
 #[derive(Debug, Clone)]
-#[allow(dead_code)] // Fields read during static batch rendering pass.
 pub(super) struct StaticBatchGroup {
-    /// Material ID for this group (0 = default).
-    pub material_id: u32,
     /// Texture ID for this group (0 = untextured).
     pub texture_id: u32,
     /// First vertex index in the batch buffer.
@@ -73,7 +70,6 @@ impl Renderer3D {
                 if group_vertex_count > 0 {
                     let color = self.resolve_material_color(current_mat, current_tex);
                     self.static_batch_groups.push(StaticBatchGroup {
-                        material_id: current_mat,
                         texture_id: current_tex,
                         start_vertex: group_start,
                         vertex_count: group_vertex_count,
@@ -136,7 +132,6 @@ impl Renderer3D {
         if group_vertex_count > 0 {
             let color = self.resolve_material_color(current_mat, current_tex);
             self.static_batch_groups.push(StaticBatchGroup {
-                material_id: current_mat,
                 texture_id: current_tex,
                 start_vertex: group_start,
                 vertex_count: group_vertex_count,
@@ -174,7 +169,7 @@ impl Renderer3D {
         } else if texture_id > 0 {
             [1.0, 1.0, 1.0, 1.0]
         } else {
-            [0.8, 0.8, 0.8, 1.0]
+            self.config.default_material_color
         }
     }
 

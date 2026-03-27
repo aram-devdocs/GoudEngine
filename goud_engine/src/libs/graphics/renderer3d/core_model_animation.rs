@@ -1,7 +1,5 @@
 //! Animation-related methods for [`Renderer3D`].
 
-use std::collections::HashMap;
-
 use super::animation::{AnimationPlayer, BakedAnimationData, BoneChannelMap};
 use super::core::Renderer3D;
 use super::model::Model3D;
@@ -9,6 +7,14 @@ use crate::core::types::{KeyframeAnimation, SkeletonData};
 use crate::libs::graphics::backend::BufferHandle;
 
 /// Per-sub-mesh data needed for CPU skinning after bone matrices are computed.
+///
+/// # Safety
+/// The raw pointers (`bind_verts`, `bone_indices`, `bone_weights`) point into
+/// `Renderer3D::models` HashMap values. They are safe to dereference as long as
+/// the `models` HashMap is not mutated (no insertions or removals) between
+/// pointer capture in `gather_skin_uploads` and the dereference in the skinning
+/// loop. This is guaranteed because `update_animations` only mutates
+/// `animation_players` (a separate field from `models`).
 struct SkinUpload {
     buffer_handle: BufferHandle,
     bind_verts: *const Vec<f32>,
@@ -63,8 +69,6 @@ impl Renderer3D {
         })
     }
 
-    /// Advance all animation players by `dt` seconds, compute bone matrices,
-    /// and apply CPU skinning to deform vertex buffers.
     /// Sets phase-lock mode for a model or instance's animation player.
     ///
     /// When phase-locked, the player uses a global shared clock instead of
@@ -103,7 +107,7 @@ impl Renderer3D {
                             skel,
                             &model.animations,
                             &model.bone_channel_maps,
-                            30.0,
+                            self.config.skinning.baked_animation_sample_rate,
                         ));
                     }
                 }
@@ -114,6 +118,8 @@ impl Renderer3D {
         true
     }
 
+    /// Advance all animation players by `dt` seconds, compute bone matrices,
+    /// and apply CPU skinning to deform vertex buffers.
     ///
     /// Includes three performance optimizations:
     /// - **G3 (BoneChannelMap)**: Uses pre-computed channel index maps to
@@ -127,6 +133,11 @@ impl Renderer3D {
         // Advance all phase-lock global clocks.
         for clock in self.phase_lock_clocks.values_mut() {
             *clock += dt;
+            // Wrap to prevent f32 precision loss after long sessions.
+            // 3600s keeps precision above 0.25ms (well within animation needs).
+            if *clock > 3600.0 {
+                *clock %= 3600.0;
+            }
         }
 
         // Collect model IDs and instance IDs that have animation players.
@@ -180,7 +191,8 @@ impl Renderer3D {
         // Key: (source_model_id, clip_index, quantized_time_bits)
         // Value: computed bone matrices
         let shared_eval = self.config.skinning.shared_animation_eval;
-        let mut bone_cache: HashMap<(u32, usize, u32), Vec<[f32; 16]>> = HashMap::new();
+        let mut bone_cache = std::mem::take(&mut self.bone_eval_cache);
+        bone_cache.clear();
 
         for &(player_id, source_model_id, skel_ptr, anims_ptr, maps_ptr, baked_ptr) in &update_list
         {
@@ -335,6 +347,9 @@ impl Renderer3D {
             }
         }
 
+        // Return the cache to self so it can be reused next frame.
+        self.bone_eval_cache = bone_cache;
+
         // Phase 2: CPU skinning -- deform bind-pose vertices using bone
         // matrices and re-upload each sub-mesh buffer.
         //
@@ -382,11 +397,15 @@ impl Renderer3D {
                 };
 
                 for upload in &item.uploads {
-                    // SAFETY: all pointers reference data in self.models / self.animation_players
-                    // which are not mutated during this skinning pass (only the backend is).
+                    // SAFETY: `bind_verts`, `bone_indices`, and `bone_weights` point into
+                    // `self.models` HashMap values captured by `gather_skin_uploads`.
+                    // The `models` HashMap is not mutated during this skinning pass
+                    // (only the backend receives buffer uploads), so the pointers remain valid.
                     let bind_verts = unsafe { &*upload.bind_verts };
                     let bi = unsafe { &*upload.bone_indices };
                     let bw = unsafe { &*upload.bone_weights };
+                    // SAFETY: `bone_matrices` points into `self.animation_players` which is
+                    // not mutated during this skinning loop (only read via immutable borrow).
                     let bone_mats = unsafe { &*bone_matrices };
 
                     cpu_skin_submesh(bind_verts, bi, bw, bone_mats, &mut self.skin_scratch_buffer);

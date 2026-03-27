@@ -300,7 +300,7 @@ impl Renderer3D {
                             .get(sub_idx)
                             .and_then(|mid| self.materials.get(mid))
                             .map(|m| [m.color.x, m.color.y, m.color.z, m.color.w])
-                            .unwrap_or([0.8, 0.8, 0.8, 1.0]);
+                            .unwrap_or(self.config.default_material_color);
                         (
                             obj.buffer,
                             obj.vertex_count,
@@ -465,9 +465,9 @@ impl Renderer3D {
         self.backend
             .set_uniform_int(uniforms.shadows_enabled, i32::from(shadows_enabled));
         self.backend
-            .set_uniform_float(uniforms.shadow_bias, self.shadow_bias);
-        let texel = if self.shadow_map_size > 0 {
-            1.0 / self.shadow_map_size as f32
+            .set_uniform_float(uniforms.shadow_bias, self.config.shadows.bias);
+        let texel = if self.config.shadows.map_size > 0 {
+            1.0 / self.config.shadows.map_size as f32
         } else {
             0.0
         };

@@ -160,22 +160,16 @@ pub unsafe extern "C" fn goud_renderer3d_load_model(
             return GOUD_INVALID_MODEL;
         }
 
-        // Texture loading debug (uncomment to diagnose):
-        // eprintln!("[TEX] Model '{}': {} tex loads, {} embedded", path_str, texture_loads.len(), embedded_assets.len());
-
         // Load textures and bind them to the model's materials.
         // Try embedded image data first (for GLB files), then fall back to filesystem.
         for (mesh_index, tex_path, tex_type) in &texture_loads {
             let tex_id = if let Some((_, img_bytes)) =
                 embedded_assets.iter().find(|(p, _)| tex_path.ends_with(p))
             {
-                // eprintln!("[TEX] Embedded mesh {}: {}", mesh_index, tex_path);
                 load_texture_from_bytes(context_id, img_bytes, tex_path)
             } else {
-                // eprintln!("[TEX] File mesh {}: {}", mesh_index, tex_path);
                 load_texture_from_path(context_id, tex_path)
             };
-            // eprintln!("[TEX] -> tex_id={} type={}", tex_id, tex_type);
             if tex_id != 0 {
                 with_renderer(context_id, |renderer| match *tex_type {
                     "albedo" => {
@@ -574,10 +568,19 @@ pub unsafe extern "C" fn goud_renderer3d_set_model_positions_batch(
         return 0;
     }
 
+    // Guard against integer overflow: count * 3 could exceed usize on 32-bit.
+    let total_floats = match (count as usize).checked_mul(3) {
+        Some(n) => n,
+        None => {
+            set_last_error(GoudError::InvalidHandle);
+            return -1;
+        }
+    };
+
     // SAFETY: caller guarantees `model_ids` has at least `count` elements and
     // `positions` has at least `count * 3` elements.
     let ids = std::slice::from_raw_parts(model_ids, count as usize);
-    let pos = std::slice::from_raw_parts(positions, (count as usize) * 3);
+    let pos = std::slice::from_raw_parts(positions, total_floats);
 
     with_renderer(context_id, |renderer| {
         let mut updated: i32 = 0;

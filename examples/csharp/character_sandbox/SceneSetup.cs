@@ -6,7 +6,6 @@ static class SceneSetup
     static bool _gridEnabled = false;
     static bool _fogEnabled = false;
     static bool _frustumCulling = true;
-    static bool _gpuSkinning = true;
     static bool _materialSorting = true;
     static bool _animationLod = true;
     static bool _sharedAnimEval = true;
@@ -60,14 +59,6 @@ static class SceneSetup
             _frustumCulling = !_frustumCulling;
             game.SetFrustumCullingEnabled(_frustumCulling);
             Console.WriteLine($"Frustum culling {(_frustumCulling ? "ON" : "OFF")}");
-        }
-
-        if (game.IsKeyJustPressed(Keys.Digit2))
-        {
-            // Skinning mode cannot be toggled at runtime — models are loaded
-            // with GPU-specific vertex format and cannot switch to CPU mode
-            // without reloading.
-            Console.WriteLine($"Skinning: GPU (fixed at load time)");
         }
 
         if (game.IsKeyJustPressed(Keys.Digit3))

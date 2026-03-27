@@ -36,7 +36,6 @@ pub(super) struct MainUniforms {
     pub(super) shadow_map: i32,
     pub(super) shadows_enabled: i32,
     pub(super) shadow_bias: i32,
-    #[allow(dead_code)] // Infrastructure for shadow softening (reserved uniform).
     pub(super) shadow_texel_size: i32,
     pub(super) fog_enabled: i32,
     pub(super) fog_color: i32,
@@ -151,14 +150,12 @@ pub(super) fn resolve_skinned_uniforms(
 /// Cached uniform locations for the instanced skinned mesh shader.
 ///
 /// Uses the instanced shader's `MainUniforms` (no model matrix, since model
-/// comes from per-instance attributes) plus bone matrix uniform locations.
+/// comes from per-instance attributes). Bone matrices are uploaded via storage
+/// buffers, not per-bone uniforms.
 #[derive(Clone)]
-#[allow(dead_code)] // Used when instanced skinned render path is wired in.
 pub(super) struct InstancedSkinnedUniforms {
     /// Standard instanced scene uniforms (view, projection, lights, etc.).
     pub(super) main: MainUniforms,
-    /// Uniform locations for `boneMatrices[i]` (GLSL path only).
-    pub(super) bone_matrices: Vec<i32>,
 }
 
 pub(super) fn resolve_instanced_skinned_uniforms(
@@ -166,17 +163,7 @@ pub(super) fn resolve_instanced_skinned_uniforms(
     shader: ShaderHandle,
 ) -> InstancedSkinnedUniforms {
     let main = resolve_main_uniforms(backend, shader);
-    let loc = |name: &str| -> i32 { uniform_location_or_inactive(backend, shader, name) };
-
-    let mut bone_matrices = Vec::with_capacity(super::skinned_mesh::MAX_BONES);
-    for i in 0..super::skinned_mesh::MAX_BONES {
-        bone_matrices.push(loc(&format!("boneMatrices[{i}]")));
-    }
-
-    InstancedSkinnedUniforms {
-        main,
-        bone_matrices,
-    }
+    InstancedSkinnedUniforms { main }
 }
 
 pub(super) fn resolve_grid_uniforms(

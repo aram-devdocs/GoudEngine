@@ -177,13 +177,36 @@ use crate::ffi::renderer3d::goud_renderer3d_create_sphere;
 use crate::ffi::renderer3d::goud_renderer3d_destroy_model;
 use crate::ffi::renderer3d::goud_renderer3d_destroy_object;
 use crate::ffi::renderer3d::goud_renderer3d_destroy_scene;
+use crate::ffi::renderer3d::goud_renderer3d_get_active_instance_count;
 use crate::ffi::renderer3d::goud_renderer3d_get_animation_count;
+use crate::ffi::renderer3d::goud_renderer3d_get_animation_evaluation_count;
+use crate::ffi::renderer3d::goud_renderer3d_get_animation_evaluation_saved_count;
+use crate::ffi::renderer3d::goud_renderer3d_get_animation_lod_distance;
+use crate::ffi::renderer3d::goud_renderer3d_get_animation_lod_enabled;
+use crate::ffi::renderer3d::goud_renderer3d_get_animation_lod_skip_distance;
 use crate::ffi::renderer3d::goud_renderer3d_get_animation_progress;
+use crate::ffi::renderer3d::goud_renderer3d_get_baked_animation_sample_rate;
+use crate::ffi::renderer3d::goud_renderer3d_get_bone_matrix_upload_count;
 use crate::ffi::renderer3d::goud_renderer3d_get_culled_object_count;
 use crate::ffi::renderer3d::goud_renderer3d_get_current_scene;
 use crate::ffi::renderer3d::goud_renderer3d_get_draw_calls;
+use crate::ffi::renderer3d::goud_renderer3d_get_frustum_culling_enabled;
+use crate::ffi::renderer3d::goud_renderer3d_get_frustum_culling_far_plane;
+use crate::ffi::renderer3d::goud_renderer3d_get_frustum_culling_fov;
+use crate::ffi::renderer3d::goud_renderer3d_get_frustum_culling_near_plane;
+use crate::ffi::renderer3d::goud_renderer3d_get_grid_alpha;
+use crate::ffi::renderer3d::goud_renderer3d_get_instanced_draw_calls;
+use crate::ffi::renderer3d::goud_renderer3d_get_instancing_enabled;
+use crate::ffi::renderer3d::goud_renderer3d_get_material_sorting_enabled;
+use crate::ffi::renderer3d::goud_renderer3d_get_min_instances_for_batching;
 use crate::ffi::renderer3d::goud_renderer3d_get_model_mesh_count;
 use crate::ffi::renderer3d::goud_renderer3d_get_object_material;
+use crate::ffi::renderer3d::goud_renderer3d_get_shadow_bias;
+use crate::ffi::renderer3d::goud_renderer3d_get_shadow_map_size;
+use crate::ffi::renderer3d::goud_renderer3d_get_shadows_enabled;
+use crate::ffi::renderer3d::goud_renderer3d_get_shared_animation_eval;
+use crate::ffi::renderer3d::goud_renderer3d_get_skinning_mode;
+use crate::ffi::renderer3d::goud_renderer3d_get_static_batching_enabled;
 use crate::ffi::renderer3d::goud_renderer3d_get_visible_object_count;
 use crate::ffi::renderer3d::goud_renderer3d_instantiate_model;
 use crate::ffi::renderer3d::goud_renderer3d_is_animation_playing;
@@ -197,29 +220,46 @@ use crate::ffi::renderer3d::goud_renderer3d_remove_object_from_scene;
 use crate::ffi::renderer3d::goud_renderer3d_remove_postprocess_pass;
 use crate::ffi::renderer3d::goud_renderer3d_remove_skinned_mesh;
 use crate::ffi::renderer3d::goud_renderer3d_render;
+use crate::ffi::renderer3d::goud_renderer3d_set_animation_baking_enabled;
+use crate::ffi::renderer3d::goud_renderer3d_set_animation_lod_distance;
 use crate::ffi::renderer3d::goud_renderer3d_set_animation_lod_enabled;
+use crate::ffi::renderer3d::goud_renderer3d_set_animation_lod_skip_distance;
+use crate::ffi::renderer3d::goud_renderer3d_set_animation_phase_lock;
 use crate::ffi::renderer3d::goud_renderer3d_set_animation_speed;
+use crate::ffi::renderer3d::goud_renderer3d_set_baked_animation_sample_rate;
 use crate::ffi::renderer3d::goud_renderer3d_set_camera_position;
 use crate::ffi::renderer3d::goud_renderer3d_set_camera_rotation;
 use crate::ffi::renderer3d::goud_renderer3d_set_current_scene;
+use crate::ffi::renderer3d::goud_renderer3d_set_default_material_color;
 use crate::ffi::renderer3d::goud_renderer3d_set_fog_enabled;
 use crate::ffi::renderer3d::goud_renderer3d_set_frustum_culling_enabled;
+use crate::ffi::renderer3d::goud_renderer3d_set_frustum_culling_far_plane;
+use crate::ffi::renderer3d::goud_renderer3d_set_frustum_culling_fov;
+use crate::ffi::renderer3d::goud_renderer3d_set_frustum_culling_near_plane;
+use crate::ffi::renderer3d::goud_renderer3d_set_grid_alpha;
 use crate::ffi::renderer3d::goud_renderer3d_set_grid_enabled;
+use crate::ffi::renderer3d::goud_renderer3d_set_instancing_enabled;
 use crate::ffi::renderer3d::goud_renderer3d_set_material_sorting_enabled;
+use crate::ffi::renderer3d::goud_renderer3d_set_min_instances_for_batching;
 use crate::ffi::renderer3d::goud_renderer3d_set_model_material;
 use crate::ffi::renderer3d::goud_renderer3d_set_model_position;
 use crate::ffi::renderer3d::goud_renderer3d_set_model_rotation;
 use crate::ffi::renderer3d::goud_renderer3d_set_model_scale;
+use crate::ffi::renderer3d::goud_renderer3d_set_model_static;
 use crate::ffi::renderer3d::goud_renderer3d_set_object_material;
 use crate::ffi::renderer3d::goud_renderer3d_set_object_position;
 use crate::ffi::renderer3d::goud_renderer3d_set_object_rotation;
 use crate::ffi::renderer3d::goud_renderer3d_set_object_scale;
 use crate::ffi::renderer3d::goud_renderer3d_set_object_static;
+use crate::ffi::renderer3d::goud_renderer3d_set_shadow_bias;
+use crate::ffi::renderer3d::goud_renderer3d_set_shadow_map_size;
+use crate::ffi::renderer3d::goud_renderer3d_set_shadows_enabled;
 use crate::ffi::renderer3d::goud_renderer3d_set_shared_animation_eval;
 use crate::ffi::renderer3d::goud_renderer3d_set_skinned_mesh_position;
 use crate::ffi::renderer3d::goud_renderer3d_set_skinned_mesh_rotation;
 use crate::ffi::renderer3d::goud_renderer3d_set_skinned_mesh_scale;
 use crate::ffi::renderer3d::goud_renderer3d_set_skinning_mode;
+use crate::ffi::renderer3d::goud_renderer3d_set_static_batching_enabled;
 use crate::ffi::renderer3d::goud_renderer3d_stop_animation;
 use crate::ffi::renderer3d::goud_renderer3d_transition_animation;
 use crate::ffi::renderer3d::goud_renderer3d_update_animations;
@@ -431,6 +471,166 @@ pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> 
         Ok(goud_renderer3d_set_shared_animation_eval(ctx, arg0) as i64)
     })?;
     tbl.set("set_shared_animation_eval", f_set_shared_animation_eval)?;
+    // GoudGame.setAnimationLodDistance
+    let f_set_animation_lod_distance = lua.create_function(move |_, arg0: f64| {
+        Ok(goud_renderer3d_set_animation_lod_distance(ctx, arg0 as f32) as i64)
+    })?;
+    tbl.set("set_animation_lod_distance", f_set_animation_lod_distance)?;
+    // GoudGame.setAnimationLodSkipDistance
+    let f_set_animation_lod_skip_distance = lua.create_function(move |_, arg0: f64| {
+        Ok(goud_renderer3d_set_animation_lod_skip_distance(ctx, arg0 as f32) as i64)
+    })?;
+    tbl.set("set_animation_lod_skip_distance", f_set_animation_lod_skip_distance)?;
+    // GoudGame.getAnimationLodDistance
+    let f_get_animation_lod_distance = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_animation_lod_distance(ctx) as f64)
+    })?;
+    tbl.set("get_animation_lod_distance", f_get_animation_lod_distance)?;
+    // GoudGame.getAnimationLodSkipDistance
+    let f_get_animation_lod_skip_distance = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_animation_lod_skip_distance(ctx) as f64)
+    })?;
+    tbl.set("get_animation_lod_skip_distance", f_get_animation_lod_skip_distance)?;
+    // GoudGame.setStaticBatchingEnabled
+    let f_set_static_batching_enabled = lua.create_function(move |_, arg0: bool| {
+        Ok(goud_renderer3d_set_static_batching_enabled(ctx, arg0) as i64)
+    })?;
+    tbl.set("set_static_batching_enabled", f_set_static_batching_enabled)?;
+    // GoudGame.setInstancingEnabled
+    let f_set_instancing_enabled = lua.create_function(move |_, arg0: bool| {
+        Ok(goud_renderer3d_set_instancing_enabled(ctx, arg0) as i64)
+    })?;
+    tbl.set("set_instancing_enabled", f_set_instancing_enabled)?;
+    // GoudGame.getFrustumCullingEnabled
+    let f_get_frustum_culling_enabled = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_frustum_culling_enabled(ctx))
+    })?;
+    tbl.set("get_frustum_culling_enabled", f_get_frustum_culling_enabled)?;
+    // GoudGame.getSkinningMode
+    let f_get_skinning_mode = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_skinning_mode(ctx) as i64)
+    })?;
+    tbl.set("get_skinning_mode", f_get_skinning_mode)?;
+    // GoudGame.getMaterialSortingEnabled
+    let f_get_material_sorting_enabled = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_material_sorting_enabled(ctx))
+    })?;
+    tbl.set("get_material_sorting_enabled", f_get_material_sorting_enabled)?;
+    // GoudGame.getStaticBatchingEnabled
+    let f_get_static_batching_enabled = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_static_batching_enabled(ctx))
+    })?;
+    tbl.set("get_static_batching_enabled", f_get_static_batching_enabled)?;
+    // GoudGame.getInstancingEnabled
+    let f_get_instancing_enabled = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_instancing_enabled(ctx))
+    })?;
+    tbl.set("get_instancing_enabled", f_get_instancing_enabled)?;
+    // GoudGame.getAnimationLodEnabled
+    let f_get_animation_lod_enabled = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_animation_lod_enabled(ctx))
+    })?;
+    tbl.set("get_animation_lod_enabled", f_get_animation_lod_enabled)?;
+    // GoudGame.getSharedAnimationEval
+    let f_get_shared_animation_eval = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_shared_animation_eval(ctx))
+    })?;
+    tbl.set("get_shared_animation_eval", f_get_shared_animation_eval)?;
+    // GoudGame.setBakedAnimationSampleRate
+    let f_set_baked_animation_sample_rate = lua.create_function(move |_, arg0: f64| {
+        Ok(goud_renderer3d_set_baked_animation_sample_rate(ctx, arg0 as f32) as i64)
+    })?;
+    tbl.set("set_baked_animation_sample_rate", f_set_baked_animation_sample_rate)?;
+    // GoudGame.getBakedAnimationSampleRate
+    let f_get_baked_animation_sample_rate = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_baked_animation_sample_rate(ctx) as f64)
+    })?;
+    tbl.set("get_baked_animation_sample_rate", f_get_baked_animation_sample_rate)?;
+    // GoudGame.setMinInstancesForBatching
+    let f_set_min_instances_for_batching = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_renderer3d_set_min_instances_for_batching(ctx, arg0 as u32) as i64)
+    })?;
+    tbl.set("set_min_instances_for_batching", f_set_min_instances_for_batching)?;
+    // GoudGame.getMinInstancesForBatching
+    let f_get_min_instances_for_batching = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_min_instances_for_batching(ctx) as i64)
+    })?;
+    tbl.set("get_min_instances_for_batching", f_get_min_instances_for_batching)?;
+    // GoudGame.setDefaultMaterialColor
+    let f_set_default_material_color = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (f64, f64, f64, f64)| {
+        Ok(goud_renderer3d_set_default_material_color(ctx, arg0 as f32, arg1 as f32, arg2 as f32, arg3 as f32) as i64)
+    })?;
+    tbl.set("set_default_material_color", f_set_default_material_color)?;
+    // GoudGame.setGridAlpha
+    let f_set_grid_alpha = lua.create_function(move |_, arg0: f64| {
+        Ok(goud_renderer3d_set_grid_alpha(ctx, arg0 as f32) as i64)
+    })?;
+    tbl.set("set_grid_alpha", f_set_grid_alpha)?;
+    // GoudGame.getGridAlpha
+    let f_get_grid_alpha = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_grid_alpha(ctx) as f64)
+    })?;
+    tbl.set("get_grid_alpha", f_get_grid_alpha)?;
+    // GoudGame.setFrustumCullingFov
+    let f_set_frustum_culling_fov = lua.create_function(move |_, arg0: f64| {
+        Ok(goud_renderer3d_set_frustum_culling_fov(ctx, arg0 as f32) as i64)
+    })?;
+    tbl.set("set_frustum_culling_fov", f_set_frustum_culling_fov)?;
+    // GoudGame.getFrustumCullingFov
+    let f_get_frustum_culling_fov = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_frustum_culling_fov(ctx) as f64)
+    })?;
+    tbl.set("get_frustum_culling_fov", f_get_frustum_culling_fov)?;
+    // GoudGame.setFrustumCullingNearPlane
+    let f_set_frustum_culling_near_plane = lua.create_function(move |_, arg0: f64| {
+        Ok(goud_renderer3d_set_frustum_culling_near_plane(ctx, arg0 as f32) as i64)
+    })?;
+    tbl.set("set_frustum_culling_near_plane", f_set_frustum_culling_near_plane)?;
+    // GoudGame.getFrustumCullingNearPlane
+    let f_get_frustum_culling_near_plane = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_frustum_culling_near_plane(ctx) as f64)
+    })?;
+    tbl.set("get_frustum_culling_near_plane", f_get_frustum_culling_near_plane)?;
+    // GoudGame.setFrustumCullingFarPlane
+    let f_set_frustum_culling_far_plane = lua.create_function(move |_, arg0: f64| {
+        Ok(goud_renderer3d_set_frustum_culling_far_plane(ctx, arg0 as f32) as i64)
+    })?;
+    tbl.set("set_frustum_culling_far_plane", f_set_frustum_culling_far_plane)?;
+    // GoudGame.getFrustumCullingFarPlane
+    let f_get_frustum_culling_far_plane = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_frustum_culling_far_plane(ctx) as f64)
+    })?;
+    tbl.set("get_frustum_culling_far_plane", f_get_frustum_culling_far_plane)?;
+    // GoudGame.setShadowsEnabled
+    let f_set_shadows_enabled = lua.create_function(move |_, arg0: bool| {
+        Ok(goud_renderer3d_set_shadows_enabled(ctx, arg0) as i64)
+    })?;
+    tbl.set("set_shadows_enabled", f_set_shadows_enabled)?;
+    // GoudGame.getShadowsEnabled
+    let f_get_shadows_enabled = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_shadows_enabled(ctx))
+    })?;
+    tbl.set("get_shadows_enabled", f_get_shadows_enabled)?;
+    // GoudGame.setShadowMapSize
+    let f_set_shadow_map_size = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_renderer3d_set_shadow_map_size(ctx, arg0 as u32) as i64)
+    })?;
+    tbl.set("set_shadow_map_size", f_set_shadow_map_size)?;
+    // GoudGame.getShadowMapSize
+    let f_get_shadow_map_size = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_shadow_map_size(ctx) as i64)
+    })?;
+    tbl.set("get_shadow_map_size", f_get_shadow_map_size)?;
+    // GoudGame.setShadowBias
+    let f_set_shadow_bias = lua.create_function(move |_, arg0: f64| {
+        Ok(goud_renderer3d_set_shadow_bias(ctx, arg0 as f32) as i64)
+    })?;
+    tbl.set("set_shadow_bias", f_set_shadow_bias)?;
+    // GoudGame.getShadowBias
+    let f_get_shadow_bias = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_shadow_bias(ctx) as f64)
+    })?;
+    tbl.set("get_shadow_bias", f_get_shadow_bias)?;
     // GoudGame.getDrawCalls
     let f_get_draw_calls = lua.create_function(move |_, _: ()| {
         Ok(goud_renderer3d_get_draw_calls(ctx) as i64)
@@ -446,6 +646,31 @@ pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> 
         Ok(goud_renderer3d_get_culled_object_count(ctx) as i64)
     })?;
     tbl.set("get_culled_object_count", f_get_culled_object_count)?;
+    // GoudGame.getInstancedDrawCalls
+    let f_get_instanced_draw_calls = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_instanced_draw_calls(ctx) as i64)
+    })?;
+    tbl.set("get_instanced_draw_calls", f_get_instanced_draw_calls)?;
+    // GoudGame.getActiveInstanceCount
+    let f_get_active_instance_count = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_active_instance_count(ctx) as i64)
+    })?;
+    tbl.set("get_active_instance_count", f_get_active_instance_count)?;
+    // GoudGame.getBoneMatrixUploadCount
+    let f_get_bone_matrix_upload_count = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_bone_matrix_upload_count(ctx) as i64)
+    })?;
+    tbl.set("get_bone_matrix_upload_count", f_get_bone_matrix_upload_count)?;
+    // GoudGame.getAnimationEvaluationCount
+    let f_get_animation_evaluation_count = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_animation_evaluation_count(ctx) as i64)
+    })?;
+    tbl.set("get_animation_evaluation_count", f_get_animation_evaluation_count)?;
+    // GoudGame.getAnimationEvaluationSavedCount
+    let f_get_animation_evaluation_saved_count = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_animation_evaluation_saved_count(ctx) as i64)
+    })?;
+    tbl.set("get_animation_evaluation_saved_count", f_get_animation_evaluation_saved_count)?;
     // GoudGame.render3D
     let f_render3_d = lua.create_function(move |_, _: ()| {
         Ok(goud_renderer3d_render(ctx))
@@ -884,6 +1109,11 @@ pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> 
         Ok(goud_renderer3d_instantiate_model(ctx, arg0 as u32) as i64)
     })?;
     tbl.set("instantiate_model", f_instantiate_model)?;
+    // GoudGame.setModelStatic
+    let f_set_model_static = lua.create_function(move |_, (arg0, arg1): (i64, bool)| {
+        Ok(goud_renderer3d_set_model_static(ctx, arg0 as u32, arg1))
+    })?;
+    tbl.set("set_model_static", f_set_model_static)?;
     // GoudGame.setModelMaterial
     let f_set_model_material = lua.create_function(move |_, (arg0, arg1, arg2): (i64, i64, i64)| {
         Ok(goud_renderer3d_set_model_material(ctx, arg0 as u32, arg1 as i32, arg2 as u32))
@@ -929,6 +1159,16 @@ pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> 
         Ok(goud_renderer3d_set_animation_speed(ctx, arg0 as u32, arg1 as f32))
     })?;
     tbl.set("set_animation_speed", f_set_animation_speed)?;
+    // GoudGame.setAnimationBakingEnabled
+    let f_set_animation_baking_enabled = lua.create_function(move |_, (arg0, arg1): (i64, bool)| {
+        Ok(goud_renderer3d_set_animation_baking_enabled(ctx, arg0 as u32, arg1))
+    })?;
+    tbl.set("set_animation_baking_enabled", f_set_animation_baking_enabled)?;
+    // GoudGame.setAnimationPhaseLock
+    let f_set_animation_phase_lock = lua.create_function(move |_, (arg0, arg1): (i64, bool)| {
+        Ok(goud_renderer3d_set_animation_phase_lock(ctx, arg0 as u32, arg1))
+    })?;
+    tbl.set("set_animation_phase_lock", f_set_animation_phase_lock)?;
     // GoudGame.blendAnimations
     let f_blend_animations = lua.create_function(move |_, (arg0, arg1, arg2, arg3): (i64, i64, i64, f64)| {
         Ok(goud_renderer3d_blend_animations(ctx, arg0 as u32, arg1 as i32, arg2 as i32, arg3 as f32))

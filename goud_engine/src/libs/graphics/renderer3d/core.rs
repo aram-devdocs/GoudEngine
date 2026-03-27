@@ -75,8 +75,6 @@ pub struct Renderer3D {
     pub(super) postprocess_texture: Option<crate::libs::graphics::backend::TextureHandle>,
     pub(super) postprocess_texture_size: (u32, u32),
     pub(super) shadow_texture: Option<crate::libs::graphics::backend::TextureHandle>,
-    pub(super) shadow_map_size: u32,
-    pub(super) shadow_bias: f32,
     pub(super) materials: HashMap<u32, Material3D>,
     pub(super) object_materials: HashMap<u32, u32>,
     pub(super) next_material_id: u32,
@@ -90,18 +88,14 @@ pub struct Renderer3D {
     pub(super) next_model_id: u32,
     pub(super) animation_players: HashMap<u32, AnimationPlayer>,
     /// Shader and uniforms for instanced skinned rendering.
-    #[allow(dead_code)] // Infrastructure for instanced skinned render path.
     pub(super) instanced_skinned_shader_handle: ShaderHandle,
-    #[allow(dead_code)]
     pub(super) instanced_skinned_uniforms: InstancedSkinnedUniforms,
     /// Per-instance vertex layout for instanced skinned rendering:
     /// model_0..model_3 (4 x vec4) + bone_offset (f32) + color (vec4) = 84 bytes.
-    #[allow(dead_code)]
     pub(super) instanced_skinned_instance_layout: VertexLayout,
     /// Storage buffer handle for GPU skinning bone matrices (per-object path).
     pub(super) bone_storage_buffer: Option<BufferHandle>,
     /// Tracks allocated size of bone_storage_buffer in bytes.
-    #[allow(dead_code)]
     pub(super) bone_storage_buffer_size: usize,
     /// Separate storage buffer for the instanced skinned path.
     pub(super) instanced_bone_storage_buffer: Option<BufferHandle>,
@@ -114,8 +108,6 @@ pub struct Renderer3D {
     pub(super) scenes: HashMap<u32, Scene3D>,
     pub(super) next_scene_id: u32,
     pub(super) current_scene: Option<u32>,
-    /// When `false`, the CPU software shadow map pass is skipped entirely.
-    pub(super) shadows_enabled: bool,
     /// Object IDs belonging to skinned models/instances — maintained
     /// incrementally to avoid per-frame recomputation.
     pub(super) skinned_object_ids: std::collections::HashSet<u32>,
@@ -131,6 +123,8 @@ pub struct Renderer3D {
     /// Pool of per-group instance buffers for instanced skinned rendering.
     /// Each group gets its own buffer to avoid wgpu write-staging overwrites.
     pub(super) instanced_skinned_instance_buffers: Vec<(BufferHandle, usize)>,
+    /// Reusable G5 shared animation evaluation cache -- cleared each frame.
+    pub(super) bone_eval_cache: HashMap<(u32, usize, u32), Vec<[f32; 16]>>,
     /// Pre-allocated buffer of visible object IDs, reused across frames to avoid
     /// per-frame Vec allocation during the render snapshot phase.
     pub(super) visible_object_ids: Vec<u32>,
@@ -282,8 +276,6 @@ impl Renderer3D {
             postprocess_texture: None,
             postprocess_texture_size: (0, 0),
             shadow_texture: None,
-            shadow_map_size: 256,
-            shadow_bias: 0.005,
             materials: HashMap::new(),
             object_materials: HashMap::new(),
             next_material_id: 1,
@@ -310,13 +302,13 @@ impl Renderer3D {
             scenes: HashMap::new(),
             next_scene_id: 1,
             current_scene: None,
-            shadows_enabled: true,
             skinned_object_ids: std::collections::HashSet::new(),
             config: Render3DConfig::default(),
             skin_scratch_buffer: Vec::new(),
             frame_counter: 0,
             phase_lock_clocks: HashMap::new(),
             instanced_skinned_instance_buffers: Vec::new(),
+            bone_eval_cache: HashMap::new(),
             visible_object_ids: Vec::with_capacity(1024),
             static_batch_dirty: false,
             static_batch_buffer: None,
@@ -433,19 +425,19 @@ impl Renderer3D {
     }
 
     pub fn set_shadow_bias(&mut self, bias: f32) {
-        self.shadow_bias = bias.max(0.0);
+        self.config.shadows.bias = bias.max(0.0);
     }
 
     pub fn shadow_bias(&self) -> f32 {
-        self.shadow_bias
+        self.config.shadows.bias
     }
 
     pub fn set_shadows_enabled(&mut self, enabled: bool) {
-        self.shadows_enabled = enabled;
+        self.config.shadows.enabled = enabled;
     }
 
     pub fn shadows_enabled(&self) -> bool {
-        self.shadows_enabled
+        self.config.shadows.enabled
     }
 
     pub fn render_config(&self) -> &Render3DConfig {

@@ -431,8 +431,7 @@ pub struct BakedClip {
     pub sample_rate: f32,
     /// Total number of baked frames.
     pub frame_count: usize,
-    /// Duration of the clip in seconds (retained for diagnostics).
-    #[allow(dead_code)]
+    /// Duration of the clip in seconds.
     pub duration: f32,
     /// Flat array of bone matrices: `frame_count * bone_count` entries.
     /// Index as: `matrices[frame * bone_count + bone_index]`.
@@ -443,7 +442,9 @@ impl BakedAnimationData {
     /// Look up the bone matrices for a clip at a given time.
     ///
     /// Performs linear interpolation between adjacent baked frames and
-    /// writes the result into `output`. Returns `true` on success.
+    /// writes the result into `output`. Returns `true` on success, or
+    /// `false` if `clip_index` is out of range, there are no frames, or
+    /// `output` is too short to hold all bone matrices.
     pub fn sample(&self, clip_index: usize, time: f32, output: &mut [[f32; 16]]) -> bool {
         let clip = match self.clips.get(clip_index) {
             Some(c) => c,
@@ -453,30 +454,53 @@ impl BakedAnimationData {
             return false;
         }
 
+        let bc = self.bone_count;
+        if output.len() < bc {
+            return false;
+        }
+
         // Compute frame position.
         let frame_f = (time * clip.sample_rate).max(0.0);
         let frame0 = (frame_f as usize).min(clip.frame_count - 1);
         let frame1 = (frame0 + 1).min(clip.frame_count - 1);
         let frac = frame_f - frame0 as f32;
 
-        let bc = self.bone_count;
         let base0 = frame0 * bc;
         let base1 = frame1 * bc;
 
-        for i in 0..bc.min(output.len()) {
+        for (i, out_mat) in output.iter_mut().enumerate().take(bc) {
             if frac < 0.001 || frame0 == frame1 {
                 // No interpolation needed.
-                output[i] = clip.matrices[base0 + i];
+                *out_mat = clip.matrices[base0 + i];
             } else {
                 // Linear interpolation between frames.
                 let m0 = &clip.matrices[base0 + i];
                 let m1 = &clip.matrices[base1 + i];
                 for j in 0..16 {
-                    output[i][j] = m0[j] + frac * (m1[j] - m0[j]);
+                    out_mat[j] = m0[j] + frac * (m1[j] - m0[j]);
                 }
             }
         }
         true
+    }
+}
+
+impl std::fmt::Display for BakedAnimationData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "BakedAnimationData({} clips, {} bones",
+            self.clips.len(),
+            self.bone_count
+        )?;
+        for (i, clip) in self.clips.iter().enumerate() {
+            write!(
+                f,
+                ", clip[{i}]: {:.2}s @ {:.0}fps ({} frames)",
+                clip.duration, clip.sample_rate, clip.frame_count
+            )?;
+        }
+        write!(f, ")")
     }
 }
 

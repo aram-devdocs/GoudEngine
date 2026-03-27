@@ -1,6 +1,6 @@
 //! Model loading and management methods for [`Renderer3D`].
 
-use super::animation::{bake_animations, AnimationPlayer, BoneChannelMap, BonePropertyNames};
+use super::animation::{bake_animations, AnimationPlayer, BoneChannelMap};
 use super::core::Renderer3D;
 use super::mesh::upload_buffer;
 use super::model::Model3D;
@@ -123,7 +123,10 @@ impl Renderer3D {
             bind_pose_bone_weights.push(sub_bw);
 
             let object_id = self.next_object_id;
-            self.next_object_id += 1;
+            self.next_object_id = self.next_object_id.wrapping_add(1);
+            if self.next_object_id == 0 {
+                self.next_object_id = 1; // Skip 0 which may be used as invalid sentinel
+            }
             let tri_vert_count = verts.len() / floats_per_vertex;
             // Compute bounding sphere from the vertex data before discarding it.
             let bounds = super::types::compute_bounding_sphere(&verts);
@@ -214,19 +217,16 @@ impl Renderer3D {
         }
 
         let model_id = self.next_model_id;
-        self.next_model_id += 1;
+        self.next_model_id = self.next_model_id.wrapping_add(1);
+        if self.next_model_id == 0 {
+            self.next_model_id = 1; // Skip 0 which may be used as invalid sentinel
+        }
 
         // Create animation player if the model has a skeleton.
         if let Some(ref skeleton) = model_data.skeleton {
             let player = AnimationPlayer::new(skeleton.bones.len());
             self.animation_players.insert(model_id, player);
         }
-
-        // Pre-compute bone property name strings once at load time to avoid
-        // per-frame format!() allocations during animation sampling.
-        let bone_count = model_data.skeleton.as_ref().map_or(0, |s| s.bones.len());
-        let cached_bone_prop_names: Vec<BonePropertyNames> =
-            (0..bone_count).map(BonePropertyNames::new).collect();
 
         // Pre-compute channel index maps for each animation clip so that
         // per-frame sampling uses direct array indexing instead of string
@@ -250,7 +250,7 @@ impl Renderer3D {
                     skel,
                     &model_data.animations,
                     &bone_channel_maps,
-                    30.0,
+                    self.config.skinning.baked_animation_sample_rate,
                 ))
             } else {
                 None
@@ -272,7 +272,6 @@ impl Renderer3D {
                 bind_pose_vertices,
                 bind_pose_bone_indices,
                 bind_pose_bone_weights,
-                cached_bone_prop_names,
                 bone_channel_maps,
                 baked_animation,
             },
@@ -305,6 +304,11 @@ impl Renderer3D {
         // Collect object IDs before removing the model entry so scene cleanup
         // can reference them.
         let model = self.models.get(&model_id).unwrap();
+        log::trace!(
+            "destroy_model({}): source='{}'",
+            model_id,
+            model.source_path
+        );
         let obj_ids: Vec<u32> = model.mesh_object_ids.clone();
 
         // Remove from all scenes that reference this model or its objects.
@@ -427,7 +431,7 @@ impl Renderer3D {
 
     /// Mark all sub-mesh objects of a model or instance as static for batching.
     pub fn set_model_static(&mut self, model_id: u32, is_static: bool) -> bool {
-        let obj_ids = self.collect_model_object_ids(model_id);
+        let obj_ids = self.collect_model_object_ids(model_id).to_vec();
         if obj_ids.is_empty() {
             return false;
         }
@@ -444,7 +448,7 @@ impl Renderer3D {
     ///
     /// If `mesh_index` is negative, applies the material to all sub-meshes.
     pub fn set_model_material(&mut self, model_id: u32, mesh_index: i32, material_id: u32) -> bool {
-        let obj_ids = self.collect_model_object_ids(model_id);
+        let obj_ids = self.collect_model_object_ids(model_id).to_vec();
         if obj_ids.is_empty() {
             return false;
         }
@@ -492,7 +496,7 @@ impl Renderer3D {
     ///
     /// `texture_id` is the GPU texture handle packed as `u32`.
     pub fn set_model_texture(&mut self, model_id: u32, mesh_index: i32, texture_id: u32) -> bool {
-        let obj_ids = self.collect_model_object_ids(model_id);
+        let obj_ids = self.collect_model_object_ids(model_id).to_vec();
         if obj_ids.is_empty() {
             return false;
         }
@@ -545,7 +549,7 @@ impl Renderer3D {
         mesh_index: usize,
         f: impl FnOnce(&mut Material3D),
     ) -> bool {
-        let mat_ids = self.collect_model_material_ids(model_id);
+        let mat_ids = self.collect_model_material_ids(model_id).to_vec();
         if mesh_index >= mat_ids.len() {
             return false;
         }
@@ -558,28 +562,40 @@ impl Renderer3D {
     }
 
     /// Collect object IDs for a model or model instance.
-    fn collect_model_object_ids(&self, id: u32) -> Vec<u32> {
+    ///
+    /// Returns a borrowed slice to avoid per-call allocation. Callers that
+    /// need to mutate `self` while iterating should `.to_vec()` the result.
+    fn collect_model_object_ids(&self, id: u32) -> &[u32] {
         self.models
             .get(&id)
-            .map(|m| &m.mesh_object_ids)
-            .or_else(|| self.model_instances.get(&id).map(|i| &i.mesh_object_ids))
-            .cloned()
-            .unwrap_or_default()
+            .map(|m| m.mesh_object_ids.as_slice())
+            .or_else(|| {
+                self.model_instances
+                    .get(&id)
+                    .map(|i| i.mesh_object_ids.as_slice())
+            })
+            .unwrap_or(&[])
     }
 
     /// Collect material IDs for a model or model instance.
-    fn collect_model_material_ids(&self, id: u32) -> Vec<u32> {
+    ///
+    /// Returns a borrowed slice to avoid per-call allocation. Callers that
+    /// need to mutate `self` while iterating should `.to_vec()` the result.
+    fn collect_model_material_ids(&self, id: u32) -> &[u32] {
         self.models
             .get(&id)
-            .map(|m| &m.mesh_material_ids)
-            .or_else(|| self.model_instances.get(&id).map(|i| &i.mesh_material_ids))
-            .cloned()
-            .unwrap_or_default()
+            .map(|m| m.mesh_material_ids.as_slice())
+            .or_else(|| {
+                self.model_instances
+                    .get(&id)
+                    .map(|i| i.mesh_material_ids.as_slice())
+            })
+            .unwrap_or(&[])
     }
 
     /// Apply a mutation to all Object3D sub-meshes of a model or instance.
     fn set_model_transform(&mut self, id: u32, f: impl Fn(&mut Object3D)) -> bool {
-        let obj_ids = self.collect_model_object_ids(id);
+        let obj_ids = self.collect_model_object_ids(id).to_vec();
         if obj_ids.is_empty() {
             return false;
         }

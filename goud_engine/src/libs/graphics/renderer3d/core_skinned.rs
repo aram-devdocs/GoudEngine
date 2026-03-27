@@ -39,7 +39,7 @@ impl Renderer3D {
                 position: cgmath::Vector3::new(0.0, 0.0, 0.0),
                 rotation: cgmath::Vector3::new(0.0, 0.0, 0.0),
                 scale: cgmath::Vector3::new(1.0, 1.0, 1.0),
-                color: [0.8, 0.8, 0.8, 1.0],
+                color: self.config.default_material_color,
             },
         );
         id

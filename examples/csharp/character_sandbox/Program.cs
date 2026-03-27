@@ -28,7 +28,10 @@ class Program
             if (playerRig != null) break;
         }
         if (playerRig == null)
-            throw new InvalidOperationException("No humanoid model found. Check assets/Character.glb exists.");
+        {
+            string assetsDir = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "assets");
+            throw new InvalidOperationException($"No humanoid model found. Check {assetsDir}/Character.glb exists.");
+        }
 
         var player = new PlayerController(game, playerRig, sceneId);
 
@@ -77,7 +80,7 @@ class Program
                 $"AnimEval={animEval} Saved={animSaved} Agents={crowd.Count}");
 
             // Write stats to file for automated comparison
-            System.IO.File.WriteAllText("/tmp/goud_profile_stats.txt",
+            System.IO.File.WriteAllText(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "goud_profile_stats.txt"),
                 $"fps={avgFps:F1}\ndraws={draws}\ninstanced={instanced}\n" +
                 $"agents={crowd.Count}\nanim_eval={animEval}\nanim_saved={animSaved}\n");
 
@@ -218,7 +221,7 @@ class Program
         Console.WriteLine("  G          Toggle grid");
         Console.WriteLine("  F          Toggle fog");
         Console.WriteLine("  +/-        Spawn/remove 10 agents");
-        Console.WriteLine("  1-5        Perf toggles (culling/skin/mat/lod/eval)");
+        Console.WriteLine("  1,3-5      Perf toggles (culling/mat/lod/eval)");
         Console.WriteLine("  6          Toggle animation phase-lock");
         Console.WriteLine("  ESC        Quit");
         Console.WriteLine("========================================");

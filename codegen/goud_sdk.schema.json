@@ -5319,6 +5319,321 @@
           "returns": "i32"
         },
         {
+          "name": "setAnimationLodDistance",
+          "doc": "Sets the distance at which animation updates are half-rated",
+          "params": [
+            {
+              "name": "distance",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setAnimationLodSkipDistance",
+          "doc": "Sets the distance at which animation updates are frozen",
+          "params": [
+            {
+              "name": "distance",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getAnimationLodDistance",
+          "doc": "Returns the animation LOD half-rate distance",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "getAnimationLodSkipDistance",
+          "doc": "Returns the animation LOD freeze distance",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "setStaticBatchingEnabled",
+          "doc": "Enables or disables static batching",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setInstancingEnabled",
+          "doc": "Enables or disables instanced rendering",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getFrustumCullingEnabled",
+          "doc": "Returns whether frustum culling is enabled",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "getSkinningMode",
+          "doc": "Returns the skinning mode (0=CPU, 1=GPU)",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "getMaterialSortingEnabled",
+          "doc": "Returns whether material sorting is enabled",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "getStaticBatchingEnabled",
+          "doc": "Returns whether static batching is enabled",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "getInstancingEnabled",
+          "doc": "Returns whether instanced rendering is enabled",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "getAnimationLodEnabled",
+          "doc": "Returns whether animation LOD is enabled",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "getSharedAnimationEval",
+          "doc": "Returns whether shared animation evaluation is enabled",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "setBakedAnimationSampleRate",
+          "doc": "Sets the baked animation sample rate in frames per second",
+          "params": [
+            {
+              "name": "rate",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getBakedAnimationSampleRate",
+          "doc": "Returns the baked animation sample rate",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "setMinInstancesForBatching",
+          "doc": "Sets the minimum instance count for instanced rendering",
+          "params": [
+            {
+              "name": "count",
+              "type": "u32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getMinInstancesForBatching",
+          "doc": "Returns the minimum instance count for batching",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "setDefaultMaterialColor",
+          "doc": "Sets the fallback material color for meshes without materials",
+          "params": [
+            {
+              "name": "r",
+              "type": "f32"
+            },
+            {
+              "name": "g",
+              "type": "f32"
+            },
+            {
+              "name": "b",
+              "type": "f32"
+            },
+            {
+              "name": "a",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setGridAlpha",
+          "doc": "Sets the grid transparency alpha (0.0 invisible, 1.0 opaque)",
+          "params": [
+            {
+              "name": "alpha",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getGridAlpha",
+          "doc": "Returns the current grid transparency alpha",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "setFrustumCullingFov",
+          "doc": "Sets the frustum culling FOV in degrees",
+          "params": [
+            {
+              "name": "fovDegrees",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getFrustumCullingFov",
+          "doc": "Returns the frustum culling FOV in degrees",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "setFrustumCullingNearPlane",
+          "doc": "Sets the near clipping plane for frustum culling",
+          "params": [
+            {
+              "name": "near",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getFrustumCullingNearPlane",
+          "doc": "Returns the frustum culling near plane distance",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "setFrustumCullingFarPlane",
+          "doc": "Sets the far clipping plane for frustum culling",
+          "params": [
+            {
+              "name": "far",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getFrustumCullingFarPlane",
+          "doc": "Returns the frustum culling far plane distance",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "setShadowsEnabled",
+          "doc": "Enables or disables shadow mapping",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getShadowsEnabled",
+          "doc": "Returns whether shadows are enabled",
+          "params": [],
+          "returns": "bool"
+        },
+        {
+          "name": "setShadowMapSize",
+          "doc": "Sets the shadow map resolution",
+          "params": [
+            {
+              "name": "size",
+              "type": "u32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getShadowMapSize",
+          "doc": "Returns the shadow map resolution",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "setShadowBias",
+          "doc": "Sets the shadow depth bias",
+          "params": [
+            {
+              "name": "bias",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getShadowBias",
+          "doc": "Returns the shadow depth bias",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "instantiateModelBatch",
+          "doc": "Creates multiple instances of a model in one call",
+          "params": [
+            {
+              "name": "sourceModelId",
+              "type": "u32"
+            },
+            {
+              "name": "count",
+              "type": "u32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "setModelPositionsBatch",
+          "doc": "Sets positions for multiple models in one call",
+          "params": [
+            {
+              "name": "count",
+              "type": "u32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "addModelsToSceneBatch",
+          "doc": "Adds multiple models to a scene in one call",
+          "params": [
+            {
+              "name": "sceneId",
+              "type": "u32"
+            },
+            {
+              "name": "count",
+              "type": "u32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
           "name": "getDrawCalls",
           "doc": "Returns the number of draw calls last frame",
           "params": [],
@@ -5901,6 +6216,36 @@
             {
               "name": "speed",
               "type": "f32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setAnimationBakingEnabled",
+          "doc": "Enables or disables animation baking for a model",
+          "params": [
+            {
+              "name": "modelId",
+              "type": "u32"
+            },
+            {
+              "name": "enabled",
+              "type": "bool"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "setAnimationPhaseLock",
+          "doc": "Enables or disables animation phase lock for a model",
+          "params": [
+            {
+              "name": "modelId",
+              "type": "u32"
+            },
+            {
+              "name": "enabled",
+              "type": "bool"
             }
           ],
           "returns": "bool"
@@ -12369,6 +12714,157 @@
         "setSharedAnimationEval": {
           "ffi": "goud_renderer3d_set_shared_animation_eval"
         },
+        "setAnimationLodDistance": {
+          "ffi": "goud_renderer3d_set_animation_lod_distance",
+          "params": {"distance": "f32"},
+          "returns": "i32"
+        },
+        "setAnimationLodSkipDistance": {
+          "ffi": "goud_renderer3d_set_animation_lod_skip_distance",
+          "params": {"distance": "f32"},
+          "returns": "i32"
+        },
+        "getAnimationLodDistance": {
+          "ffi": "goud_renderer3d_get_animation_lod_distance",
+          "returns": "f32"
+        },
+        "getAnimationLodSkipDistance": {
+          "ffi": "goud_renderer3d_get_animation_lod_skip_distance",
+          "returns": "f32"
+        },
+        "setStaticBatchingEnabled": {
+          "ffi": "goud_renderer3d_set_static_batching_enabled"
+        },
+        "setInstancingEnabled": {
+          "ffi": "goud_renderer3d_set_instancing_enabled"
+        },
+        "getFrustumCullingEnabled": {
+          "ffi": "goud_renderer3d_get_frustum_culling_enabled",
+          "returns": "bool"
+        },
+        "getSkinningMode": {
+          "ffi": "goud_renderer3d_get_skinning_mode",
+          "returns": "i32"
+        },
+        "getMaterialSortingEnabled": {
+          "ffi": "goud_renderer3d_get_material_sorting_enabled",
+          "returns": "bool"
+        },
+        "getStaticBatchingEnabled": {
+          "ffi": "goud_renderer3d_get_static_batching_enabled",
+          "returns": "bool"
+        },
+        "getInstancingEnabled": {
+          "ffi": "goud_renderer3d_get_instancing_enabled",
+          "returns": "bool"
+        },
+        "getAnimationLodEnabled": {
+          "ffi": "goud_renderer3d_get_animation_lod_enabled",
+          "returns": "bool"
+        },
+        "getSharedAnimationEval": {
+          "ffi": "goud_renderer3d_get_shared_animation_eval",
+          "returns": "bool"
+        },
+        "setBakedAnimationSampleRate": {
+          "ffi": "goud_renderer3d_set_baked_animation_sample_rate",
+          "params": {"rate": "f32"},
+          "returns": "i32"
+        },
+        "getBakedAnimationSampleRate": {
+          "ffi": "goud_renderer3d_get_baked_animation_sample_rate",
+          "returns": "f32"
+        },
+        "setMinInstancesForBatching": {
+          "ffi": "goud_renderer3d_set_min_instances_for_batching",
+          "params": {"count": "u32"},
+          "returns": "i32"
+        },
+        "getMinInstancesForBatching": {
+          "ffi": "goud_renderer3d_get_min_instances_for_batching",
+          "returns": "i32"
+        },
+        "setDefaultMaterialColor": {
+          "ffi": "goud_renderer3d_set_default_material_color",
+          "params": {"r": "f32", "g": "f32", "b": "f32", "a": "f32"},
+          "returns": "i32"
+        },
+        "setGridAlpha": {
+          "ffi": "goud_renderer3d_set_grid_alpha",
+          "params": {"alpha": "f32"},
+          "returns": "i32"
+        },
+        "getGridAlpha": {
+          "ffi": "goud_renderer3d_get_grid_alpha",
+          "returns": "f32"
+        },
+        "setFrustumCullingFov": {
+          "ffi": "goud_renderer3d_set_frustum_culling_fov",
+          "params": {"fovDegrees": "f32"},
+          "returns": "i32"
+        },
+        "getFrustumCullingFov": {
+          "ffi": "goud_renderer3d_get_frustum_culling_fov",
+          "returns": "f32"
+        },
+        "setFrustumCullingNearPlane": {
+          "ffi": "goud_renderer3d_set_frustum_culling_near_plane",
+          "params": {"near": "f32"},
+          "returns": "i32"
+        },
+        "getFrustumCullingNearPlane": {
+          "ffi": "goud_renderer3d_get_frustum_culling_near_plane",
+          "returns": "f32"
+        },
+        "setFrustumCullingFarPlane": {
+          "ffi": "goud_renderer3d_set_frustum_culling_far_plane",
+          "params": {"far": "f32"},
+          "returns": "i32"
+        },
+        "getFrustumCullingFarPlane": {
+          "ffi": "goud_renderer3d_get_frustum_culling_far_plane",
+          "returns": "f32"
+        },
+        "setShadowsEnabled": {
+          "ffi": "goud_renderer3d_set_shadows_enabled"
+        },
+        "getShadowsEnabled": {
+          "ffi": "goud_renderer3d_get_shadows_enabled",
+          "returns": "bool"
+        },
+        "setShadowMapSize": {
+          "ffi": "goud_renderer3d_set_shadow_map_size",
+          "params": {"size": "u32"},
+          "returns": "i32"
+        },
+        "getShadowMapSize": {
+          "ffi": "goud_renderer3d_get_shadow_map_size",
+          "returns": "i32"
+        },
+        "setShadowBias": {
+          "ffi": "goud_renderer3d_set_shadow_bias",
+          "params": {"bias": "f32"},
+          "returns": "i32"
+        },
+        "getShadowBias": {
+          "ffi": "goud_renderer3d_get_shadow_bias",
+          "returns": "f32"
+        },
+        "instantiateModelBatch": {
+          "ffi": "goud_renderer3d_instantiate_model_batch",
+          "unsafe": true,
+          "batch_api": true
+        },
+        "setModelPositionsBatch": {
+          "ffi": "goud_renderer3d_set_model_positions_batch",
+          "unsafe": true,
+          "batch_api": true
+        },
+        "addModelsToSceneBatch": {
+          "ffi": "goud_renderer3d_add_models_to_scene_batch",
+          "unsafe": true,
+          "batch_api": true
+        },
         "getDrawCalls": {
           "ffi": "goud_renderer3d_get_draw_calls"
         },
@@ -13213,6 +13709,12 @@
         },
         "setAnimationSpeed": {
           "ffi": "goud_renderer3d_set_animation_speed"
+        },
+        "setAnimationBakingEnabled": {
+          "ffi": "goud_renderer3d_set_animation_baking_enabled"
+        },
+        "setAnimationPhaseLock": {
+          "ffi": "goud_renderer3d_set_animation_phase_lock"
         },
         "blendAnimations": {
           "ffi": "goud_renderer3d_blend_animations"

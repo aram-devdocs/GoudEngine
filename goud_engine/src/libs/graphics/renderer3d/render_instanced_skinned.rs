@@ -35,11 +35,10 @@ impl Renderer3D {
         // Group instances by source_model_id.
         let mut groups: std::collections::HashMap<u32, Vec<u32>> = std::collections::HashMap::new();
         for (&inst_id, inst) in &self.model_instances {
-            let source = match self.models.get(&inst.source_model_id) {
-                Some(m) if m.is_skinned => m,
+            match self.models.get(&inst.source_model_id) {
+                Some(m) if m.is_skinned => {}
                 _ => continue,
             };
-            let _ = source; // just checking is_skinned
             if self.animation_players.contains_key(&inst_id) {
                 groups
                     .entry(inst.source_model_id)
@@ -53,10 +52,11 @@ impl Renderer3D {
         // template models (sitting at the default position) to appear as
         // T-pose ghosts at the origin.
 
-        // Filter to groups with at least 2 entries (instanced rendering benefit).
+        // Filter to groups meeting the minimum instance threshold for instanced rendering.
+        let min_instances = self.config.batching.min_instances_for_batching;
         let groups: Vec<(u32, Vec<u32>)> = groups
             .into_iter()
-            .filter(|(_, ids)| ids.len() >= 2)
+            .filter(|(_, ids)| ids.len() >= min_instances)
             .collect();
 
         if groups.is_empty() {
@@ -117,9 +117,7 @@ impl Renderer3D {
         // per-group offsets so a single upload covers every group.
         // Each instance's bone_offset in the instance data includes the
         // group's base offset into the packed buffer.
-        #[allow(dead_code)]
         struct GroupRenderData {
-            group_bone_offset: usize, // offset in matrices into the packed buffer
             instance_data: Vec<f32>,
             instance_count: u32,
             mesh_object_ids: Vec<u32>,
@@ -176,7 +174,6 @@ impl Renderer3D {
             }
 
             group_render_data.push(GroupRenderData {
-                group_bone_offset,
                 instance_data,
                 instance_count: gd.instance_ids.len() as u32,
                 mesh_object_ids: gd.mesh_object_ids.clone(),
@@ -276,7 +273,7 @@ impl Renderer3D {
                     .get(sub_idx)
                     .and_then(|&mid| self.materials.get(&mid))
                     .map(|m| [m.color.x, m.color.y, m.color.z, m.color.w])
-                    .unwrap_or([0.8, 0.8, 0.8, 1.0]);
+                    .unwrap_or(self.config.default_material_color);
 
                 self.bind_or_skip_texture(
                     texture_id,
@@ -305,7 +302,7 @@ impl Renderer3D {
                     vc as u32,
                     grd.instance_count,
                 ) {
-                    eprintln!("[INST] draw_arrays_instanced failed: {e}");
+                    log::error!("draw_arrays_instanced failed: {e}");
                 }
                 self.stats.draw_calls += 1;
                 self.stats.instanced_draw_calls += 1;
