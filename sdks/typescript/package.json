@@ -1,6 +1,6 @@
 {
   "name": "goudengine",
-  "version": "0.0.837",
+  "version": "0.0.838",
   "description": "GoudEngine - build 2D and 3D games with TypeScript for Node.js and web",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
