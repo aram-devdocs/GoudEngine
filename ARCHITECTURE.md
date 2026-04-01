@@ -278,7 +278,7 @@ FFI functions return `GoudResult` (an `i32`). Detailed error messages are stored
 ### FFI Modules
 
 <!-- gen:ffi-modules -->
-FFI modules (**31 total**): animation, arena, audio, collision, component, component_sprite, component_sprite_animator, component_text, component_transform2d, context, debug, engine_config, entity, input, network, physics, plugin, pool, providers, renderer, renderer3d, scene, scene_loading, scene_loading_tests, scene_tests, scene_transition, scene_transition_tests, spatial_grid, types, ui, window.
+FFI modules (**32 total**): animation, arena, audio, collision, component, component_sprite, component_sprite_animator, component_text, component_transform2d, context, debug, engine_config, entity, input, network, physics, plugin, pool, providers, renderer, renderer3d, scene, scene_loading, scene_loading_tests, scene_tests, scene_transition, scene_transition_tests, spatial_grid, spatial_hash, types, ui, window.
 <!-- /gen:ffi-modules -->
 
 See `goud_engine/src/ffi/mod.rs` for the current module tree.
