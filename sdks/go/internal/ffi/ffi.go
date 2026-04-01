@@ -2956,7 +2956,7 @@ func GoudSpatialHashInsert(handle uint32, entity_id uint64, x float32, y float32
 
 // GoudSpatialHashQueryRange wraps goud_spatial_hash_query_range.
 func GoudSpatialHashQueryRange(handle uint32, x float32, y float32, radius float32, out_entities *C.uint64_t, capacity uint32) int32 {
-	if out_entities == nil {
+	if out_entities == nil && capacity > 0 {
 		return -1
 	}
 	return int32(C.goud_spatial_hash_query_range(C.uint32_t(handle), C.float(x), C.float(y), C.float(radius), out_entities, C.uint32_t(capacity)))
@@ -2964,7 +2964,7 @@ func GoudSpatialHashQueryRange(handle uint32, x float32, y float32, radius float
 
 // GoudSpatialHashQueryRect wraps goud_spatial_hash_query_rect.
 func GoudSpatialHashQueryRect(handle uint32, x float32, y float32, w float32, h float32, out_entities *C.uint64_t, capacity uint32) int32 {
-	if out_entities == nil {
+	if out_entities == nil && capacity > 0 {
 		return -1
 	}
 	return int32(C.goud_spatial_hash_query_rect(C.uint32_t(handle), C.float(x), C.float(y), C.float(w), C.float(h), out_entities, C.uint32_t(capacity)))

@@ -162,6 +162,7 @@ namespace GoudEngine
                 _handle = uint.MaxValue;
                 _disposed = true;
             }
+            GC.SuppressFinalize(this);
         }
 
         private void ThrowIfDisposed()
