@@ -2372,6 +2372,37 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_spatial_grid_entity_count(uint handle);
 
+        // spatial_hash
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_spatial_hash_create(float cell_size);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_spatial_hash_create_with_capacity(float cell_size, uint capacity);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_spatial_hash_destroy(uint handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_spatial_hash_clear(uint handle);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_spatial_hash_insert(uint handle, ulong entity_id, float x, float y, float half_w, float half_h);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_spatial_hash_remove(uint handle, ulong entity_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_spatial_hash_update(uint handle, ulong entity_id, float x, float y, float half_w, float half_h);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_spatial_hash_query_range(uint handle, float x, float y, float radius, ref ulong out_entities, uint capacity);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_spatial_hash_query_rect(uint handle, float x, float y, float w, float h, ref ulong out_entities, uint capacity);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_spatial_hash_entity_count(uint handle);
+
         // entity_pool
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern uint goud_entity_pool_create(uint capacity);

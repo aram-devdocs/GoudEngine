@@ -126,6 +126,7 @@ pub mod scene;
 pub mod scene_loading;
 pub mod scene_transition;
 pub mod spatial_grid;
+pub mod spatial_hash;
 pub mod types;
 pub mod ui;
 #[cfg(feature = "native")]

@@ -148,6 +148,10 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/spatial_grid/lifecycle.rs",
     "src/ffi/spatial_grid/operations.rs",
     "src/ffi/spatial_grid/queries.rs",
+    // spatial_hash module (AABB-based broad-phase)
+    "src/ffi/spatial_hash/lifecycle.rs",
+    "src/ffi/spatial_hash/operations.rs",
+    "src/ffi/spatial_hash/queries.rs",
     // ui module
     "src/ffi/ui/manager.rs",
     "src/ffi/ui/node.rs",
