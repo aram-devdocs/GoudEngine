@@ -2924,6 +2924,62 @@ func GoudSpatialGridUpdate(handle uint32, entity_id uint64, x float32, y float32
 	return int32(C.goud_spatial_grid_update(C.uint32_t(handle), C.uint64_t(entity_id), C.float(x), C.float(y)))
 }
 
+// GoudSpatialHashClear wraps goud_spatial_hash_clear.
+func GoudSpatialHashClear(handle uint32) int32 {
+	return int32(C.goud_spatial_hash_clear(C.uint32_t(handle)))
+}
+
+// GoudSpatialHashCreate wraps goud_spatial_hash_create.
+func GoudSpatialHashCreate(cell_size float32) uint32 {
+	return uint32(C.goud_spatial_hash_create(C.float(cell_size)))
+}
+
+// GoudSpatialHashCreateWithCapacity wraps goud_spatial_hash_create_with_capacity.
+func GoudSpatialHashCreateWithCapacity(cell_size float32, capacity uint32) uint32 {
+	return uint32(C.goud_spatial_hash_create_with_capacity(C.float(cell_size), C.uint32_t(capacity)))
+}
+
+// GoudSpatialHashDestroy wraps goud_spatial_hash_destroy.
+func GoudSpatialHashDestroy(handle uint32) int32 {
+	return int32(C.goud_spatial_hash_destroy(C.uint32_t(handle)))
+}
+
+// GoudSpatialHashEntityCount wraps goud_spatial_hash_entity_count.
+func GoudSpatialHashEntityCount(handle uint32) int32 {
+	return int32(C.goud_spatial_hash_entity_count(C.uint32_t(handle)))
+}
+
+// GoudSpatialHashInsert wraps goud_spatial_hash_insert.
+func GoudSpatialHashInsert(handle uint32, entity_id uint64, x float32, y float32, half_w float32, half_h float32) int32 {
+	return int32(C.goud_spatial_hash_insert(C.uint32_t(handle), C.uint64_t(entity_id), C.float(x), C.float(y), C.float(half_w), C.float(half_h)))
+}
+
+// GoudSpatialHashQueryRange wraps goud_spatial_hash_query_range.
+func GoudSpatialHashQueryRange(handle uint32, x float32, y float32, radius float32, out_entities *C.uint64_t, capacity uint32) int32 {
+	if out_entities == nil && capacity > 0 {
+		return -1
+	}
+	return int32(C.goud_spatial_hash_query_range(C.uint32_t(handle), C.float(x), C.float(y), C.float(radius), out_entities, C.uint32_t(capacity)))
+}
+
+// GoudSpatialHashQueryRect wraps goud_spatial_hash_query_rect.
+func GoudSpatialHashQueryRect(handle uint32, x float32, y float32, w float32, h float32, out_entities *C.uint64_t, capacity uint32) int32 {
+	if out_entities == nil && capacity > 0 {
+		return -1
+	}
+	return int32(C.goud_spatial_hash_query_rect(C.uint32_t(handle), C.float(x), C.float(y), C.float(w), C.float(h), out_entities, C.uint32_t(capacity)))
+}
+
+// GoudSpatialHashRemove wraps goud_spatial_hash_remove.
+func GoudSpatialHashRemove(handle uint32, entity_id uint64) int32 {
+	return int32(C.goud_spatial_hash_remove(C.uint32_t(handle), C.uint64_t(entity_id)))
+}
+
+// GoudSpatialHashUpdate wraps goud_spatial_hash_update.
+func GoudSpatialHashUpdate(handle uint32, entity_id uint64, x float32, y float32, half_w float32, half_h float32) int32 {
+	return int32(C.goud_spatial_hash_update(C.uint32_t(handle), C.uint64_t(entity_id), C.float(x), C.float(y), C.float(half_w), C.float(half_h)))
+}
+
 // GoudSpriteAnimatorFromClip wraps goud_sprite_animator_from_clip.
 func GoudSpriteAnimatorFromClip(builder *C.FfiAnimationClipBuilder) C.FfiSpriteAnimator {
 	if builder == nil {

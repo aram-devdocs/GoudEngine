@@ -136,6 +136,11 @@ extern "C" {
 #define GOUD_INVALID_SPATIAL_GRID_HANDLE UINT32_MAX
 
 /**
+ * Sentinel value indicating an invalid or failed spatial hash handle.
+ */
+#define GOUD_INVALID_SPATIAL_HASH_HANDLE UINT32_MAX
+
+/**
  * Sentinel `u64` returned when a node operation fails or no node exists.
  */
 #define INVALID_NODE_U64 UINT64_MAX
@@ -5063,6 +5068,56 @@ int32_t goud_spatial_grid_query_radius(uint32_t handle, float center_x, float ce
  * Returns the number of entities in the spatial grid.
  */
 int32_t goud_spatial_grid_entity_count(uint32_t handle);
+
+/**
+ * Creates a new spatial hash with the specified cell size.
+ */
+uint32_t goud_spatial_hash_create(float cell_size);
+
+/**
+ * Creates a new spatial hash with pre-allocated capacity.
+ */
+uint32_t goud_spatial_hash_create_with_capacity(float cell_size, uint32_t capacity);
+
+/**
+ * Destroys a spatial hash and frees its resources.
+ */
+int32_t goud_spatial_hash_destroy(uint32_t handle);
+
+/**
+ * Clears all entities from a spatial hash without destroying it.
+ */
+int32_t goud_spatial_hash_clear(uint32_t handle);
+
+/**
+ * Inserts an entity with an AABB into the spatial hash.
+ */
+int32_t goud_spatial_hash_insert(uint32_t handle, uint64_t entity_id, float x, float y, float half_w, float half_h);
+
+/**
+ * Removes an entity from the spatial hash.
+ */
+int32_t goud_spatial_hash_remove(uint32_t handle, uint64_t entity_id);
+
+/**
+ * Updates an entity's AABB in the spatial hash.
+ */
+int32_t goud_spatial_hash_update(uint32_t handle, uint64_t entity_id, float x, float y, float half_w, float half_h);
+
+/**
+ * Queries for entities within a radius of a center point.
+ */
+int32_t goud_spatial_hash_query_range(uint32_t handle, float x, float y, float radius, uint64_t *out_entities, uint32_t capacity);
+
+/**
+ * Queries for entities whose AABB overlaps the given rectangle.
+ */
+int32_t goud_spatial_hash_query_rect(uint32_t handle, float x, float y, float w, float h, uint64_t *out_entities, uint32_t capacity);
+
+/**
+ * Returns the number of entities in the spatial hash.
+ */
+int32_t goud_spatial_hash_entity_count(uint32_t handle);
 
 /**
  * Begins the fixed timestep accumulator for this frame.

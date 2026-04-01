@@ -1189,6 +1189,18 @@
       "goud_spatial_grid_query_radius": {},
       "goud_spatial_grid_entity_count": {}
     },
+    "spatial_hash": {
+      "goud_spatial_hash_create": {},
+      "goud_spatial_hash_create_with_capacity": {},
+      "goud_spatial_hash_destroy": {},
+      "goud_spatial_hash_clear": {},
+      "goud_spatial_hash_insert": {},
+      "goud_spatial_hash_remove": {},
+      "goud_spatial_hash_update": {},
+      "goud_spatial_hash_query_range": {},
+      "goud_spatial_hash_query_rect": {},
+      "goud_spatial_hash_entity_count": {}
+    },
     "entity_pool": {
       "goud_entity_pool_create": {},
       "goud_entity_pool_destroy": {},

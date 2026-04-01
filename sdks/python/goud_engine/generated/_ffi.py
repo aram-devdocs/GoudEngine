@@ -1731,6 +1731,28 @@ def _setup():
     _lib.goud_spatial_grid_entity_count.argtypes = [ctypes.c_uint32]
     _lib.goud_spatial_grid_entity_count.restype = ctypes.c_int32
 
+    # spatial_hash
+    _lib.goud_spatial_hash_create.argtypes = [ctypes.c_float]
+    _lib.goud_spatial_hash_create.restype = ctypes.c_uint32
+    _lib.goud_spatial_hash_create_with_capacity.argtypes = [ctypes.c_float, ctypes.c_uint32]
+    _lib.goud_spatial_hash_create_with_capacity.restype = ctypes.c_uint32
+    _lib.goud_spatial_hash_destroy.argtypes = [ctypes.c_uint32]
+    _lib.goud_spatial_hash_destroy.restype = ctypes.c_int32
+    _lib.goud_spatial_hash_clear.argtypes = [ctypes.c_uint32]
+    _lib.goud_spatial_hash_clear.restype = ctypes.c_int32
+    _lib.goud_spatial_hash_insert.argtypes = [ctypes.c_uint32, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_spatial_hash_insert.restype = ctypes.c_int32
+    _lib.goud_spatial_hash_remove.argtypes = [ctypes.c_uint32, ctypes.c_uint64]
+    _lib.goud_spatial_hash_remove.restype = ctypes.c_int32
+    _lib.goud_spatial_hash_update.argtypes = [ctypes.c_uint32, ctypes.c_uint64, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_spatial_hash_update.restype = ctypes.c_int32
+    _lib.goud_spatial_hash_query_range.argtypes = [ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.POINTER(ctypes.c_uint64), ctypes.c_uint32]
+    _lib.goud_spatial_hash_query_range.restype = ctypes.c_int32
+    _lib.goud_spatial_hash_query_rect.argtypes = [ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.POINTER(ctypes.c_uint64), ctypes.c_uint32]
+    _lib.goud_spatial_hash_query_rect.restype = ctypes.c_int32
+    _lib.goud_spatial_hash_entity_count.argtypes = [ctypes.c_uint32]
+    _lib.goud_spatial_hash_entity_count.restype = ctypes.c_int32
+
     # entity_pool
     _lib.goud_entity_pool_create.argtypes = [ctypes.c_uint32]
     _lib.goud_entity_pool_create.restype = ctypes.c_uint32
