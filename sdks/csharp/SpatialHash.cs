@@ -65,6 +65,23 @@ namespace GoudEngine
         }
 
         /// <summary>
+        /// Updates an entity's AABB in the spatial hash.
+        /// The entity must already exist.
+        /// </summary>
+        /// <param name="entityId">Entity ID.</param>
+        /// <param name="x">New center X position.</param>
+        /// <param name="y">New center Y position.</param>
+        /// <param name="halfW">New half-width of the AABB.</param>
+        /// <param name="halfH">New half-height of the AABB.</param>
+        public void Update(ulong entityId, float x, float y, float halfW, float halfH)
+        {
+            ThrowIfDisposed();
+            int result = NativeMethods.goud_spatial_hash_update(_handle, entityId, x, y, halfW, halfH);
+            if (result != 0)
+                throw new InvalidOperationException("SpatialHash.Update failed");
+        }
+
+        /// <summary>
         /// Clears all entities from the spatial hash.
         /// </summary>
         public void Clear()
