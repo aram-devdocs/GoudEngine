@@ -452,6 +452,13 @@ def test_generated_new_api_names():
     assert "_lib.goud_spatial_grid_destroy.argtypes" in ffi_src, "missing goud_spatial_grid_destroy argtypes"
     assert "_lib.goud_spatial_grid_insert.argtypes" in ffi_src, "missing goud_spatial_grid_insert argtypes"
 
+    # Spatial hash - AABB broad-phase (#642)
+    assert "_lib.goud_spatial_hash_create.argtypes" in ffi_src, "missing goud_spatial_hash_create argtypes"
+    assert "_lib.goud_spatial_hash_destroy.argtypes" in ffi_src, "missing goud_spatial_hash_destroy argtypes"
+    assert "_lib.goud_spatial_hash_insert.argtypes" in ffi_src, "missing goud_spatial_hash_insert argtypes"
+    assert "_lib.goud_spatial_hash_query_range.argtypes" in ffi_src, "missing goud_spatial_hash_query_range argtypes"
+    assert "_lib.goud_spatial_hash_query_rect.argtypes" in ffi_src, "missing goud_spatial_hash_query_rect argtypes"
+
     # Generic ECS query (PR #605)
     assert "def component_count(self, type_id_hash):" in game_src, "missing component_count wrapper"
     assert "def component_get_entities(self, type_id_hash, out_entities, max_count):" in game_src, "missing component_get_entities wrapper"
@@ -516,7 +523,21 @@ def test_phase0_ffi_surface():
         "goud_renderer_get_frame_metrics",
     ]
 
-    all_fns = spatial_fns + atlas_fns + batch_fns + timestep_fns + metrics_fns
+    # -- SpatialHash API (AABB broad-phase, #642) --
+    spatial_hash_fns = [
+        "goud_spatial_hash_create",
+        "goud_spatial_hash_create_with_capacity",
+        "goud_spatial_hash_destroy",
+        "goud_spatial_hash_clear",
+        "goud_spatial_hash_insert",
+        "goud_spatial_hash_remove",
+        "goud_spatial_hash_update",
+        "goud_spatial_hash_query_range",
+        "goud_spatial_hash_query_rect",
+        "goud_spatial_hash_entity_count",
+    ]
+
+    all_fns = spatial_fns + spatial_hash_fns + atlas_fns + batch_fns + timestep_fns + metrics_fns
     missing = []
     for fn_name in all_fns:
         key = f"_lib.{fn_name}.argtypes"

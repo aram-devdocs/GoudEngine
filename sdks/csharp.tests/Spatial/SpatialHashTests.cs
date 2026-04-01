@@ -60,6 +60,23 @@ public class SpatialHashTests
     }
 
     [Fact]
+    public void Update_Moves_Entity()
+    {
+        using var hash = new SpatialHash(64.0f);
+        hash.Insert(1, 10.0f, 10.0f, 5.0f, 5.0f);
+        hash.Update(1, 500.0f, 500.0f, 5.0f, 5.0f);
+        Assert.Equal(1, hash.Count);
+    }
+
+    [Fact]
+    public void Update_Nonexistent_Throws()
+    {
+        using var hash = new SpatialHash(64.0f);
+        Assert.Throws<InvalidOperationException>(() =>
+            hash.Update(999, 10.0f, 10.0f, 5.0f, 5.0f));
+    }
+
+    [Fact]
     public void Clear_Empties_Hash()
     {
         using var hash = new SpatialHash(64.0f);
