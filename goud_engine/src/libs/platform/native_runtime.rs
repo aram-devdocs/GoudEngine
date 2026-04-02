@@ -29,7 +29,7 @@ fn invalid_pair_error(
 /// Tries wgpu (Winit + Wgpu) first, then falls back to OpenGL (GLFW + OpenGL).
 #[allow(unreachable_code)]
 pub fn detect_best_backend() -> (WindowBackendKind, RenderBackendKind) {
-    #[cfg(feature = "xbox-gdk")]
+    #[cfg(all(feature = "xbox-gdk", target_env = "msvc"))]
     {
         return (WindowBackendKind::XboxGdk, RenderBackendKind::Wgpu);
     }
