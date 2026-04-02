@@ -193,9 +193,7 @@ publishing {{
 }}
 
 signing {{
-    val signingKey = System.getenv("GPG_PRIVATE_KEY")
-    val signingPassword = System.getenv("GPG_PASSPHRASE")
-    useInMemoryPgpKeys(signingKey, signingPassword)
+    useGpgCmd()
     isRequired = System.getenv("MAVEN_USERNAME") != null
     sign(publishing.publications["mavenKotlin"])
 }}
