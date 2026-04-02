@@ -33,9 +33,9 @@ generated_outputs=(
   "sdks/csharp/NetworkEndpoint.cs"
   "sdks/python/pyproject.toml"
   "sdks/python/MANIFEST.in"
-  "sdks/python/goud_engine/generated"
-  "sdks/python/goud_engine/__init__.py"
-  "sdks/python/goud_engine/networking.py"
+  "sdks/python/goudengine/generated"
+  "sdks/python/goudengine/__init__.py"
+  "sdks/python/goudengine/networking.py"
   "sdks/typescript/package.json"
   "sdks/typescript/tsconfig.json"
   "sdks/typescript/tsconfig.web.json"
@@ -123,7 +123,7 @@ if [[ "$INCLUDE_DOCS" -eq 1 ]]; then
   GOUD_ENGINE_LIB="$ROOT_DIR/target/release" \
   PDOC_ALLOW_EXEC=1 \
   PYTHONPATH="$ROOT_DIR/sdks/python" \
-  pdoc --output-dir docs/book/api/python sdks/python/goud_engine
+  pdoc --output-dir docs/book/api/python sdks/python/goudengine
 
   (
     cd sdks/typescript
