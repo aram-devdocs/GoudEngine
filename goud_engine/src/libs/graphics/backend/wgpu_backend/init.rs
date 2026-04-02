@@ -335,6 +335,10 @@ impl WgpuBackend {
         pollster::block_on(Self::new_xbox_async(handle, width, height))
     }
 
+    // TODO(xbox-gdk): Extract shared init logic (bind group layouts, fallback
+    // textures, surface config) into a common helper before promoting this PoC
+    // to production. Currently duplicates new_async to avoid refactoring the
+    // existing init path during the feasibility study.
     #[cfg(feature = "xbox-gdk")]
     async fn new_xbox_async(
         handle: Arc<super::xbox_surface::XboxWindowHandle>,

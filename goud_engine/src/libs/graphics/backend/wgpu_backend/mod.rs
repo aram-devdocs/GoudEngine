@@ -35,7 +35,7 @@ mod shader;
 mod texture;
 mod uniforms;
 #[cfg(feature = "xbox-gdk")]
-pub mod xbox_surface;
+pub(crate) mod xbox_surface;
 
 // Pull internal types into this module's namespace so submodules can `use super::TypeName`.
 use resources::{

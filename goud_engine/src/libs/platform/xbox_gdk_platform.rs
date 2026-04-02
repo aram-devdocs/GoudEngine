@@ -19,6 +19,7 @@ use crate::libs::graphics::backend::wgpu_backend::xbox_surface::XboxWindowHandle
 /// Wraps an Xbox GDK `GameWindow` (HWND) and implements the engine's platform
 /// abstraction. On non-MSVC hosts the constructor always fails with a
 /// descriptive error.
+#[allow(dead_code)] // PoC stub: struct fields used once GDK SDK is linked.
 pub struct XboxGdkPlatform {
     should_close: bool,
     width: u32,
@@ -38,6 +39,7 @@ impl XboxGdkPlatform {
     }
 
     /// Returns the window handle wrapper for wgpu surface creation.
+    #[allow(dead_code)] // Called from native_runtime once GDK is linked.
     pub fn window_handle(&self) -> Arc<XboxWindowHandle> {
         Arc::clone(&self.handle)
     }
@@ -110,5 +112,18 @@ impl PlatformBackend for XboxGdkPlatform {
 
     fn get_fullscreen(&self) -> FullscreenMode {
         FullscreenMode::Borderless
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(not(target_env = "msvc"))]
+    #[test]
+    fn new_returns_backend_not_supported_on_non_msvc() {
+        let result = XboxGdkPlatform::new(&WindowConfig::default());
+        let err = result.err().expect("should fail on non-MSVC");
+        assert!(err.to_string().contains("MSVC"));
     }
 }
