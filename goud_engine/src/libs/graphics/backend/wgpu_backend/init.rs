@@ -239,7 +239,7 @@ impl WgpuBackend {
             surface_supports_copy_src,
             wgpu_instance: instance,
             wgpu_adapter: adapter,
-            window,
+            window: Some(window),
             depth_texture,
             depth_view,
             last_frame_readback: None,
@@ -349,11 +349,17 @@ impl WgpuBackend {
 
     /// Recreates the GPU surface after a mobile resume.
     ///
-    /// Uses the persisted wgpu instance, adapter, and window handle.
+    /// Uses the persisted wgpu instance and window handle. Returns an error
+    /// on platforms without a winit window (e.g. Xbox GDK).
     pub fn recreate_surface(&mut self) -> GoudResult<()> {
+        let window = self.window.as_ref().ok_or_else(|| {
+            GoudError::InvalidState(
+                "cannot recreate surface: no winit window (Xbox GDK does not support mobile suspend/resume)".into(),
+            )
+        })?;
         let surface = self
             .wgpu_instance
-            .create_surface(wgpu::SurfaceTarget::from(self.window.clone()))
+            .create_surface(wgpu::SurfaceTarget::from(window.clone()))
             .map_err(|e| GoudError::BackendNotSupported(format!("wgpu surface recreate: {e}")))?;
         surface.configure(&self.device, &self.surface_config);
         self.surface = Some(surface);

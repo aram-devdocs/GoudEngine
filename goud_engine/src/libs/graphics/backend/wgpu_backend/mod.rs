@@ -69,7 +69,8 @@ pub struct WgpuBackend {
     #[allow(dead_code)]
     wgpu_adapter: wgpu::Adapter,
     /// Persisted for surface recreation on mobile resume.
-    window: std::sync::Arc<winit::window::Window>,
+    /// `None` on platforms without winit (e.g. Xbox GDK).
+    window: Option<std::sync::Arc<winit::window::Window>>,
 
     depth_texture: wgpu::Texture,
     depth_view: wgpu::TextureView,
