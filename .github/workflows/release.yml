@@ -624,22 +624,23 @@ jobs:
       - name: Import GPG key
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
-          # Tell gpg-agent to allow preset passphrases and pre-seed it
+          # Configure gpg-agent for non-interactive use before importing
           mkdir -p ~/.gnupg
-          echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
+          chmod 700 ~/.gnupg
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
           gpgconf --kill gpg-agent
-          gpgconf --launch gpg-agent
+
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          gpg --list-secret-keys --keyid-format long
 
       - name: Publish to Maven Central
         working-directory: sdks/kotlin
         env:
           MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
-        run: ./gradlew publish --no-daemon -Pgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}"
+        run: ./gradlew publish --no-daemon
 
   # ── Step 8: Publish to crates.io ──
   publish-crates:
