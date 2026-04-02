@@ -34,9 +34,9 @@ impl WgpuBackend {
                     .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                         label: None,
                         bind_group_layouts: &[
-                            &self.uniform_bind_group_layout,
-                            &self.texture_bind_group_layout,
-                            &self.storage_bind_group_layout,
+                            Some(&self.uniform_bind_group_layout),
+                            Some(&self.texture_bind_group_layout),
+                            Some(&self.storage_bind_group_layout),
                         ],
                         immediate_size: 0,
                     })
@@ -45,8 +45,8 @@ impl WgpuBackend {
                     .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                         label: None,
                         bind_group_layouts: &[
-                            &self.uniform_bind_group_layout,
-                            &self.texture_bind_group_layout,
+                            Some(&self.uniform_bind_group_layout),
+                            Some(&self.texture_bind_group_layout),
                         ],
                         immediate_size: 0,
                     })
@@ -78,16 +78,16 @@ impl WgpuBackend {
                 let func = unsafe { std::mem::transmute::<u8, DepthFunc>(key.depth_func) };
                 wgpu::DepthStencilState {
                     format: wgpu::TextureFormat::Depth32Float,
-                    depth_write_enabled: key.depth_write,
-                    depth_compare: convert::map_depth_func(func),
+                    depth_write_enabled: Some(key.depth_write),
+                    depth_compare: Some(convert::map_depth_func(func)),
                     stencil: wgpu::StencilState::default(),
                     bias: wgpu::DepthBiasState::default(),
                 }
             } else {
                 wgpu::DepthStencilState {
                     format: wgpu::TextureFormat::Depth32Float,
-                    depth_write_enabled: false,
-                    depth_compare: wgpu::CompareFunction::Always,
+                    depth_write_enabled: Some(false),
+                    depth_compare: Some(wgpu::CompareFunction::Always),
                     stencil: wgpu::StencilState::default(),
                     bias: wgpu::DepthBiasState::default(),
                 }

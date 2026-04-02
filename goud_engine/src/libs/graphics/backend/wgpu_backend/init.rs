@@ -90,7 +90,7 @@ impl WgpuBackend {
                 max_texture_units: limits.max_sampled_textures_per_shader_stage.min(16),
                 max_texture_size: limits.max_texture_dimension_2d,
                 max_vertex_attributes: limits.max_vertex_attributes,
-                max_uniform_buffer_size: limits.max_uniform_buffer_binding_size,
+                max_uniform_buffer_size: limits.max_uniform_buffer_binding_size as u32,
                 supports_instancing: true,
                 supports_compute_shaders: true,
                 supports_geometry_shaders: false,
