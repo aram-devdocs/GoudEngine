@@ -46,7 +46,7 @@ def _load_library():
     else:
         raise OSError(f"Unsupported platform: {system}")
 
-    name = f"{prefix}goudengine{ext}"
+    name = f"{prefix}goud_engine{ext}"
     search = [
         *_env_library_candidates(name),
         Path(__file__).parent / name,
@@ -56,7 +56,7 @@ def _load_library():
     ]
     for p in search:
         if p.exists():
-            if not _has_required_symbol(p, "goudengine_config_set_physics_debug"):
+            if not _has_required_symbol(p, "goud_engine_config_set_physics_debug"):
                 continue
             return ctypes.cdll.LoadLibrary(str(p))
     raise OSError(f"Could not find {name}. Set GOUD_ENGINE_LIB env var.")
@@ -413,40 +413,40 @@ class FfiTextCmd(ctypes.Structure):
 
 def _setup():
     # engine_config
-    _lib.goudengine_config_create.argtypes = []
-    _lib.goudengine_config_create.restype = ctypes.c_void_p
-    _lib.goudengine_config_destroy.argtypes = [ctypes.c_void_p]
-    _lib.goudengine_config_destroy.restype = None
-    _lib.goudengine_config_set_title.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
-    _lib.goudengine_config_set_title.restype = ctypes.c_bool
-    _lib.goudengine_config_set_size.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32]
-    _lib.goudengine_config_set_size.restype = ctypes.c_bool
-    _lib.goudengine_config_set_vsync.argtypes = [ctypes.c_void_p, ctypes.c_bool]
-    _lib.goudengine_config_set_vsync.restype = ctypes.c_bool
-    _lib.goudengine_config_set_fullscreen.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
-    _lib.goudengine_config_set_fullscreen.restype = ctypes.c_bool
-    _lib.goudengine_config_set_target_fps.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
-    _lib.goudengine_config_set_target_fps.restype = ctypes.c_bool
-    _lib.goudengine_config_set_fps_overlay.argtypes = [ctypes.c_void_p, ctypes.c_bool]
-    _lib.goudengine_config_set_fps_overlay.restype = ctypes.c_bool
-    _lib.goudengine_config_set_physics_debug.argtypes = [ctypes.c_void_p, ctypes.c_bool]
-    _lib.goudengine_config_set_physics_debug.restype = ctypes.c_bool
-    _lib.goudengine_config_set_physics_backend_2d.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
-    _lib.goudengine_config_set_physics_backend_2d.restype = ctypes.c_bool
-    _lib.goudengine_config_set_render_backend.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
-    _lib.goudengine_config_set_render_backend.restype = ctypes.c_bool
-    _lib.goudengine_config_set_window_backend.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
-    _lib.goudengine_config_set_window_backend.restype = ctypes.c_bool
-    _lib.goudengine_config_set_debugger.argtypes = [ctypes.c_void_p, ctypes.POINTER(GoudDebuggerConfig)]
-    _lib.goudengine_config_set_debugger.restype = ctypes.c_bool
-    _lib.goudengine_config_set_aspect_ratio_lock.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
-    _lib.goudengine_config_set_aspect_ratio_lock.restype = ctypes.c_bool
-    _lib.goudengine_config_set_fixed_timestep.argtypes = [ctypes.c_void_p, ctypes.c_float]
-    _lib.goudengine_config_set_fixed_timestep.restype = ctypes.c_bool
-    _lib.goudengine_config_set_max_fixed_steps.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
-    _lib.goudengine_config_set_max_fixed_steps.restype = ctypes.c_bool
-    _lib.goudengine_create.argtypes = [ctypes.c_void_p]
-    _lib.goudengine_create.restype = GoudContextId
+    _lib.goud_engine_config_create.argtypes = []
+    _lib.goud_engine_config_create.restype = ctypes.c_void_p
+    _lib.goud_engine_config_destroy.argtypes = [ctypes.c_void_p]
+    _lib.goud_engine_config_destroy.restype = None
+    _lib.goud_engine_config_set_title.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+    _lib.goud_engine_config_set_title.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_size.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32]
+    _lib.goud_engine_config_set_size.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_vsync.argtypes = [ctypes.c_void_p, ctypes.c_bool]
+    _lib.goud_engine_config_set_vsync.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_fullscreen.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    _lib.goud_engine_config_set_fullscreen.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_target_fps.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    _lib.goud_engine_config_set_target_fps.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_fps_overlay.argtypes = [ctypes.c_void_p, ctypes.c_bool]
+    _lib.goud_engine_config_set_fps_overlay.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_physics_debug.argtypes = [ctypes.c_void_p, ctypes.c_bool]
+    _lib.goud_engine_config_set_physics_debug.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_physics_backend_2d.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    _lib.goud_engine_config_set_physics_backend_2d.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_render_backend.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    _lib.goud_engine_config_set_render_backend.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_window_backend.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    _lib.goud_engine_config_set_window_backend.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_debugger.argtypes = [ctypes.c_void_p, ctypes.POINTER(GoudDebuggerConfig)]
+    _lib.goud_engine_config_set_debugger.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_aspect_ratio_lock.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    _lib.goud_engine_config_set_aspect_ratio_lock.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_fixed_timestep.argtypes = [ctypes.c_void_p, ctypes.c_float]
+    _lib.goud_engine_config_set_fixed_timestep.restype = ctypes.c_bool
+    _lib.goud_engine_config_set_max_fixed_steps.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    _lib.goud_engine_config_set_max_fixed_steps.restype = ctypes.c_bool
+    _lib.goud_engine_create.argtypes = [ctypes.c_void_p]
+    _lib.goud_engine_create.restype = GoudContextId
 
     # context
     _lib.goud_context_create.argtypes = []

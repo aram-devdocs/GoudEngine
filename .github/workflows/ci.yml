@@ -296,6 +296,9 @@ jobs:
     - name: Check for codegen drift
       run: bash scripts/check-generated-artifacts.sh
 
+    - name: Verify SDK READMEs are up to date
+      run: python3 codegen/gen_sdk_readmes.py --check
+
   # Build native release libraries once per OS and share across SDK jobs
   native-release:
     name: Native Release Artifact on ${{ matrix.os }}

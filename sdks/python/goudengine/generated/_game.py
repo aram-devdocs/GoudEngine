@@ -2408,7 +2408,7 @@ class EngineConfig:
     def __init__(self):
         lib = get_lib()
         self._lib = lib
-        self._handle = lib.goudengine_config_create()
+        self._handle = lib.goud_engine_config_create()
 
     def __del__(self):
         self.destroy()
@@ -2417,70 +2417,70 @@ class EngineConfig:
         """Sets the window title"""
         if not self._handle:
             raise RuntimeError('EngineConfig already consumed or destroyed')
-        self._lib.goudengine_config_set_title(self._handle, title.encode('utf-8'))
+        self._lib.goud_engine_config_set_title(self._handle, title.encode('utf-8'))
         return self
 
     def set_size(self, width, height):
         """Sets the window size in pixels"""
         if not self._handle:
             raise RuntimeError('EngineConfig already consumed or destroyed')
-        self._lib.goudengine_config_set_size(self._handle, width, height)
+        self._lib.goud_engine_config_set_size(self._handle, width, height)
         return self
 
     def set_vsync(self, enabled):
         """Enables or disables vertical sync"""
         if not self._handle:
             raise RuntimeError('EngineConfig already consumed or destroyed')
-        self._lib.goudengine_config_set_vsync(self._handle, enabled)
+        self._lib.goud_engine_config_set_vsync(self._handle, enabled)
         return self
 
     def set_fullscreen(self, mode):
         """Sets the fullscreen mode (0=Windowed, 1=Borderless, 2=Exclusive)"""
         if not self._handle:
             raise RuntimeError('EngineConfig already consumed or destroyed')
-        self._lib.goudengine_config_set_fullscreen(self._handle, mode)
+        self._lib.goud_engine_config_set_fullscreen(self._handle, mode)
         return self
 
     def set_target_fps(self, fps):
         """Sets the target frames per second"""
         if not self._handle:
             raise RuntimeError('EngineConfig already consumed or destroyed')
-        self._lib.goudengine_config_set_target_fps(self._handle, fps)
+        self._lib.goud_engine_config_set_target_fps(self._handle, fps)
         return self
 
     def set_fps_overlay(self, enabled):
         """Enables or disables the FPS debug overlay"""
         if not self._handle:
             raise RuntimeError('EngineConfig already consumed or destroyed')
-        self._lib.goudengine_config_set_fps_overlay(self._handle, enabled)
+        self._lib.goud_engine_config_set_fps_overlay(self._handle, enabled)
         return self
 
     def set_physics_debug(self, enabled):
         """Enables or disables physics debug visualization"""
         if not self._handle:
             raise RuntimeError('EngineConfig already consumed or destroyed')
-        self._lib.goudengine_config_set_physics_debug(self._handle, enabled)
+        self._lib.goud_engine_config_set_physics_debug(self._handle, enabled)
         return self
 
     def set_physics_backend2_d(self, backend):
         """Selects the 2D physics backend used by the built game"""
         if not self._handle:
             raise RuntimeError('EngineConfig already consumed or destroyed')
-        self._lib.goudengine_config_set_physics_backend_2d(self._handle, int(backend))
+        self._lib.goud_engine_config_set_physics_backend_2d(self._handle, int(backend))
         return self
 
     def set_render_backend(self, backend):
         """Selects the native render backend used by the built game"""
         if not self._handle:
             raise RuntimeError('EngineConfig already consumed or destroyed')
-        self._lib.goudengine_config_set_render_backend(self._handle, int(backend))
+        self._lib.goud_engine_config_set_render_backend(self._handle, int(backend))
         return self
 
     def set_window_backend(self, backend):
         """Selects the native window backend used by the built game"""
         if not self._handle:
             raise RuntimeError('EngineConfig already consumed or destroyed')
-        self._lib.goudengine_config_set_window_backend(self._handle, int(backend))
+        self._lib.goud_engine_config_set_window_backend(self._handle, int(backend))
         return self
 
     def set_debugger(self, debugger):
@@ -2491,14 +2491,14 @@ class EngineConfig:
         _debugger_ffi.enabled = debugger.enabled
         _debugger_ffi.publish_local_attach = debugger.publish_local_attach
         _debugger_ffi.route_label = debugger.route_label.encode('utf-8')
-        self._lib.goudengine_config_set_debugger(self._handle, _debugger_ffi)
+        self._lib.goud_engine_config_set_debugger(self._handle, _debugger_ffi)
         return self
 
     def build(self):
         """Consumes the config and creates a windowed GoudGame instance"""
         if not self._handle:
             raise RuntimeError('EngineConfig already consumed')
-        ctx = self._lib.goudengine_create(self._handle)
+        ctx = self._lib.goud_engine_create(self._handle)
         self._handle = None
         if ctx._bits == 0xFFFFFFFFFFFFFFFF:
             raise RuntimeError('Failed to create engine context from EngineConfig')
@@ -2514,7 +2514,7 @@ class EngineConfig:
     def destroy(self):
         """Frees the config without building"""
         if hasattr(self, '_handle') and self._handle:
-            self._lib.goudengine_config_destroy(self._handle)
+            self._lib.goud_engine_config_destroy(self._handle)
             self._handle = None
 
 
