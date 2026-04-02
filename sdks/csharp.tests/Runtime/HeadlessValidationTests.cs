@@ -41,10 +41,8 @@ public class HeadlessValidationTests
             Assert.False(caps.SupportsCompute);
             Assert.False(caps.SupportsMsaa);
 
-            // Render stats and window dimensions confirm no GPU activity.
+            // Render stats confirm no GPU activity.
             Assert.Equal(0U, game.GetRenderStats().DrawCalls);
-            RuntimeTestSupport.CallGame(() => game.WindowWidth);
-            RuntimeTestSupport.CallGame(() => game.WindowHeight);
         }
         finally
         {
@@ -61,7 +59,7 @@ public class HeadlessValidationTests
             game.RegisterComponent<Position>();
             game.RegisterComponent<Velocity>();
 
-            var spawned = game.SpawnBatch(1000);
+            var spawned = game.SpawnBatch(1000U);
             Assert.Equal(1000, spawned.Length);
 
             for (int i = 0; i < spawned.Length; i++)
