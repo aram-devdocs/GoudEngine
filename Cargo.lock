@@ -1771,14 +1771,14 @@ dependencies = [
 
 [[package]]
 name = "goud-engine"
-version = "0.0.838"
+version = "0.0.839"
 dependencies = [
  "goud-engine-core",
 ]
 
 [[package]]
 name = "goud-engine-core"
-version = "0.0.838"
+version = "0.0.839"
 dependencies = [
  "bincode",
  "bindgen",
@@ -1834,7 +1834,7 @@ dependencies = [
 
 [[package]]
 name = "goud-engine-node"
-version = "0.0.838"
+version = "0.0.839"
 dependencies = [
  "goud-engine-core",
  "napi",
@@ -1844,7 +1844,7 @@ dependencies = [
 
 [[package]]
 name = "goud_engine_macros"
-version = "0.0.838"
+version = "0.0.839"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3620,9 +3620,9 @@ dependencies = [
 
 [[package]]
 name = "proptest"
-version = "1.10.0"
+version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37566cb3fdacef14c0737f9546df7cfeadbfbc9fef10991038bf5015d0c80532"
+checksum = "4b45fcc2344c680f5025fe57779faef368840d0bd1f42f216291f0dc4ace4744"
 dependencies = [
  "bit-set",
  "bit-vec 0.8.0",
