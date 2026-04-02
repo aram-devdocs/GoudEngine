@@ -32,7 +32,7 @@
 
 #[cfg(feature = "legacy-glfw-opengl")]
 pub mod glfw_platform;
-#[cfg(feature = "native")]
+#[cfg(any(feature = "native", feature = "xbox-gdk"))]
 pub mod native_runtime;
 #[cfg(all(
     feature = "wgpu-backend",
@@ -40,8 +40,10 @@ pub mod native_runtime;
     any(target_os = "linux", target_os = "macos", target_os = "windows")
 ))]
 pub mod winit_platform;
+#[cfg(feature = "xbox-gdk")]
+pub mod xbox_gdk_platform;
 
-#[cfg(feature = "native")]
+#[cfg(any(feature = "native", feature = "xbox-gdk"))]
 use crate::core::input_manager::InputManager;
 
 /// Fullscreen mode for the native window.
@@ -103,6 +105,9 @@ pub enum WindowBackendKind {
     Winit = 0,
     /// Legacy GLFW windowing path.
     GlfwLegacy = 1,
+    /// Xbox GDK windowing path (PoC).
+    #[cfg(feature = "xbox-gdk")]
+    XboxGdk = 2,
 }
 
 impl WindowBackendKind {
@@ -111,6 +116,8 @@ impl WindowBackendKind {
         match value {
             0 => Some(Self::Winit),
             1 => Some(Self::GlfwLegacy),
+            #[cfg(feature = "xbox-gdk")]
+            2 => Some(Self::XboxGdk),
             _ => None,
         }
     }
@@ -171,7 +178,7 @@ impl Default for WindowConfig {
 ///
 /// Most windowing APIs require main-thread access. Implementations are NOT
 /// required to be `Send` or `Sync`.
-#[cfg(feature = "native")]
+#[cfg(any(feature = "native", feature = "xbox-gdk"))]
 pub trait PlatformBackend {
     /// Returns `true` if the window has been requested to close.
     fn should_close(&self) -> bool;
@@ -277,6 +284,15 @@ mod tests {
         assert_eq!(
             RenderBackendKind::from_u32(2),
             Some(RenderBackendKind::Auto)
+        );
+    }
+
+    #[cfg(feature = "xbox-gdk")]
+    #[test]
+    fn xbox_gdk_window_backend_round_trip() {
+        assert_eq!(
+            WindowBackendKind::from_u32(2),
+            Some(WindowBackendKind::XboxGdk)
         );
     }
 }

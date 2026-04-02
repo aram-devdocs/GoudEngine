@@ -34,6 +34,10 @@ mod resources;
 mod shader;
 mod texture;
 mod uniforms;
+#[cfg(feature = "xbox-gdk")]
+mod xbox_init;
+#[cfg(feature = "xbox-gdk")]
+pub(crate) mod xbox_surface;
 
 // Pull internal types into this module's namespace so submodules can `use super::TypeName`.
 use resources::{

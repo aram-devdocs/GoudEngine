@@ -9,7 +9,10 @@ impl DrawOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.set_vertex_attributes(layout),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.set_vertex_attributes(layout),
         }
     }
@@ -18,7 +21,10 @@ impl DrawOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.set_vertex_bindings(bindings),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.set_vertex_bindings(bindings),
         }
     }
@@ -32,7 +38,10 @@ impl DrawOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.draw_arrays(topology, first, count),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.draw_arrays(topology, first, count),
         }
     }
@@ -46,7 +55,10 @@ impl DrawOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.draw_indexed(topology, count, offset),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.draw_indexed(topology, count, offset),
         }
     }
@@ -60,7 +72,10 @@ impl DrawOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.draw_indexed_u16(topology, count, offset),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.draw_indexed_u16(topology, count, offset),
         }
     }
@@ -77,7 +92,10 @@ impl DrawOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => {
                 backend.draw_arrays_instanced(topology, first, count, instance_count)
             }
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => {
                 backend.draw_arrays_instanced(topology, first, count, instance_count)
             }
@@ -96,7 +114,10 @@ impl DrawOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => {
                 backend.draw_indexed_instanced(topology, count, offset, instance_count)
             }
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => {
                 backend.draw_indexed_instanced(topology, count, offset, instance_count)
             }

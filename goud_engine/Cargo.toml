@@ -26,6 +26,7 @@ web = ["wgpu-backend", "dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:web-
 rapier2d = ["dep:rapier2d"]
 rapier3d = ["dep:rapier3d"]
 headless = []
+xbox-gdk = ["wgpu-backend"]
 
 # TODO: https://github.com/aram-devdocs/GoudEngine/issues/8
 [dependencies]
