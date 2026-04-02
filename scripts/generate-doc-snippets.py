@@ -65,7 +65,7 @@ REFERENCE_SPECS = [
     ),
     SnippetSpec(
         title="Python Generated Public Exports",
-        source=ROOT / "sdks" / "python" / "goud_engine" / "generated" / "__init__.py",
+        source=ROOT / "sdks" / "python" / "goudengine" / "generated" / "__init__.py",
         language="python",
         start_pattern=r'^"""This file is AUTO-GENERATED',
         line_count=10,
