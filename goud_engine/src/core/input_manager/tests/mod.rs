@@ -5,3 +5,4 @@ mod buffer;
 mod gamepad;
 mod keyboard;
 mod mouse;
+mod touch;

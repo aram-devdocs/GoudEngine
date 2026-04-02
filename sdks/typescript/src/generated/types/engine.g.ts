@@ -222,6 +222,18 @@ export interface IGoudGame {
   getMouseDelta(): IVec2;
   /** Returns the scroll wheel delta this frame */
   getScrollDelta(): IVec2;
+  /** Returns the number of currently active touch points */
+  getTouchCount(): number;
+  /** Returns true if the given touch ID is currently active */
+  isTouchActive(touchId: number): boolean;
+  /** Returns the position of the given touch point */
+  getTouchPosition(touchId: number): IVec2;
+  /** Returns true if the given touch began this frame */
+  isTouchJustPressed(touchId: number): boolean;
+  /** Returns true if the given touch ended this frame */
+  isTouchJustReleased(touchId: number): boolean;
+  /** Returns the movement delta for the given touch point since last frame */
+  getTouchDelta(touchId: number): IVec2;
   /** Creates a new empty entity */
   spawnEmpty(): IEntity;
   /** Destroys an entity and all its components */

@@ -93,6 +93,19 @@ impl Default for AppExiting {
     }
 }
 
+/// Emitted when the application is suspended (e.g. moved to background on mobile).
+///
+/// Systems should respond by pausing audio, suspending rendering, and saving
+/// any transient state.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub struct AppSuspended;
+
+/// Emitted when the application resumes from a suspended state.
+///
+/// Systems should respond by resuming audio and rendering.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub struct AppResumed;
+
 /// Reason for application exit.
 ///
 /// Used with [`AppExiting`] to indicate why the application is shutting down.

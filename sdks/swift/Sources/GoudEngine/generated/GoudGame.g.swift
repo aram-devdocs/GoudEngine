@@ -143,6 +143,26 @@ public final class GoudGame {
         return goud_input_mouse_button_just_released(_ctx, Int32(button.rawValue))
     }
 
+    /// Returns the number of currently active touch points
+    public func getTouchCount() -> UInt32 {
+        return goud_input_touch_count(_ctx)
+    }
+
+    /// Returns true if the given touch ID is currently active
+    public func isTouchActive(touchId: UInt64) -> Bool {
+        return goud_input_touch_active(_ctx, touchId)
+    }
+
+    /// Returns true if the given touch began this frame
+    public func isTouchJustPressed(touchId: UInt64) -> Bool {
+        return goud_input_touch_just_pressed(_ctx, touchId)
+    }
+
+    /// Returns true if the given touch ended this frame
+    public func isTouchJustReleased(touchId: UInt64) -> Bool {
+        return goud_input_touch_just_released(_ctx, touchId)
+    }
+
     /// Creates a new empty entity
     public func spawnEmpty() -> Entity {
         return Entity(bits: goud_entity_spawn_empty(_ctx))

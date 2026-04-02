@@ -45,6 +45,7 @@ impl GlfwInputProvider {
                 supports_gamepad: true,
                 supports_touch: false,
                 max_gamepads: 4,
+                max_touch_points: 0,
             },
             keys_current: HashSet::new(),
             keys_previous: HashSet::new(),

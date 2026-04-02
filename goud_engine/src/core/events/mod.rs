@@ -46,7 +46,7 @@ mod frame;
 mod tests;
 mod window;
 
-pub use app::{AppExiting, AppStarted, ExitReason};
+pub use app::{AppExiting, AppResumed, AppStarted, AppSuspended, ExitReason};
 pub use frame::{FrameEnded, FrameStarted};
 pub use window::{
     FullscreenChanged, WindowCloseRequested, WindowFocused, WindowMoved, WindowResized,

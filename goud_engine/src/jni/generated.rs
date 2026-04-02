@@ -2193,6 +2193,141 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getScrollDelt
 
 #[allow(non_snake_case)]
 #[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getTouchCount<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_getTouchCount", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::input::goud_input_touch_count(goud_context_id_from_jlong(contextId));
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_input_touch_count", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_isTouchActive<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    touchId: jni::sys::jlong,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_isTouchActive", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::input::goud_input_touch_active(goud_context_id_from_jlong(contextId), touchId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_input_touch_active", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getTouchPosition<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    touchId: jni::sys::jlong,
+) -> jni::sys::jobject {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_getTouchPosition", crate::jni::helpers::null_object(), |env| -> crate::jni::helpers::JniCallResult<jni::sys::jobject> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let mut out_x: f32 = 0.0;
+            let mut out_y: f32 = 0.0;
+            let status = unsafe { // SAFETY: out-parameter storage and marshaled inputs remain valid for the duration of the FFI call.
+        crate::ffi::input::goud_input_touch_position(goud_context_id_from_jlong(contextId), touchId as _, &mut out_x as _, &mut out_y as _)
+    };
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_input_touch_position", None);
+                return Err(());
+            }
+            let value = crate::ffi::FfiVec2 {
+                x: out_x,
+                y: out_y,
+            };
+            Ok(new_Vec2(env, value)?.into_raw())
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_isTouchJustPressed<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    touchId: jni::sys::jlong,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_isTouchJustPressed", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::input::goud_input_touch_just_pressed(goud_context_id_from_jlong(contextId), touchId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_input_touch_just_pressed", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_isTouchJustReleased<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    touchId: jni::sys::jlong,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_isTouchJustReleased", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::input::goud_input_touch_just_released(goud_context_id_from_jlong(contextId), touchId as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_input_touch_just_released", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getTouchDelta<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    touchId: jni::sys::jlong,
+) -> jni::sys::jobject {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_getTouchDelta", crate::jni::helpers::null_object(), |env| -> crate::jni::helpers::JniCallResult<jni::sys::jobject> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let mut out_dx: f32 = 0.0;
+            let mut out_dy: f32 = 0.0;
+            let status = unsafe { // SAFETY: out-parameter storage and marshaled inputs remain valid for the duration of the FFI call.
+        crate::ffi::input::goud_input_touch_delta(goud_context_id_from_jlong(contextId), touchId as _, &mut out_dx as _, &mut out_dy as _)
+    };
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_input_touch_delta", None);
+                return Err(());
+            }
+            let value = crate::ffi::FfiVec2 {
+                x: out_dx,
+                y: out_dy,
+            };
+            Ok(new_Vec2(env, value)?.into_raw())
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_spawnEmpty<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,

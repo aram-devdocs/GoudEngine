@@ -988,6 +988,10 @@ typedef struct InputCapabilities {
      * Maximum number of simultaneous gamepads.
      */
     uint32_t max_gamepads;
+    /**
+     * Maximum number of simultaneous touch points supported.
+     */
+    uint32_t max_touch_points;
 } InputCapabilities;
 
 /**
@@ -2909,6 +2913,36 @@ bool goud_input_get_mouse_delta(struct GoudContextId context_id, float *out_dx, 
  * Gets the scroll wheel delta since the last frame.
  */
 bool goud_input_get_scroll_delta(struct GoudContextId context_id, float *out_dx, float *out_dy);
+
+/**
+ * Returns the number of currently active touch points.
+ */
+uint32_t goud_input_touch_count(struct GoudContextId context_id);
+
+/**
+ * Returns `true` if the given touch ID is currently active.
+ */
+bool goud_input_touch_active(struct GoudContextId context_id, uint64_t touch_id);
+
+/**
+ * Writes the position of the given touch to the output pointers.
+ */
+bool goud_input_touch_position(struct GoudContextId context_id, uint64_t touch_id, float *out_x, float *out_y);
+
+/**
+ * Returns `true` if the given touch began this frame.
+ */
+bool goud_input_touch_just_pressed(struct GoudContextId context_id, uint64_t touch_id);
+
+/**
+ * Returns `true` if the given touch ended this frame.
+ */
+bool goud_input_touch_just_released(struct GoudContextId context_id, uint64_t touch_id);
+
+/**
+ * Writes the movement delta of the given touch to the output pointers.
+ */
+bool goud_input_touch_delta(struct GoudContextId context_id, uint64_t touch_id, float *out_dx, float *out_dy);
 
 /* === Audio === */
 

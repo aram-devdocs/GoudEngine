@@ -5,9 +5,9 @@ use std::time::{Duration, Instant};
 
 use crate::core::debugger::{self, SyntheticInputEventV1};
 use crate::core::math::Vec2;
-use crate::core::providers::input_types::{KeyCode as Key, MouseButton};
+use crate::core::providers::input_types::{KeyCode as Key, MouseButton, TouchPhase};
 
-use super::types::{BufferedInput, GamepadState, InputBinding};
+use super::types::{BufferedInput, GamepadState, InputBinding, TouchState};
 
 /// Input management resource for ECS integration.
 ///
@@ -49,6 +49,11 @@ pub struct InputManager {
 
     // Analog deadzone threshold (default 0.1)
     pub(super) analog_deadzone: f32,
+
+    // Touch input state
+    pub(super) touches_current: HashMap<u64, TouchState>,
+    pub(super) touches_previous: HashMap<u64, TouchState>,
+    pub(super) touch_pointer_emulation: bool,
 }
 
 impl InputManager {
@@ -85,6 +90,9 @@ impl InputManager {
             buffer_duration,
             last_update: Instant::now(),
             analog_deadzone: 0.1, // 10% deadzone by default
+            touches_current: HashMap::new(),
+            touches_previous: HashMap::new(),
+            touch_pointer_emulation: true,
         }
     }
 
@@ -105,6 +113,16 @@ impl InputManager {
         // Reset deltas
         self.mouse_delta = Vec2::zero();
         self.scroll_delta = Vec2::zero();
+
+        // Cycle touch state: remove ended/cancelled, copy current to previous
+        self.touches_previous = self.touches_current.clone();
+        self.touches_current.retain(|_, state| {
+            state.phase != TouchPhase::Ended && state.phase != TouchPhase::Cancelled
+        });
+        // Reset moved touches back to started for next frame's delta detection
+        for state in self.touches_current.values_mut() {
+            state.previous_position = state.position;
+        }
 
         // Clean up expired inputs from buffer
         self.input_buffer
@@ -310,6 +328,8 @@ impl InputManager {
         }
         self.mouse_delta = Vec2::zero();
         self.scroll_delta = Vec2::zero();
+        self.touches_current.clear();
+        self.touches_previous.clear();
     }
 
     /// Adds an input to the buffer for sequence detection.

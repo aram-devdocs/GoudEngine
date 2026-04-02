@@ -1208,6 +1208,48 @@ func GoudInputMouseButtonPressed(context_id C.GoudContextId, button C.GoudMouseB
 	return bool(C.goud_input_mouse_button_pressed(context_id, button))
 }
 
+// GoudInputTouchActive wraps goud_input_touch_active.
+func GoudInputTouchActive(context_id C.GoudContextId, touch_id uint64) bool {
+	return bool(C.goud_input_touch_active(context_id, C.uint64_t(touch_id)))
+}
+
+// GoudInputTouchCount wraps goud_input_touch_count.
+func GoudInputTouchCount(context_id C.GoudContextId) uint32 {
+	return uint32(C.goud_input_touch_count(context_id))
+}
+
+// GoudInputTouchDelta wraps goud_input_touch_delta.
+func GoudInputTouchDelta(context_id C.GoudContextId, touch_id uint64, out_dx *C.float, out_dy *C.float) bool {
+	if out_dx == nil {
+		return false
+	}
+	if out_dy == nil {
+		return false
+	}
+	return bool(C.goud_input_touch_delta(context_id, C.uint64_t(touch_id), out_dx, out_dy))
+}
+
+// GoudInputTouchJustPressed wraps goud_input_touch_just_pressed.
+func GoudInputTouchJustPressed(context_id C.GoudContextId, touch_id uint64) bool {
+	return bool(C.goud_input_touch_just_pressed(context_id, C.uint64_t(touch_id)))
+}
+
+// GoudInputTouchJustReleased wraps goud_input_touch_just_released.
+func GoudInputTouchJustReleased(context_id C.GoudContextId, touch_id uint64) bool {
+	return bool(C.goud_input_touch_just_released(context_id, C.uint64_t(touch_id)))
+}
+
+// GoudInputTouchPosition wraps goud_input_touch_position.
+func GoudInputTouchPosition(context_id C.GoudContextId, touch_id uint64, out_x *C.float, out_y *C.float) bool {
+	if out_x == nil {
+		return false
+	}
+	if out_y == nil {
+		return false
+	}
+	return bool(C.goud_input_touch_position(context_id, C.uint64_t(touch_id), out_x, out_y))
+}
+
 // GoudLastErrorCode wraps goud_last_error_code.
 func GoudLastErrorCode() C.GoudErrorCode {
 	return C.goud_last_error_code()
@@ -2956,7 +2998,7 @@ func GoudSpatialHashInsert(handle uint32, entity_id uint64, x float32, y float32
 
 // GoudSpatialHashQueryRange wraps goud_spatial_hash_query_range.
 func GoudSpatialHashQueryRange(handle uint32, x float32, y float32, radius float32, out_entities *C.uint64_t, capacity uint32) int32 {
-	if out_entities == nil && capacity > 0 {
+	if out_entities == nil {
 		return -1
 	}
 	return int32(C.goud_spatial_hash_query_range(C.uint32_t(handle), C.float(x), C.float(y), C.float(radius), out_entities, C.uint32_t(capacity)))
@@ -2964,7 +3006,7 @@ func GoudSpatialHashQueryRange(handle uint32, x float32, y float32, radius float
 
 // GoudSpatialHashQueryRect wraps goud_spatial_hash_query_rect.
 func GoudSpatialHashQueryRect(handle uint32, x float32, y float32, w float32, h float32, out_entities *C.uint64_t, capacity uint32) int32 {
-	if out_entities == nil && capacity > 0 {
+	if out_entities == nil {
 		return -1
 	}
 	return int32(C.goud_spatial_hash_query_rect(C.uint32_t(handle), C.float(x), C.float(y), C.float(w), C.float(h), out_entities, C.uint32_t(capacity)))

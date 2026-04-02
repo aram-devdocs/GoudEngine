@@ -30,6 +30,7 @@ mod codes;
 mod helpers;
 mod keyboard;
 mod mouse;
+mod touch;
 
 // Re-export type aliases and constants so callers see the same public API.
 pub use codes::{
@@ -57,4 +58,8 @@ pub use mouse::{
     goud_input_get_mouse_delta, goud_input_get_mouse_position, goud_input_get_scroll_delta,
     goud_input_mouse_button_just_pressed, goud_input_mouse_button_just_released,
     goud_input_mouse_button_pressed,
+};
+pub use touch::{
+    goud_input_touch_active, goud_input_touch_count, goud_input_touch_delta,
+    goud_input_touch_just_pressed, goud_input_touch_just_released, goud_input_touch_position,
 };

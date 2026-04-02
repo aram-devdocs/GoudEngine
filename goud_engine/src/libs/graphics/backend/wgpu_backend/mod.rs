@@ -54,10 +54,18 @@ pub struct WgpuBackend {
     info: BackendInfo,
     device: wgpu::Device,
     queue: wgpu::Queue,
-    surface: wgpu::Surface<'static>,
+    surface: Option<wgpu::Surface<'static>>,
     surface_config: wgpu::SurfaceConfiguration,
     surface_format: wgpu::TextureFormat,
     surface_supports_copy_src: bool,
+
+    /// Persisted for surface recreation on mobile resume.
+    wgpu_instance: wgpu::Instance,
+    /// Persisted for surface recreation on mobile resume.
+    #[allow(dead_code)]
+    wgpu_adapter: wgpu::Adapter,
+    /// Persisted for surface recreation on mobile resume.
+    window: std::sync::Arc<winit::window::Window>,
 
     depth_texture: wgpu::Texture,
     depth_view: wgpu::TextureView,
@@ -127,5 +135,7 @@ pub struct WgpuBackend {
 
 // SAFETY: wgpu Device and Queue are Send+Sync. Surface is Send.
 // All other fields are plain data or standard Rust containers.
+// Sync is sound because WgpuBackend is always accessed behind a Mutex
+// via SharedNativeRenderBackend — no unsynchronized shared access occurs.
 unsafe impl Send for WgpuBackend {}
 unsafe impl Sync for WgpuBackend {}

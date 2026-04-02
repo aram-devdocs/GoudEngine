@@ -318,6 +318,48 @@ namespace GoudEngine
             return new Vec2(_dx, _dy);
         }
 
+        /// <summary>Returns the number of currently active touch points</summary>
+        public uint GetTouchCount()
+        {
+            return NativeMethods.goud_input_touch_count(_ctx);
+        }
+
+        /// <summary>Returns true if the given touch ID is currently active</summary>
+        public bool IsTouchActive(ulong touchId)
+        {
+            return NativeMethods.goud_input_touch_active(_ctx, touchId);
+        }
+
+        /// <summary>Returns the position of the given touch point</summary>
+        public Vec2 GetTouchPosition(ulong touchId)
+        {
+            float _x = 0.0f;
+            float _y = 0.0f;
+            NativeMethods.goud_input_touch_position(_ctx, touchId, ref _x, ref _y);
+            return new Vec2(_x, _y);
+        }
+
+        /// <summary>Returns true if the given touch began this frame</summary>
+        public bool IsTouchJustPressed(ulong touchId)
+        {
+            return NativeMethods.goud_input_touch_just_pressed(_ctx, touchId);
+        }
+
+        /// <summary>Returns true if the given touch ended this frame</summary>
+        public bool IsTouchJustReleased(ulong touchId)
+        {
+            return NativeMethods.goud_input_touch_just_released(_ctx, touchId);
+        }
+
+        /// <summary>Returns the movement delta for the given touch point since last frame</summary>
+        public Vec2 GetTouchDelta(ulong touchId)
+        {
+            float _dx = 0.0f;
+            float _dy = 0.0f;
+            NativeMethods.goud_input_touch_delta(_ctx, touchId, ref _dx, ref _dy);
+            return new Vec2(_dx, _dy);
+        }
+
         /// <summary>Creates a new empty entity</summary>
         public Entity SpawnEmpty()
         {

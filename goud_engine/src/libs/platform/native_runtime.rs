@@ -1,7 +1,13 @@
 //! Native runtime factory for valid window/render backend pairs.
 
 use crate::core::error::{GoudError, GoudResult};
-#[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
+#[cfg(any(
+    target_os = "linux",
+    target_os = "macos",
+    target_os = "windows",
+    target_os = "android",
+    target_os = "ios"
+))]
 use crate::libs::graphics::backend::native_backend::NativeRenderBackend;
 use crate::libs::graphics::backend::native_backend::SharedNativeRenderBackend;
 
@@ -32,7 +38,13 @@ pub fn detect_best_backend() -> (WindowBackendKind, RenderBackendKind) {
     #[cfg(all(
         feature = "native",
         feature = "wgpu-backend",
-        any(target_os = "linux", target_os = "macos", target_os = "windows")
+        any(
+            target_os = "linux",
+            target_os = "macos",
+            target_os = "windows",
+            target_os = "android",
+            target_os = "ios"
+        )
     ))]
     {
         return (WindowBackendKind::Winit, RenderBackendKind::Wgpu);
@@ -83,7 +95,13 @@ pub fn create_native_runtime(
         #[cfg(all(
             feature = "native",
             feature = "wgpu-backend",
-            any(target_os = "linux", target_os = "macos", target_os = "windows")
+            any(
+                target_os = "linux",
+                target_os = "macos",
+                target_os = "windows",
+                target_os = "android",
+                target_os = "ios"
+            )
         ))]
         (WindowBackendKind::Winit, RenderBackendKind::Wgpu) => {
             let platform = super::winit_platform::WinitPlatform::new(window_config)?;
@@ -102,7 +120,13 @@ pub fn create_native_runtime(
         #[cfg(not(all(
             feature = "native",
             feature = "wgpu-backend",
-            any(target_os = "linux", target_os = "macos", target_os = "windows")
+            any(
+                target_os = "linux",
+                target_os = "macos",
+                target_os = "windows",
+                target_os = "android",
+                target_os = "ios"
+            )
         )))]
         (WindowBackendKind::Winit, RenderBackendKind::Wgpu) => {
             Err(GoudError::InitializationFailed(

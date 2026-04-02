@@ -29,6 +29,12 @@ public final class GoudGameNative {
     public static native Vec2 getMousePosition(long contextId);
     public static native Vec2 getMouseDelta(long contextId);
     public static native Vec2 getScrollDelta(long contextId);
+    public static native int getTouchCount(long contextId);
+    public static native boolean isTouchActive(long contextId, long touchId);
+    public static native Vec2 getTouchPosition(long contextId, long touchId);
+    public static native boolean isTouchJustPressed(long contextId, long touchId);
+    public static native boolean isTouchJustReleased(long contextId, long touchId);
+    public static native Vec2 getTouchDelta(long contextId, long touchId);
     public static native long spawnEmpty(long contextId);
     public static native boolean despawn(long contextId, long entity);
     public static native long cloneEntity(long contextId, long entity);
