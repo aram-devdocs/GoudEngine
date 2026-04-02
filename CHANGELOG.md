@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.0.839](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.838...v0.0.839) (2026-04-02)
+
+
+### Features
+
+* expose spatial hash to C# SDK ([#642](https://github.com/aram-devdocs/GoudEngine/issues/642)) ([8d14fc9](https://github.com/aram-devdocs/GoudEngine/commit/8d14fc9fe2ec85756960b5ab08ec89ccbaa3fb72))
+* **sdk:** add Update method to C# SpatialHash wrapper ([6da04c2](https://github.com/aram-devdocs/GoudEngine/commit/6da04c202613cdebb8b5e9ad73a8d04f9b815afb))
+* **sdk:** expose spatial hash to C# SDK via FFI ([#642](https://github.com/aram-devdocs/GoudEngine/issues/642)) ([4d5fdb1](https://github.com/aram-devdocs/GoudEngine/commit/4d5fdb19b18284decd3dd67786fef8c54e34122c))
+
+
+### Bug Fixes
+
+* address Claude review blockers and warnings ([a4911b3](https://github.com/aram-devdocs/GoudEngine/commit/a4911b36cf9309757cf0cf74de1781a610bf08f1))
+* address Claude review blockers and warnings ([d9a29de](https://github.com/aram-devdocs/GoudEngine/commit/d9a29de0d7273c59c3fc090810c396f3ce74cf6f))
+* address Claude review warnings ([1c407d4](https://github.com/aram-devdocs/GoudEngine/commit/1c407d46fab93b00ea5acb845321744aca7a3d42))
+* address Claude review warnings ([708639a](https://github.com/aram-devdocs/GoudEngine/commit/708639a41810df12964ec80cce313be22e1407c4))
+* address code quality review blockers for spatial hash ([15c506d](https://github.com/aram-devdocs/GoudEngine/commit/15c506df2b821bef94b032afb4c22350d0698a95))
+* address review feedback on scale validation tests ([e3961bc](https://github.com/aram-devdocs/GoudEngine/commit/e3961bc244a94adb702fb73e1d4908d1f14ce535))
+
 ## [0.0.838](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.837...v0.0.838) (2026-03-27)
 
 
