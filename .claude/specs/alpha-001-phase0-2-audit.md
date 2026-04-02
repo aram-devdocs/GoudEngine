@@ -21,7 +21,7 @@
   - `python3 sdks/python/test_network_loopback.py`
   - `cd sdks/typescript && npm test`
   - `DOTNET_ROOT_X64=/usr/local/share/dotnet/x64 /usr/local/share/dotnet/x64/dotnet test sdks/csharp.tests/GoudEngine.Tests.csproj -v minimal`
-  - `python3 -m coverage run --source=sdks/python/goud_engine sdks/python/test_bindings.py && python3 -m coverage run --append --source=sdks/python/goud_engine sdks/python/test_network_loopback.py && python3 -m coverage report`
+  - `python3 -m coverage run --source=sdks/python/goudengine sdks/python/test_bindings.py && python3 -m coverage run --append --source=sdks/python/goudengine sdks/python/test_network_loopback.py && python3 -m coverage report`
   - `cd sdks/typescript && npx c8 --reporter=text-summary npm test`
   - `DOTNET_ROOT_X64=/usr/local/share/dotnet/x64 /usr/local/share/dotnet/x64/dotnet test sdks/csharp.tests/GoudEngine.Tests.csproj -c Release -v minimal /p:CollectCoverage=true /p:CoverletOutput=sdks/csharp.tests/TestResults/coverage/ /p:CoverletOutputFormat=cobertura`
   - `cargo test -p goud-engine-core --doc -- --nocapture`
@@ -30,7 +30,7 @@
   - `GOUD_SANDBOX_SMOKE_SECONDS=1 GOUD_ENGINE_LIB=$PWD/target/debug PYTHONPATH=$PWD/sdks/python python3 examples/python/sandbox.py`
   - `cd examples/csharp/sandbox && dotnet build -v minimal && GOUD_SANDBOX_SMOKE_SECONDS=1 DOTNET_ROLL_FORWARD=Major dotnet run --no-build`
   - `cd examples/typescript/sandbox && npm run build:web && GOUD_SANDBOX_SMOKE_SECONDS=1 npm run desktop && npm run smoke:web`
-  - `GOUD_ENGINE_LIB=$PWD/target/release PYTHONPATH=$PWD/sdks/python PDOC_ALLOW_EXEC=1 pdoc --output-dir docs/book/api/python sdks/python/goud_engine`
+  - `GOUD_ENGINE_LIB=$PWD/target/release PYTHONPATH=$PWD/sdks/python PDOC_ALLOW_EXEC=1 pdoc --output-dir docs/book/api/python sdks/python/goudengine`
   - `cd sdks/typescript && npm run build:native:debug && npm run build:ts && npx typedoc --tsconfig tsconfig.typedoc.json --entryPoints src/generated/node/index.g.ts src/generated/web/index.g.ts src/generated/types/engine.g.ts src/generated/types/math.g.ts --out ../../docs/book/api/typescript --name "GoudEngine TypeScript SDK"`
   - `export PATH="$HOME/.dotnet/tools:$PATH" && cd sdks/csharp && dotnet restore GoudEngine.csproj && dotnet build -c Release --no-restore && docfx build docfx.json`
   - `mdbook build` (validated locally with the preexisting `docs/book/api` subtree moved aside so the run matches CI's build order)
@@ -107,7 +107,7 @@
 - Python SDK:
   - `python3 sdks/python/test_bindings.py` now passes.
   - The generated loader now prefers a native library that actually exports `goud_engine_config_set_physics_debug`.
-  - `sdks/python/goud_engine/networking.py` is now generator-owned.
+  - `sdks/python/goudengine/networking.py` is now generator-owned.
 - C# SDK:
   - `dotnet build sdks/csharp.tests/GoudEngine.Tests.csproj -v minimal` now passes.
   - The test project now imports `/Users/aramhammoudeh/dev/game/GoudEngine/sdks/csharp/build/GoudEngine.targets`, and the native runtime copy logic now places `libgoud_engine.dylib` in the test output directory.
@@ -155,7 +155,7 @@
 - `2026-03-11` follow-up on PR `#510`: the Claude review comment found one real remaining blocker in the checked-in Python FFI generation (`()` unit returns were emitted as `ctypes.c_uint64`, and `EngineConfigHandle` stayed integer-typed instead of `ctypes.c_void_p`).
 - Local remediation is in progress:
   - fixed in source: shared FFI normalization now treats `()` as `void`, normalizes opaque handle aliases, and generates platform-aware symbol probing for Python library selection
-  - fixed in generated output: `sdks/python/goud_engine/generated/_ffi.py` now emits `None` for void returns, `ctypes.c_void_p` for engine config handles, and `GoudContextId` for `goud_engine_create`
+  - fixed in generated output: `sdks/python/goudengine/generated/_ffi.py` now emits `None` for void returns, `ctypes.c_void_p` for engine config handles, and `GoudContextId` for `goud_engine_create`
   - fixed in tests: `sdks/python/test_bindings_generated.py` now asserts the void/handle signatures explicitly
   - fixed in CI perf: `feature-lab-parity` no longer performs the redundant extra `cargo build -p goud-engine-core` after the Rust Feature Lab build
 - Remaining review follow-up before this branch can honestly claim full closure of that comment:
@@ -263,7 +263,7 @@
 - `DOTNET_ROOT_X64=/usr/local/share/dotnet/x64 /usr/local/share/dotnet/x64/dotnet test sdks/csharp.tests/GoudEngine.Tests.csproj -v minimal`
 - `cd sdks/typescript && npm test`
 - `cargo doc --no-deps -p goud-engine-core -p goud-engine`
-- `GOUD_ENGINE_LIB=$PWD/target/release PYTHONPATH=$PWD/sdks/python PDOC_ALLOW_EXEC=1 pdoc --output-dir docs/book/api/python sdks/python/goud_engine`
+- `GOUD_ENGINE_LIB=$PWD/target/release PYTHONPATH=$PWD/sdks/python PDOC_ALLOW_EXEC=1 pdoc --output-dir docs/book/api/python sdks/python/goudengine`
 - `cd sdks/typescript && npx typedoc --tsconfig tsconfig.typedoc.json --entryPoints src/generated/node/index.g.ts src/generated/web/index.g.ts src/generated/types/engine.g.ts src/generated/types/math.g.ts --out ../../docs/book/api/typescript --name "GoudEngine TypeScript SDK"`
 - `export PATH="$HOME/.dotnet/tools:$PATH" && cd sdks/csharp && dotnet restore GoudEngine.csproj && dotnet build -c Release --no-restore && docfx build docfx.json`
 - `cargo check --manifest-path examples/rust/feature_lab/Cargo.toml`

@@ -78,7 +78,7 @@ See `docs/architecture/adding-a-new-language.md` for step-by-step instructions.
 | Generator | Output |
 |-----------|--------|
 | gen_csharp.py | sdks/csharp/generated/ |
-| gen_python.py | sdks/python/goud_engine/generated/ |
+| gen_python.py | sdks/python/goudengine/generated/ |
 | gen_ts_node.py | sdks/typescript/src/generated/ |
 | gen_ts_web.py | sdks/typescript/src/generated/web/ |
 

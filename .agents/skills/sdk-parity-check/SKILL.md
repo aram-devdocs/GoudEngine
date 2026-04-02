@@ -15,7 +15,7 @@ Run after adding or modifying FFI functions, after SDK changes, or before releas
 ## What It Checks
 
 1. **FFI → C# parity**: Every `#[no_mangle] extern "C"` function in `goud_engine/src/ffi/` has a matching `DllImport` declaration in `sdks/csharp/`
-2. **FFI → Python parity**: Every FFI function has a matching ctypes declaration in `sdks/python/goud_engine/generated/_ffi.py`
+2. **FFI → Python parity**: Every FFI function has a matching ctypes declaration in `sdks/python/goudengine/generated/_ffi.py`
 3. **Signature matching**: Parameter types and return types are compatible across the boundary
 
 ## Manual Audit Process
@@ -53,7 +53,7 @@ rg "create_context" sdks/csharp/NativeMethods.g.cs
 For each FFI function, verify a matching ctypes declaration exists in `generated/_ffi.py`:
 
 ```bash
-rg "create_context" sdks/python/goud_engine/generated/_ffi.py
+rg "create_context" sdks/python/goudengine/generated/_ffi.py
 ```
 
 ### Step 4: Check for SDK-Only Functions
@@ -65,7 +65,7 @@ Look for SDK functions that don't correspond to any FFI export (potential logic-
 rg "public .* \w+\(" sdks/csharp/ --type cs -g '!NativeMethods*' -g '!obj/*'
 
 # Python functions
-rg "def " sdks/python/goud_engine/ --type py -g '!test_*'
+rg "def " sdks/python/goudengine/ --type py -g '!test_*'
 ```
 
 ## Automated Check Script

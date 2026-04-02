@@ -81,7 +81,7 @@ SDKs MUST be thin wrappers. Check for logic that belongs in Rust:
 rg "for |while |if .* && |switch " sdks/csharp/ --type cs
 
 # Python SDK: look for logic beyond FFI calls
-rg "for |while |if .* and |if .* or " sdks/python/goud_engine/ --type py
+rg "for |while |if .* and |if .* or " sdks/python/goudengine/ --type py
 ```
 
 Flag any non-trivial logic found in SDK code — it should be moved to Rust.
