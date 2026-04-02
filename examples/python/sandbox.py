@@ -15,7 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SDK_ROOT = REPO_ROOT / "sdks" / "python"
 
 
-def _normalize_goudengine_lib() -> None:
+def _normalize_goud_engine_lib() -> None:
     raw = os.environ.get("GOUD_ENGINE_LIB", "").strip()
     if not raw:
         return
@@ -23,9 +23,9 @@ def _normalize_goudengine_lib() -> None:
     if not path.is_dir():
         return
     suffix = {
-        "darwin": "libgoudengine.dylib",
-        "linux": "libgoudengine.so",
-        "win32": "goudengine.dll",
+        "darwin": "libgoud_engine.dylib",
+        "linux": "libgoud_engine.so",
+        "win32": "goud_engine.dll",
     }.get(sys.platform)
     if not suffix:
         return
@@ -34,7 +34,7 @@ def _normalize_goudengine_lib() -> None:
         os.environ["GOUD_ENGINE_LIB"] = str(candidate)
 
 
-_normalize_goudengine_lib()
+_normalize_goud_engine_lib()
 sys.path.insert(0, str(SDK_ROOT))
 
 from goudengine import (  # noqa: E402
