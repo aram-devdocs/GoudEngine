@@ -7,7 +7,7 @@ Thin Go wrapper over GoudEngine's FFI layer via cgo.
 ## Installation
 
 ```bash
-go get github.com/aram-devdocs/goud-engine-go
+go get github.com/aram-devdocs/GoudEngine/sdks/go
 ```
 
 Requires the native engine library. Build it first:
@@ -21,7 +21,7 @@ cargo build --release
 ```go
 package main
 
-import "github.com/aram-devdocs/goud-engine-go/goud"
+import "github.com/aram-devdocs/GoudEngine/sdks/go/goud"
 
 func main() {
     game := goud.NewGame(800, 600, "My Game")

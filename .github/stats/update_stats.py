@@ -26,7 +26,7 @@ NPM_URL = "https://api.npmjs.org/downloads/range/2020-01-01:2099-12-31/goudengin
 PYPI_URL = "https://pypistats.org/api/packages/goudengine/overall?mirrors=false"
 MAVEN_SEARCH_URL = "https://central.sonatype.com/api/v1/search?q=g:io.github.aram-devdocs+AND+a:goud-engine-kotlin"
 LUAROCKS_URL = "https://luarocks.org/api/1/modules/aram-devdocs/goudengine"
-GO_PROXY_URL = "https://proxy.golang.org/github.com/aram-devdocs/goud-engine-go/goud/@v/list"
+GO_PROXY_URL = "https://proxy.golang.org/github.com/aram-devdocs/GoudEngine/sdks/go/goud/@v/list"
 
 README_MARKER_PATTERN = re.compile(
     r"<!-- COMMUNITY-STATS:START -->.*?<!-- COMMUNITY-STATS:END -->",
@@ -185,7 +185,7 @@ def build_stats_block(entry: dict[str, int | str]) -> str:
             f"| npm | [{format_number(int(entry['npm']))}](https://www.npmjs.com/package/goudengine) |",
             f"| Maven Central | [{format_number(int(entry.get('maven', 0)))}](https://central.sonatype.com/artifact/io.github.aram-devdocs/goud-engine-kotlin) |",
             f"| LuaRocks | [{format_number(int(entry.get('luarocks', 0)))}](https://luarocks.org/modules/aram-devdocs/goudengine) |",
-            f"| Go | [{int(entry.get('go_versions', 0))} versions](https://pkg.go.dev/github.com/aram-devdocs/goud-engine-go/goud) |",
+            f"| Go | [{int(entry.get('go_versions', 0))} versions](https://pkg.go.dev/github.com/aram-devdocs/GoudEngine/sdks/go/goud) |",
             "",
             "<sub>PyPI totals exclude mirrors.</sub>",
             "",

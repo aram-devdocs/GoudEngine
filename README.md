@@ -14,7 +14,7 @@
 [![PyPI](https://img.shields.io/pypi/v/goudengine.svg)](https://pypi.org/project/goudengine/)
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.aram-devdocs/goud-engine-kotlin.svg)](https://central.sonatype.com/artifact/io.github.aram-devdocs/goud-engine-kotlin)
 [![LuaRocks](https://img.shields.io/luarocks/v/aram-devdocs/goudengine.svg)](https://luarocks.org/modules/aram-devdocs/goudengine)
-[![Go Reference](https://pkg.go.dev/badge/github.com/aram-devdocs/goud-engine-go/goud.svg)](https://pkg.go.dev/github.com/aram-devdocs/goud-engine-go/goud)
+[![Go Reference](https://pkg.go.dev/badge/github.com/aram-devdocs/GoudEngine/sdks/go/goud.svg)](https://pkg.go.dev/github.com/aram-devdocs/GoudEngine/sdks/go/goud)
 
 [![total downloads](https://img.shields.io/badge/total_downloads-7%2C814-brightgreen)](#downloads)
 
@@ -44,7 +44,7 @@ GoudEngine is working toward an alpha release. The full plan covers physics, aud
 | TypeScript | `npm install goudengine` | [Getting Started](docs/src/getting-started/typescript.md) | [TypeScript examples](examples/typescript/) |
 | C | Header-only | [Getting Started](docs/src/getting-started/c-cpp.md) | [C examples](examples/c/) |
 | C++ | CMake / Meson | [Getting Started](docs/src/getting-started/c-cpp.md) | [C++ examples](examples/cpp/) |
-| Go | `go get github.com/aram-devdocs/goud-engine-go` | [Getting Started](docs/src/getting-started/go.md) | [Go examples](examples/go/) |
+| Go | `go get github.com/aram-devdocs/GoudEngine/sdks/go` | [Getting Started](docs/src/getting-started/go.md) | [Go examples](examples/go/) |
 | Kotlin | Gradle / Maven Central | [Getting Started](docs/src/getting-started/kotlin.md) | [Kotlin examples](examples/kotlin/) |
 | Swift | Swift Package Manager | [Getting Started](docs/src/getting-started/swift.md) | [Swift examples](examples/swift/) |
 | Lua | `luarocks install goudengine` | [Getting Started](docs/src/getting-started/lua.md) | [Lua examples](examples/lua/) |
@@ -218,7 +218,7 @@ cargo run -p flappy-bird                             # Rust Flappy Bird
 | npm | [1,795](https://www.npmjs.com/package/goudengine) |
 | Maven Central | [0](https://central.sonatype.com/artifact/io.github.aram-devdocs/goud-engine-kotlin) |
 | LuaRocks | [0](https://luarocks.org/modules/aram-devdocs/goudengine) |
-| Go | [0 versions](https://pkg.go.dev/github.com/aram-devdocs/goud-engine-go/goud) |
+| Go | [0 versions](https://pkg.go.dev/github.com/aram-devdocs/GoudEngine/sdks/go/goud) |
 
 <sub>PyPI totals exclude mirrors.</sub>
 

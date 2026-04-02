@@ -703,14 +703,23 @@ jobs:
         with:
           go-version: '1.21'
 
+      - name: Create Go subdirectory tag
+        env:
+          VERSION: ${{ needs.release-please.outputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Go modules in subdirectories require a tag prefixed with the module path
+          GO_TAG="sdks/go/v${VERSION}"
+          git tag "${GO_TAG}" || true
+          git push origin "${GO_TAG}" || echo "Tag ${GO_TAG} already exists"
+
       - name: Trigger Go proxy cache
         env:
           VERSION: ${{ needs.release-please.outputs.version }}
         run: |
           # Request the module from the Go proxy to warm the cache
           GOPROXY=https://proxy.golang.org GO111MODULE=on \
-            go list -m github.com/aram-devdocs/goud-engine-go/goud@v${VERSION} || \
-            echo "Go proxy cache warming attempted (may take a few minutes to propagate)"
+            go list -m github.com/aram-devdocs/GoudEngine/sdks/go@v${VERSION}
 
   # ── C/C++ Package Managers (vcpkg, Conan) ──
   # vcpkg: Packages are distributed via native tarballs (see publish-native-tarballs).

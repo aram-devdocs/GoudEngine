@@ -6,7 +6,7 @@ import (
 	"hash/fnv"
 	"unsafe"
 
-	ffi "github.com/aram-devdocs/goud-engine-go/internal/ffi"
+	ffi "github.com/aram-devdocs/GoudEngine/sdks/go/internal/ffi"
 )
 
 // Ensure unsafe is used (needed for component marshalling).

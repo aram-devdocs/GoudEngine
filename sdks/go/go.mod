@@ -1,3 +1,3 @@
-module github.com/aram-devdocs/goud-engine-go
+module github.com/aram-devdocs/GoudEngine/sdks/go
 
 go 1.21

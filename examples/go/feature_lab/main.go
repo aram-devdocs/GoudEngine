@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aram-devdocs/goud-engine-go/goud"
+	"github.com/aram-devdocs/GoudEngine/sdks/go/goud"
 )
 
 type checkResult struct {

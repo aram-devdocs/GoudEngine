@@ -122,7 +122,7 @@ def gen_game() -> None:
         '\t"hash/fnv"',
         '\t"unsafe"',
         "",
-        '\tffi "github.com/aram-devdocs/goud-engine-go/internal/ffi"',
+        '\tffi "github.com/aram-devdocs/GoudEngine/sdks/go/internal/ffi"',
         ")",
         "",
         "// Ensure unsafe is used (needed for component marshalling).",

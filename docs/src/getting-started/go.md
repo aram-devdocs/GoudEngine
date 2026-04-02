@@ -29,7 +29,7 @@ This produces `target/release/libgoud_engine.dylib` (macOS), `libgoud_engine.so`
 The Go SDK uses cgo to call into the native library. Add the module to your project:
 
 ```bash
-go get github.com/aram-devdocs/goud-engine-go
+go get github.com/aram-devdocs/GoudEngine/sdks/go
 ```
 
 For local development from the repository, the SDK is at `sdks/go/`. Set CGO flags to find the native library:
@@ -46,7 +46,7 @@ Create `main.go`:
 ```go
 package main
 
-import "github.com/aram-devdocs/goud-engine-go/goud"
+import "github.com/aram-devdocs/GoudEngine/sdks/go/goud"
 
 func main() {
     game := goud.NewGame(800, 600, "My First Game")
@@ -81,7 +81,7 @@ Load textures once before the game loop, then draw each frame.
 ```go
 package main
 
-import "github.com/aram-devdocs/goud-engine-go/goud"
+import "github.com/aram-devdocs/GoudEngine/sdks/go/goud"
 
 func main() {
     game := goud.NewGame(800, 600, "Sprite Demo")

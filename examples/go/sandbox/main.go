@@ -27,7 +27,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/aram-devdocs/goud-engine-go/goud"
+	"github.com/aram-devdocs/GoudEngine/sdks/go/goud"
 )
 
 const (

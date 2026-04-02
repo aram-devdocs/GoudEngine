@@ -1,6 +1,6 @@
 // Package ffi provides raw cgo bindings to the GoudEngine C API.
 //
-// This package is internal — use the public goud-engine-go API instead.
+// This package is internal — use the public GoudEngine/sdks/go/goud API instead.
 //
 // LDFLAGS use paths relative to this source file's directory (${SRCDIR}).
 // This assumes the SDK lives at sdks/go/ inside the GoudEngine repo so that
