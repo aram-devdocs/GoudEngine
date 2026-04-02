@@ -23,14 +23,17 @@
 
 pub mod blend;
 pub mod capabilities;
-#[cfg(feature = "native")]
+#[cfg(any(feature = "native", feature = "xbox-gdk"))]
 pub mod native_backend;
 pub mod null;
 #[cfg(feature = "legacy-glfw-opengl")]
 pub mod opengl;
 pub mod render_backend;
 pub mod types;
-#[cfg(all(feature = "native", feature = "wgpu-backend"))]
+#[cfg(any(
+    all(feature = "native", feature = "wgpu-backend"),
+    feature = "xbox-gdk"
+))]
 pub mod wgpu_backend;
 
 #[cfg(test)]

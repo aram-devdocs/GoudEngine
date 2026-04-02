@@ -17,7 +17,10 @@ use super::opengl::OpenGLBackend;
 use super::render_backend::RenderBackend;
 #[cfg(feature = "legacy-glfw-opengl")]
 use super::render_backend::StateOps;
-#[cfg(all(feature = "native", feature = "wgpu-backend"))]
+#[cfg(any(
+    all(feature = "native", feature = "wgpu-backend"),
+    feature = "xbox-gdk"
+))]
 use super::wgpu_backend::WgpuBackend;
 
 /// Concrete native render backend choice.
@@ -25,7 +28,10 @@ pub enum NativeRenderBackend {
     #[cfg(feature = "legacy-glfw-opengl")]
     /// Legacy OpenGL backend selected through the explicit legacy feature gate.
     OpenGlLegacy(Box<OpenGLBackend>),
-    #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+    #[cfg(any(
+        all(feature = "native", feature = "wgpu-backend"),
+        feature = "xbox-gdk"
+    ))]
     /// Default wgpu backend used by the native runtime.
     Wgpu(Box<WgpuBackend>),
 }
@@ -35,7 +41,10 @@ impl NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.info(),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.info(),
         }
     }
@@ -48,7 +57,10 @@ impl NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.bind_texture_by_index(index, unit),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.bind_texture_by_index(index, unit),
         }
     }
@@ -57,7 +69,10 @@ impl NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.set_viewport(0, 0, width, height),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.resize(width, height),
         }
     }

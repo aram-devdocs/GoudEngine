@@ -19,7 +19,10 @@ impl BufferOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.create_buffer(buffer_type, usage, data),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.create_buffer(buffer_type, usage, data),
         }
     }
@@ -33,7 +36,10 @@ impl BufferOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.update_buffer(handle, offset, data),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.update_buffer(handle, offset, data),
         }
     }
@@ -42,7 +48,10 @@ impl BufferOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.destroy_buffer(handle),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.destroy_buffer(handle),
         }
     }
@@ -51,7 +60,10 @@ impl BufferOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.is_buffer_valid(handle),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.is_buffer_valid(handle),
         }
     }
@@ -60,7 +72,10 @@ impl BufferOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.buffer_size(handle),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.buffer_size(handle),
         }
     }
@@ -69,7 +84,10 @@ impl BufferOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.bind_buffer(handle),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.bind_buffer(handle),
         }
     }
@@ -78,7 +96,10 @@ impl BufferOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.unbind_buffer(buffer_type),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.unbind_buffer(buffer_type),
         }
     }
@@ -87,7 +108,10 @@ impl BufferOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.supports_storage_buffers(),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.supports_storage_buffers(),
         }
     }
@@ -96,7 +120,10 @@ impl BufferOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.create_storage_buffer(data),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.create_storage_buffer(data),
         }
     }
@@ -110,7 +137,10 @@ impl BufferOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.update_storage_buffer(handle, offset, data),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.update_storage_buffer(handle, offset, data),
         }
     }
@@ -119,7 +149,10 @@ impl BufferOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.bind_storage_buffer(handle, binding),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.bind_storage_buffer(handle, binding),
         }
     }
@@ -128,7 +161,10 @@ impl BufferOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.unbind_storage_buffer(),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.unbind_storage_buffer(),
         }
     }
@@ -149,7 +185,10 @@ impl TextureOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => {
                 backend.create_texture(width, height, format, filter, wrap, data)
             }
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => {
                 backend.create_texture(width, height, format, filter, wrap, data)
             }
@@ -170,7 +209,10 @@ impl TextureOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => {
                 backend.update_texture(handle, x, y, width, height, data)
             }
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.update_texture(handle, x, y, width, height, data),
         }
     }
@@ -179,7 +221,10 @@ impl TextureOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.destroy_texture(handle),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.destroy_texture(handle),
         }
     }
@@ -188,7 +233,10 @@ impl TextureOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.is_texture_valid(handle),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.is_texture_valid(handle),
         }
     }
@@ -197,7 +245,10 @@ impl TextureOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.texture_size(handle),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.texture_size(handle),
         }
     }
@@ -206,7 +257,10 @@ impl TextureOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.bind_texture(handle, unit),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.bind_texture(handle, unit),
         }
     }
@@ -215,7 +269,10 @@ impl TextureOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.unbind_texture(unit),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.unbind_texture(unit),
         }
     }
@@ -233,7 +290,10 @@ impl TextureOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => {
                 backend.create_compressed_texture(width, height, format, data, mip_levels)
             }
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => {
                 backend.create_compressed_texture(width, height, format, data, mip_levels)
             }
@@ -246,7 +306,10 @@ impl RenderTargetOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.create_render_target(desc),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.create_render_target(desc),
         }
     }
@@ -255,7 +318,10 @@ impl RenderTargetOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.destroy_render_target(handle),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.destroy_render_target(handle),
         }
     }
@@ -264,7 +330,10 @@ impl RenderTargetOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.is_render_target_valid(handle),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.is_render_target_valid(handle),
         }
     }
@@ -273,7 +342,10 @@ impl RenderTargetOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.bind_render_target(handle),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.bind_render_target(handle),
         }
     }
@@ -282,7 +354,10 @@ impl RenderTargetOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.render_target_texture(handle),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.render_target_texture(handle),
         }
     }
@@ -293,7 +368,10 @@ impl ShaderOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.create_shader(vertex_src, fragment_src),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.create_shader(vertex_src, fragment_src),
         }
     }
@@ -302,7 +380,10 @@ impl ShaderOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.destroy_shader(handle),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.destroy_shader(handle),
         }
     }
@@ -311,7 +392,10 @@ impl ShaderOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.is_shader_valid(handle),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.is_shader_valid(handle),
         }
     }
@@ -320,7 +404,10 @@ impl ShaderOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.bind_shader(handle),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.bind_shader(handle),
         }
     }
@@ -329,7 +416,10 @@ impl ShaderOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.unbind_shader(),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.unbind_shader(),
         }
     }
@@ -338,7 +428,10 @@ impl ShaderOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.get_uniform_location(handle, name),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.get_uniform_location(handle, name),
         }
     }
@@ -347,7 +440,10 @@ impl ShaderOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.set_uniform_int(location, value),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.set_uniform_int(location, value),
         }
     }
@@ -356,7 +452,10 @@ impl ShaderOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.set_uniform_float(location, value),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.set_uniform_float(location, value),
         }
     }
@@ -365,7 +464,10 @@ impl ShaderOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.set_uniform_vec2(location, x, y),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.set_uniform_vec2(location, x, y),
         }
     }
@@ -374,7 +476,10 @@ impl ShaderOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.set_uniform_vec3(location, x, y, z),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.set_uniform_vec3(location, x, y, z),
         }
     }
@@ -383,7 +488,10 @@ impl ShaderOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.set_uniform_vec4(location, x, y, z, w),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.set_uniform_vec4(location, x, y, z, w),
         }
     }
@@ -392,7 +500,10 @@ impl ShaderOps for NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(backend) => backend.set_uniform_mat4(location, matrix),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.set_uniform_mat4(location, matrix),
         }
     }
