@@ -26,6 +26,7 @@ public class ThroneScaleValidationTests
     {
         public float Speed;
         public byte IsMoving;
+        // Padding to 4-byte alignment to match Rust repr(C) layout for FFI.
         private byte _pad1;
         private byte _pad2;
         private byte _pad3;
@@ -418,6 +419,12 @@ public class ThroneScaleValidationTests
             // Entity count should be back to zero (only churn entities were created)
             Assert.Equal(0u, game.EntityCount());
 
+            // NOTE: Due to the known FFI component storage despawn bug, native
+            // component allocations are not freed on despawn. At this batch size
+            // (100 entities * 8 bytes * 1000 cycles = ~800 KB) the leak is well
+            // under the 50 MB threshold. This test validates managed-side and
+            // entity-allocator cleanup but does not fully validate native
+            // component storage cleanup.
             Assert.True(growth < MemoryGrowthThresholdBytes,
                 $"Memory grew by {growth / (1024 * 1024)}MB after {cycleCount} churn cycles, threshold is {MemoryGrowthThresholdBytes / (1024 * 1024)}MB");
         }
