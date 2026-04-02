@@ -82,7 +82,10 @@ impl NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(_) => {}
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.drop_surface(),
         }
     }
@@ -92,7 +95,10 @@ impl NativeRenderBackend {
         match self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(_) => Ok(()),
-            #[cfg(all(feature = "native", feature = "wgpu-backend"))]
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
             Self::Wgpu(backend) => backend.recreate_surface(),
         }
     }
