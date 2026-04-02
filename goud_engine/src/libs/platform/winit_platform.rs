@@ -18,12 +18,17 @@ use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::platform::{PlatformBackend, WindowConfig};
 
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+use std::time::Duration;
+use std::time::Instant;
 use winit::application::ApplicationHandler;
 use winit::dpi::LogicalSize;
 use winit::event::{ElementState, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
+// pump_events is desktop-only; on mobile (iOS/Android) winit owns the event
+// loop via run_app() and pump_app_events is not available.
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 use winit::platform::pump_events::EventLoopExtPumpEvents;
 use winit::window::{Window, WindowAttributes, WindowId};
 
@@ -62,8 +67,10 @@ pub struct WinitPlatform {
 impl WinitPlatform {
     /// Creates a new winit platform with a window.
     ///
-    /// Internally pumps one round of events to trigger the `resumed` callback
-    /// which creates the window.
+    /// On desktop, this pumps one round of events to trigger the `resumed`
+    /// callback which creates the window. On mobile (iOS/Android), window
+    /// creation is driven by the OS — use `run_app()` integration instead.
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
     pub fn new(config: &WindowConfig) -> GoudResult<Self> {
         let mut event_loop = EventLoop::new()
             .map_err(|e| GoudError::WindowCreationFailed(format!("EventLoop: {e}")))?;
@@ -106,6 +113,15 @@ impl WinitPlatform {
         Ok(platform)
     }
 
+    /// Mobile stub: `pump_app_events` is not available on iOS/Android.
+    /// Window creation must be driven by `run_app()` integration.
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    pub fn new(_config: &WindowConfig) -> GoudResult<Self> {
+        Err(GoudError::WindowCreationFailed(
+            "WinitPlatform::new() is not available on mobile; use run_app() integration".into(),
+        ))
+    }
+
     /// Returns the winit window handle for wgpu surface creation.
     pub fn window(&self) -> &Arc<Window> {
         self.state
@@ -131,6 +147,9 @@ impl PlatformBackend for WinitPlatform {
             return 0.0;
         }
 
+        // pump_app_events is desktop-only; on mobile, events are delivered
+        // through run_app() which drives the ApplicationHandler directly.
+        #[cfg(not(any(target_os = "android", target_os = "ios")))]
         {
             let mut handler = WinitEventHandler {
                 state: &mut self.state,
