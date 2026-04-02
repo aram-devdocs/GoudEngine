@@ -24,7 +24,9 @@ impl WgpuBackend {
     }
 
     async fn new_async(window: Arc<winit::window::Window>) -> GoudResult<Self> {
-        let instance = wgpu::Instance::default();
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_with_display_handle(
+            Box::new(window.clone()),
+        ));
         let surface = instance
             .create_surface(wgpu::SurfaceTarget::from(window.clone()))
             .map_err(|e| GoudError::BackendNotSupported(format!("wgpu surface: {e}")))?;
