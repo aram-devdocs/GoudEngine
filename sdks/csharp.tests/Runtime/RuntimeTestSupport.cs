@@ -52,4 +52,34 @@ internal static class RuntimeTestSupport
         Assert.NotNull(field);
         field!.SetValue(target, value);
     }
+
+    /// <summary>
+    /// Calls an action that may fail in headless/provider-limited environments.
+    /// Swallows expected exceptions so coverage tests can exercise wrapper lines
+    /// without requiring a real GPU or window.
+    /// </summary>
+    public static void CallGame(Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (Exception ex) when (ex is EntryPointNotFoundException or InvalidOperationException or GoudException)
+        {
+            // Headless/provider-limited environments can reject some game-only calls.
+        }
+    }
+
+    /// <inheritdoc cref="CallGame(Action)"/>
+    public static void CallGame<T>(Func<T> action)
+    {
+        try
+        {
+            _ = action();
+        }
+        catch (Exception ex) when (ex is EntryPointNotFoundException or InvalidOperationException or GoudException)
+        {
+            // Headless/provider-limited environments can reject some game-only calls.
+        }
+    }
 }

@@ -392,27 +392,7 @@ public class ContextAndGameRuntimeTests
         }
     }
 
-    private static void CallGame(Action action)
-    {
-        try
-        {
-            action();
-        }
-        catch (Exception ex) when (ex is EntryPointNotFoundException or InvalidOperationException or GoudException)
-        {
-            // Headless/provider-limited environments can reject some game-only calls after the wrapper line executes.
-        }
-    }
+    private static void CallGame(Action action) => RuntimeTestSupport.CallGame(action);
 
-    private static void CallGame<T>(Func<T> action)
-    {
-        try
-        {
-            _ = action();
-        }
-        catch (Exception ex) when (ex is EntryPointNotFoundException or InvalidOperationException or GoudException)
-        {
-            // Headless/provider-limited environments can reject some game-only calls after the wrapper line executes.
-        }
-    }
+    private static void CallGame<T>(Func<T> action) => RuntimeTestSupport.CallGame(action);
 }
