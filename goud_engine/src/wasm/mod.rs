@@ -214,7 +214,13 @@ impl WasmGame {
 
         if let Some(rs) = &mut self.render_state {
             rs.renderer.begin_frame();
-            if let Ok(frame) = rs.surface.get_current_texture() {
+            let frame_result = rs.surface.get_current_texture();
+            let frame_opt = match frame_result {
+                wgpu::CurrentSurfaceTexture::Success(tex) => Some(tex),
+                wgpu::CurrentSurfaceTexture::Suboptimal(tex) => Some(tex),
+                _ => None,
+            };
+            if let Some(frame) = frame_opt {
                 let view = frame
                     .texture
                     .create_view(&wgpu::TextureViewDescriptor::default());

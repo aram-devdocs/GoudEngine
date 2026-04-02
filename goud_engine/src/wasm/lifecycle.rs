@@ -58,10 +58,9 @@ impl WasmGame {
             std::panic::set_hook(Box::new(super::console_error_panic_hook));
         }
 
-        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::BROWSER_WEBGPU | wgpu::Backends::GL,
-            ..Default::default()
-        });
+        let mut instance_desc = wgpu::InstanceDescriptor::new_without_display_handle();
+        instance_desc.backends = wgpu::Backends::BROWSER_WEBGPU | wgpu::Backends::GL;
+        let instance = wgpu::Instance::new(instance_desc);
 
         let surface = instance
             .create_surface(wgpu::SurfaceTarget::Canvas(canvas))

@@ -33,6 +33,9 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "glfw"
         update-types: ["version-update:semver-major"]
+      # jni 0.22 is a major API rewrite (JNIEnv → EnvUnowned); requires codegen changes
+      - dependency-name: "jni"
+        versions: [">=0.22"]
 
   # .NET dependencies
   - package-ecosystem: "nuget"

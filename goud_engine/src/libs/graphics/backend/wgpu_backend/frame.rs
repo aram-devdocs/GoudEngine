@@ -9,10 +9,23 @@ use crate::libs::error::{GoudError, GoudResult};
 
 impl FrameOps for WgpuBackend {
     fn begin_frame(&mut self) -> GoudResult<()> {
-        let surface_texture = self
-            .surface
-            .get_current_texture()
-            .map_err(|e| GoudError::InternalError(format!("Surface texture: {e}")))?;
+        let surface_texture = match self.surface.get_current_texture() {
+            wgpu::CurrentSurfaceTexture::Success(tex) => tex,
+            wgpu::CurrentSurfaceTexture::Suboptimal(tex) => {
+                self.surface.configure(&self.device, &self.surface_config);
+                tex
+            }
+            wgpu::CurrentSurfaceTexture::Timeout | wgpu::CurrentSurfaceTexture::Occluded => {
+                return Ok(()); // skip frame
+            }
+            wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Lost => {
+                self.surface.configure(&self.device, &self.surface_config);
+                return Err(GoudError::InternalError("Surface lost or outdated".into()));
+            }
+            wgpu::CurrentSurfaceTexture::Validation => {
+                return Err(GoudError::InternalError("Surface validation error".into()));
+            }
+        };
         let surface_view = surface_texture
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());

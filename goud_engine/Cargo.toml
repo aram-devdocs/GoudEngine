@@ -33,7 +33,7 @@ cc = { version = "1.2", optional = true }
 bindgen = { version = "0.64.0", optional = true }
 cgmath = "0.18.0"
 crossbeam-channel = "0.5"
-env_logger = { version = "0.11.6", optional = true }
+env_logger = { version = "0.11.10", optional = true }
 gl = { version = "0.14.0", optional = true }
 glfw = { version = "0.59.0", optional = true }
 log = "0.4.17"
@@ -62,9 +62,9 @@ tobj = { version = "4.0", optional = true, features = ["ahash"] }
 fbxcel = { version = "0.9", optional = true, features = ["tree"] }
 bytemuck = "1.14"
 goud_engine_macros = { version = "=0.0.839", path = "../goud_engine_macros" } # x-release-please-version
-wgpu = { version = "28", optional = true }
+wgpu = { version = "29", optional = true }
 winit = { version = "0.30", optional = true, features = ["android-native-activity"] }
-naga = { version = "28", optional = true, features = ["glsl-in", "wgsl-out"] }
+naga = { version = "29", optional = true, features = ["glsl-in", "wgsl-out"] }
 pollster = { version = "0.4", optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
 wasm-bindgen-futures = { version = "0.4", optional = true }

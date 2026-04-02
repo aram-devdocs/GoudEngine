@@ -19,41 +19,37 @@ jobs:
       with:
         script: |
           const title = context.payload.pull_request.title;
-          const validPrefixes = [
-            'feat:', 'fix:', 'docs:', 'style:', 'refactor:', 
-            'perf:', 'test:', 'chore:', 'ci:', 'build:'
-          ];
-          
-          const hasValidPrefix = validPrefixes.some(prefix => 
-            title.toLowerCase().startsWith(prefix)
-          );
-          
-          if (!hasValidPrefix) {
-            core.setFailed(`PR title must start with one of: ${validPrefixes.join(', ')}`);
-            
-            // Add comment to PR
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: `## ❌ Invalid PR Title
-              
-              Your PR title must start with one of the following prefixes:
-              - \`feat:\` - A new feature
-              - \`fix:\` - A bug fix
-              - \`docs:\` - Documentation changes
-              - \`style:\` - Code style changes (formatting, missing semi-colons, etc)
-              - \`refactor:\` - Code refactoring
-              - \`perf:\` - Performance improvements
-              - \`test:\` - Adding or updating tests
-              - \`chore:\` - Maintenance tasks
-              - \`ci:\` - CI/CD changes
-              - \`build:\` - Build system changes
-              
-              Example: \`feat: add new sprite collision detection\`
-              
-              Please update your PR title and try again.`
-            });
+          const pr = context.payload.pull_request;
+
+          // Conventional commit: type(optional-scope): description
+          const pattern = /^(feat|fix|docs|style|refactor|perf|test|chore|ci|build)(\(.+\))?:/;
+          const isValid = pattern.test(title.toLowerCase());
+
+          if (!isValid) {
+            core.setFailed(`PR title must follow conventional commits: type(scope): description`);
+
+            // Don't comment on bot PRs — they can't fix their titles
+            const isBot = pr.user.type === 'Bot';
+            if (!isBot) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `## Invalid PR Title
+
+                Your PR title must follow conventional commits format:
+                \`type(optional-scope): description\`
+
+                Valid types: \`feat\`, \`fix\`, \`docs\`, \`style\`, \`refactor\`, \`perf\`, \`test\`, \`chore\`, \`ci\`, \`build\`
+
+                Examples:
+                - \`feat: add new sprite collision detection\`
+                - \`fix(renderer): correct z-ordering for 2D sprites\`
+                - \`chore(deps): bump serde from 1.0 to 1.1\`
+
+                Please update your PR title and try again.`
+              });
+            }
           }
 
   validate-release-config:
@@ -202,7 +198,7 @@ jobs:
 
     - name: Lint changed Markdown files
       if: steps.changed.outputs.files != ''
-      uses: DavidAnson/markdownlint-cli2-action@v22
+      uses: DavidAnson/markdownlint-cli2-action@v23
       with:
         globs: ${{ steps.changed.outputs.files }}
 
