@@ -16,7 +16,7 @@
 [![LuaRocks](https://img.shields.io/luarocks/v/aram-devdocs/goudengine.svg)](https://luarocks.org/modules/aram-devdocs/goudengine)
 [![Go Reference](https://pkg.go.dev/badge/github.com/aram-devdocs/GoudEngine/sdks/go/goud.svg)](https://pkg.go.dev/github.com/aram-devdocs/GoudEngine/sdks/go/goud)
 
-[![total downloads](https://img.shields.io/badge/total_downloads-7%2C814-brightgreen)](#downloads)
+[![total downloads](https://img.shields.io/badge/total_downloads-7%2C902-brightgreen)](#downloads)
 
 Game engine written in Rust. Build 2D and 3D games from Rust, C#, Python, TypeScript, C, C++, Go, Kotlin, Swift, or Lua.
 
@@ -213,9 +213,9 @@ cargo run -p flappy-bird                             # Rust Flappy Bird
 | Registry | Total Downloads |
 |----------|-----------------|
 | crates.io | [43](https://crates.io/crates/goud-engine) |
-| NuGet | [1,997](https://www.nuget.org/packages/GoudEngine/) |
-| PyPI | [3,979](https://pypi.org/project/goudengine/) |
-| npm | [1,795](https://www.npmjs.com/package/goudengine) |
+| NuGet | [2,078](https://www.nuget.org/packages/GoudEngine/) |
+| PyPI | [3,982](https://pypi.org/project/goudengine/) |
+| npm | [1,799](https://www.npmjs.com/package/goudengine) |
 | Maven Central | [0](https://central.sonatype.com/artifact/io.github.aram-devdocs/goud-engine-kotlin) |
 | LuaRocks | [0](https://luarocks.org/modules/aram-devdocs/goudengine) |
 | Go | [0 versions](https://pkg.go.dev/github.com/aram-devdocs/GoudEngine/sdks/go/goud) |
@@ -226,7 +226,7 @@ cargo run -p flappy-bird                             # Rust Flappy Bird
 
 [![Star History Chart](https://api.star-history.com/svg?repos=aram-devdocs/GoudEngine&type=Date)](https://star-history.com/#aram-devdocs/GoudEngine&Date)
 
-<sub>Last updated: 2026-04-01 via [GitHub Action](.github/workflows/community-stats.yml)</sub>
+<sub>Last updated: 2026-04-02 via [GitHub Action](.github/workflows/community-stats.yml)</sub>
 <!-- COMMUNITY-STATS:END -->
 
 ## License
