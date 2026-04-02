@@ -679,7 +679,14 @@ jobs:
             -e "s/version = \"scm-1\"/version = \"${VERSION}-1\"/" \
             -e "s|branch = \"main\"|tag = \"v${VERSION}\"|" \
             goudengine-scm-1.rockspec > "${VERSIONED_SPEC}"
-          luarocks upload "${VERSIONED_SPEC}" --api-key=${{ secrets.LUAROCKS_API_KEY }} || echo "Upload failed or already published, skipping"
+          OUTPUT=$(luarocks upload "${VERSIONED_SPEC}" --api-key=${{ secrets.LUAROCKS_API_KEY }} 2>&1) || {
+            if echo "$OUTPUT" | grep -qi "already exists"; then
+              echo "Version already published, skipping"
+            else
+              echo "$OUTPUT"
+              exit 1
+            fi
+          }
 
   # ── Step 10: Trigger Go module proxy ──
   publish-go:

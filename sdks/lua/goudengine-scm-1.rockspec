@@ -2,6 +2,7 @@
 -- This package provides the native engine library and Lua runner binary
 -- for developing games with GoudEngine in Lua.
 
+rockspec_format = "3.0"
 package = "goudengine"
 version = "scm-1"
 
