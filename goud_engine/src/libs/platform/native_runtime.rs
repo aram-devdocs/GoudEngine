@@ -26,7 +26,7 @@ fn invalid_pair_error(
     render_backend: RenderBackendKind,
 ) -> GoudError {
     GoudError::InitializationFailed(format!(
-        "invalid native backend pair: window={window_backend:?} render={render_backend:?}; supported pairs are Winit+Wgpu and GlfwLegacy+OpenGlLegacy"
+        "invalid native backend pair: window={window_backend:?} render={render_backend:?}; supported pairs are Winit+Wgpu, GlfwLegacy+OpenGlLegacy, and XboxGdk+Wgpu"
     ))
 }
 
@@ -35,6 +35,10 @@ fn invalid_pair_error(
 /// Tries wgpu (Winit + Wgpu) first, then falls back to OpenGL (GLFW + OpenGL).
 #[allow(unreachable_code)]
 pub fn detect_best_backend() -> (WindowBackendKind, RenderBackendKind) {
+    #[cfg(all(feature = "xbox-gdk", target_env = "msvc"))]
+    {
+        return (WindowBackendKind::XboxGdk, RenderBackendKind::Wgpu);
+    }
     #[cfg(all(
         feature = "native",
         feature = "wgpu-backend",
@@ -73,6 +77,8 @@ pub fn validate_native_backend_pair(
     match (window_backend, render_backend) {
         (WindowBackendKind::Winit, RenderBackendKind::Wgpu) => Ok(()),
         (WindowBackendKind::GlfwLegacy, RenderBackendKind::OpenGlLegacy) => Ok(()),
+        #[cfg(feature = "xbox-gdk")]
+        (WindowBackendKind::XboxGdk, RenderBackendKind::Wgpu) => Ok(()),
         (_, RenderBackendKind::Auto) => Ok(()), // Auto is resolved before validation
         _ => Err(invalid_pair_error(window_backend, render_backend)),
     }
@@ -154,6 +160,23 @@ pub fn create_native_runtime(
                 "legacy GLFW/OpenGL support is not enabled in this build".to_string(),
             ))
         }
+        #[cfg(feature = "xbox-gdk")]
+        (WindowBackendKind::XboxGdk, RenderBackendKind::Wgpu) => {
+            let platform = super::xbox_gdk_platform::XboxGdkPlatform::new(window_config)?;
+            let handle = platform.window_handle();
+            let (w, h) = platform.get_framebuffer_size();
+            let mut backend =
+                crate::libs::graphics::backend::wgpu_backend::WgpuBackend::new_from_raw_handle(
+                    handle, w, h,
+                )?;
+            backend.resize(w, h);
+            Ok(NativeRuntime {
+                platform: Box::new(platform),
+                render_backend: SharedNativeRenderBackend::new(NativeRenderBackend::Wgpu(
+                    Box::new(backend),
+                )),
+            })
+        }
         _ => Err(invalid_pair_error(window_backend, render_backend)),
     }
 }
@@ -201,6 +224,15 @@ mod tests {
     fn auto_backend_passes_validation() {
         assert!(
             validate_native_backend_pair(WindowBackendKind::Winit, RenderBackendKind::Auto).is_ok()
+        );
+    }
+
+    #[cfg(feature = "xbox-gdk")]
+    #[test]
+    fn accepts_xbox_gdk_pair() {
+        assert!(
+            validate_native_backend_pair(WindowBackendKind::XboxGdk, RenderBackendKind::Wgpu,)
+                .is_ok()
         );
     }
 }
