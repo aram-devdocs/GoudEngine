@@ -32,7 +32,7 @@ Add the SDK as a local dependency. In your `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation(files("path/to/sdks/kotlin/build/libs/goud-engine-kotlin-0.0.832.jar"))
+    implementation(files("path/to/sdks/kotlin/build/libs/goudengine-0.0.832.jar"))
 }
 ```
 
@@ -40,7 +40,7 @@ dependencies {
 
 ```kotlin
 dependencies {
-    implementation("io.github.aram-devdocs:goud-engine-kotlin:0.0.833")
+    implementation("io.github.aram-devdocs:goudengine:0.0.833")
 }
 ```
 

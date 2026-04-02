@@ -102,11 +102,14 @@ python3 codegen/gen_kotlin.py
 echo "║ [13/15] Formatting generated Rust sources..."
 cargo fmt -p goud-engine-node
 
-echo "║ [14/15] Validating schema consistency..."
+echo "║ [14/16] Validating schema consistency..."
 python3 codegen/validate.py || { echo "║ ✗ Schema mismatch — fix goud_sdk.schema.json"; exit 1; }
 
-echo "║ [15/15] Generating docs snippets from validated sources..."
+echo "║ [15/16] Generating docs snippets from validated sources..."
 python3 scripts/generate-doc-snippets.py
+
+echo "║ [16/16] Generating SDK README files..."
+python3 codegen/gen_sdk_readmes.py
 
 echo "╠══════════════════════════════════════════════════════════╣"
 echo "║ ✓ All SDKs generated from goud_sdk.schema.json          ║"

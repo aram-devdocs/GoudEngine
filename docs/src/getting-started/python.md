@@ -40,10 +40,10 @@ A window opens at 800x600 and closes when you press Escape.
 Enable debugger mode before creating the headless context:
 
 ```python
-from goud_engine import (
+from goudengine import (
     GoudContext,
 )
-from goud_engine.generated._types import ContextConfig, DebuggerConfig
+from goudengine.generated._types import ContextConfig, DebuggerConfig
 
 ctx = GoudContext(
     ContextConfig(
@@ -128,7 +128,7 @@ from pathlib import Path
 sdk_path = Path(__file__).parent.parent.parent / "sdks" / "python"
 sys.path.insert(0, str(sdk_path))
 
-from goud_engine import GoudGame, Key
+from goudengine import GoudGame, Key
 ```
 
 Build the native library first:

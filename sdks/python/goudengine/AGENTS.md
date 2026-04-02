@@ -1,4 +1,4 @@
-# python/goud_engine/ — Python Package
+# python/goudengine/ — Python Package
 
 ## Purpose
 
@@ -15,11 +15,11 @@ The installable Python package providing GoudEngine bindings.
 - `generated/_ffi.py` declares every FFI function with explicit `argtypes` and `restype`
 - Rust `snake_case` FFI names map directly to Python `snake_case` wrappers
 - Library loading handles macOS (`.dylib`) and Linux (`.so`) paths
-- `__init__.py` re-exports the public API — users import from `goud_engine`
+- `__init__.py` re-exports the public API — users import from `goudengine`
 
 ## Updating Bindings
 
-When new FFI functions are added in Rust (`goud_engine/src/ffi/`):
+When new FFI functions are added in Rust (`goudengine/src/ffi/`):
 
 1. Add ctypes declaration in `generated/_ffi.py`:
    - Set `argtypes` to match the C function signature

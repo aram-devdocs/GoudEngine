@@ -1,4 +1,4 @@
-"""Generator for `sdks/python/goud_engine/networking.py`."""
+"""Generator for `sdks/python/goudengine/networking.py`."""
 
 from .context import HEADER_COMMENT, OUT, write_generated
 
@@ -14,7 +14,7 @@ def gen_network_wrappers() -> None:
         "try:",
         "    from .generated._errors import GoudError",
         'except ImportError:  # pragma: no cover - supports direct module loading in tests',
-        "    from goud_engine.generated._errors import GoudError",
+        "    from goudengine.generated._errors import GoudError",
         "",
         "if TYPE_CHECKING:",
         "    from .generated._types import NetworkPacket, NetworkSimulationConfig",

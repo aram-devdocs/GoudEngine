@@ -325,7 +325,7 @@ def test_generated_debugger_wrapper_api_names():
     assert "_lib.goud_debugger_get_snapshot_json.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]" in ffi_src
     assert "_lib.goud_debugger_get_manifest_json.argtypes = [ctypes.POINTER(ctypes.c_uint8), ctypes.c_size_t]" in ffi_src
     assert "_lib.goud_debugger_get_memory_summary.argtypes = [GoudContextId, ctypes.POINTER(GoudMemorySummary)]" in ffi_src
-    assert "_lib.goud_engine_config_set_debugger.argtypes = [ctypes.c_void_p, ctypes.POINTER(GoudDebuggerConfig)]" in ffi_src
+    assert "_lib.goudengine_config_set_debugger.argtypes = [ctypes.c_void_p, ctypes.POINTER(GoudDebuggerConfig)]" in ffi_src
     assert '("route_label", ctypes.c_char_p)' in ffi_src
     assert "def __init__(self, config: 'ContextConfig' = None):" in game_src
     assert "self._ctx = lib.goud_context_create_with_config(ctypes.byref(_config_ffi))" in game_src
@@ -734,10 +734,10 @@ def test_generated_game_runtime_with_fake_lib():
             out.current_node_id = 10
             return 1
 
-        def goud_engine_config_create(self):
+        def goudengine_config_create(self):
             return 555
 
-        def goud_engine_create(self, handle):
+        def goudengine_create(self, handle):
             return self.ffi.GoudContextId(33)
 
         def goud_debugger_get_snapshot_json(self, ctx, out_buf, out_len):

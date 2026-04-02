@@ -1,4 +1,4 @@
-from goud_engine import GoudGame, Key
+from goudengine import GoudGame, Key
 
 game = GoudGame(800, 600, "My Game")
 

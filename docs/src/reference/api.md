@@ -31,7 +31,7 @@ dotnet build -p:GenerateDocumentationFile=true
 Python API docs can be generated with pdoc from docstrings:
 
 ```bash
-pdoc sdks/python/goud_engine --output-dir docs/api/python
+pdoc sdks/python/goudengine --output-dir docs/api/python
 ```
 
 ## TypeScript

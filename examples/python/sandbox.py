@@ -15,7 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SDK_ROOT = REPO_ROOT / "sdks" / "python"
 
 
-def _normalize_goud_engine_lib() -> None:
+def _normalize_goudengine_lib() -> None:
     raw = os.environ.get("GOUD_ENGINE_LIB", "").strip()
     if not raw:
         return
@@ -23,9 +23,9 @@ def _normalize_goud_engine_lib() -> None:
     if not path.is_dir():
         return
     suffix = {
-        "darwin": "libgoud_engine.dylib",
-        "linux": "libgoud_engine.so",
-        "win32": "goud_engine.dll",
+        "darwin": "libgoudengine.dylib",
+        "linux": "libgoudengine.so",
+        "win32": "goudengine.dll",
     }.get(sys.platform)
     if not suffix:
         return
@@ -34,10 +34,10 @@ def _normalize_goud_engine_lib() -> None:
         os.environ["GOUD_ENGINE_LIB"] = str(candidate)
 
 
-_normalize_goud_engine_lib()
+_normalize_goudengine_lib()
 sys.path.insert(0, str(SDK_ROOT))
 
-from goud_engine import (  # noqa: E402
+from goudengine import (  # noqa: E402
     Color,
     EngineConfig,
     GoudContext,
@@ -48,7 +48,7 @@ from goud_engine import (  # noqa: E402
     TextAlignment,
     UiManager,
 )
-from goud_engine.generated._types import DebuggerConfig  # noqa: E402
+from goudengine.generated._types import DebuggerConfig  # noqa: E402
 
 
 WINDOW_WIDTH = 1280

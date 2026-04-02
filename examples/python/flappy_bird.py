@@ -28,7 +28,7 @@ from typing import List, Optional
 sdk_path = Path(__file__).parent.parent.parent / "sdks" / "python"
 sys.path.insert(0, str(sdk_path))
 
-from goud_engine import (
+from goudengine import (
     GoudGame,
     Key, MouseButton,
     Transform2D, Sprite,
@@ -699,7 +699,7 @@ def main():
     except Exception as e:
         print(f"\nError: {e}")
         print("\nMake sure the native library is built:")
-        print("  cd goud_engine && cargo build --release")
+        print("  cd goudengine && cargo build --release")
         import traceback
         traceback.print_exc()
         return 1

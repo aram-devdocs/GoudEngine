@@ -792,7 +792,7 @@ jobs:
           | npm | \`goudengine\` | ${{ needs.publish-npm.result }} |
           | NuGet | \`GoudEngine\` | ${{ needs.publish-nuget.result }} |
           | PyPI | \`goudengine\` | ${{ needs.publish-pypi.result }} |
-          | Maven Central | \`goud-engine-kotlin\` | ${{ needs.publish-kotlin.result }} |
+          | Maven Central | \`goudengine\` | ${{ needs.publish-kotlin.result }} |
           | crates.io | \`goud-engine\` | ${{ needs.publish-crates.result }} |
           | GitHub Release | C/C++ tarballs | ${{ needs.publish-native-tarballs.result }} |
           | GitHub Release | Console static tarballs | ${{ needs.publish-console-static-tarballs.result }} |

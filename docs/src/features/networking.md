@@ -43,7 +43,7 @@ while (true)
 ## Python
 
 ```python
-from goud_engine import GoudContext, NetworkManager, NetworkProtocol
+from goudengine import GoudContext, NetworkManager, NetworkProtocol
 
 host_context = GoudContext()
 client_context = GoudContext()

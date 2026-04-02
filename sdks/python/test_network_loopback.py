@@ -44,7 +44,7 @@ def _wait_for_peer_counts(host_endpoint, client_endpoint, timeout_sec=3.0):
 
 
 def _test_send_requires_default_peer():
-    from goud_engine import GoudContext, NetworkManager, NetworkProtocol
+    from goudengine import GoudContext, NetworkManager, NetworkProtocol
 
     ctx = GoudContext()
     endpoint = None
@@ -69,7 +69,7 @@ def _test_send_requires_default_peer():
 
 
 def _test_tcp_loopback_roundtrip():
-    from goud_engine import GoudContext, NetworkManager, NetworkProtocol
+    from goudengine import GoudContext, NetworkManager, NetworkProtocol
 
     host_ctx = GoudContext()
     client_ctx = GoudContext()
@@ -141,7 +141,7 @@ def _test_tcp_loopback_roundtrip():
 
 def main() -> int:
     try:
-        from goud_engine import GoudContext  # noqa: F401
+        from goudengine import GoudContext  # noqa: F401
     except Exception as exc:
         print(f"ERROR: Python networking loopback tests require native library: {exc}")
         return 1

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional
 try:
     from .generated._errors import GoudError
 except ImportError:  # pragma: no cover - supports direct module loading in tests
-    from goud_engine.generated._errors import GoudError
+    from goudengine.generated._errors import GoudError
 
 if TYPE_CHECKING:
     from .generated._types import NetworkPacket, NetworkSimulationConfig

@@ -19,7 +19,7 @@ from typing import Callable
 sdk_path = Path(__file__).parent.parent.parent / "sdks" / "python"
 sys.path.insert(0, str(sdk_path))
 
-from goud_engine import (  # noqa: E402
+from goudengine import (  # noqa: E402
     GoudContext,
     GoudError,
     NetworkManager,
@@ -29,7 +29,7 @@ from goud_engine import (  # noqa: E402
     parse_debugger_manifest,
     parse_debugger_snapshot,
 )
-from goud_engine.generated._types import ContextConfig, DebuggerConfig  # noqa: E402
+from goudengine.generated._types import ContextConfig, DebuggerConfig  # noqa: E402
 
 DEBUGGER_ROUTE_LABEL = "feature-lab-python-headless"
 

@@ -33,7 +33,7 @@ Issues = "https://github.com/aram-devdocs/GoudEngine/issues"
 Documentation = "https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/python"
 
 [tool.setuptools.packages.find]
-include = ["goud_engine*"]
+include = ["goudengine*"]
 
 [tool.setuptools.package-data]
-goud_engine = ["*.so", "*.dylib", "*.dll", "include/*.h"]
+goudengine = ["*.so", "*.dylib", "*.dll", "include/*.h"]

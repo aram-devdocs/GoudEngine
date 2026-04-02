@@ -15,12 +15,12 @@ Python examples for the GoudEngine SDK live in this directory.
 
 1. Build the native library:
    ```bash
-   cd goud_engine
+   cd goudengine
    cargo build --release
    ```
 2. Use Python 3.8 or newer.
 
-The SDK bindings are loaded from `sdks/python/goud_engine` and use `ctypes`.
+The SDK bindings are loaded from `sdks/python/goudengine` and use `ctypes`.
 
 ## Run
 
@@ -59,7 +59,7 @@ python feature_lab.py
 ### Frame Loop and Input
 
 ```python
-from goud_engine import GoudGame, Key, MouseButton
+from goudengine import GoudGame, Key, MouseButton
 
 game = GoudGame(800, 600, "My Game")
 
@@ -81,7 +81,7 @@ game.destroy()
 ### Transform2D and Sprite
 
 ```python
-from goud_engine import Transform2D, Sprite
+from goudengine import Transform2D, Sprite
 import math
 
 t = Transform2D.from_position(100, 50)

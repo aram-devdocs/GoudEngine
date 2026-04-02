@@ -7,11 +7,11 @@ import sys
 import types
 from pathlib import Path
 
-_GENERATED_DIR = Path(__file__).parent / "goud_engine" / "generated"
-_PACKAGE_DIR = Path(__file__).parent / "goud_engine"
+_GENERATED_DIR = Path(__file__).parent / "goudengine" / "generated"
+_PACKAGE_DIR = Path(__file__).parent / "goudengine"
 _NETWORKING_PATH = _PACKAGE_DIR / "networking.py"
 _ROOT_INIT_PATH = _PACKAGE_DIR / "__init__.py"
-_LEGACY_ERRORS_PATH = Path(__file__).parent / "goud_engine" / "errors.py"
+_LEGACY_ERRORS_PATH = Path(__file__).parent / "goudengine" / "errors.py"
 _ERRORS_PATH = (
     _LEGACY_ERRORS_PATH
     if _LEGACY_ERRORS_PATH.exists()

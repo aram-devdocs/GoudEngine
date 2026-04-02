@@ -51,7 +51,7 @@ Used by: `publish-pypi` job to publish Python SDK to PyPI
 #### `MAVEN_USERNAME`
 - Where to obtain: [Maven Central Repository > Account > User Token](https://central.sonatype.com/)
 - Type: JIRA/OSS account username or user token (username format)
-- Scope: Publish to `io.github.aram-devdocs:goud-engine-kotlin`
+- Scope: Publish to `io.github.aram-devdocs:goudengine`
 - Used by: `publish-kotlin` Gradle plugin configuration
 
 #### `MAVEN_PASSWORD`

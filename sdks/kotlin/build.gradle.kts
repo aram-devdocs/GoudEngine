@@ -87,7 +87,7 @@ publishing {
     publications {
         create<MavenPublication>("mavenKotlin") {
             groupId = "io.github.aram-devdocs"
-            artifactId = "goud-engine-kotlin"
+            artifactId = "goudengine"
             from(components["java"])
             pom {
                 name.set("GoudEngine Kotlin SDK")
