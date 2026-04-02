@@ -452,7 +452,15 @@ jobs:
 
       - name: Publish
         working-directory: sdks/typescript
-        run: npm publish --provenance --access public --ignore-scripts
+        run: |
+          OUTPUT=$(npm publish --provenance --access public --ignore-scripts 2>&1) || {
+            if echo "$OUTPUT" | grep -q "cannot publish over the previously published"; then
+              echo "Version already published, skipping"
+            else
+              echo "$OUTPUT"
+              exit 1
+            fi
+          }
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -572,6 +580,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: sdks/python/dist/
+          skip-existing: true
 
   # ── Step 7: Publish to Maven Central ──
   publish-kotlin:
@@ -681,7 +690,7 @@ jobs:
             -e "s/version = \"scm-1\"/version = \"${VERSION}-1\"/" \
             -e "s|branch = \"main\"|tag = \"v${VERSION}\"|" \
             goudengine-scm-1.rockspec > "${VERSIONED_SPEC}"
-          OUTPUT=$(luarocks upload "${VERSIONED_SPEC}" --api-key=${{ secrets.LUAROCKS_API_KEY }} 2>&1) || {
+          OUTPUT=$(luarocks upload "${VERSIONED_SPEC}" --skip-pack --api-key=${{ secrets.LUAROCKS_API_KEY }} 2>&1) || {
             if echo "$OUTPUT" | grep -qi "already exists"; then
               echo "Version already published, skipping"
             else
