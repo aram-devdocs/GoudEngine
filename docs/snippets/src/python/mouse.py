@@ -1,4 +1,4 @@
-from goud_engine import GoudGame, MouseButton
+from goudengine import GoudGame, MouseButton
 
 game = GoudGame(800, 600, "My Game")
 

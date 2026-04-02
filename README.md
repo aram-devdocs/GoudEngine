@@ -12,7 +12,7 @@
 [![npm](https://img.shields.io/npm/v/goudengine.svg)](https://www.npmjs.com/package/goudengine)
 [![NuGet](https://img.shields.io/nuget/v/GoudEngine.svg)](https://www.nuget.org/packages/GoudEngine/)
 [![PyPI](https://img.shields.io/pypi/v/goudengine.svg)](https://pypi.org/project/goudengine/)
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.aram-devdocs/goud-engine-kotlin.svg)](https://central.sonatype.com/artifact/io.github.aram-devdocs/goud-engine-kotlin)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.aram-devdocs/goudengine.svg)](https://central.sonatype.com/artifact/io.github.aram-devdocs/goudengine)
 [![LuaRocks](https://img.shields.io/luarocks/v/aram-devdocs/goudengine.svg)](https://luarocks.org/modules/aram-devdocs/goudengine)
 [![Go Reference](https://pkg.go.dev/badge/github.com/aram-devdocs/GoudEngine/sdks/go/goud.svg)](https://pkg.go.dev/github.com/aram-devdocs/GoudEngine/sdks/go/goud)
 
@@ -20,21 +20,9 @@
 
 Game engine written in Rust. Build 2D and 3D games from Rust, C#, Python, TypeScript, C, C++, Go, Kotlin, Swift, or Lua.
 
-| | |
-|---|---|
-| **SDKs** | [Rust](sdks/rust/) · [C#](sdks/csharp/) · [Python](sdks/python/) · [TypeScript](sdks/typescript/) · [C](sdks/c/) · [C++](sdks/cpp/) · [Go](sdks/go/) · [Kotlin](sdks/kotlin/) · [Swift](sdks/swift/) · [Lua](luarocks/) |
-| **Examples** | [All Examples](examples/) · [Flappy Bird (Rust)](examples/rust/) |
-| **Docs** | [Documentation Site](https://goudengine.aramhammoudeh.com/) · [Getting Started](docs/src/getting-started/) · [Architecture](docs/src/architecture/) · [Development Guide](docs/src/development/guide.md) · [Building](docs/src/development/building.md) · [AI Setup](docs/src/development/ai-setup.md) |
-
-## Alpha Roadmap
-
-GoudEngine is working toward an alpha release. The full plan covers physics, audio, text rendering, animation, scenes, UI, 10 SDK languages, mobile/console support, and a networking system.
-
-- **[ALPHA_ROADMAP.md](ALPHA_ROADMAP.md)** — Full technical roadmap
-- **[Master tracking issue](https://github.com/aram-devdocs/GoudEngine/issues/114)** — ALPHA-001: GoudEngine Alpha Release
-- **[Contributing](CONTRIBUTING.md)** — How to contribute
-
 ## Get Started
+
+Pick your language and follow the guide -- you'll have a window open in 5 minutes.
 
 | Language | Install | Guide | Examples |
 |----------|---------|-------|----------|
@@ -45,9 +33,21 @@ GoudEngine is working toward an alpha release. The full plan covers physics, aud
 | C | Header-only | [Getting Started](docs/src/getting-started/c-cpp.md) | [C examples](examples/c/) |
 | C++ | CMake / Meson | [Getting Started](docs/src/getting-started/c-cpp.md) | [C++ examples](examples/cpp/) |
 | Go | `go get github.com/aram-devdocs/GoudEngine/sdks/go` | [Getting Started](docs/src/getting-started/go.md) | [Go examples](examples/go/) |
-| Kotlin | Gradle / Maven Central | [Getting Started](docs/src/getting-started/kotlin.md) | [Kotlin examples](examples/kotlin/) |
+| Kotlin | `implementation("io.github.aram-devdocs:goudengine:0.0.839")` | [Getting Started](docs/src/getting-started/kotlin.md) | [Kotlin examples](examples/kotlin/) |
 | Swift | Swift Package Manager | [Getting Started](docs/src/getting-started/swift.md) | [Swift examples](examples/swift/) |
 | Lua | `luarocks install goudengine` | [Getting Started](docs/src/getting-started/lua.md) | [Lua examples](examples/lua/) |
+
+### Package Naming
+
+The canonical name is **GoudEngine**, adapted to each language's registry conventions:
+
+| Convention | Registries | Package Name |
+|------------|-----------|--------------|
+| Lowercase | npm, PyPI, LuaRocks, Maven Central | `goudengine` |
+| PascalCase | NuGet, Swift Package Manager | `GoudEngine` |
+| Kebab-case | crates.io | `goud-engine` |
+
+> **Migrating from an older version?** Python imports changed from `from goud_engine import ...` to `from goudengine import ...`. Kotlin's Maven artifact changed from `goud-engine-kotlin` to `goudengine`. See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ## Design Philosophy
 
@@ -74,6 +74,24 @@ GoudEngine is working toward an alpha release. The full plan covers physics, aud
 - Entity Component System (ECS): high-performance game object management
 - Input handling: keyboard and mouse with frame-based state tracking
 - Structured error diagnostics with error codes and recovery hints
+
+## Examples
+
+See [examples/README.md](examples/README.md) for the full list with run commands. All examples use `./dev.sh`:
+
+```sh
+./dev.sh --game flappy_goud                          # C# Flappy Bird
+./dev.sh --game 3d_cube                              # C# 3D demo
+./dev.sh --game feature_lab                          # C# headless feature lab
+./dev.sh --sdk python --game flappy_bird             # Python Flappy Bird
+./dev.sh --sdk typescript --game flappy_bird         # TypeScript desktop
+./dev.sh --sdk typescript --game flappy_bird_web     # TypeScript web
+./dev.sh --sdk go --game flappy_bird                 # Go Flappy Bird
+./dev.sh --sdk kotlin --game flappy_bird             # Kotlin Flappy Bird
+./dev.sh --sdk swift --game flappy_bird              # Swift Flappy Bird
+./dev.sh --sdk lua --game flappy_bird                # Lua Flappy Bird
+cargo run -p flappy-bird                             # Rust Flappy Bird
+```
 
 ## Debugger Runtime
 
@@ -141,7 +159,7 @@ codegen/goud_sdk.schema.json   (source of truth)
          ├── gen_kotlin.py     → sdks/kotlin/
          ├── gen_go.py         → sdks/go/internal/ffi/
          ├── gen_go_sdk.py     → sdks/go/goud/
-         └── gen_lua.py        → luarocks/goudengine/
+         └── gen_lua.py        → sdks/lua/
 ```
 
 See `codegen/AGENTS.md` for details.
@@ -153,8 +171,7 @@ See `codegen/AGENTS.md` for details.
 | `libs/` | Core libraries (graphics, platform, ECS, logger) |
 | `goud_engine/` | Engine crate (core, assets, SDK, FFI) |
 | `goud_engine_macros/` | Procedural macros |
-| `sdks/` | Language SDKs (Rust, C#, Python, TypeScript, C, C++, Go, Kotlin, Swift) |
-| `luarocks/` | Lua SDK (LuaRocks distribution package) |
+| `sdks/` | Language SDKs (Rust, C#, Python, TypeScript, C, C++, Go, Kotlin, Swift, Lua) |
 | `codegen/` | Unified SDK code generation pipeline |
 | `tools/` | Development utilities (lint-layers) |
 | `examples/` | Example games organized by SDK language |
@@ -162,44 +179,22 @@ See `codegen/AGENTS.md` for details.
 | `scripts/` | Build, codegen, and CI helper scripts |
 | `ports/` | Package manager ports (Conan, vcpkg) |
 
-## Examples
+## Alpha Roadmap
 
-See [examples/README.md](examples/README.md) for the full list with run commands. All examples use `./dev.sh`:
+GoudEngine is working toward an alpha release. The full plan covers physics, audio, text rendering, animation, scenes, UI, 10 SDK languages, mobile/console support, and a networking system.
 
-```sh
-./dev.sh --game flappy_goud                          # C# Flappy Bird
-./dev.sh --game 3d_cube                              # C# 3D demo
-./dev.sh --game feature_lab                          # C# headless feature lab
-./dev.sh --sdk python --game flappy_bird             # Python Flappy Bird
-./dev.sh --sdk typescript --game flappy_bird         # TypeScript desktop
-./dev.sh --sdk typescript --game flappy_bird_web     # TypeScript web
-./dev.sh --sdk go --game flappy_bird                 # Go Flappy Bird
-./dev.sh --sdk kotlin --game flappy_bird             # Kotlin Flappy Bird
-./dev.sh --sdk swift --game flappy_bird              # Swift Flappy Bird
-./dev.sh --sdk lua --game flappy_bird                # Lua Flappy Bird
-cargo run -p flappy-bird                             # Rust Flappy Bird
-```
+- **[ALPHA_ROADMAP.md](ALPHA_ROADMAP.md)** — Full technical roadmap
+- **[Master tracking issue](https://github.com/aram-devdocs/GoudEngine/issues/114)** — ALPHA-001: GoudEngine Alpha Release
+- **[Contributing](CONTRIBUTING.md)** — How to contribute
 
 ## Documentation
 
-- Getting Started: [Rust](docs/src/getting-started/rust.md) · [C#](docs/src/getting-started/csharp.md) · [Python](docs/src/getting-started/python.md) · [TypeScript](docs/src/getting-started/typescript.md) · [C/C++](docs/src/getting-started/c-cpp.md) · [Go](docs/src/getting-started/go.md) · [Kotlin](docs/src/getting-started/kotlin.md) · [Swift](docs/src/getting-started/swift.md) · [Lua](docs/src/getting-started/lua.md)
+- **[Documentation site](https://goudengine.aramhammoudeh.com/)** — Full guides, architecture, and API reference
 - [SDK-First Architecture](docs/src/architecture/sdk-first.md)
 - [Adding a New Language](docs/src/architecture/adding-a-language.md)
 - [Development Guide](docs/src/development/guide.md) — dev.sh, Git hooks, version management
 - [Building](docs/src/development/building.md) — build.sh, package.sh, NuGet feed
 - [AI Setup](docs/src/development/ai-setup.md) — Claude Code, Cursor, Gemini configuration
-- [Rust SDK](sdks/rust/README.md)
-- [C# SDK](sdks/csharp/README.md)
-- [Python SDK](sdks/python/README.md)
-- [TypeScript SDK](sdks/typescript/README.md)
-- [Go SDK](sdks/go/README.md)
-- [Kotlin SDK](sdks/kotlin/README.md)
-- [Swift SDK](sdks/swift/README.md)
-- [C SDK](sdks/c/README.md)
-- [C++ SDK](sdks/cpp/README.md)
-- [Lua SDK](luarocks/README.md)
-- [csbindgen](https://github.com/Cysharp/csbindgen) — C# bindings generator
-- [cbindgen](https://github.com/mozilla/cbindgen) — C header generator
 
 ## Community
 
@@ -216,7 +211,7 @@ cargo run -p flappy-bird                             # Rust Flappy Bird
 | NuGet | [2,078](https://www.nuget.org/packages/GoudEngine/) |
 | PyPI | [3,982](https://pypi.org/project/goudengine/) |
 | npm | [1,799](https://www.npmjs.com/package/goudengine) |
-| Maven Central | [0](https://central.sonatype.com/artifact/io.github.aram-devdocs/goud-engine-kotlin) |
+| Maven Central | [0](https://central.sonatype.com/artifact/io.github.aram-devdocs/goudengine) |
 | LuaRocks | [0](https://luarocks.org/modules/aram-devdocs/goudengine) |
 | Go | [0 versions](https://pkg.go.dev/github.com/aram-devdocs/GoudEngine/sdks/go/goud) |
 

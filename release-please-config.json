@@ -32,7 +32,7 @@
         { "type": "generic", "path": "sdks/go/include/goud_engine.h" },
         { "type": "generic", "path": "sdks/swift/Sources/CGoudEngine/include/goud_engine.h" },
         { "type": "generic", "path": "sdks/csharp/include/goud_engine.h" },
-        { "type": "generic", "path": "sdks/python/goud_engine/include/goud_engine.h" },
+        { "type": "generic", "path": "sdks/python/goudengine/include/goud_engine.h" },
         { "type": "generic", "path": "sdks/c/include/goud_engine.h" },
         { "type": "generic", "path": "sdks/cpp/include/goud_engine.h" },
         { "type": "generic", "path": "sdks/cpp/include/goud/goud.g.hpp" },

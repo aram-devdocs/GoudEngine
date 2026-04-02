@@ -16,7 +16,7 @@ from sdk_common import (
     write_generated,
 )
 
-OUT = SDKS_DIR / "python" / "goud_engine" / "generated"
+OUT = SDKS_DIR / "python" / "goudengine" / "generated"
 schema = load_schema()
 mapping = load_ffi_mapping(schema)
 

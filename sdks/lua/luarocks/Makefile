@@ -17,10 +17,10 @@ else
 endif
 
 LIB_NAME := $(LIB_PREFIX)goud_engine.$(LIB_EXT)
-BUILD_DIR := ../target/release
+BUILD_DIR := ../../../target/release
 
 all:
-	cd .. && $(CARGO) build $(CARGO_FLAGS)
+	cd ../../.. && $(CARGO) build $(CARGO_FLAGS)
 
 install: all
 	install -d $(INST_LIBDIR)
@@ -30,4 +30,4 @@ install: all
 	install -m 644 goudengine/constants.lua $(INST_LUADIR)/goudengine/constants.lua
 
 clean:
-	cd .. && $(CARGO) clean
+	cd ../../.. && $(CARGO) clean

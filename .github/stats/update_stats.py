@@ -24,7 +24,7 @@ NUGET_SEARCH_URL = "https://azuresearch-usnc.nuget.org/query?q=packageid:GoudEng
 NUGET_REGISTRATION_URL = "https://api.nuget.org/v3/registration5-gz-semver2/goudengine/index.json"
 NPM_URL = "https://api.npmjs.org/downloads/range/2020-01-01:2099-12-31/goudengine"
 PYPI_URL = "https://pypistats.org/api/packages/goudengine/overall?mirrors=false"
-MAVEN_SEARCH_URL = "https://central.sonatype.com/api/v1/search?q=g:io.github.aram-devdocs+AND+a:goud-engine-kotlin"
+MAVEN_SEARCH_URL = "https://central.sonatype.com/api/v1/search?q=g:io.github.aram-devdocs+AND+a:goudengine"
 LUAROCKS_URL = "https://luarocks.org/api/1/modules/aram-devdocs/goudengine"
 GO_PROXY_URL = "https://proxy.golang.org/github.com/aram-devdocs/GoudEngine/sdks/go/goud/@v/list"
 
@@ -183,7 +183,7 @@ def build_stats_block(entry: dict[str, int | str]) -> str:
             f"| NuGet | [{format_number(int(entry['nuget']))}](https://www.nuget.org/packages/GoudEngine/) |",
             f"| PyPI | [{format_number(int(entry['pypi']))}](https://pypi.org/project/goudengine/) |",
             f"| npm | [{format_number(int(entry['npm']))}](https://www.npmjs.com/package/goudengine) |",
-            f"| Maven Central | [{format_number(int(entry.get('maven', 0)))}](https://central.sonatype.com/artifact/io.github.aram-devdocs/goud-engine-kotlin) |",
+            f"| Maven Central | [{format_number(int(entry.get('maven', 0)))}](https://central.sonatype.com/artifact/io.github.aram-devdocs/goudengine) |",
             f"| LuaRocks | [{format_number(int(entry.get('luarocks', 0)))}](https://luarocks.org/modules/aram-devdocs/goudengine) |",
             f"| Go | [{int(entry.get('go_versions', 0))} versions](https://pkg.go.dev/github.com/aram-devdocs/GoudEngine/sdks/go/goud) |",
             "",

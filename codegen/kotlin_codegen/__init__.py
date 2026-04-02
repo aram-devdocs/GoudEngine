@@ -154,7 +154,7 @@ publishing {{
     publications {{
         create<MavenPublication>("mavenKotlin") {{
             groupId = "io.github.aram-devdocs"
-            artifactId = "goud-engine-kotlin"
+            artifactId = "goudengine"
             from(components["java"])
             pom {{
                 name.set("GoudEngine Kotlin SDK")
@@ -201,7 +201,7 @@ signing {{
     settings_gradle = kotlin_root / "settings.gradle.kts"
     settings_content = f"""\
 // {HEADER_COMMENT}
-rootProject.name = "goud-engine-kotlin"
+rootProject.name = "goudengine"
 """
     settings_gradle.write_text(settings_content)
     print(f"  Generated: {settings_gradle.relative_to(ROOT_DIR)}")

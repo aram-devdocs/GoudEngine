@@ -37,7 +37,7 @@ def _normalize_goud_engine_lib() -> None:
 _normalize_goud_engine_lib()
 sys.path.insert(0, str(SDK_ROOT))
 
-from goud_engine import (  # noqa: E402
+from goudengine import (  # noqa: E402
     Color,
     EngineConfig,
     GoudContext,
@@ -48,7 +48,7 @@ from goud_engine import (  # noqa: E402
     TextAlignment,
     UiManager,
 )
-from goud_engine.generated._types import DebuggerConfig  # noqa: E402
+from goudengine.generated._types import DebuggerConfig  # noqa: E402
 
 
 WINDOW_WIDTH = 1280

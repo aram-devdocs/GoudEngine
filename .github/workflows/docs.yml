@@ -87,7 +87,7 @@ jobs:
 
       - name: Build Python API docs
         run: |
-          pdoc --output-dir docs/book/api/python sdks/python/goud_engine
+          pdoc --output-dir docs/book/api/python sdks/python/goudengine
         env:
           LD_LIBRARY_PATH: ${{ github.workspace }}/target/release
           GOUD_ENGINE_LIB: ${{ github.workspace }}/target/release

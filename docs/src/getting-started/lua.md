@@ -43,14 +43,14 @@ cargo build --release
 For standalone Lua scripts that need key constants:
 
 ```bash
-cd luarocks
+cd sdks/lua
 luarocks make goudengine-scm-1.rockspec
 ```
 
 Or build manually:
 
 ```bash
-cd luarocks
+cd sdks/lua/luarocks
 make          # builds the native library via cargo
 make install  # installs Lua modules and the native library
 ```
@@ -196,7 +196,7 @@ python3 codegen/gen_lua.py
 
 ## Next Steps
 
-- [Lua SDK README](https://github.com/aram-devdocs/GoudEngine/tree/main/luarocks/) -- LuaRocks package documentation
+- [Lua SDK README](https://github.com/aram-devdocs/GoudEngine/tree/main/sdks/lua/) -- Lua SDK documentation
 - [Lua examples source](https://github.com/aram-devdocs/GoudEngine/tree/main/examples/lua/) -- complete game source code
 - [Build Your First Game](../guides/build-your-first-game.md) -- end-to-end minimal game walkthrough
 - [Example Showcase](../guides/showcase.md) -- current cross-language parity matrix

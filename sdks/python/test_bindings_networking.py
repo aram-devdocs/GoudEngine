@@ -177,7 +177,7 @@ def test_generated_context_entity_component_runtime_safe():
     """Exercise headless context wrappers to execute generated _game.py paths safely."""
     print("Testing generated GoudContext entity/component wrappers...")
 
-    from goud_engine import GoudContext, Sprite, Transform2D
+    from goudengine import GoudContext, Sprite, Transform2D
 
     ctx = GoudContext()
     try:

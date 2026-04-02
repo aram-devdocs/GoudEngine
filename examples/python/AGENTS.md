@@ -21,12 +21,12 @@ Python games demonstrating GoudEngine's Python SDK.
 
 ## Patterns
 
-- Import from `goud_engine` package (sdks/python/goud_engine/)
+- Import from `goudengine` package (sdks/python/goudengine/)
 - `flappy_bird.py` mirrors C# `flappy_goud` for SDK parity validation
 - Examples use snake_case (Python convention)
 - Keep examples readable — they serve as SDK documentation
 
 ## Anti-Patterns
 
-- NEVER import from engine internals — use the public `goud_engine` package only
-- NEVER add dependencies beyond the standard library and goud_engine
+- NEVER import from engine internals — use the public `goudengine` package only
+- NEVER add dependencies beyond the standard library and goudengine

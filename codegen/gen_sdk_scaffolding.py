@@ -154,20 +154,20 @@ def gen_python_scaffolding() -> None:
         f'Documentation = "{REPO_URL}/tree/main/sdks/python"',
         "",
         "[tool.setuptools.packages.find]",
-        'include = ["goud_engine*"]',
+        'include = ["goudengine*"]',
         "",
         "[tool.setuptools.package-data]",
-        'goud_engine = ["*.so", "*.dylib", "*.dll", "include/*.h"]',
+        'goudengine = ["*.so", "*.dylib", "*.dll", "include/*.h"]',
         "",
     ])
     write_generated(SDKS_DIR / "python" / "pyproject.toml", pyproject)
 
     manifest = "\n".join([
         f"# {HEADER_COMMENT}",
-        "include goud_engine/*.so",
-        "include goud_engine/*.dylib",
-        "include goud_engine/*.dll",
-        "include goud_engine/include/*.h",
+        "include goudengine/*.so",
+        "include goudengine/*.dylib",
+        "include goudengine/*.dll",
+        "include goudengine/include/*.h",
         "include README.md",
         "",
     ])

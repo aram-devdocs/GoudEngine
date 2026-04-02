@@ -78,8 +78,8 @@ jobs:
         name: codegen-generated
         path: |
           sdks/csharp/generated/
-          sdks/python/goud_engine/generated/
-          sdks/python/goud_engine/__init__.py
+          sdks/python/goudengine/generated/
+          sdks/python/goudengine/__init__.py
           sdks/typescript/src/generated/
           sdks/typescript/native/src/*.g.rs
           sdks/typescript/native/src/lib.rs
@@ -296,6 +296,9 @@ jobs:
     - name: Check for codegen drift
       run: bash scripts/check-generated-artifacts.sh
 
+    - name: Verify SDK READMEs are up to date
+      run: python3 codegen/gen_sdk_readmes.py --check
+
   # Build native release libraries once per OS and share across SDK jobs
   native-release:
     name: Native Release Artifact on ${{ matrix.os }}
@@ -425,7 +428,7 @@ jobs:
         python << 'EOF'
         import sys
         sys.path.insert(0, '../../sdks/python')
-        from goud_engine import (
+        from goudengine import (
             GoudGame, Entity, Transform2D, Sprite, Vec2, Color
         )
         print('Python SDK imports successful')
@@ -444,8 +447,8 @@ jobs:
         GOUD_ENGINE_LIB: ${{ github.workspace }}/native-release
       run: |
         python -m coverage erase
-        python -m coverage run --source=sdks/python/goud_engine sdks/python/test_bindings.py
-        python -m coverage run --append --source=sdks/python/goud_engine sdks/python/test_network_loopback.py
+        python -m coverage run --source=sdks/python/goudengine sdks/python/test_bindings.py
+        python -m coverage run --append --source=sdks/python/goudengine sdks/python/test_network_loopback.py
         python -m coverage report --fail-under=80
         python -m coverage xml -o sdks/python/coverage.xml
 
@@ -624,7 +627,7 @@ jobs:
         LD_LIBRARY_PATH: ${{ github.workspace }}/target/debug:${{ env.LD_LIBRARY_PATH }}
         DYLD_LIBRARY_PATH: ${{ github.workspace }}/target/debug:${{ env.DYLD_LIBRARY_PATH }}
       run: |
-        python -c "from goud_engine import GoudGame, Entity, Transform2D, Sprite; print('Python SDK integration check passed')"
+        python -c "from goudengine import GoudGame, Entity, Transform2D, Sprite; print('Python SDK integration check passed')"
 
   # TypeScript SDK — native addon build + tests
   typescript-sdk-native:
@@ -1202,7 +1205,7 @@ jobs:
         sudo apt-get install -y lua5.4
 
     - name: Run Lua tests
-      working-directory: luarocks
+      working-directory: sdks/lua/luarocks
       run: lua5.4 test_constants.lua
 
   clean-room-regeneration:

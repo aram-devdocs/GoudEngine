@@ -24,7 +24,7 @@ from pathlib import Path
 sdk_path = Path(__file__).parent.parent.parent / "sdks" / "python"
 sys.path.insert(0, str(sdk_path))
 
-from goud_engine import (
+from goudengine import (
     GoudGame,
     Entity,
     Transform2D, Sprite,
@@ -126,7 +126,7 @@ def demo_game_window():
     except Exception as e:
         print(f"\nCould not create window: {e}")
         print("Make sure the native library is built:")
-        print("  cd goud_engine && cargo build --release")
+        print("  cd goudengine && cargo build --release")
         return False
 
     print("\nGame window demo complete!")

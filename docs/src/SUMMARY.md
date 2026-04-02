@@ -4,6 +4,7 @@
 
 # Getting Started
 
+- [Choose Your Language](getting-started/index.md)
 - [C# SDK](getting-started/csharp.md)
 - [Python SDK](getting-started/python.md)
 - [Rust SDK](getting-started/rust.md)

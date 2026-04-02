@@ -33,4 +33,4 @@ All built-in component types used by the engine's ECS.
 3. Register in `mod.rs`
 4. Add FFI exports in `ffi/component_new_component.rs`
 5. Update C# SDK (`sdks/csharp/generated/Components/`)
-6. Update Python SDK (`sdks/python/goud_engine/generated/_ffi.py`)
+6. Update Python SDK (`sdks/python/goudengine/generated/_ffi.py`)
