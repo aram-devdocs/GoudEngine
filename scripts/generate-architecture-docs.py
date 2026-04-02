@@ -142,6 +142,7 @@ def collect_codegen_generators() -> str:
         "gen_kotlin": "Kotlin SDK bindings",
         "gen_lua": "Lua SDK bindings",
         "gen_swift": "Swift SDK bindings",
+        "gen_sdk_readmes": "SDK README files from template",
         "gen_sdk_scaffolding": "SDK package scaffolding",
     }
 

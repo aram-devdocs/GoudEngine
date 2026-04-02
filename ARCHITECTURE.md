@@ -383,18 +383,19 @@ Codegen produces all files under `sdks/*/generated/`. Do not edit them by hand.
 | `gen_kotlin.py` | Kotlin SDK bindings |
 | `gen_lua.py` | Lua SDK bindings |
 | `gen_python.py` | Python SDK bindings |
+| `gen_sdk_readmes.py` | SDK README files from template |
 | `gen_sdk_scaffolding.py` | SDK package scaffolding |
 | `gen_swift.py` | Swift SDK bindings |
 | `gen_ts_node.py` | TypeScript Node.js bindings |
 | `gen_ts_web.py` | TypeScript Web/WASM bindings |
 
-Total: 12 generators.
+Total: 13 generators.
 <!-- /gen:codegen-generators -->
 
 ### Pipeline
 
 <!-- gen:codegen-steps -->
-The full pipeline runs **19 steps** (see `codegen.sh` for details).
+The full pipeline runs **20 steps** (see `codegen.sh` for details).
 <!-- /gen:codegen-steps -->
 
 Run the full pipeline: `./codegen.sh`
