@@ -1,8 +1,14 @@
-//! wgpu backend initialization: device/surface setup and public accessors.
+//! Xbox GDK wgpu initialization path.
+//!
+//! Separated from `init.rs` to stay within the 500-line file limit.
+//! TODO(xbox-gdk): Extract shared init logic (bind group layouts, fallback
+//! textures, surface config) into a common helper before promoting this PoC
+//! to production. Currently duplicates `new_async` to avoid refactoring the
+//! existing init path during the feasibility study.
 
 use super::{
     BackendCapabilities, BackendInfo, BlendFactor, CullFace, DepthFunc, FrontFace, HashMap,
-    PrimitiveTopology, ShaderLanguage, TextureOps, WgpuBackend,
+    PrimitiveTopology, ShaderLanguage, WgpuBackend,
 };
 use crate::core::{
     error::{GoudError, GoudResult},
@@ -10,26 +16,33 @@ use crate::core::{
 };
 use std::sync::Arc;
 
-/// Size (bytes) of the per-shader uniform staging buffer.
-pub const UNIFORM_BUFFER_SIZE: usize = 4096;
-/// Maximum number of simultaneously-bound texture units.
-pub const MAX_TEXTURE_UNITS: usize = 16;
+use super::init::{MAX_TEXTURE_UNITS, UNIFORM_BUFFER_SIZE};
 
 impl WgpuBackend {
-    /// Creates a new wgpu backend from a winit window.
+    /// Creates a new wgpu backend from a raw Xbox GDK window handle.
     ///
+    /// Forces the DX12 backend since Xbox GDK uses DirectX 12 natively.
     /// Blocks on async wgpu initialization via pollster.
-    pub fn new(window: Arc<winit::window::Window>) -> GoudResult<Self> {
-        pollster::block_on(Self::new_async(window))
+    pub fn new_from_raw_handle(
+        handle: Arc<super::xbox_surface::XboxWindowHandle>,
+        width: u32,
+        height: u32,
+    ) -> GoudResult<Self> {
+        pollster::block_on(Self::new_xbox_async(handle, width, height))
     }
 
-    async fn new_async(window: Arc<winit::window::Window>) -> GoudResult<Self> {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_with_display_handle(
-            Box::new(window.clone()),
-        ));
+    async fn new_xbox_async(
+        handle: Arc<super::xbox_surface::XboxWindowHandle>,
+        width: u32,
+        height: u32,
+    ) -> GoudResult<Self> {
+        let mut instance_desc = wgpu::InstanceDescriptor::new_without_display_handle();
+        instance_desc.backends = wgpu::Backends::DX12;
+        let instance = wgpu::Instance::new(instance_desc);
+
         let surface = instance
-            .create_surface(wgpu::SurfaceTarget::from(window.clone()))
-            .map_err(|e| GoudError::BackendNotSupported(format!("wgpu surface: {e}")))?;
+            .create_surface(wgpu::SurfaceTarget::from(handle))
+            .map_err(|e| GoudError::BackendNotSupported(format!("wgpu Xbox surface: {e}")))?;
 
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -38,11 +51,13 @@ impl WgpuBackend {
                 force_fallback_adapter: false,
             })
             .await
-            .map_err(|e| GoudError::BackendNotSupported(format!("No suitable GPU adapter: {e}")))?;
+            .map_err(|e| {
+                GoudError::BackendNotSupported(format!("No suitable DX12 adapter: {e}"))
+            })?;
 
         let (device, queue): (wgpu::Device, wgpu::Queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
-                label: Some("GoudEngine"),
+                label: Some("GoudEngine-Xbox"),
                 required_features: wgpu::Features::empty(),
                 required_limits: wgpu::Limits::default(),
                 ..Default::default()
@@ -50,9 +65,7 @@ impl WgpuBackend {
             .await
             .map_err(|e| GoudError::BackendNotSupported(format!("wgpu device: {e}")))?;
 
-        let size = window.inner_size();
         let caps = surface.get_capabilities(&adapter);
-        // Prefer a non-sRGB surface so blending stays in gamma-encoded space, matching OpenGL's default behavior (no GL_FRAMEBUFFER_SRGB). An sRGB surface applies hardware gamma expansion on read, changing blend results.
         let surface_format = caps
             .formats
             .iter()
@@ -61,6 +74,8 @@ impl WgpuBackend {
             .unwrap_or(caps.formats[0]);
         let surface_supports_copy_src = caps.usages.contains(wgpu::TextureUsages::COPY_SRC);
 
+        let w = width.max(1);
+        let h = height.max(1);
         let surface_config = wgpu::SurfaceConfiguration {
             usage: if surface_supports_copy_src {
                 wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC
@@ -68,8 +83,8 @@ impl WgpuBackend {
                 wgpu::TextureUsages::RENDER_ATTACHMENT
             },
             format: surface_format,
-            width: size.width.max(1),
-            height: size.height.max(1),
+            width: w,
+            height: h,
             present_mode: wgpu::PresentMode::AutoVsync,
             alpha_mode: caps.alpha_modes[0],
             view_formats: vec![],
@@ -77,14 +92,13 @@ impl WgpuBackend {
         };
         surface.configure(&device, &surface_config);
 
-        let (depth_texture, depth_view) =
-            Self::create_depth_texture(&device, surface_config.width, surface_config.height);
+        let (depth_texture, depth_view) = Self::create_depth_texture(&device, w, h);
 
         let adapter_info = adapter.get_info();
         let limits = device.limits();
 
         let info = BackendInfo {
-            name: "wgpu",
+            name: "wgpu-xbox",
             version: format!("{:?}", adapter_info.backend),
             vendor: adapter_info.vendor.to_string(),
             renderer: adapter_info.name.clone(),
@@ -142,8 +156,6 @@ impl WgpuBackend {
                 ],
             });
 
-        // Create a cached 1x1 white fallback texture + bind group used for draws
-        // without a bound texture.  Created once here to avoid per-frame allocation.
         let fallback_tex_bind_group = {
             let tex = device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("fallback-white-1x1"),
@@ -211,7 +223,6 @@ impl WgpuBackend {
                 }],
             });
 
-        // Create fallback storage buffer bind group (empty 64-byte buffer).
         let fallback_storage_bind_group = {
             let buf = device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("fallback-storage"),
@@ -277,60 +288,5 @@ impl WgpuBackend {
             storage_bind_group_cache: HashMap::new(),
             uniform_ring: Vec::with_capacity(UNIFORM_BUFFER_SIZE * 64),
         })
-    }
-
-    pub(super) fn create_depth_texture(
-        device: &wgpu::Device,
-        width: u32,
-        height: u32,
-    ) -> (wgpu::Texture, wgpu::TextureView) {
-        let tex = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("depth"),
-            size: wgpu::Extent3d {
-                width: width.max(1),
-                height: height.max(1),
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Depth32Float,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            view_formats: &[],
-        });
-        let view = tex.create_view(&wgpu::TextureViewDescriptor::default());
-        (tex, view)
-    }
-
-    /// Provides access to the wgpu device (for advanced use / surface creation).
-    pub fn device(&self) -> &wgpu::Device {
-        &self.device
-    }
-
-    /// Provides access to the wgpu queue.
-    pub fn queue(&self) -> &wgpu::Queue {
-        &self.queue
-    }
-
-    pub(crate) fn bind_texture_by_index(&mut self, index: u32, unit: u32) -> GoudResult<()> {
-        let handle = self
-            .textures
-            .keys()
-            .copied()
-            .find(|handle| handle.index() == index)
-            .ok_or(GoudError::InvalidHandle)?;
-        self.bind_texture(handle, unit)
-    }
-
-    /// Resizes the surface and depth buffer. Call after window resize.
-    pub fn resize(&mut self, width: u32, height: u32) {
-        let w = width.max(1);
-        let h = height.max(1);
-        self.surface_config.width = w;
-        self.surface_config.height = h;
-        self.surface.configure(&self.device, &self.surface_config);
-        let (dt, dv) = Self::create_depth_texture(&self.device, w, h);
-        self.depth_texture = dt;
-        self.depth_view = dv;
     }
 }
