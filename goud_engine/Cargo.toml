@@ -62,7 +62,7 @@ tobj = { version = "4.0", optional = true, features = ["ahash"] }
 fbxcel = { version = "0.9", optional = true, features = ["tree"] }
 bytemuck = "1.14"
 goud_engine_macros = { version = "=0.0.839", path = "../goud_engine_macros" } # x-release-please-version
-wgpu = { version = "28", optional = true }
+wgpu = { version = "29", optional = true }
 winit = { version = "0.30", optional = true, features = ["android-native-activity"] }
 naga = { version = "28", optional = true, features = ["glsl-in", "wgsl-out"] }
 pollster = { version = "0.4", optional = true }
