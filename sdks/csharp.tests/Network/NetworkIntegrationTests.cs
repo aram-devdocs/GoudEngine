@@ -212,15 +212,16 @@ public class NetworkIntegrationTests
                 Assert.Equal(0, (int)Invoke(clientEndpoints[i], "Send", msg, (byte)0));
             }
 
-            // Host receives all 3 messages
+            // Host receives all 3 messages — drain all queued packets per poll cycle
             var received = new List<NetworkPacket>();
             sw = Stopwatch.StartNew();
             while (received.Count < 3 && sw.Elapsed < TimeSpan.FromSeconds(10))
             {
                 PumpMulti(hostEndpoint, clientEndpoints);
-                var packet = (NetworkPacket?)Invoke(hostEndpoint, "Receive");
-                if (packet.HasValue)
+                while (true)
                 {
+                    var packet = (NetworkPacket?)Invoke(hostEndpoint, "Receive");
+                    if (!packet.HasValue) break;
                     received.Add(packet.Value);
                 }
 
