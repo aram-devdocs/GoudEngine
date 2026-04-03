@@ -410,6 +410,22 @@ export interface IGoudGame {
   setShadowBias(bias: number): number;
   /** Returns the shadow depth bias */
   getShadowBias(): number;
+  /** Sets the maximum vertex count for static batching */
+  setMaxStaticBatchVertices(vertices: number): number;
+  /** Returns the maximum vertex count for static batching */
+  getMaxStaticBatchVertices(): number;
+  /** Sets the maximum bones per mesh for skeletal animation */
+  setMaxBonesPerMesh(bones: number): number;
+  /** Returns the maximum bones per mesh */
+  getMaxBonesPerMesh(): number;
+  /** Sets the shadow strength (darkness, 0.0-1.0) */
+  setShadowStrength(strength: number): number;
+  /** Returns the shadow strength (0.0-1.0) */
+  getShadowStrength(): number;
+  /** Sets the vertex threshold at which shadows are automatically disabled */
+  setShadowAutoDisableThreshold(threshold: number): number;
+  /** Returns the vertex threshold for shadow auto-disable */
+  getShadowAutoDisableThreshold(): number;
   /** Creates multiple instances of a model in one call */
   instantiateModelBatch(sourceModelId: number, count: number): number;
   /** Sets positions for multiple models in one call */

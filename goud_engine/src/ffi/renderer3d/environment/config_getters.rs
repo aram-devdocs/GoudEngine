@@ -159,3 +159,38 @@ pub extern "C" fn goud_renderer3d_get_shadow_map_size(context_id: GoudContextId)
 pub extern "C" fn goud_renderer3d_get_shadow_bias(context_id: GoudContextId) -> f32 {
     with_renderer(context_id, |r| r.render_config().shadows.bias).unwrap_or(-1.0)
 }
+
+/// Returns the maximum vertex count for static batching, or -1 on error.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_get_max_static_batch_vertices(context_id: GoudContextId) -> i32 {
+    with_renderer(context_id, |r| {
+        r.render_config().batching.max_static_batch_vertices as i32
+    })
+    .unwrap_or(-1)
+}
+
+/// Returns the maximum bones per mesh, or -1 on error.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_get_max_bones_per_mesh(context_id: GoudContextId) -> i32 {
+    with_renderer(context_id, |r| {
+        r.render_config().skinning.max_bones_per_mesh as i32
+    })
+    .unwrap_or(-1)
+}
+
+/// Returns the shadow strength (0.0-1.0), or -1.0 on error.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_get_shadow_strength(context_id: GoudContextId) -> f32 {
+    with_renderer(context_id, |r| r.render_config().shadows.shadow_strength).unwrap_or(-1.0)
+}
+
+/// Returns the vertex threshold for shadow auto-disable, or -1 on error.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_get_shadow_auto_disable_threshold(
+    context_id: GoudContextId,
+) -> i32 {
+    with_renderer(context_id, |r| {
+        r.render_config().shadows.auto_disable_vertex_threshold as i32
+    })
+    .unwrap_or(-1)
+}

@@ -207,11 +207,15 @@ use crate::ffi::renderer3d::goud_renderer3d_get_grid_alpha;
 use crate::ffi::renderer3d::goud_renderer3d_get_instanced_draw_calls;
 use crate::ffi::renderer3d::goud_renderer3d_get_instancing_enabled;
 use crate::ffi::renderer3d::goud_renderer3d_get_material_sorting_enabled;
+use crate::ffi::renderer3d::goud_renderer3d_get_max_bones_per_mesh;
+use crate::ffi::renderer3d::goud_renderer3d_get_max_static_batch_vertices;
 use crate::ffi::renderer3d::goud_renderer3d_get_min_instances_for_batching;
 use crate::ffi::renderer3d::goud_renderer3d_get_model_mesh_count;
 use crate::ffi::renderer3d::goud_renderer3d_get_object_material;
+use crate::ffi::renderer3d::goud_renderer3d_get_shadow_auto_disable_threshold;
 use crate::ffi::renderer3d::goud_renderer3d_get_shadow_bias;
 use crate::ffi::renderer3d::goud_renderer3d_get_shadow_map_size;
+use crate::ffi::renderer3d::goud_renderer3d_get_shadow_strength;
 use crate::ffi::renderer3d::goud_renderer3d_get_shadows_enabled;
 use crate::ffi::renderer3d::goud_renderer3d_get_shared_animation_eval;
 use crate::ffi::renderer3d::goud_renderer3d_get_skinning_mode;
@@ -249,6 +253,8 @@ use crate::ffi::renderer3d::goud_renderer3d_set_grid_alpha;
 use crate::ffi::renderer3d::goud_renderer3d_set_grid_enabled;
 use crate::ffi::renderer3d::goud_renderer3d_set_instancing_enabled;
 use crate::ffi::renderer3d::goud_renderer3d_set_material_sorting_enabled;
+use crate::ffi::renderer3d::goud_renderer3d_set_max_bones_per_mesh;
+use crate::ffi::renderer3d::goud_renderer3d_set_max_static_batch_vertices;
 use crate::ffi::renderer3d::goud_renderer3d_set_min_instances_for_batching;
 use crate::ffi::renderer3d::goud_renderer3d_set_model_material;
 use crate::ffi::renderer3d::goud_renderer3d_set_model_position;
@@ -260,8 +266,10 @@ use crate::ffi::renderer3d::goud_renderer3d_set_object_position;
 use crate::ffi::renderer3d::goud_renderer3d_set_object_rotation;
 use crate::ffi::renderer3d::goud_renderer3d_set_object_scale;
 use crate::ffi::renderer3d::goud_renderer3d_set_object_static;
+use crate::ffi::renderer3d::goud_renderer3d_set_shadow_auto_disable_threshold;
 use crate::ffi::renderer3d::goud_renderer3d_set_shadow_bias;
 use crate::ffi::renderer3d::goud_renderer3d_set_shadow_map_size;
+use crate::ffi::renderer3d::goud_renderer3d_set_shadow_strength;
 use crate::ffi::renderer3d::goud_renderer3d_set_shadows_enabled;
 use crate::ffi::renderer3d::goud_renderer3d_set_shared_animation_eval;
 use crate::ffi::renderer3d::goud_renderer3d_set_skinned_mesh_position;
@@ -685,6 +693,46 @@ pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> 
         Ok(goud_renderer3d_get_shadow_bias(ctx) as f64)
     })?;
     tbl.set("get_shadow_bias", f_get_shadow_bias)?;
+    // GoudGame.setMaxStaticBatchVertices
+    let f_set_max_static_batch_vertices = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_renderer3d_set_max_static_batch_vertices(ctx, arg0 as u32) as i64)
+    })?;
+    tbl.set("set_max_static_batch_vertices", f_set_max_static_batch_vertices)?;
+    // GoudGame.getMaxStaticBatchVertices
+    let f_get_max_static_batch_vertices = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_max_static_batch_vertices(ctx) as i64)
+    })?;
+    tbl.set("get_max_static_batch_vertices", f_get_max_static_batch_vertices)?;
+    // GoudGame.setMaxBonesPerMesh
+    let f_set_max_bones_per_mesh = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_renderer3d_set_max_bones_per_mesh(ctx, arg0 as u32) as i64)
+    })?;
+    tbl.set("set_max_bones_per_mesh", f_set_max_bones_per_mesh)?;
+    // GoudGame.getMaxBonesPerMesh
+    let f_get_max_bones_per_mesh = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_max_bones_per_mesh(ctx) as i64)
+    })?;
+    tbl.set("get_max_bones_per_mesh", f_get_max_bones_per_mesh)?;
+    // GoudGame.setShadowStrength
+    let f_set_shadow_strength = lua.create_function(move |_, arg0: f64| {
+        Ok(goud_renderer3d_set_shadow_strength(ctx, arg0 as f32) as i64)
+    })?;
+    tbl.set("set_shadow_strength", f_set_shadow_strength)?;
+    // GoudGame.getShadowStrength
+    let f_get_shadow_strength = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_shadow_strength(ctx) as f64)
+    })?;
+    tbl.set("get_shadow_strength", f_get_shadow_strength)?;
+    // GoudGame.setShadowAutoDisableThreshold
+    let f_set_shadow_auto_disable_threshold = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_renderer3d_set_shadow_auto_disable_threshold(ctx, arg0 as u32) as i64)
+    })?;
+    tbl.set("set_shadow_auto_disable_threshold", f_set_shadow_auto_disable_threshold)?;
+    // GoudGame.getShadowAutoDisableThreshold
+    let f_get_shadow_auto_disable_threshold = lua.create_function(move |_, _: ()| {
+        Ok(goud_renderer3d_get_shadow_auto_disable_threshold(ctx) as i64)
+    })?;
+    tbl.set("get_shadow_auto_disable_threshold", f_get_shadow_auto_disable_threshold)?;
     // GoudGame.getDrawCalls
     let f_get_draw_calls = lua.create_function(move |_, _: ()| {
         Ok(goud_renderer3d_get_draw_calls(ctx) as i64)

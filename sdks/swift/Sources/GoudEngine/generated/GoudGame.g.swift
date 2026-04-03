@@ -493,6 +493,46 @@ public final class GoudGame {
         return goud_renderer3d_get_shadow_bias(_ctx)
     }
 
+    /// Sets the maximum vertex count for static batching
+    public func setMaxStaticBatchVertices(vertices: UInt32) -> Int32 {
+        return goud_renderer3d_set_max_static_batch_vertices(_ctx, vertices)
+    }
+
+    /// Returns the maximum vertex count for static batching
+    public func getMaxStaticBatchVertices() -> Int32 {
+        return goud_renderer3d_get_max_static_batch_vertices(_ctx)
+    }
+
+    /// Sets the maximum bones per mesh for skeletal animation
+    public func setMaxBonesPerMesh(bones: UInt32) -> Int32 {
+        return goud_renderer3d_set_max_bones_per_mesh(_ctx, bones)
+    }
+
+    /// Returns the maximum bones per mesh
+    public func getMaxBonesPerMesh() -> Int32 {
+        return goud_renderer3d_get_max_bones_per_mesh(_ctx)
+    }
+
+    /// Sets the shadow strength (darkness, 0.0-1.0)
+    public func setShadowStrength(strength: Float) -> Int32 {
+        return goud_renderer3d_set_shadow_strength(_ctx, strength)
+    }
+
+    /// Returns the shadow strength (0.0-1.0)
+    public func getShadowStrength() -> Float {
+        return goud_renderer3d_get_shadow_strength(_ctx)
+    }
+
+    /// Sets the vertex threshold at which shadows are automatically disabled
+    public func setShadowAutoDisableThreshold(threshold: UInt32) -> Int32 {
+        return goud_renderer3d_set_shadow_auto_disable_threshold(_ctx, threshold)
+    }
+
+    /// Returns the vertex threshold for shadow auto-disable
+    public func getShadowAutoDisableThreshold() -> Int32 {
+        return goud_renderer3d_get_shadow_auto_disable_threshold(_ctx)
+    }
+
     /// Returns the number of draw calls last frame
     public func getDrawCalls() -> Int32 {
         return goud_renderer3d_get_draw_calls(_ctx)

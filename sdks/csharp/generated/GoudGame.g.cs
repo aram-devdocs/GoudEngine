@@ -1014,6 +1014,54 @@ namespace GoudEngine
             return NativeMethods.goud_renderer3d_get_shadow_bias(_ctx);
         }
 
+        /// <summary>Sets the maximum vertex count for static batching</summary>
+        public int SetMaxStaticBatchVertices(uint vertices)
+        {
+            return NativeMethods.goud_renderer3d_set_max_static_batch_vertices(_ctx, vertices);
+        }
+
+        /// <summary>Returns the maximum vertex count for static batching</summary>
+        public int GetMaxStaticBatchVertices()
+        {
+            return NativeMethods.goud_renderer3d_get_max_static_batch_vertices(_ctx);
+        }
+
+        /// <summary>Sets the maximum bones per mesh for skeletal animation</summary>
+        public int SetMaxBonesPerMesh(uint bones)
+        {
+            return NativeMethods.goud_renderer3d_set_max_bones_per_mesh(_ctx, bones);
+        }
+
+        /// <summary>Returns the maximum bones per mesh</summary>
+        public int GetMaxBonesPerMesh()
+        {
+            return NativeMethods.goud_renderer3d_get_max_bones_per_mesh(_ctx);
+        }
+
+        /// <summary>Sets the shadow strength (darkness, 0.0-1.0)</summary>
+        public int SetShadowStrength(float strength)
+        {
+            return NativeMethods.goud_renderer3d_set_shadow_strength(_ctx, strength);
+        }
+
+        /// <summary>Returns the shadow strength (0.0-1.0)</summary>
+        public float GetShadowStrength()
+        {
+            return NativeMethods.goud_renderer3d_get_shadow_strength(_ctx);
+        }
+
+        /// <summary>Sets the vertex threshold at which shadows are automatically disabled</summary>
+        public int SetShadowAutoDisableThreshold(uint threshold)
+        {
+            return NativeMethods.goud_renderer3d_set_shadow_auto_disable_threshold(_ctx, threshold);
+        }
+
+        /// <summary>Returns the vertex threshold for shadow auto-disable</summary>
+        public int GetShadowAutoDisableThreshold()
+        {
+            return NativeMethods.goud_renderer3d_get_shadow_auto_disable_threshold(_ctx);
+        }
+
         /// <summary>Returns the number of draw calls last frame</summary>
         public int GetDrawCalls()
         {

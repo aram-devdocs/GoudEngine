@@ -35,7 +35,7 @@ impl Renderer3D {
             self.next_object_id = 1; // Skip 0 which may be used as invalid sentinel
         }
 
-        let bounds = compute_bounding_sphere(&vertices);
+        let bounds = compute_bounding_sphere(&vertices, 8);
         self.objects.insert(
             id,
             Object3D {

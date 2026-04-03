@@ -137,17 +137,17 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
         return com.goudengine.types.Vec2.fromNative(r)
     }
 
-    fun isGamepadButtonPressed(gamepadId: Int, button: com.goudengine.input.GamepadButton): Boolean =
-        GoudGameNative.isGamepadButtonPressed(contextId, gamepadId, button.value)
+    fun isGamepadButtonPressed(gamepadId: Int, button: Int): Boolean =
+        GoudGameNative.isGamepadButtonPressed(contextId, gamepadId, button)
 
-    fun isGamepadButtonJustPressed(gamepadId: Int, button: com.goudengine.input.GamepadButton): Boolean =
-        GoudGameNative.isGamepadButtonJustPressed(contextId, gamepadId, button.value)
+    fun isGamepadButtonJustPressed(gamepadId: Int, button: Int): Boolean =
+        GoudGameNative.isGamepadButtonJustPressed(contextId, gamepadId, button)
 
-    fun isGamepadButtonJustReleased(gamepadId: Int, button: com.goudengine.input.GamepadButton): Boolean =
-        GoudGameNative.isGamepadButtonJustReleased(contextId, gamepadId, button.value)
+    fun isGamepadButtonJustReleased(gamepadId: Int, button: Int): Boolean =
+        GoudGameNative.isGamepadButtonJustReleased(contextId, gamepadId, button)
 
-    fun getGamepadAxis(gamepadId: Int, axis: com.goudengine.input.GamepadAxis): Float =
-        GoudGameNative.getGamepadAxis(contextId, gamepadId, axis.value)
+    fun getGamepadAxis(gamepadId: Int, axis: Int): Float =
+        GoudGameNative.getGamepadAxis(contextId, gamepadId, axis)
 
     fun spawnEmpty(): com.goudengine.core.EntityHandle {
         val r = GoudGameNative.spawnEmpty(contextId)
@@ -411,6 +411,30 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
 
     fun getShadowBias(): Float =
         GoudGameNative.getShadowBias(contextId)
+
+    fun setMaxStaticBatchVertices(vertices: Int): Int =
+        GoudGameNative.setMaxStaticBatchVertices(contextId, vertices)
+
+    fun getMaxStaticBatchVertices(): Int =
+        GoudGameNative.getMaxStaticBatchVertices(contextId)
+
+    fun setMaxBonesPerMesh(bones: Int): Int =
+        GoudGameNative.setMaxBonesPerMesh(contextId, bones)
+
+    fun getMaxBonesPerMesh(): Int =
+        GoudGameNative.getMaxBonesPerMesh(contextId)
+
+    fun setShadowStrength(strength: Float): Int =
+        GoudGameNative.setShadowStrength(contextId, strength)
+
+    fun getShadowStrength(): Float =
+        GoudGameNative.getShadowStrength(contextId)
+
+    fun setShadowAutoDisableThreshold(threshold: Int): Int =
+        GoudGameNative.setShadowAutoDisableThreshold(contextId, threshold)
+
+    fun getShadowAutoDisableThreshold(): Int =
+        GoudGameNative.getShadowAutoDisableThreshold(contextId)
 
     fun getDrawCalls(): Int =
         GoudGameNative.getDrawCalls(contextId)

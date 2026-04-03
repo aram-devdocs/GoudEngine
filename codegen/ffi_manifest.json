@@ -3546,6 +3546,22 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_renderer3d_get_max_bones_per_mesh": {
+      "source_file": "ffi/renderer3d/environment/config_getters.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_get_max_static_batch_vertices": {
+      "source_file": "ffi/renderer3d/environment/config_getters.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_renderer3d_get_min_instances_for_batching": {
       "source_file": "ffi/renderer3d/environment/config_getters.rs",
       "params": [
@@ -3587,6 +3603,14 @@
       "return_type": "u32",
       "is_unsafe": false
     },
+    "goud_renderer3d_get_shadow_auto_disable_threshold": {
+      "source_file": "ffi/renderer3d/environment/config_getters.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_renderer3d_get_shadow_bias": {
       "source_file": "ffi/renderer3d/environment/config_getters.rs",
       "params": [
@@ -3601,6 +3625,14 @@
         "context_id: GoudContextId"
       ],
       "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_get_shadow_strength": {
+      "source_file": "ffi/renderer3d/environment/config_getters.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "f32",
       "is_unsafe": false
     },
     "goud_renderer3d_get_shadows_enabled": {
@@ -3972,6 +4004,24 @@
       "return_type": "i32",
       "is_unsafe": false
     },
+    "goud_renderer3d_set_max_bones_per_mesh": {
+      "source_file": "ffi/renderer3d/environment/config_setters.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "bones: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_max_static_batch_vertices": {
+      "source_file": "ffi/renderer3d/environment/config_setters.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "vertices: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_renderer3d_set_min_instances_for_batching": {
       "source_file": "ffi/renderer3d/environment/config_setters.rs",
       "params": [
@@ -4105,6 +4155,15 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_renderer3d_set_shadow_auto_disable_threshold": {
+      "source_file": "ffi/renderer3d/environment/config_setters.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "threshold: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
     "goud_renderer3d_set_shadow_bias": {
       "source_file": "ffi/renderer3d/environment/config_setters.rs",
       "params": [
@@ -4119,6 +4178,15 @@
       "params": [
         "context_id: GoudContextId",
         "size: u32"
+      ],
+      "return_type": "i32",
+      "is_unsafe": false
+    },
+    "goud_renderer3d_set_shadow_strength": {
+      "source_file": "ffi/renderer3d/environment/config_setters.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "strength: f32"
       ],
       "return_type": "i32",
       "is_unsafe": false
@@ -6525,5 +6593,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 661
+  "total_count": 669
 }

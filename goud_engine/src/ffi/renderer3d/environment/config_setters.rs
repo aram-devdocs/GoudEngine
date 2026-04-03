@@ -414,3 +414,83 @@ pub extern "C" fn goud_renderer3d_set_shadow_bias(context_id: GoudContextId, bia
     })
     .unwrap_or(-1)
 }
+
+/// Sets the maximum vertex count for static batching.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_max_static_batch_vertices(
+    context_id: GoudContextId,
+    vertices: u32,
+) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    with_renderer(context_id, |renderer| {
+        let mut config = renderer.render_config().clone();
+        config.batching.max_static_batch_vertices = vertices.max(1) as usize;
+        renderer.set_render_config(config);
+        0
+    })
+    .unwrap_or(-1)
+}
+
+/// Sets the maximum bones per mesh for skeletal animation.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_max_bones_per_mesh(
+    context_id: GoudContextId,
+    bones: u32,
+) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    with_renderer(context_id, |renderer| {
+        let mut config = renderer.render_config().clone();
+        config.skinning.max_bones_per_mesh = bones.max(1);
+        renderer.set_render_config(config);
+        0
+    })
+    .unwrap_or(-1)
+}
+
+/// Sets the shadow strength (darkness, 0.0 = invisible, 1.0 = fully opaque).
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_shadow_strength(
+    context_id: GoudContextId,
+    strength: f32,
+) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    with_renderer(context_id, |renderer| {
+        let mut config = renderer.render_config().clone();
+        config.shadows.shadow_strength = strength.clamp(0.0, 1.0);
+        renderer.set_render_config(config);
+        0
+    })
+    .unwrap_or(-1)
+}
+
+/// Sets the vertex threshold at which shadows are automatically disabled.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_set_shadow_auto_disable_threshold(
+    context_id: GoudContextId,
+    threshold: u32,
+) -> i32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return -1;
+    }
+
+    with_renderer(context_id, |renderer| {
+        let mut config = renderer.render_config().clone();
+        config.shadows.auto_disable_vertex_threshold = threshold as usize;
+        renderer.set_render_config(config);
+        0
+    })
+    .unwrap_or(-1)
+}

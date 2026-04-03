@@ -5791,6 +5791,74 @@
           "returns": "f32"
         },
         {
+          "name": "setMaxStaticBatchVertices",
+          "doc": "Sets the maximum vertex count for static batching",
+          "params": [
+            {
+              "name": "vertices",
+              "type": "u32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getMaxStaticBatchVertices",
+          "doc": "Returns the maximum vertex count for static batching",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "setMaxBonesPerMesh",
+          "doc": "Sets the maximum bones per mesh for skeletal animation",
+          "params": [
+            {
+              "name": "bones",
+              "type": "u32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getMaxBonesPerMesh",
+          "doc": "Returns the maximum bones per mesh",
+          "params": [],
+          "returns": "i32"
+        },
+        {
+          "name": "setShadowStrength",
+          "doc": "Sets the shadow strength (darkness, 0.0-1.0)",
+          "params": [
+            {
+              "name": "strength",
+              "type": "f32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getShadowStrength",
+          "doc": "Returns the shadow strength (0.0-1.0)",
+          "params": [],
+          "returns": "f32"
+        },
+        {
+          "name": "setShadowAutoDisableThreshold",
+          "doc": "Sets the vertex threshold at which shadows are automatically disabled",
+          "params": [
+            {
+              "name": "threshold",
+              "type": "u32"
+            }
+          ],
+          "returns": "i32"
+        },
+        {
+          "name": "getShadowAutoDisableThreshold",
+          "doc": "Returns the vertex threshold for shadow auto-disable",
+          "params": [],
+          "returns": "i32"
+        },
+        {
           "name": "instantiateModelBatch",
           "doc": "Creates multiple instances of a model in one call",
           "params": [
@@ -13157,6 +13225,50 @@
         "getShadowBias": {
           "ffi": "goud_renderer3d_get_shadow_bias",
           "returns": "f32"
+        },
+        "setMaxStaticBatchVertices": {
+          "ffi": "goud_renderer3d_set_max_static_batch_vertices",
+          "params": {
+            "vertices": "u32"
+          },
+          "returns": "i32"
+        },
+        "getMaxStaticBatchVertices": {
+          "ffi": "goud_renderer3d_get_max_static_batch_vertices",
+          "returns": "i32"
+        },
+        "setMaxBonesPerMesh": {
+          "ffi": "goud_renderer3d_set_max_bones_per_mesh",
+          "params": {
+            "bones": "u32"
+          },
+          "returns": "i32"
+        },
+        "getMaxBonesPerMesh": {
+          "ffi": "goud_renderer3d_get_max_bones_per_mesh",
+          "returns": "i32"
+        },
+        "setShadowStrength": {
+          "ffi": "goud_renderer3d_set_shadow_strength",
+          "params": {
+            "strength": "f32"
+          },
+          "returns": "i32"
+        },
+        "getShadowStrength": {
+          "ffi": "goud_renderer3d_get_shadow_strength",
+          "returns": "f32"
+        },
+        "setShadowAutoDisableThreshold": {
+          "ffi": "goud_renderer3d_set_shadow_auto_disable_threshold",
+          "params": {
+            "threshold": "u32"
+          },
+          "returns": "i32"
+        },
+        "getShadowAutoDisableThreshold": {
+          "ffi": "goud_renderer3d_get_shadow_auto_disable_threshold",
+          "returns": "i32"
         },
         "instantiateModelBatch": {
           "ffi": "goud_renderer3d_instantiate_model_batch",

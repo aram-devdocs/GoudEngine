@@ -197,12 +197,13 @@ impl Default for BoundingSphere {
     }
 }
 
-/// Compute a bounding sphere from a flat vertex buffer (8 floats per vertex: pos+normal+uv).
+/// Compute a bounding sphere from a flat vertex buffer with the given stride.
 pub(in crate::libs::graphics::renderer3d) fn compute_bounding_sphere(
     vertices: &[f32],
+    floats_per_vertex: usize,
 ) -> BoundingSphere {
-    const FPV: usize = 8;
-    let vert_count = vertices.len() / FPV;
+    let fpv = floats_per_vertex;
+    let vert_count = vertices.len() / fpv;
     if vert_count == 0 {
         return BoundingSphere::default();
     }
@@ -211,7 +212,7 @@ pub(in crate::libs::graphics::renderer3d) fn compute_bounding_sphere(
     let mut min = Vector3::new(f32::MAX, f32::MAX, f32::MAX);
     let mut max = Vector3::new(f32::MIN, f32::MIN, f32::MIN);
     for i in 0..vert_count {
-        let base = i * FPV;
+        let base = i * fpv;
         let p = Vector3::new(vertices[base], vertices[base + 1], vertices[base + 2]);
         min.x = min.x.min(p.x);
         min.y = min.y.min(p.y);
@@ -225,7 +226,7 @@ pub(in crate::libs::graphics::renderer3d) fn compute_bounding_sphere(
     // Compute radius as max distance from center.
     let mut radius_sq = 0.0f32;
     for i in 0..vert_count {
-        let base = i * FPV;
+        let base = i * fpv;
         let p = Vector3::new(vertices[base], vertices[base + 1], vertices[base + 2]);
         let d = p - center;
         radius_sq = radius_sq.max(d.x * d.x + d.y * d.y + d.z * d.z);

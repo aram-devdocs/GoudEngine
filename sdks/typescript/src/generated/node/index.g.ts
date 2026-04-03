@@ -815,6 +815,46 @@ export class GoudGame implements IGoudGame {
     return (this.native as any).getShadowBias();
   }
 
+  /** Sets the maximum vertex count for static batching */
+  setMaxStaticBatchVertices(vertices: number): number {
+    return (this.native as any).setMaxStaticBatchVertices(vertices);
+  }
+
+  /** Returns the maximum vertex count for static batching */
+  getMaxStaticBatchVertices(): number {
+    return (this.native as any).getMaxStaticBatchVertices();
+  }
+
+  /** Sets the maximum bones per mesh for skeletal animation */
+  setMaxBonesPerMesh(bones: number): number {
+    return (this.native as any).setMaxBonesPerMesh(bones);
+  }
+
+  /** Returns the maximum bones per mesh */
+  getMaxBonesPerMesh(): number {
+    return (this.native as any).getMaxBonesPerMesh();
+  }
+
+  /** Sets the shadow strength (darkness, 0.0-1.0) */
+  setShadowStrength(strength: number): number {
+    return (this.native as any).setShadowStrength(strength);
+  }
+
+  /** Returns the shadow strength (0.0-1.0) */
+  getShadowStrength(): number {
+    return (this.native as any).getShadowStrength();
+  }
+
+  /** Sets the vertex threshold at which shadows are automatically disabled */
+  setShadowAutoDisableThreshold(threshold: number): number {
+    return (this.native as any).setShadowAutoDisableThreshold(threshold);
+  }
+
+  /** Returns the vertex threshold for shadow auto-disable */
+  getShadowAutoDisableThreshold(): number {
+    return (this.native as any).getShadowAutoDisableThreshold();
+  }
+
   /** Creates multiple instances of a model in one call */
   instantiateModelBatch(sourceModelId: number, count: number): number {
     return (this.native as any).instantiateModelBatch(sourceModelId, count);
