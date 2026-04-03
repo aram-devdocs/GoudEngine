@@ -27,6 +27,7 @@ mod buffer;
 mod convert;
 mod frame;
 mod frame_draw_ops;
+mod frame_trait_impls;
 mod init;
 mod pipeline;
 mod readback;
