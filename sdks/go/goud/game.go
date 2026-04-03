@@ -193,6 +193,36 @@ func (g *Game) GetScrollDelta() Vec2 {
 	return NewVec2(dx, dy)
 }
 
+// GetTouchCount Returns the number of currently active touch points
+func (g *Game) GetTouchCount() uint32 {
+	return 0
+}
+
+// IsTouchActive Returns true if the given touch ID is currently active
+func (g *Game) IsTouchActive(touchId uint64) bool {
+	return false
+}
+
+// GetTouchPosition Returns the position of the given touch point
+func (g *Game) GetTouchPosition(touchId uint64) Vec2 {
+	return Vec2{}
+}
+
+// IsTouchJustPressed Returns true if the given touch began this frame
+func (g *Game) IsTouchJustPressed(touchId uint64) bool {
+	return false
+}
+
+// IsTouchJustReleased Returns true if the given touch ended this frame
+func (g *Game) IsTouchJustReleased(touchId uint64) bool {
+	return false
+}
+
+// GetTouchDelta Returns the movement delta for the given touch point since last frame
+func (g *Game) GetTouchDelta(touchId uint64) Vec2 {
+	return Vec2{}
+}
+
 // SpawnEmpty creates a new empty entity.
 func (g *Game) SpawnEmpty() EntityID {
 	return NewEntityID(ffi.EntitySpawnEmpty(g.ctx))

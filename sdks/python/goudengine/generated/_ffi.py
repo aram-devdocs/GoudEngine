@@ -910,6 +910,20 @@ def _setup():
     _lib.goud_input_get_scroll_delta.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
     _lib.goud_input_get_scroll_delta.restype = ctypes.c_bool
 
+    # input_touch
+    _lib.goud_input_touch_count.argtypes = [GoudContextId]
+    _lib.goud_input_touch_count.restype = ctypes.c_uint32
+    _lib.goud_input_touch_active.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_input_touch_active.restype = ctypes.c_bool
+    _lib.goud_input_touch_position.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
+    _lib.goud_input_touch_position.restype = ctypes.c_bool
+    _lib.goud_input_touch_just_pressed.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_input_touch_just_pressed.restype = ctypes.c_bool
+    _lib.goud_input_touch_just_released.argtypes = [GoudContextId, ctypes.c_uint64]
+    _lib.goud_input_touch_just_released.restype = ctypes.c_bool
+    _lib.goud_input_touch_delta.argtypes = [GoudContextId, ctypes.c_uint64, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
+    _lib.goud_input_touch_delta.restype = ctypes.c_bool
+
     # input_actions
     _lib.goud_input_map_action_key.argtypes = [GoudContextId, ctypes.c_char_p, ctypes.c_uint64]
     _lib.goud_input_map_action_key.restype = ctypes.c_bool

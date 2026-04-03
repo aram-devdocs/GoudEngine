@@ -4650,6 +4650,67 @@
           "returns": "Vec2"
         },
         {
+          "name": "getTouchCount",
+          "doc": "Returns the number of currently active touch points",
+          "params": [],
+          "returns": "u32"
+        },
+        {
+          "name": "isTouchActive",
+          "doc": "Returns true if the given touch ID is currently active",
+          "params": [
+            {
+              "name": "touchId",
+              "type": "u64"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "getTouchPosition",
+          "doc": "Returns the position of the given touch point",
+          "params": [
+            {
+              "name": "touchId",
+              "type": "u64"
+            }
+          ],
+          "returns": "Vec2"
+        },
+        {
+          "name": "isTouchJustPressed",
+          "doc": "Returns true if the given touch began this frame",
+          "params": [
+            {
+              "name": "touchId",
+              "type": "u64"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "isTouchJustReleased",
+          "doc": "Returns true if the given touch ended this frame",
+          "params": [
+            {
+              "name": "touchId",
+              "type": "u64"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "getTouchDelta",
+          "doc": "Returns the movement delta for the given touch point since last frame",
+          "params": [
+            {
+              "name": "touchId",
+              "type": "u64"
+            }
+          ],
+          "returns": "Vec2"
+        },
+        {
           "$ref": "EcsMethods",
           "name": "spawnEmpty"
         },
@@ -8533,6 +8594,24 @@
         },
         {
           "sig": "scroll_dy(): number"
+        },
+        {
+          "method": "getTouchCount"
+        },
+        {
+          "method": "isTouchActive"
+        },
+        {
+          "method": "getTouchPosition"
+        },
+        {
+          "method": "isTouchJustPressed"
+        },
+        {
+          "method": "isTouchJustReleased"
+        },
+        {
+          "method": "getTouchDelta"
         },
         {
           "method": "mapActionKey"
@@ -12439,6 +12518,46 @@
         },
         "getScrollDelta": {
           "ffi": "goud_input_get_scroll_delta",
+          "out_params": [
+            {
+              "name": "dx",
+              "type": "f32"
+            },
+            {
+              "name": "dy",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "Vec2"
+        },
+        "getTouchCount": {
+          "ffi": "goud_input_touch_count"
+        },
+        "isTouchActive": {
+          "ffi": "goud_input_touch_active"
+        },
+        "getTouchPosition": {
+          "ffi": "goud_input_touch_position",
+          "out_params": [
+            {
+              "name": "x",
+              "type": "f32"
+            },
+            {
+              "name": "y",
+              "type": "f32"
+            }
+          ],
+          "returns_struct": "Vec2"
+        },
+        "isTouchJustPressed": {
+          "ffi": "goud_input_touch_just_pressed"
+        },
+        "isTouchJustReleased": {
+          "ffi": "goud_input_touch_just_released"
+        },
+        "getTouchDelta": {
+          "ffi": "goud_input_touch_delta",
           "out_params": [
             {
               "name": "dx",

@@ -115,6 +115,28 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
         return com.goudengine.types.Vec2.fromNative(r)
     }
 
+    fun getTouchCount(): Int =
+        GoudGameNative.getTouchCount(contextId)
+
+    fun isTouchActive(touchId: Long): Boolean =
+        GoudGameNative.isTouchActive(contextId, touchId)
+
+    fun getTouchPosition(touchId: Long): com.goudengine.types.Vec2 {
+        val r = GoudGameNative.getTouchPosition(contextId, touchId)
+        return com.goudengine.types.Vec2.fromNative(r)
+    }
+
+    fun isTouchJustPressed(touchId: Long): Boolean =
+        GoudGameNative.isTouchJustPressed(contextId, touchId)
+
+    fun isTouchJustReleased(touchId: Long): Boolean =
+        GoudGameNative.isTouchJustReleased(contextId, touchId)
+
+    fun getTouchDelta(touchId: Long): com.goudengine.types.Vec2 {
+        val r = GoudGameNative.getTouchDelta(contextId, touchId)
+        return com.goudengine.types.Vec2.fromNative(r)
+    }
+
     fun spawnEmpty(): com.goudengine.core.EntityHandle {
         val r = GoudGameNative.spawnEmpty(contextId)
         return com.goudengine.core.EntityHandle(r)

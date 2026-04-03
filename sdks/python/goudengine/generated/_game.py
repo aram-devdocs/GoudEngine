@@ -236,6 +236,36 @@ class GoudGame:
         self._lib.goud_input_get_scroll_delta(self._ctx, ctypes.byref(_dx), ctypes.byref(_dy))
         return Vec2(_dx.value, _dy.value)
 
+    def get_touch_count(self):
+        """Returns the number of currently active touch points"""
+        return self._lib.goud_input_touch_count(self._ctx)
+
+    def is_touch_active(self, touch_id):
+        """Returns true if the given touch ID is currently active"""
+        return self._lib.goud_input_touch_active(self._ctx, touch_id)
+
+    def get_touch_position(self, touch_id):
+        """Returns the position of the given touch point"""
+        _x = ctypes.c_float()
+        _y = ctypes.c_float()
+        self._lib.goud_input_touch_position(self._ctx, touch_id, ctypes.byref(_x), ctypes.byref(_y))
+        return Vec2(_x.value, _y.value)
+
+    def is_touch_just_pressed(self, touch_id):
+        """Returns true if the given touch began this frame"""
+        return self._lib.goud_input_touch_just_pressed(self._ctx, touch_id)
+
+    def is_touch_just_released(self, touch_id):
+        """Returns true if the given touch ended this frame"""
+        return self._lib.goud_input_touch_just_released(self._ctx, touch_id)
+
+    def get_touch_delta(self, touch_id):
+        """Returns the movement delta for the given touch point since last frame"""
+        _dx = ctypes.c_float()
+        _dy = ctypes.c_float()
+        self._lib.goud_input_touch_delta(self._ctx, touch_id, ctypes.byref(_dx), ctypes.byref(_dy))
+        return Vec2(_dx.value, _dy.value)
+
     def spawn_empty(self):
         """Creates a new empty entity"""
         bits = self._lib.goud_entity_spawn_empty(self._ctx)

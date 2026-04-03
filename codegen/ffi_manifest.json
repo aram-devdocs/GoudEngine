@@ -1873,6 +1873,63 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_input_touch_active": {
+      "source_file": "ffi/input/touch.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "touch_id: u64"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_input_touch_count": {
+      "source_file": "ffi/input/touch.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_input_touch_delta": {
+      "source_file": "ffi/input/touch.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "touch_id: u64",
+        "out_dx: *mut f32",
+        "out_dy: *mut f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_input_touch_just_pressed": {
+      "source_file": "ffi/input/touch.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "touch_id: u64"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_input_touch_just_released": {
+      "source_file": "ffi/input/touch.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "touch_id: u64"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_input_touch_position": {
+      "source_file": "ffi/input/touch.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "touch_id: u64",
+        "out_x: *mut f32",
+        "out_y: *mut f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
     "goud_last_error_code": {
       "source_file": "ffi/error.rs",
       "params": [],
@@ -6339,5 +6396,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 642
+  "total_count": 648
 }

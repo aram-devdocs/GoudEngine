@@ -22,6 +22,7 @@ impl NullInputProvider {
                 supports_gamepad: false,
                 supports_touch: false,
                 max_gamepads: 0,
+                max_touch_points: 0,
             },
         }
     }

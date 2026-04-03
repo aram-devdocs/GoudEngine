@@ -326,6 +326,23 @@ impl MouseButton {
     pub const Button3: Self = Self::Middle;
 }
 
+/// Phase of a touch event on a touchscreen device.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(u32)]
+pub enum TouchPhase {
+    /// A finger touched the screen.
+    Started = 0,
+    /// A finger already on the screen moved.
+    Moved = 1,
+    /// A finger was lifted from the screen.
+    Ended = 2,
+    /// The system cancelled the touch (e.g. palm rejection).
+    Cancelled = 3,
+}
+
+/// Unique identifier for a touch point (finger).
+pub type TouchId = u64;
+
 /// Gamepad identifier (0-indexed).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GamepadId(pub u32);
@@ -411,7 +428,7 @@ impl GamepadButton {
 }
 
 /// Capabilities reported by an input provider.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 #[repr(C)]
 pub struct InputCapabilities {
     /// Whether gamepad input is supported.
@@ -420,6 +437,19 @@ pub struct InputCapabilities {
     pub supports_touch: bool,
     /// Maximum number of simultaneous gamepads.
     pub max_gamepads: u32,
+    /// Maximum number of simultaneous touch points supported.
+    pub max_touch_points: u32,
+}
+
+impl Default for InputCapabilities {
+    fn default() -> Self {
+        Self {
+            supports_gamepad: false,
+            supports_touch: false,
+            max_gamepads: 0,
+            max_touch_points: 10,
+        }
+    }
 }
 
 #[cfg(test)]

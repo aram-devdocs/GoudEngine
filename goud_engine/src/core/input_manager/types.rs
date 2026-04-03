@@ -1,6 +1,7 @@
-//! Shared input types: `GamepadState`, `BufferedInput`, and `InputBinding`.
+//! Shared input types: `GamepadState`, `BufferedInput`, `InputBinding`, and `TouchState`.
 
-use crate::core::providers::input_types::{GamepadAxis, KeyCode as Key, MouseButton};
+use crate::core::math::Vec2;
+use crate::core::providers::input_types::{GamepadAxis, KeyCode as Key, MouseButton, TouchPhase};
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 
@@ -128,4 +129,12 @@ impl BufferedInput {
     pub(super) fn is_expired(&self, now: Instant, buffer_duration: Duration) -> bool {
         now.duration_since(self.timestamp) > buffer_duration
     }
+}
+
+/// Internal state for a single active touch point.
+#[derive(Debug, Clone)]
+pub(super) struct TouchState {
+    pub(super) position: Vec2,
+    pub(super) previous_position: Vec2,
+    pub(super) phase: TouchPhase,
 }

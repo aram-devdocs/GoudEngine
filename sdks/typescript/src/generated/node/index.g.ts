@@ -342,6 +342,36 @@ export class GoudGame implements IGoudGame {
     return { x: value[0], y: value[1] };
   }
 
+  /** Returns the number of currently active touch points */
+  getTouchCount(): number {
+    return (this.native as any).getTouchCount();
+  }
+
+  /** Returns true if the given touch ID is currently active */
+  isTouchActive(touchId: number): boolean {
+    return (this.native as any).isTouchActive(touchId);
+  }
+
+  /** Returns the position of the given touch point */
+  getTouchPosition(touchId: number): IVec2 {
+    return (this.native as any).getTouchPosition(touchId);
+  }
+
+  /** Returns true if the given touch began this frame */
+  isTouchJustPressed(touchId: number): boolean {
+    return (this.native as any).isTouchJustPressed(touchId);
+  }
+
+  /** Returns true if the given touch ended this frame */
+  isTouchJustReleased(touchId: number): boolean {
+    return (this.native as any).isTouchJustReleased(touchId);
+  }
+
+  /** Returns the movement delta for the given touch point since last frame */
+  getTouchDelta(touchId: number): IVec2 {
+    return (this.native as any).getTouchDelta(touchId);
+  }
+
   /** Creates a new empty entity */
   spawnEmpty(): IEntity {
     return this.native.spawnEmpty() as unknown as IEntity;

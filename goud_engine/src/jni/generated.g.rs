@@ -183,6 +183,7 @@ pub(crate) fn set_InputCapabilities_fields<'local>(env: &mut jni::JNIEnv<'local>
     crate::jni::helpers::set_boolean_field(env, obj, "supportsGamepad", value.supports_gamepad)?;
     crate::jni::helpers::set_boolean_field(env, obj, "supportsTouch", value.supports_touch)?;
     crate::jni::helpers::set_int_field(env, obj, "maxGamepads", value.max_gamepads as i32)?;
+    crate::jni::helpers::set_int_field(env, obj, "maxTouchPoints", value.max_touch_points as i32)?;
     Ok(())
 }
 
@@ -200,10 +201,12 @@ pub(crate) fn read_InputCapabilities<'local>(env: &mut jni::JNIEnv<'local>, obj:
     let field_supportsGamepad = crate::jni::helpers::get_boolean_field(env, obj, "supportsGamepad")?;
     let field_supportsTouch = crate::jni::helpers::get_boolean_field(env, obj, "supportsTouch")?;
     let field_maxGamepads = crate::jni::helpers::get_int_field(env, obj, "maxGamepads")? as _;
+    let field_maxTouchPoints = crate::jni::helpers::get_int_field(env, obj, "maxTouchPoints")? as _;
     Ok(crate::core::providers::input_types::InputCapabilities {
         supports_gamepad: field_supportsGamepad,
         supports_touch: field_supportsTouch,
         max_gamepads: field_maxGamepads,
+        max_touch_points: field_maxTouchPoints,
     })
 }
 

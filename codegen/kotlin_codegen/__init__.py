@@ -67,10 +67,10 @@ def _write_gradle_build():
     content = f"""\
 // {HEADER_COMMENT}
 plugins {{
-    kotlin("jvm") version "1.9.22"
+    kotlin("jvm") version "2.0.21"
     `maven-publish`
     signing
-    id("org.jetbrains.dokka") version "1.9.10"
+    id("org.jetbrains.dokka") version "1.9.20"
 }}
 
 group = "io.github.aram-devdocs"
@@ -201,6 +201,12 @@ signing {{
     settings_gradle = kotlin_root / "settings.gradle.kts"
     settings_content = f"""\
 // {HEADER_COMMENT}
+pluginManagement {{
+    repositories {{
+        gradlePluginPortal()
+        mavenCentral()
+    }}
+}}
 rootProject.name = "goudengine"
 """
     settings_gradle.write_text(settings_content)

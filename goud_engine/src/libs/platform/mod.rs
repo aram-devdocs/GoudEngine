@@ -37,7 +37,13 @@ pub mod native_runtime;
 #[cfg(all(
     feature = "wgpu-backend",
     feature = "native",
-    any(target_os = "linux", target_os = "macos", target_os = "windows")
+    any(
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "windows",
+        target_os = "android",
+        target_os = "ios"
+    )
 ))]
 pub mod winit_platform;
 #[cfg(feature = "xbox-gdk")]
@@ -222,6 +228,20 @@ pub trait PlatformBackend {
     /// Returns the current fullscreen mode.
     fn get_fullscreen(&self) -> FullscreenMode {
         FullscreenMode::Windowed
+    }
+
+    /// Called when the platform suspends the application (e.g. mobile background).
+    ///
+    /// Implementations should release platform resources that are invalid while
+    /// suspended (e.g. GPU surfaces on Android).
+    fn on_suspended(&mut self) {}
+
+    /// Called when the platform resumes the application from a suspended state.
+    fn on_resumed(&mut self) {}
+
+    /// Returns `true` if the platform is currently in a suspended state.
+    fn is_suspended(&self) -> bool {
+        false
     }
 }
 

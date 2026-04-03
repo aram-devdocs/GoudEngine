@@ -233,10 +233,13 @@ impl WgpuBackend {
             info,
             device,
             queue,
-            surface,
+            surface: Some(surface),
             surface_config,
             surface_format,
             surface_supports_copy_src,
+            wgpu_instance: instance,
+            wgpu_adapter: adapter,
+            window: Some(window),
             depth_texture,
             depth_view,
             last_frame_readback: None,
@@ -328,9 +331,38 @@ impl WgpuBackend {
         let h = height.max(1);
         self.surface_config.width = w;
         self.surface_config.height = h;
-        self.surface.configure(&self.device, &self.surface_config);
+        if let Some(ref surface) = self.surface {
+            surface.configure(&self.device, &self.surface_config);
+        }
         let (dt, dv) = Self::create_depth_texture(&self.device, w, h);
         self.depth_texture = dt;
         self.depth_view = dv;
+    }
+
+    /// Drops the GPU surface. Used when the app is suspended on mobile.
+    ///
+    /// The device, queue, and all GPU resources (textures, buffers, pipelines)
+    /// remain valid -- only the presentation surface is released.
+    pub fn drop_surface(&mut self) {
+        self.surface = None;
+    }
+
+    /// Recreates the GPU surface after a mobile resume.
+    ///
+    /// Uses the persisted wgpu instance and window handle. Returns an error
+    /// on platforms without a winit window (e.g. Xbox GDK).
+    pub fn recreate_surface(&mut self) -> GoudResult<()> {
+        let window = self.window.as_ref().ok_or_else(|| {
+            GoudError::InvalidState(
+                "cannot recreate surface: no winit window (Xbox GDK does not support mobile suspend/resume)".into(),
+            )
+        })?;
+        let surface = self
+            .wgpu_instance
+            .create_surface(wgpu::SurfaceTarget::from(window.clone()))
+            .map_err(|e| GoudError::BackendNotSupported(format!("wgpu surface recreate: {e}")))?;
+        surface.configure(&self.device, &self.surface_config);
+        self.surface = Some(surface);
+        Ok(())
     }
 }

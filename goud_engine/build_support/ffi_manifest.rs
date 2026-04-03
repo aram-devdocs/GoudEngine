@@ -91,6 +91,7 @@ const FFI_SOURCE_FILES: &[&str] = &[
     "src/ffi/input/keyboard.rs",
     "src/ffi/input/mouse.rs",
     "src/ffi/input/actions.rs",
+    "src/ffi/input/touch.rs",
     // collision (not yet split)
     "src/ffi/collision.rs",
     // scene module

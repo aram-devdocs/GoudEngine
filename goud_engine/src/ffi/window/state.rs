@@ -54,6 +54,9 @@ pub struct WindowState {
     /// Deferred capture coordination between the IPC thread and the main thread.
     pub(crate) deferred_capture: Option<DeferredCapture>,
 
+    /// Tracks the previous suspended state to detect transitions.
+    was_suspended: bool,
+
     /// Fixed timestep step size in seconds (0.0 = disabled).
     pub(crate) fixed_timestep: f32,
 
@@ -85,6 +88,7 @@ impl WindowState {
             physics_debug_enabled,
             base_physics_debug_enabled: physics_debug_enabled,
             delta_time: 0.0,
+            was_suspended: false,
             debug_overlay: DebugOverlay::new(0.5),
             network_overlay: NetworkOverlayState::default(),
             debugger_route,
@@ -112,6 +116,28 @@ impl WindowState {
         let started_at = Instant::now();
         let raw_delta = self.platform.poll_events(input);
         debugger::record_phase_duration("window_events", started_at.elapsed().as_micros() as u64);
+
+        // Detect suspend/resume transitions and manage GPU surface lifecycle.
+        let is_suspended = self.platform.is_suspended();
+        if is_suspended && !self.was_suspended {
+            // Entering suspended state — drop the GPU surface.
+            self.backend.drop_surface();
+            log::info!("App suspended — GPU surface dropped");
+        } else if !is_suspended && self.was_suspended {
+            // Resuming from suspended state — recreate the GPU surface.
+            if let Err(e) = self.backend.recreate_surface() {
+                log::error!("Failed to recreate GPU surface on resume: {e}");
+            } else {
+                log::info!("App resumed — GPU surface recreated");
+            }
+        }
+        self.was_suspended = is_suspended;
+
+        if is_suspended {
+            self.delta_time = 0.0;
+            return 0.0;
+        }
+
         let framebuffer_size = self.platform.get_framebuffer_size();
         self.backend
             .resize_surface(framebuffer_size.0, framebuffer_size.1);

@@ -76,6 +76,32 @@ impl NativeRenderBackend {
             Self::Wgpu(backend) => backend.resize(width, height),
         }
     }
+
+    /// Drops the GPU surface for mobile suspend. No-op on OpenGL.
+    pub(crate) fn drop_surface(&mut self) {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(_) => {}
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
+            Self::Wgpu(backend) => backend.drop_surface(),
+        }
+    }
+
+    /// Recreates the GPU surface after mobile resume. No-op on OpenGL.
+    pub(crate) fn recreate_surface(&mut self) -> GoudResult<()> {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(_) => Ok(()),
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk"
+            ))]
+            Self::Wgpu(backend) => backend.recreate_surface(),
+        }
+    }
 }
 
 /// Cloneable native render backend handle backed by shared state.
@@ -107,5 +133,15 @@ impl SharedNativeRenderBackend {
 
     pub(crate) fn resize_surface(&self, width: u32, height: u32) {
         self.lock().resize_surface(width, height);
+    }
+
+    /// Drops the GPU surface for mobile suspend.
+    pub(crate) fn drop_surface(&self) {
+        self.lock().drop_surface();
+    }
+
+    /// Recreates the GPU surface after mobile resume.
+    pub(crate) fn recreate_surface(&self) -> GoudResult<()> {
+        self.lock().recreate_surface()
     }
 }

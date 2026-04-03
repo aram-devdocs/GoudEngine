@@ -69,6 +69,10 @@ use crate::ffi::window::goud_fixed_timestep_begin;
 use crate::ffi::window::goud_fixed_timestep_set;
 use crate::ffi::window::goud_fixed_timestep_set_max_steps;
 use crate::ffi::arena::goud_frame_arena_reset;
+use crate::ffi::input::goud_input_touch_active;
+use crate::ffi::input::goud_input_touch_count;
+use crate::ffi::input::goud_input_touch_just_pressed;
+use crate::ffi::input::goud_input_touch_just_released;
 use crate::ffi::network::goud_network_clear_overlay_handle;
 use crate::ffi::network::goud_network_clear_simulation;
 use crate::ffi::network::goud_network_disconnect;
@@ -320,6 +324,26 @@ pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> 
         Ok(goud_window_destroy(ctx))
     })?;
     tbl.set("destroy", f_destroy)?;
+    // GoudGame.getTouchCount
+    let f_get_touch_count = lua.create_function(move |_, _: ()| {
+        Ok(goud_input_touch_count(ctx) as i64)
+    })?;
+    tbl.set("get_touch_count", f_get_touch_count)?;
+    // GoudGame.isTouchActive
+    let f_is_touch_active = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_input_touch_active(ctx, arg0 as u64))
+    })?;
+    tbl.set("is_touch_active", f_is_touch_active)?;
+    // GoudGame.isTouchJustPressed
+    let f_is_touch_just_pressed = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_input_touch_just_pressed(ctx, arg0 as u64))
+    })?;
+    tbl.set("is_touch_just_pressed", f_is_touch_just_pressed)?;
+    // GoudGame.isTouchJustReleased
+    let f_is_touch_just_released = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_input_touch_just_released(ctx, arg0 as u64))
+    })?;
+    tbl.set("is_touch_just_released", f_is_touch_just_released)?;
     // GoudGame.spawnEmpty
     let f_spawn_empty = lua.create_function(move |_, _: ()| {
         Ok(goud_entity_spawn_empty(ctx) as i64)

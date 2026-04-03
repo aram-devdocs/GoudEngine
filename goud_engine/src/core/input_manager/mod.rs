@@ -77,6 +77,7 @@ mod actions;
 mod buffer;
 mod gamepad;
 mod manager;
+mod touch;
 mod types;
 
 #[cfg(test)]

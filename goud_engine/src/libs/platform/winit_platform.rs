@@ -18,12 +18,17 @@ use crate::libs::error::{GoudError, GoudResult};
 use crate::libs::platform::{PlatformBackend, WindowConfig};
 
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+use std::time::Duration;
+use std::time::Instant;
 use winit::application::ApplicationHandler;
 use winit::dpi::LogicalSize;
 use winit::event::{ElementState, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
+// pump_events is desktop-only; on mobile (iOS/Android) winit owns the event
+// loop via run_app() and pump_app_events is not available.
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 use winit::platform::pump_events::EventLoopExtPumpEvents;
 use winit::window::{Window, WindowAttributes, WindowId};
 
@@ -32,6 +37,7 @@ use winit::window::{Window, WindowAttributes, WindowId};
 struct WinitState {
     window: Option<Arc<Window>>,
     should_close: bool,
+    is_suspended: bool,
     width: u32,
     height: u32,
     last_frame_time: Instant,
@@ -61,8 +67,10 @@ pub struct WinitPlatform {
 impl WinitPlatform {
     /// Creates a new winit platform with a window.
     ///
-    /// Internally pumps one round of events to trigger the `resumed` callback
-    /// which creates the window.
+    /// On desktop, this pumps one round of events to trigger the `resumed`
+    /// callback which creates the window. On mobile (iOS/Android), window
+    /// creation is driven by the OS — use `run_app()` integration instead.
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
     pub fn new(config: &WindowConfig) -> GoudResult<Self> {
         let mut event_loop = EventLoop::new()
             .map_err(|e| GoudError::WindowCreationFailed(format!("EventLoop: {e}")))?;
@@ -70,6 +78,7 @@ impl WinitPlatform {
         let mut state = WinitState {
             window: None,
             should_close: false,
+            is_suspended: false,
             width: config.width,
             height: config.height,
             last_frame_time: Instant::now(),
@@ -104,6 +113,15 @@ impl WinitPlatform {
         Ok(platform)
     }
 
+    /// Mobile stub: `pump_app_events` is not available on iOS/Android.
+    /// Window creation must be driven by `run_app()` integration.
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    pub fn new(_config: &WindowConfig) -> GoudResult<Self> {
+        Err(GoudError::WindowCreationFailed(
+            "WinitPlatform::new() is not available on mobile; use run_app() integration".into(),
+        ))
+    }
+
     /// Returns the winit window handle for wgpu surface creation.
     pub fn window(&self) -> &Arc<Window> {
         self.state
@@ -125,6 +143,13 @@ impl PlatformBackend for WinitPlatform {
     fn poll_events(&mut self, input: &mut InputManager) -> f32 {
         input.update();
 
+        if self.state.is_suspended {
+            return 0.0;
+        }
+
+        // pump_app_events is desktop-only; on mobile, events are delivered
+        // through run_app() which drives the ApplicationHandler directly.
+        #[cfg(not(any(target_os = "android", target_os = "ios")))]
         {
             let mut handler = WinitEventHandler {
                 state: &mut self.state,
@@ -204,6 +229,10 @@ impl PlatformBackend for WinitPlatform {
     fn get_fullscreen(&self) -> super::FullscreenMode {
         self.state.fullscreen_mode
     }
+
+    fn is_suspended(&self) -> bool {
+        self.state.is_suspended
+    }
 }
 
 // =============================================================================
@@ -218,6 +247,8 @@ struct WinitEventHandler<'a> {
 impl ApplicationHandler for WinitEventHandler<'_> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.state.window.is_some() {
+            // Re-entering foreground on mobile -- clear suspended flag
+            self.state.is_suspended = false;
             return;
         }
         let attrs = WindowAttributes::default()
@@ -233,6 +264,11 @@ impl ApplicationHandler for WinitEventHandler<'_> {
                 log::error!("Failed to create winit window: {e}");
             }
         }
+    }
+
+    fn suspended(&mut self, _event_loop: &ActiveEventLoop) {
+        self.state.is_suspended = true;
+        self.input.clear();
     }
 
     fn window_event(
@@ -291,6 +327,32 @@ impl ApplicationHandler for WinitEventHandler<'_> {
                     winit::event::MouseScrollDelta::PixelDelta(pos) => (pos.x as f32, pos.y as f32),
                 };
                 self.input.add_scroll_delta(Vec2::new(dx, dy));
+            }
+            WindowEvent::Touch(touch) => {
+                let scale = self
+                    .state
+                    .window
+                    .as_ref()
+                    .map(|w| w.scale_factor())
+                    .unwrap_or(1.0);
+                let position = Vec2::new(
+                    (touch.location.x / scale) as f32,
+                    (touch.location.y / scale) as f32,
+                );
+                match touch.phase {
+                    winit::event::TouchPhase::Started => {
+                        self.input.touch_start(touch.id, position);
+                    }
+                    winit::event::TouchPhase::Moved => {
+                        self.input.touch_move(touch.id, position);
+                    }
+                    winit::event::TouchPhase::Ended => {
+                        self.input.touch_end(touch.id);
+                    }
+                    winit::event::TouchPhase::Cancelled => {
+                        self.input.touch_cancel(touch.id);
+                    }
+                }
             }
             _ => {}
         }

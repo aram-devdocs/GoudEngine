@@ -9,17 +9,21 @@ use crate::libs::error::{GoudError, GoudResult};
 
 impl FrameOps for WgpuBackend {
     fn begin_frame(&mut self) -> GoudResult<()> {
-        let surface_texture = match self.surface.get_current_texture() {
+        let surface = match self.surface.as_ref() {
+            Some(s) => s,
+            None => return Ok(()), // Surface dropped (mobile suspended) -- skip frame
+        };
+        let surface_texture = match surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(tex) => tex,
             wgpu::CurrentSurfaceTexture::Suboptimal(tex) => {
-                self.surface.configure(&self.device, &self.surface_config);
+                surface.configure(&self.device, &self.surface_config);
                 tex
             }
             wgpu::CurrentSurfaceTexture::Timeout | wgpu::CurrentSurfaceTexture::Occluded => {
                 return Ok(()); // skip frame
             }
             wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Lost => {
-                self.surface.configure(&self.device, &self.surface_config);
+                surface.configure(&self.device, &self.surface_config);
                 return Err(GoudError::InternalError("Surface lost or outdated".into()));
             }
             wgpu::CurrentSurfaceTexture::Validation => {

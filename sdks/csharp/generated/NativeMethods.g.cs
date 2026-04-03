@@ -1178,6 +1178,30 @@ namespace GoudEngine
         [return: MarshalAs(UnmanagedType.U1)]
         public static extern bool goud_input_get_scroll_delta(GoudContextId context_id, ref float out_dx, ref float out_dy);
 
+        // input_touch
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_input_touch_count(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_input_touch_active(GoudContextId context_id, ulong touch_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_input_touch_position(GoudContextId context_id, ulong touch_id, ref float out_x, ref float out_y);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_input_touch_just_pressed(GoudContextId context_id, ulong touch_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_input_touch_just_released(GoudContextId context_id, ulong touch_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_input_touch_delta(GoudContextId context_id, ulong touch_id, ref float out_dx, ref float out_dy);
+
         // input_actions
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]

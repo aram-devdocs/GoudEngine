@@ -737,6 +737,19 @@ export class GoudGame implements IGoudGame {
   /** Returns the scroll wheel delta this frame */
   getScrollDelta(): IVec2 { return { x: this.handle.scroll_dx(), y: this.handle.scroll_dy() }; }
 
+  /** Returns the number of currently active touch points */
+  getTouchCount(): number { return 0; }
+  /** Returns true if the given touch ID is currently active */
+  isTouchActive(_touchId: number): boolean { return false; }
+  /** Returns the position of the given touch point */
+  getTouchPosition(_touchId: number): IVec2 { return { x: 0, y: 0 }; }
+  /** Returns true if the given touch began this frame */
+  isTouchJustPressed(_touchId: number): boolean { return false; }
+  /** Returns true if the given touch ended this frame */
+  isTouchJustReleased(_touchId: number): boolean { return false; }
+  /** Returns the movement delta for the given touch point since last frame */
+  getTouchDelta(_touchId: number): IVec2 { return { x: 0, y: 0 }; }
+
   /** Maps an action name to a key */
   mapActionKey(action: string, key: number): boolean { return this.handle.map_action_key(action, key); }
   /** Returns true if the action is currently pressed */

@@ -751,6 +751,14 @@
       "goud_input_get_mouse_delta": {},
       "goud_input_get_scroll_delta": {}
     },
+    "input_touch": {
+      "goud_input_touch_count": {},
+      "goud_input_touch_active": {},
+      "goud_input_touch_position": {},
+      "goud_input_touch_just_pressed": {},
+      "goud_input_touch_just_released": {},
+      "goud_input_touch_delta": {}
+    },
     "input_actions": {
       "goud_input_map_action_key": {},
       "goud_input_action_pressed": {},
