@@ -127,7 +127,13 @@ impl Renderer3D {
                 Object3D {
                     buffer,
                     vertex_count: tri_vert_count as i32,
-                    vertices: Vec::new(),
+                    // CPU-side vertex copy for static batching (8 FPV layout).
+                    // Skinned models use 16 FPV and are never static-batched.
+                    vertices: if is_skinned {
+                        Vec::new()
+                    } else {
+                        verts.clone()
+                    },
                     position: Vector3::new(0.0, 0.0, 0.0),
                     rotation: Vector3::new(0.0, 0.0, 0.0),
                     scale: Vector3::new(1.0, 1.0, 1.0),

@@ -379,3 +379,37 @@ fn test_scene_filtering_limits_rendered_objects() {
     renderer.render(None);
     assert_eq!(renderer.stats().draw_calls, 2);
 }
+
+/// Regression test for #630: primitives marked static must still render via
+/// the static batch path instead of disappearing.
+#[test]
+fn test_static_primitive_renders_via_batch() {
+    let mut renderer = make_renderer();
+    let cube = renderer.create_primitive(PrimitiveCreateInfo {
+        primitive_type: PrimitiveType::Cube,
+        width: 1.0,
+        height: 1.0,
+        depth: 1.0,
+        segments: 1,
+        texture_id: 0,
+    });
+    assert_ne!(cube, 0);
+
+    // Dynamic path: one draw call, one visible object.
+    renderer.render(None);
+    assert_eq!(renderer.stats().draw_calls, 1);
+    assert_eq!(renderer.stats().visible_objects, 1);
+
+    // Mark static: should render via static batch, not dynamic pass.
+    assert!(renderer.set_object_static(cube, true));
+    renderer.render(None);
+    let stats = renderer.stats();
+    assert!(
+        stats.draw_calls >= 1,
+        "static object must produce at least one draw call"
+    );
+    assert_eq!(
+        stats.visible_objects, 0,
+        "static object should not appear in dynamic pass"
+    );
+}
