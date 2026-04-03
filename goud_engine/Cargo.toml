@@ -85,7 +85,7 @@ web-sys = { version = "0.3", optional = true, features = [
     "AudioDestinationNode", "BaseAudioContext",
     "Blob", "Url",
 ] }
-sdl2 = { version = "0.37", optional = true, features = ["bundled", "raw-window-handle"] }
+sdl2 = { version = "0.38", optional = true, features = ["bundled", "raw-window-handle"] }
 bumpalo = "3.20.2"
 smallvec = "1.15.1"
 
