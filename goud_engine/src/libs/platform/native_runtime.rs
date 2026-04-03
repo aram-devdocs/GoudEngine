@@ -199,7 +199,7 @@ pub fn create_native_runtime(
             let (w, h) = platform.get_framebuffer_size();
             let mut backend =
                 crate::libs::graphics::backend::wgpu_backend::WgpuBackend::new_from_sdl_handle(
-                    handle, w, h,
+                    handle, w, h, window_config.vsync,
                 )?;
             backend.resize(w, h);
             Ok(NativeRuntime {
@@ -216,7 +216,7 @@ pub fn create_native_runtime(
             let (w, h) = platform.get_framebuffer_size();
             let mut backend =
                 crate::libs::graphics::backend::wgpu_backend::WgpuBackend::new_from_switch_handle(
-                    handle, w, h,
+                    handle, w, h, window_config.vsync,
                 )?;
             backend.resize(w, h);
             Ok(NativeRuntime {

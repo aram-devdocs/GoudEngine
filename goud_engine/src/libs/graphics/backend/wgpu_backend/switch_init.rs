@@ -27,14 +27,16 @@ impl WgpuBackend {
         handle: Arc<super::switch_surface::SwitchWindowHandle>,
         width: u32,
         height: u32,
+        vsync: bool,
     ) -> GoudResult<Self> {
-        pollster::block_on(Self::new_switch_async(handle, width, height))
+        pollster::block_on(Self::new_switch_async(handle, width, height, vsync))
     }
 
     async fn new_switch_async(
         handle: Arc<super::switch_surface::SwitchWindowHandle>,
         width: u32,
         height: u32,
+        vsync: bool,
     ) -> GoudResult<Self> {
         let mut instance_desc = wgpu::InstanceDescriptor::new_without_display_handle();
         instance_desc.backends = wgpu::Backends::VULKAN;
@@ -85,10 +87,14 @@ impl WgpuBackend {
             format: surface_format,
             width: w,
             height: h,
-            present_mode: wgpu::PresentMode::AutoVsync,
+            present_mode: if vsync {
+                wgpu::PresentMode::AutoVsync
+            } else {
+                wgpu::PresentMode::AutoNoVsync
+            },
             alpha_mode: caps.alpha_modes[0],
             view_formats: vec![],
-            desired_maximum_frame_latency: 2,
+            desired_maximum_frame_latency: 1,
         };
         surface.configure(&device, &surface_config);
 
