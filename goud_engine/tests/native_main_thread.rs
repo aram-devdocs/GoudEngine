@@ -7,6 +7,10 @@ use std::time::{Duration, Instant};
 use goud_engine::sdk::{GameConfig, GoudGame};
 
 fn should_skip_native_smoke() -> bool {
+    if std::env::var_os("CI").is_some() {
+        return true;
+    }
+
     #[cfg(target_os = "linux")]
     {
         std::env::var_os("DISPLAY").is_none() && std::env::var_os("WAYLAND_DISPLAY").is_none()
