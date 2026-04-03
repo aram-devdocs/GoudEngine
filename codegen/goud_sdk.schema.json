@@ -5360,6 +5360,37 @@
           "returns": "bool"
         },
         {
+          "name": "configureFogLinear",
+          "doc": "Configures linear fog with explicit start and end distances",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool"
+            },
+            {
+              "name": "startDistance",
+              "type": "f32"
+            },
+            {
+              "name": "endDistance",
+              "type": "f32"
+            },
+            {
+              "name": "r",
+              "type": "f32"
+            },
+            {
+              "name": "g",
+              "type": "f32"
+            },
+            {
+              "name": "b",
+              "type": "f32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
           "name": "setFogEnabled",
           "doc": "Sets fog visibility",
           "params": [
@@ -12860,6 +12891,9 @@
         },
         "configureFog": {
           "ffi": "goud_renderer3d_configure_fog"
+        },
+        "configureFogLinear": {
+          "ffi": "goud_renderer3d_configure_fog_linear"
         },
         "setFogEnabled": {
           "ffi": "goud_renderer3d_set_fog_enabled"

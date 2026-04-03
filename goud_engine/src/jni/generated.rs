@@ -2328,129 +2328,6 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getTouchDelta
 
 #[allow(non_snake_case)]
 #[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_isGamepadButtonPressed<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    gamepadId: jni::sys::jint,
-    button: jni::sys::jint,
-) -> jni::sys::jboolean {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_isGamepadButtonPressed", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::input::gamepad::goud_input_gamepad_button_pressed(goud_context_id_from_jlong(contextId), gamepadId as u32, button as u32);
-            if !result && crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_input_gamepad_button_pressed", None);
-                return Err(());
-            }
-            Ok(crate::jni::helpers::to_jboolean(result))
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_isGamepadButtonJustPressed<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    gamepadId: jni::sys::jint,
-    button: jni::sys::jint,
-) -> jni::sys::jboolean {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_isGamepadButtonJustPressed", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::input::gamepad::goud_input_gamepad_button_just_pressed(goud_context_id_from_jlong(contextId), gamepadId as u32, button as u32);
-            if !result && crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_input_gamepad_button_just_pressed", None);
-                return Err(());
-            }
-            Ok(crate::jni::helpers::to_jboolean(result))
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_isGamepadButtonJustReleased<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    gamepadId: jni::sys::jint,
-    button: jni::sys::jint,
-) -> jni::sys::jboolean {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_isGamepadButtonJustReleased", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::input::gamepad::goud_input_gamepad_button_just_released(goud_context_id_from_jlong(contextId), gamepadId as u32, button as u32);
-            if !result && crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_input_gamepad_button_just_released", None);
-                return Err(());
-            }
-            Ok(crate::jni::helpers::to_jboolean(result))
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getGamepadAxis<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    gamepadId: jni::sys::jint,
-    axis: jni::sys::jint,
-) -> jni::sys::jfloat {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_getGamepadAxis", 0.0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jfloat> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::input::gamepad::goud_input_gamepad_axis(goud_context_id_from_jlong(contextId), gamepadId as u32, axis as u32);
-            if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_input_gamepad_axis", None);
-                return Err(());
-            }
-            Ok(result)
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_isGamepadConnected<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-    gamepadId: jni::sys::jint,
-) -> jni::sys::jboolean {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_isGamepadConnected", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::input::gamepad::goud_input_gamepad_connected(goud_context_id_from_jlong(contextId), gamepadId as u32);
-            if !result && crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_input_gamepad_connected", None);
-                return Err(());
-            }
-            Ok(crate::jni::helpers::to_jboolean(result))
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
-pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getGamepadConnectedCount<'local>(
-    mut env: jni::JNIEnv<'local>,
-    _class: jni::objects::JClass<'local>,
-    contextId: jni::sys::jlong,
-) -> jni::sys::jint {
-    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_getGamepadConnectedCount", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
-            crate::jni::helpers::prepare_call(env)?;
-            crate::jni::helpers::clear_last_error();
-            let result = crate::ffi::input::gamepad::goud_input_gamepad_connected_count(goud_context_id_from_jlong(contextId));
-            if crate::jni::helpers::last_error_code() != 0 {
-                let _ = crate::jni::helpers::throw_engine_error(env, "goud_input_gamepad_connected_count", None);
-                return Err(());
-            }
-            Ok(result as jni::sys::jint)
-    })
-}
-
-#[allow(non_snake_case)]
-#[no_mangle]
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_spawnEmpty<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,
@@ -3595,6 +3472,31 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_configureFog<
             let result = crate::ffi::renderer3d::goud_renderer3d_configure_fog(goud_context_id_from_jlong(contextId), enabled != 0, r as _, g as _, b as _, density as _);
             if !result && crate::jni::helpers::last_error_code() != 0 {
                 let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_configure_fog", None);
+                return Err(());
+            }
+            Ok(crate::jni::helpers::to_jboolean(result))
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_configureFogLinear<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    enabled: jni::sys::jboolean,
+    startDistance: jni::sys::jfloat,
+    endDistance: jni::sys::jfloat,
+    r: jni::sys::jfloat,
+    g: jni::sys::jfloat,
+    b: jni::sys::jfloat,
+) -> jni::sys::jboolean {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_configureFogLinear", jni::sys::JNI_FALSE, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jboolean> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_configure_fog_linear(goud_context_id_from_jlong(contextId), enabled != 0, startDistance as _, endDistance as _, r as _, g as _, b as _);
+            if !result && crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_configure_fog_linear", None);
                 return Err(());
             }
             Ok(crate::jni::helpers::to_jboolean(result))

@@ -2279,6 +2279,11 @@ bool goud_renderer3d_configure_skybox(struct GoudContextId context_id, bool enab
 bool goud_renderer3d_configure_fog(struct GoudContextId context_id, bool enabled, float r, float g, float b, float density);
 
 /**
+ * Configures linear fog with explicit start/end distances.
+ */
+bool goud_renderer3d_configure_fog_linear(struct GoudContextId context_id, bool enabled, float start_distance, float end_distance, float r, float g, float b);
+
+/**
  * Sets fog enabled state.
  */
 bool goud_renderer3d_set_fog_enabled(struct GoudContextId context_id, bool enabled);

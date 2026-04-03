@@ -171,6 +171,7 @@ use crate::ffi::renderer3d::goud_renderer3d_add_object_to_scene;
 use crate::ffi::renderer3d::goud_renderer3d_blend_animations;
 use crate::ffi::renderer3d::goud_renderer3d_clear_current_scene;
 use crate::ffi::renderer3d::goud_renderer3d_configure_fog;
+use crate::ffi::renderer3d::goud_renderer3d_configure_fog_linear;
 use crate::ffi::renderer3d::goud_renderer3d_configure_grid;
 use crate::ffi::renderer3d::goud_renderer3d_configure_skybox;
 use crate::ffi::renderer3d::goud_renderer3d_create_cube;
@@ -465,6 +466,11 @@ pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> 
         Ok(goud_renderer3d_configure_fog(ctx, arg0, arg1 as f32, arg2 as f32, arg3 as f32, arg4 as f32))
     })?;
     tbl.set("configure_fog", f_configure_fog)?;
+    // GoudGame.configureFogLinear
+    let f_configure_fog_linear = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4, arg5): (bool, f64, f64, f64, f64, f64)| {
+        Ok(goud_renderer3d_configure_fog_linear(ctx, arg0, arg1 as f32, arg2 as f32, arg3 as f32, arg4 as f32, arg5 as f32))
+    })?;
+    tbl.set("configure_fog_linear", f_configure_fog_linear)?;
     // GoudGame.setFogEnabled
     let f_set_fog_enabled = lua.create_function(move |_, arg0: bool| {
         Ok(goud_renderer3d_set_fog_enabled(ctx, arg0))

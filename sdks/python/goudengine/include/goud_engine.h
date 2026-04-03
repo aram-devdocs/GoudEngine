@@ -41,6 +41,11 @@ extern "C" {
 #define PROTOCOL_VERSION 1
 
 /**
+ * Maximum number of gamepad slots supported by the engine.
+ */
+#define MAX_GAMEPAD_SLOTS 4
+
+/**
  * Sentinel value for an invalid entity ID.
  */
 #define GOUD_INVALID_ENTITY_ID UINT64_MAX
@@ -2272,6 +2277,11 @@ bool goud_renderer3d_configure_skybox(struct GoudContextId context_id, bool enab
  * Configures fog settings.
  */
 bool goud_renderer3d_configure_fog(struct GoudContextId context_id, bool enabled, float r, float g, float b, float density);
+
+/**
+ * Configures linear fog with explicit start/end distances.
+ */
+bool goud_renderer3d_configure_fog_linear(struct GoudContextId context_id, bool enabled, float start_distance, float end_distance, float r, float g, float b);
 
 /**
  * Sets fog enabled state.

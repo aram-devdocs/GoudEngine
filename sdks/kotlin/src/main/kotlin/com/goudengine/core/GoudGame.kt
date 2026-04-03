@@ -137,26 +137,6 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
         return com.goudengine.types.Vec2.fromNative(r)
     }
 
-    // -- Gamepad input --------------------------------------------------------
-
-    fun isGamepadButtonPressed(gamepadId: Int, button: com.goudengine.input.GamepadButton): Boolean =
-        GoudGameNative.isGamepadButtonPressed(contextId, gamepadId, button.value)
-
-    fun isGamepadButtonJustPressed(gamepadId: Int, button: com.goudengine.input.GamepadButton): Boolean =
-        GoudGameNative.isGamepadButtonJustPressed(contextId, gamepadId, button.value)
-
-    fun isGamepadButtonJustReleased(gamepadId: Int, button: com.goudengine.input.GamepadButton): Boolean =
-        GoudGameNative.isGamepadButtonJustReleased(contextId, gamepadId, button.value)
-
-    fun getGamepadAxis(gamepadId: Int, axis: com.goudengine.input.GamepadAxis): Float =
-        GoudGameNative.getGamepadAxis(contextId, gamepadId, axis.value)
-
-    fun isGamepadConnected(gamepadId: Int): Boolean =
-        GoudGameNative.isGamepadConnected(contextId, gamepadId)
-
-    fun getGamepadConnectedCount(): Int =
-        GoudGameNative.getGamepadConnectedCount(contextId)
-
     fun spawnEmpty(): com.goudengine.core.EntityHandle {
         val r = GoudGameNative.spawnEmpty(contextId)
         return com.goudengine.core.EntityHandle(r)
@@ -302,6 +282,9 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
 
     fun configureFog(enabled: Boolean, r: Float, g: Float, b: Float, density: Float): Boolean =
         GoudGameNative.configureFog(contextId, enabled, r, g, b, density)
+
+    fun configureFogLinear(enabled: Boolean, startDistance: Float, endDistance: Float, r: Float, g: Float, b: Float): Boolean =
+        GoudGameNative.configureFogLinear(contextId, enabled, startDistance, endDistance, r, g, b)
 
     fun setFogEnabled(enabled: Boolean): Boolean =
         GoudGameNative.setFogEnabled(contextId, enabled)

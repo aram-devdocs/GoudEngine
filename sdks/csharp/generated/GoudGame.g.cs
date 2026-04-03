@@ -756,6 +756,12 @@ namespace GoudEngine
             return NativeMethods.goud_renderer3d_configure_fog(_ctx, enabled, r, g, b, density);
         }
 
+        /// <summary>Configures linear fog with explicit start and end distances</summary>
+        public bool ConfigureFogLinear(bool enabled, float startDistance, float endDistance, float r, float g, float b)
+        {
+            return NativeMethods.goud_renderer3d_configure_fog_linear(_ctx, enabled, startDistance, endDistance, r, g, b);
+        }
+
         /// <summary>Sets fog visibility</summary>
         public bool SetFogEnabled(bool enabled)
         {

@@ -12,7 +12,7 @@ use super::GoudGame;
 #[cfg(feature = "native")]
 use crate::libs::graphics::backend::native_backend::SharedNativeRenderBackend;
 use crate::libs::graphics::renderer3d::{
-    AntiAliasingMode, FogConfig, GridConfig, InstanceTransform, Light, LightType,
+    AntiAliasingMode, FogConfig, FogMode, GridConfig, InstanceTransform, Light, LightType,
     ParticleEmitterConfig, PrimitiveCreateInfo, PrimitiveType, Renderer3DStats, SkyboxConfig,
     TextureManagerTrait,
 };
@@ -363,14 +363,40 @@ impl GoudGame {
         }
     }
 
-    /// Configures fog settings.
+    /// Configures exponential fog settings.
     pub fn configure_fog(&mut self, enabled: bool, r: f32, g: f32, b: f32, density: f32) -> bool {
         match &mut self.renderer_3d {
             Some(renderer) => {
                 renderer.configure_fog(FogConfig {
                     enabled,
                     color: Vector3::new(r, g, b),
-                    density,
+                    mode: FogMode::Exponential { density },
+                });
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// Configures linear fog with explicit start/end distances.
+    pub fn configure_fog_linear(
+        &mut self,
+        enabled: bool,
+        start_distance: f32,
+        end_distance: f32,
+        r: f32,
+        g: f32,
+        b: f32,
+    ) -> bool {
+        match &mut self.renderer_3d {
+            Some(renderer) => {
+                renderer.configure_fog(FogConfig {
+                    enabled,
+                    color: Vector3::new(r, g, b),
+                    mode: FogMode::Linear {
+                        start: start_distance,
+                        end: end_distance,
+                    },
                 });
                 true
             }

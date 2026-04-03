@@ -699,6 +699,8 @@ def _setup():
     _lib.goud_renderer3d_configure_skybox.restype = ctypes.c_bool
     _lib.goud_renderer3d_configure_fog.argtypes = [GoudContextId, ctypes.c_bool, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
     _lib.goud_renderer3d_configure_fog.restype = ctypes.c_bool
+    _lib.goud_renderer3d_configure_fog_linear.argtypes = [GoudContextId, ctypes.c_bool, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+    _lib.goud_renderer3d_configure_fog_linear.restype = ctypes.c_bool
     _lib.goud_renderer3d_set_fog_enabled.argtypes = [GoudContextId, ctypes.c_bool]
     _lib.goud_renderer3d_set_fog_enabled.restype = ctypes.c_bool
     _lib.goud_renderer3d_set_frustum_culling_enabled.argtypes = [GoudContextId, ctypes.c_bool]

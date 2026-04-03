@@ -19,7 +19,7 @@ use crate::core::error::{set_last_error, GoudError};
 use crate::ffi::context::{GoudContextId, GOUD_INVALID_CONTEXT_ID};
 use crate::ffi::window::with_window_state;
 use crate::libs::graphics::renderer3d::TextureManagerTrait;
-use crate::libs::graphics::renderer3d::{FogConfig, GridConfig, SkyboxConfig};
+use crate::libs::graphics::renderer3d::{FogConfig, FogMode, GridConfig, SkyboxConfig};
 use cgmath::{Vector3, Vector4};
 
 struct WindowTextureBridge {
@@ -193,7 +193,44 @@ pub extern "C" fn goud_renderer3d_configure_fog(
         renderer.configure_fog(FogConfig {
             enabled,
             color: Vector3::new(r, g, b),
-            density,
+            mode: FogMode::Exponential { density },
+        });
+        true
+    })
+    .unwrap_or(false)
+}
+
+/// Configures linear fog with explicit start/end distances.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_configure_fog_linear(
+    context_id: GoudContextId,
+    enabled: bool,
+    start_distance: f32,
+    end_distance: f32,
+    r: f32,
+    g: f32,
+    b: f32,
+) -> bool {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return false;
+    }
+
+    if ensure_renderer3d_state(context_id).is_err() {
+        set_last_error(GoudError::InternalError(
+            "Renderer state not found".to_string(),
+        ));
+        return false;
+    }
+
+    with_renderer(context_id, |renderer| {
+        renderer.configure_fog(FogConfig {
+            enabled,
+            color: Vector3::new(r, g, b),
+            mode: FogMode::Linear {
+                start: start_distance,
+                end: end_distance,
+            },
         });
         true
     })

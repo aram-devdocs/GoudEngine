@@ -1987,6 +1987,11 @@ func GoudRenderer3dConfigureFog(context_id C.GoudContextId, enabled bool, r floa
 	return bool(C.goud_renderer3d_configure_fog(context_id, C._Bool(enabled), C.float(r), C.float(g), C.float(b), C.float(density)))
 }
 
+// GoudRenderer3dConfigureFogLinear wraps goud_renderer3d_configure_fog_linear.
+func GoudRenderer3dConfigureFogLinear(context_id C.GoudContextId, enabled bool, start_distance float32, end_distance float32, r float32, g float32, b float32) bool {
+	return bool(C.goud_renderer3d_configure_fog_linear(context_id, C._Bool(enabled), C.float(start_distance), C.float(end_distance), C.float(r), C.float(g), C.float(b)))
+}
+
 // GoudRenderer3dConfigureGrid wraps goud_renderer3d_configure_grid.
 func GoudRenderer3dConfigureGrid(context_id C.GoudContextId, enabled bool, size float32, divisions uint32) bool {
 	return bool(C.goud_renderer3d_configure_grid(context_id, C._Bool(enabled), C.float(size), C.uint32_t(divisions)))

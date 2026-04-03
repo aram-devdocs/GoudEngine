@@ -650,6 +650,7 @@
       "goud_renderer3d_set_grid_enabled": {},
       "goud_renderer3d_configure_skybox": {},
       "goud_renderer3d_configure_fog": {},
+      "goud_renderer3d_configure_fog_linear": {},
       "goud_renderer3d_set_fog_enabled": {},
       "goud_renderer3d_set_frustum_culling_enabled": {},
       "goud_renderer3d_set_skinning_mode": {},

@@ -56,9 +56,9 @@ pub use core::Renderer3D;
 pub use scene::Scene3D;
 pub use texture::TextureManagerTrait;
 pub use types::{
-    AntiAliasingMode, BloomPass, Bone3D, Camera3D, ColorGradePass, FogConfig, GaussianBlurPass,
-    GridConfig, GridRenderMode, InstanceTransform, Light, LightType, Material3D, MaterialType,
-    ParticleEmitterConfig, PbrProperties, PostProcessPipeline, PrimitiveCreateInfo, PrimitiveType,
-    RenderPass, Renderer3DStats, Skeleton3D, SkinnedMesh3D, SkyboxConfig, MAX_BONES,
+    AntiAliasingMode, BloomPass, Bone3D, Camera3D, ColorGradePass, FogConfig, FogMode,
+    GaussianBlurPass, GridConfig, GridRenderMode, InstanceTransform, Light, LightType, Material3D,
+    MaterialType, ParticleEmitterConfig, PbrProperties, PostProcessPipeline, PrimitiveCreateInfo,
+    PrimitiveType, RenderPass, Renderer3DStats, Skeleton3D, SkinnedMesh3D, SkyboxConfig, MAX_BONES,
     MAX_BONE_INFLUENCES, MAX_LIGHTS,
 };

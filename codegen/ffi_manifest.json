@@ -3098,6 +3098,20 @@
       "return_type": "bool",
       "is_unsafe": false
     },
+    "goud_renderer3d_configure_fog_linear": {
+      "source_file": "ffi/renderer3d/environment/mod.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "enabled: bool",
+        "start_distance: f32",
+        "end_distance: f32",
+        "r: f32",
+        "g: f32",
+        "b: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
     "goud_renderer3d_configure_grid": {
       "source_file": "ffi/renderer3d/environment/mod.rs",
       "params": [
@@ -6404,5 +6418,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 649
+  "total_count": 650
 }

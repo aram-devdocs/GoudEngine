@@ -480,6 +480,10 @@ class GoudGame:
         """Configures fog settings"""
         return self._lib.goud_renderer3d_configure_fog(self._ctx, enabled, r, g, b, density)
 
+    def configure_fog_linear(self, enabled, start_distance, end_distance, r, g, b):
+        """Configures linear fog with explicit start and end distances"""
+        return self._lib.goud_renderer3d_configure_fog_linear(self._ctx, enabled, start_distance, end_distance, r, g, b)
+
     def set_fog_enabled(self, enabled):
         """Sets fog visibility"""
         return self._lib.goud_renderer3d_set_fog_enabled(self._ctx, enabled)

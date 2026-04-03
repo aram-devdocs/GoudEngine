@@ -504,6 +504,11 @@ func (g *Game) ConfigureFog(enabled bool, r float32, gVal float32, b float32, de
 	return false
 }
 
+// ConfigureFogLinear Configures linear fog with explicit start and end distances
+func (g *Game) ConfigureFogLinear(enabled bool, startDistance float32, endDistance float32, r float32, gVal float32, b float32) bool {
+	return false
+}
+
 // SetFogEnabled Sets fog visibility
 func (g *Game) SetFogEnabled(enabled bool) bool {
 	return false

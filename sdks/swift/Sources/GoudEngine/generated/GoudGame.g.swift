@@ -278,6 +278,11 @@ public final class GoudGame {
         return goud_renderer3d_configure_fog(_ctx, enabled, r, g, b, density)
     }
 
+    /// Configures linear fog with explicit start and end distances
+    public func configureFogLinear(enabled: Bool, startDistance: Float, endDistance: Float, r: Float, g: Float, b: Float) -> Bool {
+        return goud_renderer3d_configure_fog_linear(_ctx, enabled, startDistance, endDistance, r, g, b)
+    }
+
     /// Sets fog visibility
     public func setFogEnabled(enabled: Bool) -> Bool {
         return goud_renderer3d_set_fog_enabled(_ctx, enabled)

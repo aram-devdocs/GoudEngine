@@ -324,6 +324,8 @@ export interface IGoudGame {
   configureSkybox(enabled: boolean, r: number, g: number, b: number, a: number): boolean;
   /** Configures fog settings */
   configureFog(enabled: boolean, r: number, g: number, b: number, density: number): boolean;
+  /** Configures linear fog with explicit start and end distances */
+  configureFogLinear(enabled: boolean, startDistance: number, endDistance: number, r: number, g: number, b: number): boolean;
   /** Sets fog visibility */
   setFogEnabled(enabled: boolean): boolean;
   /** Enables or disables frustum culling */

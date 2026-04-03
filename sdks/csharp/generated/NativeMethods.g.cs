@@ -809,6 +809,10 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_configure_fog_linear(GoudContextId context_id, [MarshalAs(UnmanagedType.U1)] bool enabled, float start_distance, float end_distance, float r, float g, float b);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
         public static extern bool goud_renderer3d_set_fog_enabled(GoudContextId context_id, [MarshalAs(UnmanagedType.U1)] bool enabled);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

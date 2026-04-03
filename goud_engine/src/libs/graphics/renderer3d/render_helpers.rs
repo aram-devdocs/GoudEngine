@@ -429,7 +429,12 @@ impl Renderer3D {
         self.backend
             .set_uniform_vec3(uniforms.fog_color, fog.color.x, fog.color.y, fog.color.z);
         self.backend
-            .set_uniform_float(uniforms.fog_density, fog.density);
+            .set_uniform_float(uniforms.fog_density, fog.density());
+        self.backend
+            .set_uniform_int(uniforms.fog_mode, fog.mode_int());
+        self.backend
+            .set_uniform_float(uniforms.fog_start, fog.start());
+        self.backend.set_uniform_float(uniforms.fog_end, fog.end());
         let light_count = lights.len().min(MAX_LIGHTS) as i32;
         self.backend
             .set_uniform_int(uniforms.num_lights, light_count);

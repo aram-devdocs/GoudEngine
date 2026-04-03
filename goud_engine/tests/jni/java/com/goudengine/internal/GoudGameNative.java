@@ -79,6 +79,7 @@ public final class GoudGameNative {
     public static native boolean setGridEnabled(long contextId, boolean enabled);
     public static native boolean configureSkybox(long contextId, boolean enabled, float r, float g, float b, float a);
     public static native boolean configureFog(long contextId, boolean enabled, float r, float g, float b, float density);
+    public static native boolean configureFogLinear(long contextId, boolean enabled, float startDistance, float endDistance, float r, float g, float b);
     public static native boolean setFogEnabled(long contextId, boolean enabled);
     public static native int setFrustumCullingEnabled(long contextId, boolean enabled);
     public static native int setSkinningMode(long contextId, int mode);

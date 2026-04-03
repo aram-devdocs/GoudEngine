@@ -600,6 +600,11 @@ export class GoudGame implements IGoudGame {
     return this.native.configureFog(enabled, r, g, b, density);
   }
 
+  /** Configures linear fog with explicit start and end distances */
+  configureFogLinear(enabled: boolean, startDistance: number, endDistance: number, r: number, g: number, b: number): boolean {
+    return (this.native as any).configureFogLinear(enabled, startDistance, endDistance, r, g, b);
+  }
+
   /** Sets fog visibility */
   setFogEnabled(enabled: boolean): boolean {
     return this.native.setFogEnabled(enabled);
