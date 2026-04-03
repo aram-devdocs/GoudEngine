@@ -40,6 +40,33 @@ pub struct FfiRenderMetrics {
     pub ui_draw_calls: u32,
 }
 
+/// FFI-safe per-frame phase timings for performance diagnosis.
+///
+/// All values are in microseconds. Updated each frame by the wgpu backend
+/// and renderer3d. Read via [`goud_renderer_get_frame_phase_timings`].
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+pub struct FfiFramePhaseTimings {
+    /// Time to acquire the next surface texture (us).
+    pub surface_acquire_us: u64,
+    /// GPU shadow depth pass recording and execution time (us).
+    pub shadow_pass_us: u64,
+    /// Shadow map build time (us).
+    pub shadow_build_us: u64,
+    /// 3D scene render time (us).
+    pub render3d_scene_us: u64,
+    /// Uniform upload and pipeline creation time (us).
+    pub uniform_upload_us: u64,
+    /// GPU render pass recording time (us).
+    pub render_pass_us: u64,
+    /// GPU command submission time (us).
+    pub gpu_submit_us: u64,
+    /// GPU readback stall time (us).
+    pub readback_stall_us: u64,
+    /// Surface present / vsync wait time (us).
+    pub surface_present_us: u64,
+}
+
 // ============================================================================
 // Tests
 // ============================================================================

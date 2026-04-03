@@ -12,17 +12,18 @@ use crate::libs::graphics::backend::{RenderBackend, ShaderLanguage, VertexLayout
 use super::animation::AnimationPlayer;
 use super::mesh::generate_plane_vertices;
 use super::mesh::{
-    create_axis_mesh, create_grid_mesh, create_postprocess_quad, grid_vertex_layout,
-    instance_vertex_layout, instanced_skinned_instance_layout, object_vertex_layout,
-    postprocess_vertex_layout, skinned_vertex_layout, upload_buffer,
+    create_axis_mesh, create_grid_mesh, create_postprocess_quad, depth_only_vertex_layout,
+    grid_vertex_layout, instance_vertex_layout, instanced_skinned_instance_layout,
+    object_vertex_layout, postprocess_vertex_layout, skinned_vertex_layout, upload_buffer,
 };
 use super::model::{Model3D, ModelInstance3D};
 use super::shaders::{
     resolve_grid_uniforms, resolve_instanced_skinned_uniforms, resolve_main_uniforms,
-    resolve_skinned_uniforms, GridUniforms, InstancedSkinnedUniforms, MainUniforms,
-    SkinnedUniforms, FRAGMENT_SHADER_3D, FRAGMENT_SHADER_3D_WGSL, GRID_FRAGMENT_SHADER,
-    GRID_FRAGMENT_SHADER_WGSL, GRID_VERTEX_SHADER, GRID_VERTEX_SHADER_WGSL,
-    INSTANCED_FRAGMENT_SHADER_3D, INSTANCED_FRAGMENT_SHADER_3D_WGSL,
+    resolve_skinned_uniforms, DepthOnlyUniforms, GridUniforms, InstancedSkinnedUniforms,
+    MainUniforms, SkinnedUniforms, DEPTH_ONLY_FRAGMENT_SHADER, DEPTH_ONLY_FRAGMENT_SHADER_WGSL,
+    DEPTH_ONLY_VERTEX_SHADER, DEPTH_ONLY_VERTEX_SHADER_WGSL, FRAGMENT_SHADER_3D,
+    FRAGMENT_SHADER_3D_WGSL, GRID_FRAGMENT_SHADER, GRID_FRAGMENT_SHADER_WGSL, GRID_VERTEX_SHADER,
+    GRID_VERTEX_SHADER_WGSL, INSTANCED_FRAGMENT_SHADER_3D, INSTANCED_FRAGMENT_SHADER_3D_WGSL,
     INSTANCED_SKINNED_VERTEX_SHADER, INSTANCED_SKINNED_VERTEX_SHADER_WGSL,
     INSTANCED_VERTEX_SHADER_3D, INSTANCED_VERTEX_SHADER_3D_WGSL, POSTPROCESS_FRAGMENT_SHADER,
     POSTPROCESS_FRAGMENT_SHADER_WGSL, POSTPROCESS_VERTEX_SHADER, POSTPROCESS_VERTEX_SHADER_WGSL,
@@ -132,6 +133,12 @@ pub struct Renderer3D {
     /// Reusable G5 shared animation evaluation cache -- cleared each frame.
     pub(in crate::libs::graphics::renderer3d) bone_eval_cache:
         HashMap<(u32, usize, u32), Vec<[f32; 16]>>,
+    /// Depth-only shader handle for the GPU shadow pre-pass.
+    pub(in crate::libs::graphics::renderer3d) depth_only_shader_handle: ShaderHandle,
+    /// Cached uniform locations for the depth-only shadow shader.
+    pub(in crate::libs::graphics::renderer3d) depth_only_uniforms: DepthOnlyUniforms,
+    /// Vertex layout for the depth-only shader (position only, stride 32 bytes).
+    pub(in crate::libs::graphics::renderer3d) depth_only_layout: VertexLayout,
     /// Pre-allocated buffer of visible object IDs, reused across frames to avoid
     /// per-frame Vec allocation during the render snapshot phase.
     pub(in crate::libs::graphics::renderer3d) visible_object_ids: Vec<u32>,
@@ -233,6 +240,17 @@ impl Renderer3D {
         let instanced_skinned_uniforms =
             resolve_instanced_skinned_uniforms(backend.as_ref(), instanced_skinned_shader_handle);
 
+        // Depth-only shader for the GPU shadow pre-pass.
+        let (vs, fs) = shaders!(
+            (DEPTH_ONLY_VERTEX_SHADER, DEPTH_ONLY_FRAGMENT_SHADER),
+            (DEPTH_ONLY_VERTEX_SHADER_WGSL, DEPTH_ONLY_FRAGMENT_SHADER_WGSL)
+        );
+        let depth_only_shader_handle = backend
+            .create_shader(vs, fs)
+            .map_err(|e| format!("Depth-only shader: {e}"))?;
+        let depth_only_uniforms =
+            super::shaders::resolve_depth_only_uniforms(backend.as_ref(), depth_only_shader_handle);
+
         let (grid_buffer, grid_vertex_count) = create_grid_mesh(backend.as_mut(), 20.0, 20)?;
         let (axis_buffer, axis_vertex_count) = create_axis_mesh(backend.as_mut(), 5.0)?;
         let particle_verts = generate_plane_vertices(1.0, 1.0);
@@ -316,6 +334,9 @@ impl Renderer3D {
             phase_lock_clocks: HashMap::new(),
             instanced_skinned_instance_buffers: Vec::new(),
             bone_eval_cache: HashMap::new(),
+            depth_only_shader_handle,
+            depth_only_uniforms,
+            depth_only_layout: depth_only_vertex_layout(),
             visible_object_ids: Vec::with_capacity(1024),
             static_batch_dirty: false,
             static_batch_buffer: None,

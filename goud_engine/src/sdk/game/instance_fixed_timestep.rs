@@ -1,6 +1,9 @@
 //! Fixed timestep game loop methods for [`GoudGame`].
 
 use super::GoudGame;
+
+/// Maximum frames for headless/windowless game loops (safety cap).
+const MAX_HEADLESS_FRAMES: u64 = 10_000;
 use crate::context_registry::scene::SceneId;
 use crate::ecs::World;
 use crate::sdk::game_config::GameContext;
@@ -74,7 +77,7 @@ impl GoudGame {
             }
             self.finish_runtime_frame();
 
-            if self.context.frame_count() > 10000 {
+            if self.context.frame_count() > MAX_HEADLESS_FRAMES {
                 break;
             }
         }

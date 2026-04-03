@@ -470,6 +470,62 @@ public struct RenderMetrics: Equatable {
 
 }
 
+/// Per-frame phase timings for performance diagnosis. All values in microseconds.
+public struct FramePhaseTimings: Equatable {
+    /// Time to acquire the next surface texture (us)
+    public var surfaceAcquireUs: UInt64
+    /// Shadow map build time (us)
+    public var shadowBuildUs: UInt64
+    /// 3D scene render time (us)
+    public var render3dSceneUs: UInt64
+    /// Uniform upload and pipeline creation time (us)
+    public var uniformUploadUs: UInt64
+    /// GPU render pass recording time (us)
+    public var renderPassUs: UInt64
+    /// GPU command submission time (us)
+    public var gpuSubmitUs: UInt64
+    /// GPU readback stall time (us)
+    public var readbackStallUs: UInt64
+    /// Surface present / vsync wait time (us)
+    public var surfacePresentUs: UInt64
+
+    public init(surfaceAcquireUs: UInt64 = 0, shadowBuildUs: UInt64 = 0, render3dSceneUs: UInt64 = 0, uniformUploadUs: UInt64 = 0, renderPassUs: UInt64 = 0, gpuSubmitUs: UInt64 = 0, readbackStallUs: UInt64 = 0, surfacePresentUs: UInt64 = 0) {
+        self.surfaceAcquireUs = surfaceAcquireUs
+        self.shadowBuildUs = shadowBuildUs
+        self.render3dSceneUs = render3dSceneUs
+        self.uniformUploadUs = uniformUploadUs
+        self.renderPassUs = renderPassUs
+        self.gpuSubmitUs = gpuSubmitUs
+        self.readbackStallUs = readbackStallUs
+        self.surfacePresentUs = surfacePresentUs
+    }
+
+    internal init(ffi: FfiFramePhaseTimings) {
+        self.surfaceAcquireUs = ffi.surface_acquire_us
+        self.shadowBuildUs = ffi.shadow_build_us
+        self.render3dSceneUs = ffi.render3d_scene_us
+        self.uniformUploadUs = ffi.uniform_upload_us
+        self.renderPassUs = ffi.render_pass_us
+        self.gpuSubmitUs = ffi.gpu_submit_us
+        self.readbackStallUs = ffi.readback_stall_us
+        self.surfacePresentUs = ffi.surface_present_us
+    }
+
+    internal func toFFI() -> FfiFramePhaseTimings {
+        var ffi = FfiFramePhaseTimings()
+        ffi.surface_acquire_us = surfaceAcquireUs
+        ffi.shadow_build_us = shadowBuildUs
+        ffi.render3d_scene_us = render3dSceneUs
+        ffi.uniform_upload_us = uniformUploadUs
+        ffi.render_pass_us = renderPassUs
+        ffi.gpu_submit_us = gpuSubmitUs
+        ffi.readback_stall_us = readbackStallUs
+        ffi.surface_present_us = surfacePresentUs
+        return ffi
+    }
+
+}
+
 /// Pre-init debugger runtime configuration for desktop contexts.
 public struct DebuggerConfig: Equatable {
     /// Enables the debugger runtime for the created game or context.

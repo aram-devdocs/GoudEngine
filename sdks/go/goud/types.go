@@ -424,6 +424,32 @@ func NewRenderMetrics(drawCallCount uint32, spritesSubmitted uint32, spritesDraw
 	}
 }
 
+// FramePhaseTimings Per-frame phase timings for performance diagnosis. All values in microseconds.
+type FramePhaseTimings struct {
+	SurfaceAcquireUs uint64
+	ShadowBuildUs uint64
+	Render3dSceneUs uint64
+	UniformUploadUs uint64
+	RenderPassUs uint64
+	GpuSubmitUs uint64
+	ReadbackStallUs uint64
+	SurfacePresentUs uint64
+}
+
+// NewFramePhaseTimings creates a new FramePhaseTimings.
+func NewFramePhaseTimings(surfaceAcquireUs uint64, shadowBuildUs uint64, render3dSceneUs uint64, uniformUploadUs uint64, renderPassUs uint64, gpuSubmitUs uint64, readbackStallUs uint64, surfacePresentUs uint64) FramePhaseTimings {
+	return FramePhaseTimings{
+		SurfaceAcquireUs: surfaceAcquireUs,
+		ShadowBuildUs: shadowBuildUs,
+		Render3dSceneUs: render3dSceneUs,
+		UniformUploadUs: uniformUploadUs,
+		RenderPassUs: renderPassUs,
+		GpuSubmitUs: gpuSubmitUs,
+		ReadbackStallUs: readbackStallUs,
+		SurfacePresentUs: surfacePresentUs,
+	}
+}
+
 // DebuggerConfig Pre-init debugger runtime configuration for desktop contexts.
 type DebuggerConfig struct {
 	Enabled bool

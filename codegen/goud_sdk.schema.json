@@ -2320,6 +2320,52 @@
         }
       ]
     },
+    "FramePhaseTimings": {
+      "kind": "value",
+      "doc": "Per-frame phase timings for performance diagnosis. All values in microseconds.",
+      "fields": [
+        {
+          "name": "surfaceAcquireUs",
+          "type": "u64",
+          "doc": "Time to acquire the next surface texture (us)"
+        },
+        {
+          "name": "shadowBuildUs",
+          "type": "u64",
+          "doc": "Shadow map build time (us)"
+        },
+        {
+          "name": "render3dSceneUs",
+          "type": "u64",
+          "doc": "3D scene render time (us)"
+        },
+        {
+          "name": "uniformUploadUs",
+          "type": "u64",
+          "doc": "Uniform upload and pipeline creation time (us)"
+        },
+        {
+          "name": "renderPassUs",
+          "type": "u64",
+          "doc": "GPU render pass recording time (us)"
+        },
+        {
+          "name": "gpuSubmitUs",
+          "type": "u64",
+          "doc": "GPU command submission time (us)"
+        },
+        {
+          "name": "readbackStallUs",
+          "type": "u64",
+          "doc": "GPU readback stall time (us)"
+        },
+        {
+          "name": "surfacePresentUs",
+          "type": "u64",
+          "doc": "Surface present / vsync wait time (us)"
+        }
+      ]
+    },
     "DebuggerConfig": {
       "kind": "value",
       "doc": "Pre-init debugger runtime configuration for desktop contexts.",

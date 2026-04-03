@@ -90,11 +90,14 @@ impl WgpuBackend {
                 (0, 0)
             };
 
-        self.draw_commands.push(DrawCommand {
+        // Snapshot textures before creating the DrawCommand to avoid
+        // borrow conflicts with shadow_draw_commands / draw_commands.
+        let textures = self.snapshot_textures();
+        let cmd = DrawCommand {
             shader,
             index_buffer: self.bound_index_buffer,
             vertex_bindings,
-            bound_textures: self.snapshot_textures(),
+            bound_textures: textures,
             topology: self.current_topology,
             depth_test: self.depth_test_enabled,
             depth_write: self.depth_write_enabled,
@@ -109,7 +112,12 @@ impl WgpuBackend {
             uniform_ring_size,
             draw_type,
             storage_buffer: self.bound_storage_buffer,
-        });
+        };
+        if self.recording_shadow {
+            self.shadow_draw_commands.push(cmd);
+        } else {
+            self.draw_commands.push(cmd);
+        }
         Ok(())
     }
 

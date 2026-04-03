@@ -158,6 +158,18 @@ class FfiRenderMetrics(ctypes.Structure):
         ("ui_draw_calls", ctypes.c_uint32)
     ]
 
+class FfiFramePhaseTimings(ctypes.Structure):
+    _fields_ = [
+        ("surface_acquire_us", ctypes.c_uint64),
+        ("shadow_build_us", ctypes.c_uint64),
+        ("render3d_scene_us", ctypes.c_uint64),
+        ("uniform_upload_us", ctypes.c_uint64),
+        ("render_pass_us", ctypes.c_uint64),
+        ("gpu_submit_us", ctypes.c_uint64),
+        ("readback_stall_us", ctypes.c_uint64),
+        ("surface_present_us", ctypes.c_uint64)
+    ]
+
 class GoudDebuggerConfig(ctypes.Structure):
     _fields_ = [
         ("enabled", ctypes.c_bool),
@@ -1792,6 +1804,8 @@ def _setup():
     # render_metrics
     _lib.goud_renderer_get_frame_metrics.argtypes = [GoudContextId, ctypes.POINTER(FfiRenderMetrics)]
     _lib.goud_renderer_get_frame_metrics.restype = ctypes.c_int32
+    _lib.goud_renderer_get_frame_phase_timings.argtypes = [ctypes.POINTER(FfiFramePhaseTimings)]
+    _lib.goud_renderer_get_frame_phase_timings.restype = ctypes.c_int32
 
 _setup()
 

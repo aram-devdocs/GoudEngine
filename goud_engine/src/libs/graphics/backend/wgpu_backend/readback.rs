@@ -15,6 +15,22 @@ impl RenderBackend for WgpuBackend {
         &self.info
     }
 
+    fn ensure_shadow_resources(&mut self, size: u32) {
+        self.ensure_shadow_resources_impl(size);
+    }
+
+    fn begin_shadow_recording(&mut self) {
+        self.begin_shadow_recording_impl();
+    }
+
+    fn end_shadow_recording(&mut self) {
+        self.end_shadow_recording_impl();
+    }
+
+    fn request_readback(&mut self) {
+        self.request_readback_impl();
+    }
+
     fn read_default_framebuffer_rgba8(
         &mut self,
         width: u32,

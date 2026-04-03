@@ -19,11 +19,11 @@ impl WgpuBackend {
     /// Creates a new wgpu backend from a winit window.
     ///
     /// Blocks on async wgpu initialization via pollster.
-    pub fn new(window: Arc<winit::window::Window>) -> GoudResult<Self> {
-        pollster::block_on(Self::new_async(window))
+    pub fn new(window: Arc<winit::window::Window>, vsync: bool) -> GoudResult<Self> {
+        pollster::block_on(Self::new_async(window, vsync))
     }
 
-    async fn new_async(window: Arc<winit::window::Window>) -> GoudResult<Self> {
+    async fn new_async(window: Arc<winit::window::Window>, vsync: bool) -> GoudResult<Self> {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_with_display_handle(
             Box::new(window.clone()),
         ));
@@ -70,9 +70,14 @@ impl WgpuBackend {
             format: surface_format,
             width: size.width.max(1),
             height: size.height.max(1),
-            present_mode: wgpu::PresentMode::AutoVsync,
+            present_mode: if vsync {
+                wgpu::PresentMode::AutoVsync
+            } else {
+                wgpu::PresentMode::AutoNoVsync
+            },
             alpha_mode: caps.alpha_modes[0],
             view_formats: vec![],
+            // wgpu default; 2 allows double-buffering for smooth frame delivery on high-refresh displays
             desired_maximum_frame_latency: 2,
         };
         surface.configure(&device, &surface_config);
@@ -211,6 +216,13 @@ impl WgpuBackend {
                 }],
             });
 
+        let shadow_bind_group_layout = super::shadow_pass::create_shadow_bind_group_layout(&device);
+        let fallback_shadow_bind_group = super::shadow_pass::create_fallback_shadow_bind_group(
+            &device,
+            &queue,
+            &shadow_bind_group_layout,
+        );
+
         // Create fallback storage buffer bind group (empty 64-byte buffer).
         let fallback_storage_bind_group = {
             let buf = device.create_buffer(&wgpu::BufferDescriptor {
@@ -279,6 +291,18 @@ impl WgpuBackend {
             bound_storage_buffer: None,
             storage_bind_group_cache: HashMap::new(),
             uniform_ring: Vec::with_capacity(UNIFORM_BUFFER_SIZE * 64),
+            shadow_bind_group_layout,
+            shadow_depth_texture: None,
+            shadow_depth_view: None,
+            shadow_sample_view: None,
+            shadow_sampler: None,
+            shadow_bind_group: None,
+            fallback_shadow_bind_group,
+            shadow_draw_commands: Vec::new(),
+            recording_shadow: false,
+            shadow_map_size: 0,
+            shadow_pipeline_cache: HashMap::new(),
+            readback_requested: false,
         })
     }
 

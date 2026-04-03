@@ -1,18 +1,21 @@
 //! Sub-trait and RenderBackend implementations for `WgpuBackend`.
 use super::{
-    super::types::{BufferUsage, TextureFilter, TextureFormat, TextureWrap},
-    BlendFactor, BufferHandle, BufferOps, BufferType, CullFace, DepthFunc, DrawType, FrameOps,
-    FrameState, FrontFace, PipelineKey, ShaderHandle, ShaderOps, StateOps, TextureHandle,
-    TextureOps, WgpuBackend,
+    super::types::BufferUsage, BlendFactor, BufferHandle, BufferOps, BufferType, CullFace,
+    DepthFunc, DrawType, FrameOps, FrameState, FrontFace, PipelineKey, StateOps, WgpuBackend,
 };
 use crate::libs::error::{GoudError, GoudResult};
 
 impl FrameOps for WgpuBackend {
     fn begin_frame(&mut self) -> GoudResult<()> {
+        use crate::libs::graphics::frame_timing;
+
+        frame_timing::reset_timings();
+
         let surface = match self.surface.as_ref() {
             Some(s) => s,
             None => return Ok(()), // Surface dropped (mobile suspended) -- skip frame
         };
+        let acquire_start = std::time::Instant::now();
         let surface_texture = match surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(tex) => tex,
             wgpu::CurrentSurfaceTexture::Suboptimal(tex) => {
@@ -30,6 +33,9 @@ impl FrameOps for WgpuBackend {
                 return Err(GoudError::InternalError("Surface validation error".into()));
             }
         };
+        let acquire_us = acquire_start.elapsed().as_micros() as u64;
+        frame_timing::record_phase("surface_acquire", acquire_us);
+
         let surface_view = surface_texture
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
@@ -38,6 +44,7 @@ impl FrameOps for WgpuBackend {
             surface_view,
         });
         self.draw_commands.clear();
+        self.shadow_draw_commands.clear();
         self.uniform_ring.clear();
         // Always clear each frame to match OpenGL's glClear() behavior and avoid
         // uninitialized surface data showing through as garbage artifacts.
@@ -46,6 +53,8 @@ impl FrameOps for WgpuBackend {
     }
 
     fn end_frame(&mut self) -> GoudResult<()> {
+        use crate::libs::graphics::frame_timing;
+
         let frame = self
             .current_frame
             .take()
@@ -54,6 +63,9 @@ impl FrameOps for WgpuBackend {
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
+        // -- uniform_upload phase -------------------------------------------------
+        let uniform_start = std::time::Instant::now();
 
         // Upload per-draw-command uniform data into aligned dynamic-offset
         // slots.  Returns the byte offset for each command.
@@ -94,10 +106,21 @@ impl FrameOps for WgpuBackend {
             }
         }
 
-        let readback = self
-            .surface_supports_copy_src
-            .then(|| self.prepare_frame_readback());
+        let uniform_us = uniform_start.elapsed().as_micros() as u64;
+        frame_timing::record_phase("uniform_upload", uniform_us);
 
+        // -- shadow_pass phase ---------------------------------------------------
+        let shadow_pass_start = std::time::Instant::now();
+        self.execute_shadow_pass(&mut encoder);
+        let shadow_pass_us = shadow_pass_start.elapsed().as_micros() as u64;
+        frame_timing::record_phase("shadow_pass", shadow_pass_us);
+
+        let readback = (self.surface_supports_copy_src && self.readback_requested)
+            .then(|| self.prepare_frame_readback());
+        self.readback_requested = false;
+
+        // -- render_pass phase ----------------------------------------------------
+        let render_pass_start = std::time::Instant::now();
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: None,
@@ -149,13 +172,21 @@ impl FrameOps for WgpuBackend {
                 }
 
                 // Set storage buffer bind group at group(2) for GPU skinning.
+                // Always bind group(2) since the pipeline layout includes it.
                 if let Some(bg) = cmd
                     .storage_buffer
                     .and_then(|h| self.storage_bind_group_cache.get(&h))
                 {
                     pass.set_bind_group(2, bg, &[]);
-                } else if cmd.storage_buffer.is_some() {
+                } else {
                     pass.set_bind_group(2, &self.fallback_storage_bind_group, &[]);
+                }
+
+                // Set shadow depth texture bind group at group(3).
+                if let Some(ref shadow_bg) = self.shadow_bind_group {
+                    pass.set_bind_group(3, shadow_bg, &[]);
+                } else {
+                    pass.set_bind_group(3, &self.fallback_shadow_bind_group, &[]);
                 }
 
                 if let Some(ib_handle) = cmd.index_buffer {
@@ -192,6 +223,8 @@ impl FrameOps for WgpuBackend {
                 }
             }
         }
+        let render_pass_us = render_pass_start.elapsed().as_micros() as u64;
+        frame_timing::record_phase("render_pass", render_pass_us);
 
         if let Some(readback) = readback {
             encoder.copy_texture_to_buffer(
@@ -216,14 +249,34 @@ impl FrameOps for WgpuBackend {
                 },
             );
 
+            // -- gpu_submit phase (readback path) ---------------------------------
+            let submit_start = std::time::Instant::now();
             self.queue.submit(std::iter::once(encoder.finish()));
+            let submit_us = submit_start.elapsed().as_micros() as u64;
+            frame_timing::record_phase("gpu_submit", submit_us);
+
+            // -- readback_stall phase ---------------------------------------------
+            let readback_start = std::time::Instant::now();
             self.finish_frame_readback(readback)?;
+            let readback_us = readback_start.elapsed().as_micros() as u64;
+            frame_timing::record_phase("readback_stall", readback_us);
         } else {
+            // -- gpu_submit phase (no-readback path) ------------------------------
+            let submit_start = std::time::Instant::now();
             self.queue.submit(std::iter::once(encoder.finish()));
+            let submit_us = submit_start.elapsed().as_micros() as u64;
+            frame_timing::record_phase("gpu_submit", submit_us);
+
             self.last_frame_readback = None;
         }
+
+        // -- surface_present phase ------------------------------------------------
+        let present_start = std::time::Instant::now();
         frame.surface_texture.present();
-        self.draw_commands.clear();
+        let present_us = present_start.elapsed().as_micros() as u64;
+        frame_timing::record_phase("surface_present", present_us);
+
+        // draw_commands is already cleared in begin_frame().
         self.flush_pending_buffer_destroys();
         Ok(())
     }
@@ -354,120 +407,5 @@ impl BufferOps for WgpuBackend {
     }
 }
 
-// ========================================================================
-// TextureOps (delegated to texture.rs)
-// ========================================================================
-
-impl TextureOps for WgpuBackend {
-    fn create_texture(
-        &mut self,
-        width: u32,
-        height: u32,
-        format: TextureFormat,
-        filter: TextureFilter,
-        wrap: TextureWrap,
-        data: &[u8],
-    ) -> GoudResult<TextureHandle> {
-        self.create_texture_impl(width, height, format, filter, wrap, data)
-    }
-
-    fn update_texture(
-        &mut self,
-        handle: TextureHandle,
-        x: u32,
-        y: u32,
-        width: u32,
-        height: u32,
-        data: &[u8],
-    ) -> GoudResult<()> {
-        self.update_texture_impl(handle, x, y, width, height, data)
-    }
-
-    fn destroy_texture(&mut self, handle: TextureHandle) -> bool {
-        self.destroy_texture_impl(handle)
-    }
-
-    fn is_texture_valid(&self, handle: TextureHandle) -> bool {
-        self.is_texture_valid_impl(handle)
-    }
-
-    fn texture_size(&self, handle: TextureHandle) -> Option<(u32, u32)> {
-        self.texture_size_impl(handle)
-    }
-
-    fn bind_texture(&mut self, handle: TextureHandle, unit: u32) -> GoudResult<()> {
-        self.bind_texture_impl(handle, unit)
-    }
-
-    fn unbind_texture(&mut self, unit: u32) {
-        self.unbind_texture_impl(unit);
-    }
-}
-
-// ========================================================================
-// ShaderOps (delegated to shader.rs)
-// ========================================================================
-
-impl ShaderOps for WgpuBackend {
-    fn create_shader(&mut self, vertex_src: &str, fragment_src: &str) -> GoudResult<ShaderHandle> {
-        self.create_shader_impl(vertex_src, fragment_src)
-    }
-
-    fn destroy_shader(&mut self, handle: ShaderHandle) -> bool {
-        self.destroy_shader_impl(handle)
-    }
-
-    fn is_shader_valid(&self, handle: ShaderHandle) -> bool {
-        self.is_shader_valid_impl(handle)
-    }
-
-    fn bind_shader(&mut self, handle: ShaderHandle) -> GoudResult<()> {
-        self.bind_shader_impl(handle)
-    }
-
-    fn unbind_shader(&mut self) {
-        self.unbind_shader_impl();
-    }
-
-    fn get_uniform_location(&self, handle: ShaderHandle, name: &str) -> Option<i32> {
-        self.get_uniform_location_impl(handle, name)
-    }
-
-    fn set_uniform_int(&mut self, location: i32, value: i32) {
-        self.write_uniform(location, &value.to_le_bytes());
-    }
-
-    fn set_uniform_float(&mut self, location: i32, value: f32) {
-        self.write_uniform(location, &value.to_le_bytes());
-    }
-
-    fn set_uniform_vec2(&mut self, location: i32, x: f32, y: f32) {
-        let mut buf = [0u8; 8];
-        buf[0..4].copy_from_slice(&x.to_le_bytes());
-        buf[4..8].copy_from_slice(&y.to_le_bytes());
-        self.write_uniform(location, &buf);
-    }
-
-    fn set_uniform_vec3(&mut self, location: i32, x: f32, y: f32, z: f32) {
-        let mut buf = [0u8; 12];
-        buf[0..4].copy_from_slice(&x.to_le_bytes());
-        buf[4..8].copy_from_slice(&y.to_le_bytes());
-        buf[8..12].copy_from_slice(&z.to_le_bytes());
-        self.write_uniform(location, &buf);
-    }
-
-    fn set_uniform_vec4(&mut self, location: i32, x: f32, y: f32, z: f32, w: f32) {
-        let mut buf = [0u8; 16];
-        buf[0..4].copy_from_slice(&x.to_le_bytes());
-        buf[4..8].copy_from_slice(&y.to_le_bytes());
-        buf[8..12].copy_from_slice(&z.to_le_bytes());
-        buf[12..16].copy_from_slice(&w.to_le_bytes());
-        self.write_uniform(location, &buf);
-    }
-
-    fn set_uniform_mat4(&mut self, location: i32, matrix: &[f32; 16]) {
-        self.write_uniform(location, bytemuck::cast_slice(matrix));
-    }
-}
-
+// TextureOps and ShaderOps are implemented in frame_trait_impls.rs
 // DrawOps is implemented in frame_draw_ops.rs

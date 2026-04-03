@@ -27,6 +27,7 @@ mod buffer;
 mod convert;
 mod frame;
 mod frame_draw_ops;
+mod frame_trait_impls;
 mod init;
 mod pipeline;
 mod readback;
@@ -36,6 +37,7 @@ mod sdl_init;
 #[cfg(feature = "sdl-window")]
 pub(crate) mod sdl_surface;
 mod shader;
+mod shadow_pass;
 #[cfg(feature = "switch-vulkan")]
 mod switch_init;
 #[cfg(feature = "switch-vulkan")]
@@ -144,6 +146,32 @@ pub struct WgpuBackend {
     /// `(offset, size)` into this buffer instead of cloning the full 4KB
     /// staging buffer per draw.  Cleared at `begin_frame`.
     uniform_ring: Vec<u8>,
+
+    // Shadow pass resources
+    /// Bind group layout for the shadow depth texture + comparison sampler (group 3).
+    shadow_bind_group_layout: wgpu::BindGroupLayout,
+    /// Shadow depth texture (Depth32Float) used as a render target for the shadow pass.
+    shadow_depth_texture: Option<wgpu::Texture>,
+    /// Depth attachment view for rendering into the shadow map.
+    shadow_depth_view: Option<wgpu::TextureView>,
+    /// Sampling view used in the main pass to read the shadow map.
+    shadow_sample_view: Option<wgpu::TextureView>,
+    /// Comparison sampler for hardware PCF shadow lookup.
+    shadow_sampler: Option<wgpu::Sampler>,
+    /// Bind group binding shadow_sample_view + shadow_sampler at group 3.
+    shadow_bind_group: Option<wgpu::BindGroup>,
+    /// Fallback 1x1 depth texture bind group for when no shadow map is active.
+    fallback_shadow_bind_group: wgpu::BindGroup,
+    /// Draw commands recorded during the shadow pre-pass.
+    shadow_draw_commands: Vec<DrawCommand>,
+    /// When true, `record_draw()` appends to `shadow_draw_commands`.
+    recording_shadow: bool,
+    /// Current shadow map resolution (0 = not yet created).
+    shadow_map_size: u32,
+    /// Pipeline cache for depth-only shadow pipelines (different target format).
+    shadow_pipeline_cache: HashMap<PipelineKey, wgpu::RenderPipeline>,
+    /// Whether a readback has been requested for the current frame.
+    readback_requested: bool,
 }
 
 // SAFETY: wgpu Device and Queue are Send+Sync. Surface is Send.

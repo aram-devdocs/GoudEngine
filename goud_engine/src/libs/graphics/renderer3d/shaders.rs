@@ -36,6 +36,7 @@ pub(super) struct MainUniforms {
     pub(super) shadow_map: i32,
     pub(super) shadows_enabled: i32,
     pub(super) shadow_bias: i32,
+    pub(super) shadow_strength: i32,
     pub(super) shadow_texel_size: i32,
     pub(super) fog_enabled: i32,
     pub(super) fog_color: i32,
@@ -104,6 +105,7 @@ pub(super) fn resolve_main_uniforms(
         shadow_map: loc("shadowMap"),
         shadows_enabled: loc("shadowsEnabled"),
         shadow_bias: loc("shadowBias"),
+        shadow_strength: loc("shadowStrength"),
         shadow_texel_size: loc("shadowTexelSize"),
         fog_enabled: loc("fogEnabled"),
         fog_color: loc("fogColor"),
@@ -164,6 +166,21 @@ pub(super) fn resolve_instanced_skinned_uniforms(
 ) -> InstancedSkinnedUniforms {
     let main = resolve_main_uniforms(backend, shader);
     InstancedSkinnedUniforms { main }
+}
+
+/// Cached uniform locations for the depth-only shadow shader.
+#[derive(Clone)]
+pub(super) struct DepthOnlyUniforms {
+    /// MVP matrix uniform location.
+    pub(super) mvp: i32,
+}
+
+pub(super) fn resolve_depth_only_uniforms(
+    backend: &dyn RenderBackend,
+    shader: ShaderHandle,
+) -> DepthOnlyUniforms {
+    let loc = |name: &str| -> i32 { uniform_location_or_inactive(backend, shader, name) };
+    DepthOnlyUniforms { mvp: loc("mvp") }
 }
 
 pub(super) fn resolve_grid_uniforms(

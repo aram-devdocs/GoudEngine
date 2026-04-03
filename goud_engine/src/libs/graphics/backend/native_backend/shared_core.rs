@@ -23,6 +23,22 @@ impl RenderBackend for SharedNativeRenderBackend {
     ) -> Result<Vec<u8>, String> {
         self.lock().read_default_framebuffer_rgba8(width, height)
     }
+
+    fn ensure_shadow_resources(&mut self, size: u32) {
+        self.lock().ensure_shadow_resources(size);
+    }
+
+    fn begin_shadow_recording(&mut self) {
+        self.lock().begin_shadow_recording();
+    }
+
+    fn end_shadow_recording(&mut self) {
+        self.lock().end_shadow_recording();
+    }
+
+    fn request_readback(&mut self) {
+        self.lock().request_readback();
+    }
 }
 
 impl FrameOps for SharedNativeRenderBackend {

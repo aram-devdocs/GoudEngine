@@ -8,6 +8,10 @@ sealed class GameConfig
     public bool VariedAnims { get; init; } = false;
     public bool PhaseLock { get; init; } = false;
     public bool Profile { get; init; } = false;
+    public int ProfileDuration { get; init; } = 10;
+    public bool Shadows { get; init; } = false;
+    public uint ShadowSize { get; init; } = 1024;
+    public bool Vsync { get; init; } = true;
 
     public static GameConfig Parse(string[] args)
     {
@@ -17,6 +21,10 @@ sealed class GameConfig
         bool variedAnims = false;
         bool phaseLock = false;
         bool profile = false;
+        int profileDuration = 10;
+        bool shadows = false;
+        uint shadowSize = 1024;
+        bool vsync = true;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -47,6 +55,24 @@ sealed class GameConfig
             {
                 profile = true;
             }
+            else if (args[i] == "--duration" && i + 1 < args.Length && int.TryParse(args[i + 1], out int d))
+            {
+                profileDuration = Math.Max(1, d);
+                i++;
+            }
+            else if (args[i] == "--shadows")
+            {
+                shadows = true;
+            }
+            else if (args[i] == "--shadow-size" && i + 1 < args.Length && uint.TryParse(args[i + 1], out uint ss))
+            {
+                shadowSize = ss;
+                i++;
+            }
+            else if (args[i] == "--no-vsync")
+            {
+                vsync = false;
+            }
         }
 
         return new GameConfig
@@ -57,6 +83,10 @@ sealed class GameConfig
             VariedAnims = variedAnims,
             PhaseLock = phaseLock,
             Profile = profile,
+            ProfileDuration = profileDuration,
+            Shadows = shadows,
+            ShadowSize = shadowSize,
+            Vsync = vsync,
         };
     }
 }

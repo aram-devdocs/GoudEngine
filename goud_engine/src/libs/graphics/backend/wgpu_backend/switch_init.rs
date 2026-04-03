@@ -27,14 +27,16 @@ impl WgpuBackend {
         handle: Arc<super::switch_surface::SwitchWindowHandle>,
         width: u32,
         height: u32,
+        vsync: bool,
     ) -> GoudResult<Self> {
-        pollster::block_on(Self::new_switch_async(handle, width, height))
+        pollster::block_on(Self::new_switch_async(handle, width, height, vsync))
     }
 
     async fn new_switch_async(
         handle: Arc<super::switch_surface::SwitchWindowHandle>,
         width: u32,
         height: u32,
+        vsync: bool,
     ) -> GoudResult<Self> {
         let mut instance_desc = wgpu::InstanceDescriptor::new_without_display_handle();
         instance_desc.backends = wgpu::Backends::VULKAN;
@@ -85,9 +87,14 @@ impl WgpuBackend {
             format: surface_format,
             width: w,
             height: h,
-            present_mode: wgpu::PresentMode::AutoVsync,
+            present_mode: if vsync {
+                wgpu::PresentMode::AutoVsync
+            } else {
+                wgpu::PresentMode::AutoNoVsync
+            },
             alpha_mode: caps.alpha_modes[0],
             view_formats: vec![],
+            // wgpu default; 2 allows double-buffering for smooth frame delivery on high-refresh displays
             desired_maximum_frame_latency: 2,
         };
         surface.configure(&device, &surface_config);
@@ -240,6 +247,13 @@ impl WgpuBackend {
             })
         };
 
+        let shadow_bind_group_layout = super::shadow_pass::create_shadow_bind_group_layout(&device);
+        let fallback_shadow_bind_group = super::shadow_pass::create_fallback_shadow_bind_group(
+            &device,
+            &queue,
+            &shadow_bind_group_layout,
+        );
+
         Ok(Self {
             info,
             device,
@@ -290,6 +304,18 @@ impl WgpuBackend {
             bound_storage_buffer: None,
             storage_bind_group_cache: HashMap::new(),
             uniform_ring: Vec::with_capacity(UNIFORM_BUFFER_SIZE * 64),
+            shadow_bind_group_layout,
+            shadow_depth_texture: None,
+            shadow_depth_view: None,
+            shadow_sample_view: None,
+            shadow_sampler: None,
+            shadow_bind_group: None,
+            fallback_shadow_bind_group,
+            shadow_draw_commands: Vec::new(),
+            recording_shadow: false,
+            shadow_map_size: 0,
+            shadow_pipeline_cache: HashMap::new(),
+            readback_requested: false,
         })
     }
 }

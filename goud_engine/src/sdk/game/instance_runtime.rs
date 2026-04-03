@@ -1,6 +1,9 @@
 //! Runtime loop and diagnostic methods for [`GoudGame`].
 
 use super::GoudGame;
+
+/// Maximum frames for headless/windowless game loops (safety cap).
+const MAX_HEADLESS_FRAMES: u64 = 10_000;
 #[cfg(feature = "native")]
 use crate::assets::AssetServer;
 use crate::context_registry::scene::SceneId;
@@ -43,8 +46,6 @@ impl GoudGame {
             1.0 / 60.0 // Default to 60 FPS for simulation
         };
 
-        // For now, just run a few frames to demonstrate the API
-        // Real implementation would integrate with windowing system
         while self.context.is_running() {
             let frame_time = self.prepare_runtime_frame(frame_time);
             self.context.update(frame_time);
@@ -84,7 +85,7 @@ impl GoudGame {
             self.finish_runtime_frame();
 
             // Safety: Limit iterations in tests/examples without actual window
-            if self.context.frame_count() > 10000 {
+            if self.context.frame_count() > MAX_HEADLESS_FRAMES {
                 break;
             }
         }
