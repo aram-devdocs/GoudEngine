@@ -1209,6 +1209,10 @@ export class GoudGame implements IGoudGame {
   getSharedAnimationEval(): boolean { return false; }
   getSkinningMode(): number { return 0; }
   getStaticBatchingEnabled(): boolean { return false; }
+  getMaxStaticBatchVertices(): number { return 50000; }
+  getMaxBonesPerMesh(): number { return 128; }
+  getShadowStrength(): number { return 0.65; }
+  getShadowAutoDisableThreshold(): number { return 10000; }
 
   setAnimationLodDistance(_distance: number): number { return 0; }
   setAnimationLodSkipDistance(_distance: number): number { return 0; }
@@ -1223,7 +1227,11 @@ export class GoudGame implements IGoudGame {
   setShadowBias(_bias: number): number { return 0; }
   setShadowMapSize(_size: number): number { return 0; }
   setShadowsEnabled(_enabled: boolean): number { return 0; }
+  setShadowStrength(_strength: number): number { return 0; }
+  setShadowAutoDisableThreshold(_threshold: number): number { return 0; }
   setStaticBatchingEnabled(_enabled: boolean): number { return 0; }
+  setMaxStaticBatchVertices(_vertices: number): number { return 0; }
+  setMaxBonesPerMesh(_bones: number): number { return 0; }
 
   // TODO: wasm coordinate origin -- these stub methods satisfy the IGoudGame interface
   setCoordinateOrigin(_origin: number): boolean { return true; }
