@@ -842,6 +842,13 @@ def gen_web_wrapper():
     lines.append("  getTouchDelta(_touchId: number): IVec2 { return { x: 0, y: 0 }; }")
     lines.append("")
 
+    # Gamepad input (stubs — WASM gamepad bindings not yet implemented)
+    lines.append("  isGamepadButtonPressed(_gamepadId: number, _button: number): boolean { return false; }")
+    lines.append("  isGamepadButtonJustPressed(_gamepadId: number, _button: number): boolean { return false; }")
+    lines.append("  isGamepadButtonJustReleased(_gamepadId: number, _button: number): boolean { return false; }")
+    lines.append("  getGamepadAxis(_gamepadId: number, _axis: number): number { return 0; }")
+    lines.append("")
+
     emit_jsdoc(lines, _method_docs.get("map_action_key"))
     lines.append("  mapActionKey(action: string, key: number): boolean { return this.handle.map_action_key(action, key); }")
     emit_jsdoc(lines, _method_docs.get("is_action_pressed"))

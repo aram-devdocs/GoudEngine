@@ -750,6 +750,11 @@ export class GoudGame implements IGoudGame {
   /** Returns the movement delta for the given touch point since last frame */
   getTouchDelta(_touchId: number): IVec2 { return { x: 0, y: 0 }; }
 
+  isGamepadButtonPressed(_gamepadId: number, _button: number): boolean { return false; }
+  isGamepadButtonJustPressed(_gamepadId: number, _button: number): boolean { return false; }
+  isGamepadButtonJustReleased(_gamepadId: number, _button: number): boolean { return false; }
+  getGamepadAxis(_gamepadId: number, _axis: number): number { return 0; }
+
   /** Maps an action name to a key */
   mapActionKey(action: string, key: number): boolean { return this.handle.map_action_key(action, key); }
   /** Returns true if the action is currently pressed */
