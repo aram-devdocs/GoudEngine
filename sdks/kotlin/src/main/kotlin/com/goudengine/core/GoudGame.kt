@@ -137,6 +137,18 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
         return com.goudengine.types.Vec2.fromNative(r)
     }
 
+    fun isGamepadButtonPressed(gamepadId: Int, button: Int): Boolean =
+        GoudGameNative.isGamepadButtonPressed(contextId, gamepadId, button)
+
+    fun isGamepadButtonJustPressed(gamepadId: Int, button: Int): Boolean =
+        GoudGameNative.isGamepadButtonJustPressed(contextId, gamepadId, button)
+
+    fun isGamepadButtonJustReleased(gamepadId: Int, button: Int): Boolean =
+        GoudGameNative.isGamepadButtonJustReleased(contextId, gamepadId, button)
+
+    fun getGamepadAxis(gamepadId: Int, axis: Int): Float =
+        GoudGameNative.getGamepadAxis(contextId, gamepadId, axis)
+
     fun spawnEmpty(): com.goudengine.core.EntityHandle {
         val r = GoudGameNative.spawnEmpty(contextId)
         return com.goudengine.core.EntityHandle(r)

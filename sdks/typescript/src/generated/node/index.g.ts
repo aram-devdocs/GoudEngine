@@ -372,6 +372,26 @@ export class GoudGame implements IGoudGame {
     return (this.native as any).getTouchDelta(touchId);
   }
 
+  /** Returns true if the specified gamepad button is currently pressed */
+  isGamepadButtonPressed(gamepadId: number, button: number): boolean {
+    return (this.native as any).isGamepadButtonPressed(gamepadId, button);
+  }
+
+  /** Returns true if the specified gamepad button was just pressed this frame */
+  isGamepadButtonJustPressed(gamepadId: number, button: number): boolean {
+    return (this.native as any).isGamepadButtonJustPressed(gamepadId, button);
+  }
+
+  /** Returns true if the specified gamepad button was just released this frame */
+  isGamepadButtonJustReleased(gamepadId: number, button: number): boolean {
+    return (this.native as any).isGamepadButtonJustReleased(gamepadId, button);
+  }
+
+  /** Returns the current value of a gamepad analog axis (-1.0 to 1.0) */
+  getGamepadAxis(gamepadId: number, axis: number): number {
+    return (this.native as any).getGamepadAxis(gamepadId, axis);
+  }
+
   /** Creates a new empty entity */
   spawnEmpty(): IEntity {
     return this.native.spawnEmpty() as unknown as IEntity;

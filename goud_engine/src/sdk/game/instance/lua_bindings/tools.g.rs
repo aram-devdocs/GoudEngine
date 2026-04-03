@@ -69,6 +69,10 @@ use crate::ffi::window::goud_fixed_timestep_begin;
 use crate::ffi::window::goud_fixed_timestep_set;
 use crate::ffi::window::goud_fixed_timestep_set_max_steps;
 use crate::ffi::arena::goud_frame_arena_reset;
+use crate::ffi::input::goud_input_gamepad_axis;
+use crate::ffi::input::goud_input_gamepad_button_just_pressed;
+use crate::ffi::input::goud_input_gamepad_button_just_released;
+use crate::ffi::input::goud_input_gamepad_button_pressed;
 use crate::ffi::input::goud_input_touch_active;
 use crate::ffi::input::goud_input_touch_count;
 use crate::ffi::input::goud_input_touch_just_pressed;
@@ -325,6 +329,26 @@ pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> 
         Ok(goud_window_destroy(ctx))
     })?;
     tbl.set("destroy", f_destroy)?;
+    // GoudGame.isGamepadButtonPressed
+    let f_is_gamepad_button_pressed = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
+        Ok(goud_input_gamepad_button_pressed(ctx, arg0 as u32, arg1 as u32))
+    })?;
+    tbl.set("is_gamepad_button_pressed", f_is_gamepad_button_pressed)?;
+    // GoudGame.isGamepadButtonJustPressed
+    let f_is_gamepad_button_just_pressed = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
+        Ok(goud_input_gamepad_button_just_pressed(ctx, arg0 as u32, arg1 as u32))
+    })?;
+    tbl.set("is_gamepad_button_just_pressed", f_is_gamepad_button_just_pressed)?;
+    // GoudGame.isGamepadButtonJustReleased
+    let f_is_gamepad_button_just_released = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
+        Ok(goud_input_gamepad_button_just_released(ctx, arg0 as u32, arg1 as u32))
+    })?;
+    tbl.set("is_gamepad_button_just_released", f_is_gamepad_button_just_released)?;
+    // GoudGame.getGamepadAxis
+    let f_get_gamepad_axis = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
+        Ok(goud_input_gamepad_axis(ctx, arg0 as u32, arg1 as u32) as f64)
+    })?;
+    tbl.set("get_gamepad_axis", f_get_gamepad_axis)?;
     // GoudGame.getTouchCount
     let f_get_touch_count = lua.create_function(move |_, _: ()| {
         Ok(goud_input_touch_count(ctx) as i64)

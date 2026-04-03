@@ -764,7 +764,20 @@
       "goud_input_mouse_button_just_released": {},
       "goud_input_get_mouse_position": {},
       "goud_input_get_mouse_delta": {},
-      "goud_input_get_scroll_delta": {}
+      "goud_input_get_scroll_delta": {},
+      "goud_input_gamepad_button_pressed": {},
+      "goud_input_gamepad_button_just_pressed": {},
+      "goud_input_gamepad_button_just_released": {},
+      "goud_input_gamepad_axis": {}
+    },
+    "input_gamepad": {
+      "goud_input_gamepad_connected": {},
+      "goud_input_gamepad_connected_count": {},
+      "goud_input_gamepad_left_stick": {},
+      "goud_input_gamepad_right_stick": {},
+      "goud_input_gamepad_left_trigger": {},
+      "goud_input_gamepad_right_trigger": {},
+      "goud_input_gamepad_set_vibration": {}
     },
     "input_touch": {
       "goud_input_touch_count": {},

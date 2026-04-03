@@ -923,6 +923,30 @@ def _setup():
     _lib.goud_input_get_mouse_delta.restype = ctypes.c_bool
     _lib.goud_input_get_scroll_delta.argtypes = [GoudContextId, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
     _lib.goud_input_get_scroll_delta.restype = ctypes.c_bool
+    _lib.goud_input_gamepad_button_pressed.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_uint32]
+    _lib.goud_input_gamepad_button_pressed.restype = ctypes.c_bool
+    _lib.goud_input_gamepad_button_just_pressed.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_uint32]
+    _lib.goud_input_gamepad_button_just_pressed.restype = ctypes.c_bool
+    _lib.goud_input_gamepad_button_just_released.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_uint32]
+    _lib.goud_input_gamepad_button_just_released.restype = ctypes.c_bool
+    _lib.goud_input_gamepad_axis.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_uint32]
+    _lib.goud_input_gamepad_axis.restype = ctypes.c_float
+
+    # input_gamepad
+    _lib.goud_input_gamepad_connected.argtypes = [GoudContextId, ctypes.c_uint32]
+    _lib.goud_input_gamepad_connected.restype = ctypes.c_bool
+    _lib.goud_input_gamepad_connected_count.argtypes = [GoudContextId]
+    _lib.goud_input_gamepad_connected_count.restype = ctypes.c_uint32
+    _lib.goud_input_gamepad_left_stick.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
+    _lib.goud_input_gamepad_left_stick.restype = ctypes.c_bool
+    _lib.goud_input_gamepad_right_stick.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float)]
+    _lib.goud_input_gamepad_right_stick.restype = ctypes.c_bool
+    _lib.goud_input_gamepad_left_trigger.argtypes = [GoudContextId, ctypes.c_uint32]
+    _lib.goud_input_gamepad_left_trigger.restype = ctypes.c_float
+    _lib.goud_input_gamepad_right_trigger.argtypes = [GoudContextId, ctypes.c_uint32]
+    _lib.goud_input_gamepad_right_trigger.restype = ctypes.c_float
+    _lib.goud_input_gamepad_set_vibration.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_float]
+    _lib.goud_input_gamepad_set_vibration.restype = ctypes.c_bool
 
     # input_touch
     _lib.goud_input_touch_count.argtypes = [GoudContextId]

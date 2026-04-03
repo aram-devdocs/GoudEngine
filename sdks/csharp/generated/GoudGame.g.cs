@@ -360,6 +360,30 @@ namespace GoudEngine
             return new Vec2(_dx, _dy);
         }
 
+        /// <summary>Returns true if the specified gamepad button is currently pressed</summary>
+        public bool IsGamepadButtonPressed(uint gamepadId, uint button)
+        {
+            return NativeMethods.goud_input_gamepad_button_pressed(_ctx, gamepadId, button);
+        }
+
+        /// <summary>Returns true if the specified gamepad button was just pressed this frame</summary>
+        public bool IsGamepadButtonJustPressed(uint gamepadId, uint button)
+        {
+            return NativeMethods.goud_input_gamepad_button_just_pressed(_ctx, gamepadId, button);
+        }
+
+        /// <summary>Returns true if the specified gamepad button was just released this frame</summary>
+        public bool IsGamepadButtonJustReleased(uint gamepadId, uint button)
+        {
+            return NativeMethods.goud_input_gamepad_button_just_released(_ctx, gamepadId, button);
+        }
+
+        /// <summary>Returns the current value of a gamepad analog axis (-1.0 to 1.0)</summary>
+        public float GetGamepadAxis(uint gamepadId, uint axis)
+        {
+            return NativeMethods.goud_input_gamepad_axis(_ctx, gamepadId, axis);
+        }
+
         /// <summary>Creates a new empty entity</summary>
         public Entity SpawnEmpty()
         {

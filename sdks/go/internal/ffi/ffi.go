@@ -1137,6 +1137,73 @@ func GoudInputActionPressed(context_id C.GoudContextId, action_name *C.char) boo
 	return bool(C.goud_input_action_pressed(context_id, action_name))
 }
 
+// GoudInputGamepadAxis wraps goud_input_gamepad_axis.
+func GoudInputGamepadAxis(context_id C.GoudContextId, gamepad_id uint32, axis uint32) float32 {
+	return float32(C.goud_input_gamepad_axis(context_id, C.uint32_t(gamepad_id), C.uint32_t(axis)))
+}
+
+// GoudInputGamepadButtonJustPressed wraps goud_input_gamepad_button_just_pressed.
+func GoudInputGamepadButtonJustPressed(context_id C.GoudContextId, gamepad_id uint32, button uint32) bool {
+	return bool(C.goud_input_gamepad_button_just_pressed(context_id, C.uint32_t(gamepad_id), C.uint32_t(button)))
+}
+
+// GoudInputGamepadButtonJustReleased wraps goud_input_gamepad_button_just_released.
+func GoudInputGamepadButtonJustReleased(context_id C.GoudContextId, gamepad_id uint32, button uint32) bool {
+	return bool(C.goud_input_gamepad_button_just_released(context_id, C.uint32_t(gamepad_id), C.uint32_t(button)))
+}
+
+// GoudInputGamepadButtonPressed wraps goud_input_gamepad_button_pressed.
+func GoudInputGamepadButtonPressed(context_id C.GoudContextId, gamepad_id uint32, button uint32) bool {
+	return bool(C.goud_input_gamepad_button_pressed(context_id, C.uint32_t(gamepad_id), C.uint32_t(button)))
+}
+
+// GoudInputGamepadConnected wraps goud_input_gamepad_connected.
+func GoudInputGamepadConnected(context_id C.GoudContextId, gamepad_id uint32) bool {
+	return bool(C.goud_input_gamepad_connected(context_id, C.uint32_t(gamepad_id)))
+}
+
+// GoudInputGamepadConnectedCount wraps goud_input_gamepad_connected_count.
+func GoudInputGamepadConnectedCount(context_id C.GoudContextId) uint32 {
+	return uint32(C.goud_input_gamepad_connected_count(context_id))
+}
+
+// GoudInputGamepadLeftStick wraps goud_input_gamepad_left_stick.
+func GoudInputGamepadLeftStick(context_id C.GoudContextId, gamepad_id uint32, out_x *C.float, out_y *C.float) bool {
+	if out_x == nil {
+		return false
+	}
+	if out_y == nil {
+		return false
+	}
+	return bool(C.goud_input_gamepad_left_stick(context_id, C.uint32_t(gamepad_id), out_x, out_y))
+}
+
+// GoudInputGamepadLeftTrigger wraps goud_input_gamepad_left_trigger.
+func GoudInputGamepadLeftTrigger(context_id C.GoudContextId, gamepad_id uint32) float32 {
+	return float32(C.goud_input_gamepad_left_trigger(context_id, C.uint32_t(gamepad_id)))
+}
+
+// GoudInputGamepadRightStick wraps goud_input_gamepad_right_stick.
+func GoudInputGamepadRightStick(context_id C.GoudContextId, gamepad_id uint32, out_x *C.float, out_y *C.float) bool {
+	if out_x == nil {
+		return false
+	}
+	if out_y == nil {
+		return false
+	}
+	return bool(C.goud_input_gamepad_right_stick(context_id, C.uint32_t(gamepad_id), out_x, out_y))
+}
+
+// GoudInputGamepadRightTrigger wraps goud_input_gamepad_right_trigger.
+func GoudInputGamepadRightTrigger(context_id C.GoudContextId, gamepad_id uint32) float32 {
+	return float32(C.goud_input_gamepad_right_trigger(context_id, C.uint32_t(gamepad_id)))
+}
+
+// GoudInputGamepadSetVibration wraps goud_input_gamepad_set_vibration.
+func GoudInputGamepadSetVibration(context_id C.GoudContextId, gamepad_id uint32, intensity float32) bool {
+	return bool(C.goud_input_gamepad_set_vibration(context_id, C.uint32_t(gamepad_id), C.float(intensity)))
+}
+
 // GoudInputGetMouseDelta wraps goud_input_get_mouse_delta.
 func GoudInputGetMouseDelta(context_id C.GoudContextId, out_dx *C.float, out_dy *C.float) bool {
 	if out_dx == nil {

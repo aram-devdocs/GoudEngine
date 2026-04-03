@@ -111,6 +111,7 @@ sdks/c/tests/build/
 
 # Claude worktrees (ephemeral, per-session)
 .claude/worktrees/
+.worktrees/
 .mcp.json
 
 # Gradle build artifacts

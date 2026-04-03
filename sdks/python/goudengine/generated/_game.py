@@ -266,6 +266,22 @@ class GoudGame:
         self._lib.goud_input_touch_delta(self._ctx, touch_id, ctypes.byref(_dx), ctypes.byref(_dy))
         return Vec2(_dx.value, _dy.value)
 
+    def is_gamepad_button_pressed(self, gamepad_id, button):
+        """Returns true if the specified gamepad button is currently pressed"""
+        return self._lib.goud_input_gamepad_button_pressed(self._ctx, gamepad_id, button)
+
+    def is_gamepad_button_just_pressed(self, gamepad_id, button):
+        """Returns true if the specified gamepad button was just pressed this frame"""
+        return self._lib.goud_input_gamepad_button_just_pressed(self._ctx, gamepad_id, button)
+
+    def is_gamepad_button_just_released(self, gamepad_id, button):
+        """Returns true if the specified gamepad button was just released this frame"""
+        return self._lib.goud_input_gamepad_button_just_released(self._ctx, gamepad_id, button)
+
+    def get_gamepad_axis(self, gamepad_id, axis):
+        """Returns the current value of a gamepad analog axis (-1.0 to 1.0)"""
+        return self._lib.goud_input_gamepad_axis(self._ctx, gamepad_id, axis)
+
     def spawn_empty(self):
         """Creates a new empty entity"""
         bits = self._lib.goud_entity_spawn_empty(self._ctx)

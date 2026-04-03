@@ -234,6 +234,14 @@ export interface IGoudGame {
   isTouchJustReleased(touchId: number): boolean;
   /** Returns the movement delta for the given touch point since last frame */
   getTouchDelta(touchId: number): IVec2;
+  /** Returns true if the specified gamepad button is currently pressed */
+  isGamepadButtonPressed(gamepadId: number, button: number): boolean;
+  /** Returns true if the specified gamepad button was just pressed this frame */
+  isGamepadButtonJustPressed(gamepadId: number, button: number): boolean;
+  /** Returns true if the specified gamepad button was just released this frame */
+  isGamepadButtonJustReleased(gamepadId: number, button: number): boolean;
+  /** Returns the current value of a gamepad analog axis (-1.0 to 1.0) */
+  getGamepadAxis(gamepadId: number, axis: number): number;
   /** Creates a new empty entity */
   spawnEmpty(): IEntity;
   /** Destroys an entity and all its components */

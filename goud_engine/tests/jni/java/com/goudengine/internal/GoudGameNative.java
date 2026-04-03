@@ -35,6 +35,10 @@ public final class GoudGameNative {
     public static native boolean isTouchJustPressed(long contextId, long touchId);
     public static native boolean isTouchJustReleased(long contextId, long touchId);
     public static native Vec2 getTouchDelta(long contextId, long touchId);
+    public static native boolean isGamepadButtonPressed(long contextId, int gamepadId, int button);
+    public static native boolean isGamepadButtonJustPressed(long contextId, int gamepadId, int button);
+    public static native boolean isGamepadButtonJustReleased(long contextId, int gamepadId, int button);
+    public static native float getGamepadAxis(long contextId, int gamepadId, int axis);
     public static native long spawnEmpty(long contextId);
     public static native boolean despawn(long contextId, long entity);
     public static native long cloneEntity(long contextId, long entity);

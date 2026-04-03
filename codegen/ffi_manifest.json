@@ -1779,6 +1779,113 @@
       "return_type": "bool",
       "is_unsafe": true
     },
+    "goud_input_gamepad_axis": {
+      "source_file": "ffi/input/gamepad.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "gamepad_id: u32",
+        "axis: u32"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_input_gamepad_button_just_pressed": {
+      "source_file": "ffi/input/gamepad.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "gamepad_id: u32",
+        "button: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_input_gamepad_button_just_released": {
+      "source_file": "ffi/input/gamepad.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "gamepad_id: u32",
+        "button: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_input_gamepad_button_pressed": {
+      "source_file": "ffi/input/gamepad.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "gamepad_id: u32",
+        "button: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_input_gamepad_connected": {
+      "source_file": "ffi/input/gamepad.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "gamepad_id: u32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
+    "goud_input_gamepad_connected_count": {
+      "source_file": "ffi/input/gamepad.rs",
+      "params": [
+        "context_id: GoudContextId"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
+    "goud_input_gamepad_left_stick": {
+      "source_file": "ffi/input/gamepad.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "gamepad_id: u32",
+        "out_x: *mut f32",
+        "out_y: *mut f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_input_gamepad_left_trigger": {
+      "source_file": "ffi/input/gamepad.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "gamepad_id: u32"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_input_gamepad_right_stick": {
+      "source_file": "ffi/input/gamepad.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "gamepad_id: u32",
+        "out_x: *mut f32",
+        "out_y: *mut f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": true
+    },
+    "goud_input_gamepad_right_trigger": {
+      "source_file": "ffi/input/gamepad.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "gamepad_id: u32"
+      ],
+      "return_type": "f32",
+      "is_unsafe": false
+    },
+    "goud_input_gamepad_set_vibration": {
+      "source_file": "ffi/input/gamepad.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "gamepad_id: u32",
+        "intensity: f32"
+      ],
+      "return_type": "bool",
+      "is_unsafe": false
+    },
     "goud_input_get_mouse_delta": {
       "source_file": "ffi/input/mouse.rs",
       "params": [
@@ -6418,5 +6525,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 650
+  "total_count": 661
 }
