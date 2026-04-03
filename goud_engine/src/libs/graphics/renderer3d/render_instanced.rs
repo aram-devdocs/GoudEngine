@@ -186,8 +186,8 @@ impl Renderer3D {
         self.backend
             .set_uniform_mat4(self.uniforms.model, &identity);
 
-        // Snapshot groups to avoid borrow conflict with &mut self.
-        let groups = self.static_batch_groups.clone();
+        // Temporarily take groups to avoid borrow conflict with &mut self.
+        let groups = std::mem::take(&mut self.static_batch_groups);
         let batch_buf = match self.static_batch_buffer {
             Some(buf) => buf,
             None => {
@@ -229,5 +229,6 @@ impl Renderer3D {
             );
             self.stats.draw_calls += 1;
         }
+        self.static_batch_groups = groups;
     }
 }

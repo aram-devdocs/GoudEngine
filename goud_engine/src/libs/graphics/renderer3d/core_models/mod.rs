@@ -121,7 +121,7 @@ impl Renderer3D {
                 self.next_object_id = 1;
             }
             let tri_vert_count = verts.len() / floats_per_vertex;
-            let bounds = super::types::compute_bounding_sphere(&verts);
+            let bounds = super::types::compute_bounding_sphere(&verts, floats_per_vertex);
             self.objects.insert(
                 object_id,
                 Object3D {

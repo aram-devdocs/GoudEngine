@@ -68,7 +68,7 @@ class Bird(game: GoudGame) {
         if (game.isKeyJustPressed(Key.Space)) return true
 
         // Gamepad input: A/South button on gamepad 0.
-        if (game.isGamepadButtonJustPressed(0, GamepadButton.South)) return true
+        if (game.isGamepadButtonJustPressed(0, GamepadButton.South.value)) return true
 
         return false
     }

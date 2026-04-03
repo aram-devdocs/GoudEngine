@@ -150,6 +150,9 @@ pub struct Renderer3D {
     pub(in crate::libs::graphics::renderer3d) static_batch_groups: Vec<StaticBatchGroup>,
     /// Total vertex count in the static batch buffer.
     pub(in crate::libs::graphics::renderer3d) static_batch_vertex_count: u32,
+    /// Object IDs that were actually included in the static batch (not overflowed).
+    /// Used to distinguish batched objects from overflow objects that need individual draws.
+    pub(in crate::libs::graphics::renderer3d) static_batched_ids: std::collections::HashSet<u32>,
 }
 
 // StaticBatchGroup is defined in core_static_batch.rs
@@ -342,16 +345,29 @@ impl Renderer3D {
             static_batch_buffer: None,
             static_batch_groups: Vec::new(),
             static_batch_vertex_count: 0,
+            static_batched_ids: std::collections::HashSet::new(),
         })
     }
     pub fn set_object_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
-        self.mutate_object(id, |obj| obj.position = Vector3::new(x, y, z))
+        let ok = self.mutate_object(id, |obj| obj.position = Vector3::new(x, y, z));
+        if ok && self.objects.get(&id).is_some_and(|o| o.is_static) {
+            self.static_batch_dirty = true;
+        }
+        ok
     }
     pub fn set_object_rotation(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
-        self.mutate_object(id, |obj| obj.rotation = Vector3::new(x, y, z))
+        let ok = self.mutate_object(id, |obj| obj.rotation = Vector3::new(x, y, z));
+        if ok && self.objects.get(&id).is_some_and(|o| o.is_static) {
+            self.static_batch_dirty = true;
+        }
+        ok
     }
     pub fn set_object_scale(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
-        self.mutate_object(id, |obj| obj.scale = Vector3::new(x, y, z))
+        let ok = self.mutate_object(id, |obj| obj.scale = Vector3::new(x, y, z));
+        if ok && self.objects.get(&id).is_some_and(|o| o.is_static) {
+            self.static_batch_dirty = true;
+        }
+        ok
     }
 
     /// Mark an object as static (transform never changes) or dynamic.

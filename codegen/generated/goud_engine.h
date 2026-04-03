@@ -2389,6 +2389,26 @@ int32_t goud_renderer3d_get_shadow_map_size(struct GoudContextId context_id);
 float goud_renderer3d_get_shadow_bias(struct GoudContextId context_id);
 
 /**
+ * Returns the maximum vertex count for static batching, or -1 on error.
+ */
+int32_t goud_renderer3d_get_max_static_batch_vertices(struct GoudContextId context_id);
+
+/**
+ * Returns the maximum bones per mesh, or -1 on error.
+ */
+int32_t goud_renderer3d_get_max_bones_per_mesh(struct GoudContextId context_id);
+
+/**
+ * Returns the shadow strength (0.0-1.0), or -1.0 on error.
+ */
+float goud_renderer3d_get_shadow_strength(struct GoudContextId context_id);
+
+/**
+ * Returns the vertex threshold for shadow auto-disable, or -1 on error.
+ */
+int32_t goud_renderer3d_get_shadow_auto_disable_threshold(struct GoudContextId context_id);
+
+/**
  * Enables or disables frustum culling.
  */
 int32_t goud_renderer3d_set_frustum_culling_enabled(struct GoudContextId context_id, bool enabled);
@@ -2487,6 +2507,26 @@ int32_t goud_renderer3d_set_shadow_map_size(struct GoudContextId context_id, uin
  * Sets the shadow depth bias.
  */
 int32_t goud_renderer3d_set_shadow_bias(struct GoudContextId context_id, float bias);
+
+/**
+ * Sets the maximum vertex count for static batching.
+ */
+int32_t goud_renderer3d_set_max_static_batch_vertices(struct GoudContextId context_id, uint32_t vertices);
+
+/**
+ * Sets the maximum bones per mesh for skeletal animation.
+ */
+int32_t goud_renderer3d_set_max_bones_per_mesh(struct GoudContextId context_id, uint32_t bones);
+
+/**
+ * Sets the shadow strength (darkness, 0.0 = invisible, 1.0 = fully opaque).
+ */
+int32_t goud_renderer3d_set_shadow_strength(struct GoudContextId context_id, float strength);
+
+/**
+ * Sets the vertex threshold at which shadows are automatically disabled.
+ */
+int32_t goud_renderer3d_set_shadow_auto_disable_threshold(struct GoudContextId context_id, uint32_t threshold);
 
 /**
  * Returns the number of draw calls issued during the last `render()` call.

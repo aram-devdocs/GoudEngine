@@ -31,6 +31,7 @@ impl Renderer3D {
         }
         self.static_batch_groups.clear();
         self.static_batch_vertex_count = 0;
+        self.static_batched_ids.clear();
         self.static_batch_dirty = false;
 
         // Collect static object IDs with their sort key.
@@ -85,10 +86,15 @@ impl Renderer3D {
             let obj_vert_count = obj.vertices.len() / FPV;
             if (all_verts.len() / FPV) + obj_vert_count > max_verts {
                 log::warn!(
-                    "Static batch vertex limit ({max_verts}) reached, skipping remaining objects"
+                    "Static batch vertex limit ({max_verts}) reached; \
+                     {}/{} static objects batched, remainder uses individual draws",
+                    self.static_batched_ids.len(),
+                    entries.len(),
                 );
                 break;
             }
+
+            self.static_batched_ids.insert(obj_id);
 
             // Build model matrix and bake transform into vertices.
             let model = Self::create_model_matrix(obj.position, obj.rotation, obj.scale);
@@ -157,6 +163,7 @@ impl Renderer3D {
                 log::error!("Failed to create static batch buffer: {e}");
                 self.static_batch_groups.clear();
                 self.static_batch_vertex_count = 0;
+                self.static_batched_ids.clear();
             }
         }
     }

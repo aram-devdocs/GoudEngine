@@ -122,6 +122,14 @@ public final class GoudGameNative {
     public static native int getShadowMapSize(long contextId);
     public static native int setShadowBias(long contextId, float bias);
     public static native float getShadowBias(long contextId);
+    public static native int setMaxStaticBatchVertices(long contextId, int vertices);
+    public static native int getMaxStaticBatchVertices(long contextId);
+    public static native int setMaxBonesPerMesh(long contextId, int bones);
+    public static native int getMaxBonesPerMesh(long contextId);
+    public static native int setShadowStrength(long contextId, float strength);
+    public static native float getShadowStrength(long contextId);
+    public static native int setShadowAutoDisableThreshold(long contextId, int threshold);
+    public static native int getShadowAutoDisableThreshold(long contextId);
     public static native int instantiateModelBatch(long contextId, int sourceModelId, int count);
     public static native int setModelPositionsBatch(long contextId, int count);
     public static native int addModelsToSceneBatch(long contextId, int sceneId, int count);

@@ -291,10 +291,17 @@ impl Renderer3D {
         if obj_ids.is_empty() {
             return false;
         }
+        let mut has_static = false;
         for obj_id in obj_ids {
             if let Some(obj) = self.objects.get_mut(&obj_id) {
                 f(obj);
+                if obj.is_static {
+                    has_static = true;
+                }
             }
+        }
+        if has_static {
+            self.static_batch_dirty = true;
         }
         true
     }

@@ -937,6 +937,30 @@ namespace GoudEngine
         public static extern float goud_renderer3d_get_shadow_bias(GoudContextId context_id);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_set_max_static_batch_vertices(GoudContextId context_id, uint vertices);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_get_max_static_batch_vertices(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_set_max_bones_per_mesh(GoudContextId context_id, uint bones);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_get_max_bones_per_mesh(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_set_shadow_strength(GoudContextId context_id, float strength);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_renderer3d_get_shadow_strength(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_set_shadow_auto_disable_threshold(GoudContextId context_id, uint threshold);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer3d_get_shadow_auto_disable_threshold(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_renderer3d_instantiate_model_batch(GoudContextId context_id, uint source_model_id, uint count, ref uint out_ids);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

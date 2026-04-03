@@ -652,6 +652,38 @@ class GoudGame:
         """Returns the shadow depth bias"""
         return self._lib.goud_renderer3d_get_shadow_bias(self._ctx)
 
+    def set_max_static_batch_vertices(self, vertices):
+        """Sets the maximum vertex count for static batching"""
+        return self._lib.goud_renderer3d_set_max_static_batch_vertices(self._ctx, vertices)
+
+    def get_max_static_batch_vertices(self):
+        """Returns the maximum vertex count for static batching"""
+        return self._lib.goud_renderer3d_get_max_static_batch_vertices(self._ctx)
+
+    def set_max_bones_per_mesh(self, bones):
+        """Sets the maximum bones per mesh for skeletal animation"""
+        return self._lib.goud_renderer3d_set_max_bones_per_mesh(self._ctx, bones)
+
+    def get_max_bones_per_mesh(self):
+        """Returns the maximum bones per mesh"""
+        return self._lib.goud_renderer3d_get_max_bones_per_mesh(self._ctx)
+
+    def set_shadow_strength(self, strength):
+        """Sets the shadow strength (darkness, 0.0-1.0)"""
+        return self._lib.goud_renderer3d_set_shadow_strength(self._ctx, strength)
+
+    def get_shadow_strength(self):
+        """Returns the shadow strength (0.0-1.0)"""
+        return self._lib.goud_renderer3d_get_shadow_strength(self._ctx)
+
+    def set_shadow_auto_disable_threshold(self, threshold):
+        """Sets the vertex threshold at which shadows are automatically disabled"""
+        return self._lib.goud_renderer3d_set_shadow_auto_disable_threshold(self._ctx, threshold)
+
+    def get_shadow_auto_disable_threshold(self):
+        """Returns the vertex threshold for shadow auto-disable"""
+        return self._lib.goud_renderer3d_get_shadow_auto_disable_threshold(self._ctx)
+
     def instantiate_model_batch(self, source_model_id, count):
         """Creates multiple instances of a model in one call"""
         return self._lib.goud_renderer3d_instantiate_model_batch(self._ctx, source_model_id, count)

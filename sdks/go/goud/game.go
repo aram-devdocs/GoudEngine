@@ -719,6 +719,46 @@ func (g *Game) GetShadowBias() float32 {
 	return 0
 }
 
+// SetMaxStaticBatchVertices Sets the maximum vertex count for static batching
+func (g *Game) SetMaxStaticBatchVertices(vertices uint32) int32 {
+	return 0
+}
+
+// GetMaxStaticBatchVertices Returns the maximum vertex count for static batching
+func (g *Game) GetMaxStaticBatchVertices() int32 {
+	return 0
+}
+
+// SetMaxBonesPerMesh Sets the maximum bones per mesh for skeletal animation
+func (g *Game) SetMaxBonesPerMesh(bones uint32) int32 {
+	return 0
+}
+
+// GetMaxBonesPerMesh Returns the maximum bones per mesh
+func (g *Game) GetMaxBonesPerMesh() int32 {
+	return 0
+}
+
+// SetShadowStrength Sets the shadow strength (darkness, 0.0-1.0)
+func (g *Game) SetShadowStrength(strength float32) int32 {
+	return 0
+}
+
+// GetShadowStrength Returns the shadow strength (0.0-1.0)
+func (g *Game) GetShadowStrength() float32 {
+	return 0
+}
+
+// SetShadowAutoDisableThreshold Sets the vertex threshold at which shadows are automatically disabled
+func (g *Game) SetShadowAutoDisableThreshold(threshold uint32) int32 {
+	return 0
+}
+
+// GetShadowAutoDisableThreshold Returns the vertex threshold for shadow auto-disable
+func (g *Game) GetShadowAutoDisableThreshold() int32 {
+	return 0
+}
+
 // InstantiateModelBatch Creates multiple instances of a model in one call
 func (g *Game) InstantiateModelBatch(sourceModelId uint32, count uint32) int32 {
 	return 0

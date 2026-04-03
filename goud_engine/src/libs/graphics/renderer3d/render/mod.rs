@@ -202,7 +202,7 @@ impl Renderer3D {
             if skinned_obj_ids.contains(&id) {
                 continue;
             }
-            if has_static_batch && obj.is_static {
+            if has_static_batch && self.static_batched_ids.contains(&id) {
                 continue;
             }
             if let Some(filter) = scene_obj_filter {

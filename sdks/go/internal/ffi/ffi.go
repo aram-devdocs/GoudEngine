@@ -2255,6 +2255,16 @@ func GoudRenderer3dGetMaterialSortingEnabled(context_id C.GoudContextId) bool {
 	return bool(C.goud_renderer3d_get_material_sorting_enabled(context_id))
 }
 
+// GoudRenderer3dGetMaxBonesPerMesh wraps goud_renderer3d_get_max_bones_per_mesh.
+func GoudRenderer3dGetMaxBonesPerMesh(context_id C.GoudContextId) int32 {
+	return int32(C.goud_renderer3d_get_max_bones_per_mesh(context_id))
+}
+
+// GoudRenderer3dGetMaxStaticBatchVertices wraps goud_renderer3d_get_max_static_batch_vertices.
+func GoudRenderer3dGetMaxStaticBatchVertices(context_id C.GoudContextId) int32 {
+	return int32(C.goud_renderer3d_get_max_static_batch_vertices(context_id))
+}
+
 // GoudRenderer3dGetMinInstancesForBatching wraps goud_renderer3d_get_min_instances_for_batching.
 func GoudRenderer3dGetMinInstancesForBatching(context_id C.GoudContextId) int32 {
 	return int32(C.goud_renderer3d_get_min_instances_for_batching(context_id))
@@ -2293,6 +2303,11 @@ func GoudRenderer3dGetObjectMaterial(context_id C.GoudContextId, object_id uint3
 	return uint32(C.goud_renderer3d_get_object_material(context_id, C.uint32_t(object_id)))
 }
 
+// GoudRenderer3dGetShadowAutoDisableThreshold wraps goud_renderer3d_get_shadow_auto_disable_threshold.
+func GoudRenderer3dGetShadowAutoDisableThreshold(context_id C.GoudContextId) int32 {
+	return int32(C.goud_renderer3d_get_shadow_auto_disable_threshold(context_id))
+}
+
 // GoudRenderer3dGetShadowBias wraps goud_renderer3d_get_shadow_bias.
 func GoudRenderer3dGetShadowBias(context_id C.GoudContextId) float32 {
 	return float32(C.goud_renderer3d_get_shadow_bias(context_id))
@@ -2301,6 +2316,11 @@ func GoudRenderer3dGetShadowBias(context_id C.GoudContextId) float32 {
 // GoudRenderer3dGetShadowMapSize wraps goud_renderer3d_get_shadow_map_size.
 func GoudRenderer3dGetShadowMapSize(context_id C.GoudContextId) int32 {
 	return int32(C.goud_renderer3d_get_shadow_map_size(context_id))
+}
+
+// GoudRenderer3dGetShadowStrength wraps goud_renderer3d_get_shadow_strength.
+func GoudRenderer3dGetShadowStrength(context_id C.GoudContextId) float32 {
+	return float32(C.goud_renderer3d_get_shadow_strength(context_id))
 }
 
 // GoudRenderer3dGetShadowsEnabled wraps goud_renderer3d_get_shadows_enabled.
@@ -2509,6 +2529,16 @@ func GoudRenderer3dSetMaterialSortingEnabled(context_id C.GoudContextId, enabled
 	return int32(C.goud_renderer3d_set_material_sorting_enabled(context_id, C._Bool(enabled)))
 }
 
+// GoudRenderer3dSetMaxBonesPerMesh wraps goud_renderer3d_set_max_bones_per_mesh.
+func GoudRenderer3dSetMaxBonesPerMesh(context_id C.GoudContextId, bones uint32) int32 {
+	return int32(C.goud_renderer3d_set_max_bones_per_mesh(context_id, C.uint32_t(bones)))
+}
+
+// GoudRenderer3dSetMaxStaticBatchVertices wraps goud_renderer3d_set_max_static_batch_vertices.
+func GoudRenderer3dSetMaxStaticBatchVertices(context_id C.GoudContextId, vertices uint32) int32 {
+	return int32(C.goud_renderer3d_set_max_static_batch_vertices(context_id, C.uint32_t(vertices)))
+}
+
 // GoudRenderer3dSetMinInstancesForBatching wraps goud_renderer3d_set_min_instances_for_batching.
 func GoudRenderer3dSetMinInstancesForBatching(context_id C.GoudContextId, count uint32) int32 {
 	return int32(C.goud_renderer3d_set_min_instances_for_batching(context_id, C.uint32_t(count)))
@@ -2575,6 +2605,11 @@ func GoudRenderer3dSetObjectStatic(context_id C.GoudContextId, object_id uint32,
 	return bool(C.goud_renderer3d_set_object_static(context_id, C.uint32_t(object_id), C._Bool(is_static)))
 }
 
+// GoudRenderer3dSetShadowAutoDisableThreshold wraps goud_renderer3d_set_shadow_auto_disable_threshold.
+func GoudRenderer3dSetShadowAutoDisableThreshold(context_id C.GoudContextId, threshold uint32) int32 {
+	return int32(C.goud_renderer3d_set_shadow_auto_disable_threshold(context_id, C.uint32_t(threshold)))
+}
+
 // GoudRenderer3dSetShadowBias wraps goud_renderer3d_set_shadow_bias.
 func GoudRenderer3dSetShadowBias(context_id C.GoudContextId, bias float32) int32 {
 	return int32(C.goud_renderer3d_set_shadow_bias(context_id, C.float(bias)))
@@ -2583,6 +2618,11 @@ func GoudRenderer3dSetShadowBias(context_id C.GoudContextId, bias float32) int32
 // GoudRenderer3dSetShadowMapSize wraps goud_renderer3d_set_shadow_map_size.
 func GoudRenderer3dSetShadowMapSize(context_id C.GoudContextId, size uint32) int32 {
 	return int32(C.goud_renderer3d_set_shadow_map_size(context_id, C.uint32_t(size)))
+}
+
+// GoudRenderer3dSetShadowStrength wraps goud_renderer3d_set_shadow_strength.
+func GoudRenderer3dSetShadowStrength(context_id C.GoudContextId, strength float32) int32 {
+	return int32(C.goud_renderer3d_set_shadow_strength(context_id, C.float(strength)))
 }
 
 // GoudRenderer3dSetShadowsEnabled wraps goud_renderer3d_set_shadows_enabled.
