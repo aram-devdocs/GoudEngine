@@ -11,7 +11,9 @@ impl DrawOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.set_vertex_attributes(layout),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.set_vertex_attributes(layout),
         }
@@ -23,7 +25,9 @@ impl DrawOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.set_vertex_bindings(bindings),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.set_vertex_bindings(bindings),
         }
@@ -40,7 +44,9 @@ impl DrawOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.draw_arrays(topology, first, count),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.draw_arrays(topology, first, count),
         }
@@ -57,7 +63,9 @@ impl DrawOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.draw_indexed(topology, count, offset),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.draw_indexed(topology, count, offset),
         }
@@ -74,7 +82,9 @@ impl DrawOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.draw_indexed_u16(topology, count, offset),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.draw_indexed_u16(topology, count, offset),
         }
@@ -94,7 +104,9 @@ impl DrawOps for NativeRenderBackend {
             }
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => {
                 backend.draw_arrays_instanced(topology, first, count, instance_count)
@@ -116,7 +128,9 @@ impl DrawOps for NativeRenderBackend {
             }
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => {
                 backend.draw_indexed_instanced(topology, count, offset, instance_count)

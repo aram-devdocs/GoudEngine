@@ -27,6 +27,8 @@ rapier2d = ["dep:rapier2d"]
 rapier3d = ["dep:rapier3d"]
 headless = []
 xbox-gdk = ["wgpu-backend"]
+sdl-window = ["wgpu-backend", "dep:sdl2"]
+switch-vulkan = ["wgpu-backend"]
 
 # TODO: https://github.com/aram-devdocs/GoudEngine/issues/8
 [dependencies]
@@ -83,6 +85,7 @@ web-sys = { version = "0.3", optional = true, features = [
     "AudioDestinationNode", "BaseAudioContext",
     "Blob", "Url",
 ] }
+sdl2 = { version = "0.38", optional = true, features = ["bundled", "raw-window-handle"] }
 bumpalo = "3.20.2"
 smallvec = "1.15.1"
 

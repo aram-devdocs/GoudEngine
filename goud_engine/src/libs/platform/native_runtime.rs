@@ -26,7 +26,7 @@ fn invalid_pair_error(
     render_backend: RenderBackendKind,
 ) -> GoudError {
     GoudError::InitializationFailed(format!(
-        "invalid native backend pair: window={window_backend:?} render={render_backend:?}; supported pairs are Winit+Wgpu, GlfwLegacy+OpenGlLegacy, and XboxGdk+Wgpu"
+        "invalid native backend pair: window={window_backend:?} render={render_backend:?}; supported pairs are Winit+Wgpu, GlfwLegacy+OpenGlLegacy, XboxGdk+Wgpu, SdlWindow+Wgpu, and SwitchVulkan+Wgpu"
     ))
 }
 
@@ -38,6 +38,16 @@ pub fn detect_best_backend() -> (WindowBackendKind, RenderBackendKind) {
     #[cfg(all(feature = "xbox-gdk", target_env = "msvc"))]
     {
         return (WindowBackendKind::XboxGdk, RenderBackendKind::Wgpu);
+    }
+    #[cfg(all(feature = "switch-vulkan", target_arch = "aarch64"))]
+    {
+        return (WindowBackendKind::SwitchVulkan, RenderBackendKind::Wgpu);
+    }
+    // SDL works on all desktops but auto-detect prefers it only on Linux
+    // where it replaces GLFW as the portkit-friendly windowing layer.
+    #[cfg(all(feature = "sdl-window", target_os = "linux"))]
+    {
+        return (WindowBackendKind::SdlWindow, RenderBackendKind::Wgpu);
     }
     #[cfg(all(
         feature = "native",
@@ -79,6 +89,10 @@ pub fn validate_native_backend_pair(
         (WindowBackendKind::GlfwLegacy, RenderBackendKind::OpenGlLegacy) => Ok(()),
         #[cfg(feature = "xbox-gdk")]
         (WindowBackendKind::XboxGdk, RenderBackendKind::Wgpu) => Ok(()),
+        #[cfg(feature = "sdl-window")]
+        (WindowBackendKind::SdlWindow, RenderBackendKind::Wgpu) => Ok(()),
+        #[cfg(feature = "switch-vulkan")]
+        (WindowBackendKind::SwitchVulkan, RenderBackendKind::Wgpu) => Ok(()),
         (_, RenderBackendKind::Auto) => Ok(()), // Auto is resolved before validation
         _ => Err(invalid_pair_error(window_backend, render_backend)),
     }
@@ -177,6 +191,40 @@ pub fn create_native_runtime(
                 )),
             })
         }
+        #[cfg(feature = "sdl-window")]
+        (WindowBackendKind::SdlWindow, RenderBackendKind::Wgpu) => {
+            let platform = super::sdl_platform::SdlPlatform::new(window_config)?;
+            let handle = platform.window_handle();
+            let (w, h) = platform.get_framebuffer_size();
+            let mut backend =
+                crate::libs::graphics::backend::wgpu_backend::WgpuBackend::new_from_sdl_handle(
+                    handle, w, h,
+                )?;
+            backend.resize(w, h);
+            Ok(NativeRuntime {
+                platform: Box::new(platform),
+                render_backend: SharedNativeRenderBackend::new(NativeRenderBackend::Wgpu(
+                    Box::new(backend),
+                )),
+            })
+        }
+        #[cfg(feature = "switch-vulkan")]
+        (WindowBackendKind::SwitchVulkan, RenderBackendKind::Wgpu) => {
+            let platform = super::switch_vulkan_platform::SwitchVulkanPlatform::new(window_config)?;
+            let handle = platform.window_handle();
+            let (w, h) = platform.get_framebuffer_size();
+            let mut backend =
+                crate::libs::graphics::backend::wgpu_backend::WgpuBackend::new_from_switch_handle(
+                    handle, w, h,
+                )?;
+            backend.resize(w, h);
+            Ok(NativeRuntime {
+                platform: Box::new(platform),
+                render_backend: SharedNativeRenderBackend::new(NativeRenderBackend::Wgpu(
+                    Box::new(backend),
+                )),
+            })
+        }
         _ => Err(invalid_pair_error(window_backend, render_backend)),
     }
 }
@@ -234,5 +282,25 @@ mod tests {
             validate_native_backend_pair(WindowBackendKind::XboxGdk, RenderBackendKind::Wgpu,)
                 .is_ok()
         );
+    }
+
+    #[cfg(feature = "sdl-window")]
+    #[test]
+    fn accepts_sdl_window_pair() {
+        assert!(validate_native_backend_pair(
+            WindowBackendKind::SdlWindow,
+            RenderBackendKind::Wgpu
+        )
+        .is_ok());
+    }
+
+    #[cfg(feature = "switch-vulkan")]
+    #[test]
+    fn accepts_switch_vulkan_pair() {
+        assert!(validate_native_backend_pair(
+            WindowBackendKind::SwitchVulkan,
+            RenderBackendKind::Wgpu
+        )
+        .is_ok());
     }
 }

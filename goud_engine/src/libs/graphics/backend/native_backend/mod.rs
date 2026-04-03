@@ -19,7 +19,9 @@ use super::render_backend::RenderBackend;
 use super::render_backend::StateOps;
 #[cfg(any(
     all(feature = "native", feature = "wgpu-backend"),
-    feature = "xbox-gdk"
+    feature = "xbox-gdk",
+    feature = "sdl-window",
+    feature = "switch-vulkan"
 ))]
 use super::wgpu_backend::WgpuBackend;
 
@@ -30,7 +32,9 @@ pub enum NativeRenderBackend {
     OpenGlLegacy(Box<OpenGLBackend>),
     #[cfg(any(
         all(feature = "native", feature = "wgpu-backend"),
-        feature = "xbox-gdk"
+        feature = "xbox-gdk",
+        feature = "sdl-window",
+        feature = "switch-vulkan"
     ))]
     /// Default wgpu backend used by the native runtime.
     Wgpu(Box<WgpuBackend>),
@@ -43,7 +47,9 @@ impl NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.info(),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.info(),
         }
@@ -59,7 +65,9 @@ impl NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.bind_texture_by_index(index, unit),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.bind_texture_by_index(index, unit),
         }
@@ -71,7 +79,9 @@ impl NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.set_viewport(0, 0, width, height),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.resize(width, height),
         }
@@ -84,7 +94,9 @@ impl NativeRenderBackend {
             Self::OpenGlLegacy(_) => {}
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.drop_surface(),
         }
@@ -97,7 +109,9 @@ impl NativeRenderBackend {
             Self::OpenGlLegacy(_) => Ok(()),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.recreate_surface(),
         }

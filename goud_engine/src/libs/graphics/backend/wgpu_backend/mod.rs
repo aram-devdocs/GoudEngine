@@ -31,7 +31,15 @@ mod init;
 mod pipeline;
 mod readback;
 mod resources;
+#[cfg(feature = "sdl-window")]
+mod sdl_init;
+#[cfg(feature = "sdl-window")]
+pub(crate) mod sdl_surface;
 mod shader;
+#[cfg(feature = "switch-vulkan")]
+mod switch_init;
+#[cfg(feature = "switch-vulkan")]
+pub(crate) mod switch_surface;
 mod texture;
 mod uniforms;
 #[cfg(feature = "xbox-gdk")]

@@ -117,6 +117,8 @@ The `RenderBackend` trait abstracts the GPU backend. Both 2D (SpriteBatch) and 3
 | `rapier3d` | `rapier3d` |
 | `headless` | (empty) |
 | `xbox-gdk` | `wgpu-backend` |
+| `sdl-window` | `wgpu-backend`, `sdl2` |
+| `switch-vulkan` | `wgpu-backend` |
 <!-- /gen:feature-flags -->
 
 ### SpriteBatch (2D)
