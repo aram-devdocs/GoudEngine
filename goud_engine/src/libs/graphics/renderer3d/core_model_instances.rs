@@ -29,9 +29,15 @@ impl Renderer3D {
         let mut instance_material_ids = Vec::with_capacity(source.mesh_material_ids.len());
 
         for (i, &src_obj_id) in source.mesh_object_ids.iter().enumerate() {
-            let (src_buffer, vertex_count, texture_id, src_bounds) =
+            let (src_buffer, vertex_count, texture_id, src_bounds, src_vertices) =
                 match self.objects.get(&src_obj_id) {
-                    Some(o) => (o.buffer, o.vertex_count, o.texture_id, o.bounds),
+                    Some(o) => (
+                        o.buffer,
+                        o.vertex_count,
+                        o.texture_id,
+                        o.bounds,
+                        o.vertices.clone(),
+                    ),
                     None => continue,
                 };
 
@@ -68,7 +74,7 @@ impl Renderer3D {
                 Object3D {
                     buffer,
                     vertex_count,
-                    vertices: Vec::new(),
+                    vertices: src_vertices,
                     position: Vector3::new(0.0, 0.0, 0.0),
                     rotation: Vector3::new(0.0, 0.0, 0.0),
                     scale: Vector3::new(1.0, 1.0, 1.0),

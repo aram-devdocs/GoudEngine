@@ -127,7 +127,11 @@ impl Renderer3D {
                 Object3D {
                     buffer,
                     vertex_count: tri_vert_count as i32,
-                    vertices: Vec::new(),
+                    vertices: if is_skinned {
+                        Vec::new()
+                    } else {
+                        verts.clone()
+                    },
                     position: Vector3::new(0.0, 0.0, 0.0),
                     rotation: Vector3::new(0.0, 0.0, 0.0),
                     scale: Vector3::new(1.0, 1.0, 1.0),
