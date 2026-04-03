@@ -144,10 +144,6 @@ impl Renderer3D {
     }
 
     /// Render skinned Model3D and ModelInstance3D entries using the skinned shader.
-    ///
-    /// Iterates models and instances that have `is_skinned == true`, binds the
-    /// skinned shader, uploads bone matrices from the matching `AnimationPlayer`,
-    /// and draws each sub-mesh with the skinned vertex layout.
     pub(super) fn render_skinned_models(
         &mut self,
         view_arr: &[f32; 16],
@@ -401,8 +397,6 @@ impl Renderer3D {
         }
     }
 
-    // render_instanced_skinned_models is in render_instanced_skinned.rs
-
     /// Upload view/projection/fog/light uniforms to the currently-bound shader.
     pub(super) fn apply_main_uniforms(
         &mut self,
@@ -429,7 +423,12 @@ impl Renderer3D {
         self.backend
             .set_uniform_vec3(uniforms.fog_color, fog.color.x, fog.color.y, fog.color.z);
         self.backend
-            .set_uniform_float(uniforms.fog_density, fog.density);
+            .set_uniform_float(uniforms.fog_density, fog.density());
+        self.backend
+            .set_uniform_int(uniforms.fog_mode, fog.mode_int());
+        self.backend
+            .set_uniform_float(uniforms.fog_start, fog.start());
+        self.backend.set_uniform_float(uniforms.fog_end, fog.end());
         let light_count = lights.len().min(MAX_LIGHTS) as i32;
         self.backend
             .set_uniform_int(uniforms.num_lights, light_count);

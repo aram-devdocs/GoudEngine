@@ -272,6 +272,15 @@ fn test_environment_functions_invalid_context_return_false() {
         GOUD_INVALID_CONTEXT_ID,
         true
     ));
+    assert!(!goud_renderer3d_configure_fog_linear(
+        GOUD_INVALID_CONTEXT_ID,
+        true,
+        80.0,
+        200.0,
+        0.5,
+        0.5,
+        0.5
+    ));
     assert!(!goud_renderer3d_render(GOUD_INVALID_CONTEXT_ID));
     assert!(!goud_renderer3d_render_all(GOUD_INVALID_CONTEXT_ID));
 }

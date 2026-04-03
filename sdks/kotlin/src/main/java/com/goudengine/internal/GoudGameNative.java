@@ -35,6 +35,10 @@ public final class GoudGameNative {
     public static native boolean isTouchJustPressed(long contextId, long touchId);
     public static native boolean isTouchJustReleased(long contextId, long touchId);
     public static native Vec2 getTouchDelta(long contextId, long touchId);
+    public static native boolean isGamepadButtonPressed(long contextId, int gamepadId, int button);
+    public static native boolean isGamepadButtonJustPressed(long contextId, int gamepadId, int button);
+    public static native boolean isGamepadButtonJustReleased(long contextId, int gamepadId, int button);
+    public static native float getGamepadAxis(long contextId, int gamepadId, int axis);
     public static native long spawnEmpty(long contextId);
     public static native boolean despawn(long contextId, long entity);
     public static native long cloneEntity(long contextId, long entity);
@@ -79,6 +83,7 @@ public final class GoudGameNative {
     public static native boolean setGridEnabled(long contextId, boolean enabled);
     public static native boolean configureSkybox(long contextId, boolean enabled, float r, float g, float b, float a);
     public static native boolean configureFog(long contextId, boolean enabled, float r, float g, float b, float density);
+    public static native boolean configureFogLinear(long contextId, boolean enabled, float startDistance, float endDistance, float r, float g, float b);
     public static native boolean setFogEnabled(long contextId, boolean enabled);
     public static native int setFrustumCullingEnabled(long contextId, boolean enabled);
     public static native int setSkinningMode(long contextId, int mode);
@@ -274,12 +279,6 @@ public final class GoudGameNative {
     public static native int audioUpdateCrossfades(long contextId, float deltaSec);
     public static native int audioActiveCrossfadeCount(long contextId);
     public static native int audioActivate(long contextId);
-    public static native boolean isGamepadButtonPressed(long contextId, int gamepadId, int button);
-    public static native boolean isGamepadButtonJustPressed(long contextId, int gamepadId, int button);
-    public static native boolean isGamepadButtonJustReleased(long contextId, int gamepadId, int button);
-    public static native float getGamepadAxis(long contextId, int gamepadId, int axis);
-    public static native boolean isGamepadConnected(long contextId, int gamepadId);
-    public static native int getGamepadConnectedCount(long contextId);
     public static native boolean checkHotSwapShortcut(long contextId);
     public static native long p2pCreateMesh(long contextId, int protocol, int port, P2pMeshConfig config);
     public static native long p2pJoinMesh(long contextId, int protocol, String address, int port, P2pMeshConfig config);

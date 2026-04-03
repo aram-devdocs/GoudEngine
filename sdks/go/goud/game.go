@@ -223,6 +223,26 @@ func (g *Game) GetTouchDelta(touchId uint64) Vec2 {
 	return Vec2{}
 }
 
+// IsGamepadButtonPressed Returns true if the specified gamepad button is currently pressed
+func (g *Game) IsGamepadButtonPressed(gamepadId uint32, button uint32) bool {
+	return false
+}
+
+// IsGamepadButtonJustPressed Returns true if the specified gamepad button was just pressed this frame
+func (g *Game) IsGamepadButtonJustPressed(gamepadId uint32, button uint32) bool {
+	return false
+}
+
+// IsGamepadButtonJustReleased Returns true if the specified gamepad button was just released this frame
+func (g *Game) IsGamepadButtonJustReleased(gamepadId uint32, button uint32) bool {
+	return false
+}
+
+// GetGamepadAxis Returns the current value of a gamepad analog axis (-1.0 to 1.0)
+func (g *Game) GetGamepadAxis(gamepadId uint32, axis uint32) float32 {
+	return 0
+}
+
 // SpawnEmpty creates a new empty entity.
 func (g *Game) SpawnEmpty() EntityID {
 	return NewEntityID(ffi.EntitySpawnEmpty(g.ctx))
@@ -501,6 +521,11 @@ func (g *Game) ConfigureSkybox(enabled bool, r float32, gVal float32, b float32,
 
 // ConfigureFog Configures fog settings
 func (g *Game) ConfigureFog(enabled bool, r float32, gVal float32, b float32, density float32) bool {
+	return false
+}
+
+// ConfigureFogLinear Configures linear fog with explicit start and end distances
+func (g *Game) ConfigureFogLinear(enabled bool, startDistance float32, endDistance float32, r float32, gVal float32, b float32) bool {
 	return false
 }
 

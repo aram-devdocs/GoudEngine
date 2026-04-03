@@ -163,6 +163,26 @@ public final class GoudGame {
         return goud_input_touch_just_released(_ctx, touchId)
     }
 
+    /// Returns true if the specified gamepad button is currently pressed
+    public func isGamepadButtonPressed(gamepadId: UInt32, button: UInt32) -> Bool {
+        return goud_input_gamepad_button_pressed(_ctx, gamepadId, button)
+    }
+
+    /// Returns true if the specified gamepad button was just pressed this frame
+    public func isGamepadButtonJustPressed(gamepadId: UInt32, button: UInt32) -> Bool {
+        return goud_input_gamepad_button_just_pressed(_ctx, gamepadId, button)
+    }
+
+    /// Returns true if the specified gamepad button was just released this frame
+    public func isGamepadButtonJustReleased(gamepadId: UInt32, button: UInt32) -> Bool {
+        return goud_input_gamepad_button_just_released(_ctx, gamepadId, button)
+    }
+
+    /// Returns the current value of a gamepad analog axis (-1.0 to 1.0)
+    public func getGamepadAxis(gamepadId: UInt32, axis: UInt32) -> Float {
+        return goud_input_gamepad_axis(_ctx, gamepadId, axis)
+    }
+
     /// Creates a new empty entity
     public func spawnEmpty() -> Entity {
         return Entity(bits: goud_entity_spawn_empty(_ctx))
@@ -276,6 +296,11 @@ public final class GoudGame {
     /// Configures fog settings
     public func configureFog(enabled: Bool, r: Float, g: Float, b: Float, density: Float) -> Bool {
         return goud_renderer3d_configure_fog(_ctx, enabled, r, g, b, density)
+    }
+
+    /// Configures linear fog with explicit start and end distances
+    public func configureFogLinear(enabled: Bool, startDistance: Float, endDistance: Float, r: Float, g: Float, b: Float) -> Bool {
+        return goud_renderer3d_configure_fog_linear(_ctx, enabled, startDistance, endDistance, r, g, b)
     }
 
     /// Sets fog visibility

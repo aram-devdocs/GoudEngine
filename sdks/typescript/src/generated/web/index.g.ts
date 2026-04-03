@@ -750,6 +750,11 @@ export class GoudGame implements IGoudGame {
   /** Returns the movement delta for the given touch point since last frame */
   getTouchDelta(_touchId: number): IVec2 { return { x: 0, y: 0 }; }
 
+  isGamepadButtonPressed(_gamepadId: number, _button: number): boolean { return false; }
+  isGamepadButtonJustPressed(_gamepadId: number, _button: number): boolean { return false; }
+  isGamepadButtonJustReleased(_gamepadId: number, _button: number): boolean { return false; }
+  getGamepadAxis(_gamepadId: number, _axis: number): number { return 0; }
+
   /** Maps an action name to a key */
   mapActionKey(action: string, key: number): boolean { return this.handle.map_action_key(action, key); }
   /** Returns true if the action is currently pressed */
@@ -1014,6 +1019,7 @@ export class GoudGame implements IGoudGame {
   setGridEnabled(_enabled: boolean): boolean { return false; }
   configureSkybox(_enabled: boolean, _r: number, _g: number, _b: number, _a: number): boolean { return false; }
   configureFog(_enabled: boolean, _r: number, _g: number, _b: number, _density: number): boolean { return false; }
+  configureFogLinear(_enabled: boolean, _startDistance: number, _endDistance: number, _r: number, _g: number, _b: number): boolean { return false; }
   setFogEnabled(_enabled: boolean): boolean { return false; }
   render3D(): boolean { return false; }
   setFrustumCullingEnabled(_enabled: boolean): number { return 0; }

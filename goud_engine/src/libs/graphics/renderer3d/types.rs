@@ -11,10 +11,6 @@ pub use super::render_pass::{
 };
 pub use super::skinned_mesh::{Bone3D, Skeleton3D, SkinnedMesh3D, MAX_BONES, MAX_BONE_INFLUENCES};
 
-// ============================================================================
-// Constants
-// ============================================================================
-
 /// Maximum number of lights supported
 pub const MAX_LIGHTS: usize = 8;
 
@@ -381,6 +377,23 @@ impl Default for SkyboxConfig {
     }
 }
 
+/// Fog calculation mode.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum FogMode {
+    /// Classic exponential fog. Visibility = exp(-(density * distance)^2).
+    Exponential {
+        /// Fog density factor.
+        density: f32,
+    },
+    /// Linear fog with explicit start/end distances. Clear before start, fully fogged after end.
+    Linear {
+        /// Distance at which fog begins.
+        start: f32,
+        /// Distance at which fog is fully opaque.
+        end: f32,
+    },
+}
+
 /// Fog configuration
 #[derive(Debug, Clone)]
 #[allow(missing_docs)]
@@ -389,8 +402,39 @@ pub struct FogConfig {
     pub enabled: bool,
     /// Fog color (RGB)
     pub color: Vector3<f32>,
-    /// Fog density
-    pub density: f32,
+    /// Fog mode (exponential or linear)
+    pub mode: FogMode,
+}
+
+impl FogConfig {
+    /// Returns 0 for exponential, 1 for linear (used as shader uniform).
+    pub fn mode_int(&self) -> i32 {
+        match self.mode {
+            FogMode::Exponential { .. } => 0,
+            FogMode::Linear { .. } => 1,
+        }
+    }
+    /// Returns density (0.0 for linear mode).
+    pub fn density(&self) -> f32 {
+        match self.mode {
+            FogMode::Exponential { density } => density,
+            FogMode::Linear { .. } => 0.0,
+        }
+    }
+    /// Returns fog start distance (0.0 for exponential mode).
+    pub fn start(&self) -> f32 {
+        match self.mode {
+            FogMode::Exponential { .. } => 0.0,
+            FogMode::Linear { start, .. } => start,
+        }
+    }
+    /// Returns fog end distance (0.0 for exponential mode).
+    pub fn end(&self) -> f32 {
+        match self.mode {
+            FogMode::Exponential { .. } => 0.0,
+            FogMode::Linear { end, .. } => end,
+        }
+    }
 }
 
 impl Default for FogConfig {
@@ -398,7 +442,7 @@ impl Default for FogConfig {
         Self {
             enabled: true,
             color: Vector3::new(0.05, 0.05, 0.1),
-            density: 0.02,
+            mode: FogMode::Exponential { density: 0.02 },
         }
     }
 }
@@ -425,6 +469,10 @@ impl Default for Camera3D {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "types_tests.rs"]
+mod types_tests;
 
 impl Camera3D {
     /// Get the view matrix

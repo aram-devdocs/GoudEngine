@@ -69,6 +69,10 @@ use crate::ffi::window::goud_fixed_timestep_begin;
 use crate::ffi::window::goud_fixed_timestep_set;
 use crate::ffi::window::goud_fixed_timestep_set_max_steps;
 use crate::ffi::arena::goud_frame_arena_reset;
+use crate::ffi::input::goud_input_gamepad_axis;
+use crate::ffi::input::goud_input_gamepad_button_just_pressed;
+use crate::ffi::input::goud_input_gamepad_button_just_released;
+use crate::ffi::input::goud_input_gamepad_button_pressed;
 use crate::ffi::input::goud_input_touch_active;
 use crate::ffi::input::goud_input_touch_count;
 use crate::ffi::input::goud_input_touch_just_pressed;
@@ -171,6 +175,7 @@ use crate::ffi::renderer3d::goud_renderer3d_add_object_to_scene;
 use crate::ffi::renderer3d::goud_renderer3d_blend_animations;
 use crate::ffi::renderer3d::goud_renderer3d_clear_current_scene;
 use crate::ffi::renderer3d::goud_renderer3d_configure_fog;
+use crate::ffi::renderer3d::goud_renderer3d_configure_fog_linear;
 use crate::ffi::renderer3d::goud_renderer3d_configure_grid;
 use crate::ffi::renderer3d::goud_renderer3d_configure_skybox;
 use crate::ffi::renderer3d::goud_renderer3d_create_cube;
@@ -324,6 +329,26 @@ pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> 
         Ok(goud_window_destroy(ctx))
     })?;
     tbl.set("destroy", f_destroy)?;
+    // GoudGame.isGamepadButtonPressed
+    let f_is_gamepad_button_pressed = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
+        Ok(goud_input_gamepad_button_pressed(ctx, arg0 as u32, arg1 as u32))
+    })?;
+    tbl.set("is_gamepad_button_pressed", f_is_gamepad_button_pressed)?;
+    // GoudGame.isGamepadButtonJustPressed
+    let f_is_gamepad_button_just_pressed = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
+        Ok(goud_input_gamepad_button_just_pressed(ctx, arg0 as u32, arg1 as u32))
+    })?;
+    tbl.set("is_gamepad_button_just_pressed", f_is_gamepad_button_just_pressed)?;
+    // GoudGame.isGamepadButtonJustReleased
+    let f_is_gamepad_button_just_released = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
+        Ok(goud_input_gamepad_button_just_released(ctx, arg0 as u32, arg1 as u32))
+    })?;
+    tbl.set("is_gamepad_button_just_released", f_is_gamepad_button_just_released)?;
+    // GoudGame.getGamepadAxis
+    let f_get_gamepad_axis = lua.create_function(move |_, (arg0, arg1): (i64, i64)| {
+        Ok(goud_input_gamepad_axis(ctx, arg0 as u32, arg1 as u32) as f64)
+    })?;
+    tbl.set("get_gamepad_axis", f_get_gamepad_axis)?;
     // GoudGame.getTouchCount
     let f_get_touch_count = lua.create_function(move |_, _: ()| {
         Ok(goud_input_touch_count(ctx) as i64)
@@ -465,6 +490,11 @@ pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> 
         Ok(goud_renderer3d_configure_fog(ctx, arg0, arg1 as f32, arg2 as f32, arg3 as f32, arg4 as f32))
     })?;
     tbl.set("configure_fog", f_configure_fog)?;
+    // GoudGame.configureFogLinear
+    let f_configure_fog_linear = lua.create_function(move |_, (arg0, arg1, arg2, arg3, arg4, arg5): (bool, f64, f64, f64, f64, f64)| {
+        Ok(goud_renderer3d_configure_fog_linear(ctx, arg0, arg1 as f32, arg2 as f32, arg3 as f32, arg4 as f32, arg5 as f32))
+    })?;
+    tbl.set("configure_fog_linear", f_configure_fog_linear)?;
     // GoudGame.setFogEnabled
     let f_set_fog_enabled = lua.create_function(move |_, arg0: bool| {
         Ok(goud_renderer3d_set_fog_enabled(ctx, arg0))

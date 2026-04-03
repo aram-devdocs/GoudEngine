@@ -66,6 +66,14 @@ fn test_configure_fog_headless() {
 }
 
 #[test]
+fn test_configure_fog_linear_headless() {
+    // Without a renderer, configure_fog_linear should return false gracefully
+    // (no panic, no UB) -- the SDK wrapper handles missing renderer state.
+    let mut game = GoudGame::new(GameConfig::default()).unwrap();
+    assert!(!game.configure_fog_linear(true, 80.0, 200.0, 0.5, 0.5, 0.5));
+}
+
+#[test]
 fn test_set_fog_enabled_headless() {
     let mut game = GoudGame::new(GameConfig::default()).unwrap();
     assert!(!game.set_fog_enabled(true));

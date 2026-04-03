@@ -809,6 +809,10 @@ namespace GoudEngine
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_renderer3d_configure_fog_linear(GoudContextId context_id, [MarshalAs(UnmanagedType.U1)] bool enabled, float start_distance, float end_distance, float r, float g, float b);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
         public static extern bool goud_renderer3d_set_fog_enabled(GoudContextId context_id, [MarshalAs(UnmanagedType.U1)] bool enabled);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -1190,6 +1194,47 @@ namespace GoudEngine
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
         public static extern bool goud_input_get_scroll_delta(GoudContextId context_id, ref float out_dx, ref float out_dy);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_input_gamepad_button_pressed(GoudContextId context_id, uint gamepad_id, uint button);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_input_gamepad_button_just_pressed(GoudContextId context_id, uint gamepad_id, uint button);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_input_gamepad_button_just_released(GoudContextId context_id, uint gamepad_id, uint button);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_input_gamepad_axis(GoudContextId context_id, uint gamepad_id, uint axis);
+
+        // input_gamepad
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_input_gamepad_connected(GoudContextId context_id, uint gamepad_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_input_gamepad_connected_count(GoudContextId context_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_input_gamepad_left_stick(GoudContextId context_id, uint gamepad_id, ref float out_x, ref float out_y);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_input_gamepad_right_stick(GoudContextId context_id, uint gamepad_id, ref float out_x, ref float out_y);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_input_gamepad_left_trigger(GoudContextId context_id, uint gamepad_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float goud_input_gamepad_right_trigger(GoudContextId context_id, uint gamepad_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool goud_input_gamepad_set_vibration(GoudContextId context_id, uint gamepad_id, float intensity);
 
         // input_touch
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

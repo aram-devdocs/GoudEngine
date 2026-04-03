@@ -141,7 +141,13 @@ impl Renderer3D {
                 eff_fog.color.z,
             );
             self.backend
-                .set_uniform_float(self.grid_uniforms.fog_density, eff_fog.density);
+                .set_uniform_float(self.grid_uniforms.fog_density, eff_fog.density());
+            self.backend
+                .set_uniform_int(self.grid_uniforms.fog_mode, eff_fog.mode_int());
+            self.backend
+                .set_uniform_float(self.grid_uniforms.fog_start, eff_fog.start());
+            self.backend
+                .set_uniform_float(self.grid_uniforms.fog_end, eff_fog.end());
             self.backend.enable_blending();
             self.backend
                 .set_blend_func(BlendFactor::SrcAlpha, BlendFactor::OneMinusSrcAlpha);

@@ -41,6 +41,9 @@ pub(super) struct MainUniforms {
     pub(super) fog_enabled: i32,
     pub(super) fog_color: i32,
     pub(super) fog_density: i32,
+    pub(super) fog_mode: i32,
+    pub(super) fog_start: i32,
+    pub(super) fog_end: i32,
     pub(super) lights: Vec<LightUniforms>,
     pub(super) primary_light_dir: i32,
     pub(super) primary_light_color: i32,
@@ -55,6 +58,9 @@ pub(super) struct GridUniforms {
     pub(super) fog_enabled: i32,
     pub(super) fog_color: i32,
     pub(super) fog_density: i32,
+    pub(super) fog_mode: i32,
+    pub(super) fog_start: i32,
+    pub(super) fog_end: i32,
     pub(super) alpha: i32,
 }
 
@@ -110,6 +116,9 @@ pub(super) fn resolve_main_uniforms(
         fog_enabled: loc("fogEnabled"),
         fog_color: loc("fogColor"),
         fog_density: loc("fogDensity"),
+        fog_mode: loc("fogMode"),
+        fog_start: loc("fogStart"),
+        fog_end: loc("fogEnd"),
         lights,
         primary_light_dir: loc("primaryLightDir"),
         primary_light_color: loc("primaryLightColor"),
@@ -196,6 +205,9 @@ pub(super) fn resolve_grid_uniforms(
         fog_enabled: loc("fogEnabled"),
         fog_color: loc("fogColor"),
         fog_density: loc("fogDensity"),
+        fog_mode: loc("fogMode"),
+        fog_start: loc("fogStart"),
+        fog_end: loc("fogEnd"),
         alpha: loc("alpha"),
     }
 }

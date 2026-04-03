@@ -104,8 +104,14 @@ vec3 calculateSpotLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir) {
 uniform bool fogEnabled;
 uniform vec3 fogColor;
 uniform float fogDensity;
+uniform int fogMode;
+uniform float fogStart;
+uniform float fogEnd;
 
 float calculateFog(float distance) {
+    if (fogMode == 1) {
+        return clamp((fogEnd - distance) / max(fogEnd - fogStart, 0.00001), 0.0, 1.0);
+    }
     float fog = exp(-pow(fogDensity * distance, 2.0));
     return clamp(fog, 0.0, 1.0);
 }
@@ -245,6 +251,9 @@ uniform vec4 objectColor;
 uniform bool fogEnabled;
 uniform vec3 fogColor;
 uniform float fogDensity;
+uniform int fogMode;
+uniform float fogStart;
+uniform float fogEnd;
 uniform bool shadowsEnabled;
 uniform float shadowBias;
 uniform float shadowStrength;
@@ -285,6 +294,9 @@ vec3 calculateSpotLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir) {
 }
 
 float calculateFog(float distance) {
+    if (fogMode == 1) {
+        return clamp((fogEnd - distance) / max(fogEnd - fogStart, 0.00001), 0.0, 1.0);
+    }
     float fog = exp(-pow(fogDensity * distance, 2.0));
     return clamp(fog, 0.0, 1.0);
 }
@@ -378,6 +390,9 @@ uniform vec3 viewPos;
 uniform bool fogEnabled;
 uniform vec3 fogColor;
 uniform float fogDensity;
+uniform int fogMode;
+uniform float fogStart;
+uniform float fogEnd;
 uniform float alpha;
 
 void main()
@@ -386,8 +401,13 @@ void main()
 
     if (fogEnabled) {
         float distance = length(viewPos - fragPos);
-        float fogFactor = exp(-fogDensity * distance);
-        fogFactor = clamp(fogFactor, 0.0, 1.0);
+        float fogFactor;
+        if (fogMode == 1) {
+            fogFactor = clamp((fogEnd - distance) / max(fogEnd - fogStart, 0.00001), 0.0, 1.0);
+        } else {
+            fogFactor = exp(-fogDensity * distance);
+            fogFactor = clamp(fogFactor, 0.0, 1.0);
+        }
         color = mix(fogColor, color, fogFactor);
     }
 
@@ -427,6 +447,10 @@ struct Uniforms {
     primaryLightIntensity: f32,
     primaryLightColor: vec3<f32>,
     _pad4: f32,
+    fogMode: i32,
+    fogStart: f32,
+    fogEnd: f32,
+    _padFog: f32,
     lights: array<Light, 8>,
 }
 
@@ -498,6 +522,10 @@ struct Uniforms {
     primaryLightIntensity: f32,
     primaryLightColor: vec3<f32>,
     _pad4: f32,
+    fogMode: i32,
+    fogStart: f32,
+    fogEnd: f32,
+    _padFog: f32,
     lights: array<Light, 8>,
 }
 
@@ -634,7 +662,12 @@ fn main(
 
     if uniforms.fogEnabled != 0 {
         let dist = length(frag_pos - uniforms.viewPos);
-        let fog_factor = clamp(exp(-pow(uniforms.fogDensity * dist, 2.0)), 0.0, 1.0);
+        var fog_factor: f32;
+        if uniforms.fogMode == 1 {
+            fog_factor = clamp((uniforms.fogEnd - dist) / max(uniforms.fogEnd - uniforms.fogStart, 0.00001), 0.0, 1.0);
+        } else {
+            fog_factor = clamp(exp(-pow(uniforms.fogDensity * dist, 2.0)), 0.0, 1.0);
+        }
         final_color = mix(uniforms.fogColor, final_color, fog_factor);
     }
 
@@ -674,6 +707,10 @@ struct Uniforms {
     primaryLightIntensity: f32,
     primaryLightColor: vec3<f32>,
     _pad4: f32,
+    fogMode: i32,
+    fogStart: f32,
+    fogEnd: f32,
+    _padFog: f32,
     lights: array<Light, 8>,
 }
 
@@ -738,6 +775,10 @@ struct Uniforms {
     primaryLightIntensity: f32,
     primaryLightColor: vec3<f32>,
     _pad4: f32,
+    fogMode: i32,
+    fogStart: f32,
+    fogEnd: f32,
+    _padFog: f32,
     lights: array<Light, 8>,
 }
 
@@ -872,7 +913,12 @@ fn main(
 
     if uniforms.fogEnabled != 0 {
         let dist = length(frag_pos - uniforms.viewPos);
-        let fog_factor = clamp(exp(-pow(uniforms.fogDensity * dist, 2.0)), 0.0, 1.0);
+        var fog_factor: f32;
+        if uniforms.fogMode == 1 {
+            fog_factor = clamp((uniforms.fogEnd - dist) / max(uniforms.fogEnd - uniforms.fogStart, 0.00001), 0.0, 1.0);
+        } else {
+            fog_factor = clamp(exp(-pow(uniforms.fogDensity * dist, 2.0)), 0.0, 1.0);
+        }
         final_color = mix(uniforms.fogColor, final_color, fog_factor);
     }
 
@@ -889,6 +935,9 @@ struct Uniforms {
     fogColor: vec3<f32>,
     fogEnabled: i32,
     alpha: f32,
+    fogMode: i32,
+    fogStart: f32,
+    fogEnd: f32,
 }
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
@@ -923,6 +972,9 @@ struct Uniforms {
     fogColor: vec3<f32>,
     fogEnabled: i32,
     alpha: f32,
+    fogMode: i32,
+    fogStart: f32,
+    fogEnd: f32,
 }
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
@@ -936,7 +988,12 @@ fn main(
 
     if uniforms.fogEnabled != 0 {
         let dist = length(uniforms.viewPos - frag_pos);
-        let fog_factor = clamp(exp(-pow(uniforms.fogDensity * dist, 2.0)), 0.0, 1.0);
+        var fog_factor: f32;
+        if uniforms.fogMode == 1 {
+            fog_factor = clamp((uniforms.fogEnd - dist) / max(uniforms.fogEnd - uniforms.fogStart, 0.00001), 0.0, 1.0);
+        } else {
+            fog_factor = clamp(exp(-pow(uniforms.fogDensity * dist, 2.0)), 0.0, 1.0);
+        }
         final_color = mix(uniforms.fogColor, final_color, fog_factor);
     }
 
@@ -1160,6 +1217,10 @@ struct Uniforms {
     primaryLightIntensity: f32,
     primaryLightColor: vec3<f32>,
     _pad4: f32,
+    fogMode: i32,
+    fogStart: f32,
+    fogEnd: f32,
+    _padFog: f32,
     lights: array<Light, 8>,
 }
 
@@ -1288,6 +1349,10 @@ struct Uniforms {
     primaryLightIntensity: f32,
     primaryLightColor: vec3<f32>,
     _pad4: f32,
+    fogMode: i32,
+    fogStart: f32,
+    fogEnd: f32,
+    _padFog: f32,
     lights: array<Light, 8>,
 }
 

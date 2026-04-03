@@ -4757,6 +4757,66 @@
           "returns": "Vec2"
         },
         {
+          "name": "isGamepadButtonPressed",
+          "doc": "Returns true if the specified gamepad button is currently pressed",
+          "params": [
+            {
+              "name": "gamepadId",
+              "type": "u32"
+            },
+            {
+              "name": "button",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "isGamepadButtonJustPressed",
+          "doc": "Returns true if the specified gamepad button was just pressed this frame",
+          "params": [
+            {
+              "name": "gamepadId",
+              "type": "u32"
+            },
+            {
+              "name": "button",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "isGamepadButtonJustReleased",
+          "doc": "Returns true if the specified gamepad button was just released this frame",
+          "params": [
+            {
+              "name": "gamepadId",
+              "type": "u32"
+            },
+            {
+              "name": "button",
+              "type": "u32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "getGamepadAxis",
+          "doc": "Returns the current value of a gamepad analog axis (-1.0 to 1.0)",
+          "params": [
+            {
+              "name": "gamepadId",
+              "type": "u32"
+            },
+            {
+              "name": "axis",
+              "type": "u32"
+            }
+          ],
+          "returns": "f32"
+        },
+        {
           "$ref": "EcsMethods",
           "name": "spawnEmpty"
         },
@@ -5354,6 +5414,37 @@
             },
             {
               "name": "density",
+              "type": "f32"
+            }
+          ],
+          "returns": "bool"
+        },
+        {
+          "name": "configureFogLinear",
+          "doc": "Configures linear fog with explicit start and end distances",
+          "params": [
+            {
+              "name": "enabled",
+              "type": "bool"
+            },
+            {
+              "name": "startDistance",
+              "type": "f32"
+            },
+            {
+              "name": "endDistance",
+              "type": "f32"
+            },
+            {
+              "name": "r",
+              "type": "f32"
+            },
+            {
+              "name": "g",
+              "type": "f32"
+            },
+            {
+              "name": "b",
               "type": "f32"
             }
           ],
@@ -8658,6 +8749,18 @@
         },
         {
           "method": "getTouchDelta"
+        },
+        {
+          "method": "isGamepadButtonPressed"
+        },
+        {
+          "method": "isGamepadButtonJustPressed"
+        },
+        {
+          "method": "isGamepadButtonJustReleased"
+        },
+        {
+          "method": "getGamepadAxis"
         },
         {
           "method": "mapActionKey"
@@ -12576,6 +12679,18 @@
           ],
           "returns_struct": "Vec2"
         },
+        "isGamepadButtonPressed": {
+          "ffi": "goud_input_gamepad_button_pressed"
+        },
+        "isGamepadButtonJustPressed": {
+          "ffi": "goud_input_gamepad_button_just_pressed"
+        },
+        "isGamepadButtonJustReleased": {
+          "ffi": "goud_input_gamepad_button_just_released"
+        },
+        "getGamepadAxis": {
+          "ffi": "goud_input_gamepad_axis"
+        },
         "getTouchCount": {
           "ffi": "goud_input_touch_count"
         },
@@ -12860,6 +12975,9 @@
         },
         "configureFog": {
           "ffi": "goud_renderer3d_configure_fog"
+        },
+        "configureFogLinear": {
+          "ffi": "goud_renderer3d_configure_fog_linear"
         },
         "setFogEnabled": {
           "ffi": "goud_renderer3d_set_fog_enabled"
