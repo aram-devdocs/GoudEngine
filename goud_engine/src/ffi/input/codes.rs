@@ -109,3 +109,48 @@ mod mouse_buttons {
     pub const MOUSE_BUTTON_8: GoudMouseButton = 7;
 }
 pub use mouse_buttons::*;
+
+/// FFI-compatible gamepad button code.
+pub type GoudGamepadButton = u32;
+
+/// FFI-compatible gamepad axis code.
+pub type GoudGamepadAxis = u32;
+
+// Gamepad button constants (matching GamepadButton repr(u32) discriminants).
+#[allow(missing_docs)]
+mod gamepad_buttons {
+    use super::GoudGamepadButton;
+    /// A / Cross
+    pub const GAMEPAD_BUTTON_SOUTH: GoudGamepadButton = 0;
+    /// B / Circle
+    pub const GAMEPAD_BUTTON_EAST: GoudGamepadButton = 1;
+    /// X / Square
+    pub const GAMEPAD_BUTTON_WEST: GoudGamepadButton = 2;
+    /// Y / Triangle
+    pub const GAMEPAD_BUTTON_NORTH: GoudGamepadButton = 3;
+    pub const GAMEPAD_BUTTON_LEFT_BUMPER: GoudGamepadButton = 4;
+    pub const GAMEPAD_BUTTON_RIGHT_BUMPER: GoudGamepadButton = 5;
+    pub const GAMEPAD_BUTTON_BACK: GoudGamepadButton = 6;
+    pub const GAMEPAD_BUTTON_START: GoudGamepadButton = 7;
+    pub const GAMEPAD_BUTTON_GUIDE: GoudGamepadButton = 8;
+    pub const GAMEPAD_BUTTON_LEFT_STICK: GoudGamepadButton = 9;
+    pub const GAMEPAD_BUTTON_RIGHT_STICK: GoudGamepadButton = 10;
+    pub const GAMEPAD_BUTTON_DPAD_UP: GoudGamepadButton = 11;
+    pub const GAMEPAD_BUTTON_DPAD_RIGHT: GoudGamepadButton = 12;
+    pub const GAMEPAD_BUTTON_DPAD_DOWN: GoudGamepadButton = 13;
+    pub const GAMEPAD_BUTTON_DPAD_LEFT: GoudGamepadButton = 14;
+}
+pub use gamepad_buttons::*;
+
+// Gamepad axis constants (matching GamepadAxis repr(u32) discriminants).
+#[allow(missing_docs)]
+mod gamepad_axes {
+    use super::GoudGamepadAxis;
+    pub const GAMEPAD_AXIS_LEFT_X: GoudGamepadAxis = 0;
+    pub const GAMEPAD_AXIS_LEFT_Y: GoudGamepadAxis = 1;
+    pub const GAMEPAD_AXIS_RIGHT_X: GoudGamepadAxis = 2;
+    pub const GAMEPAD_AXIS_RIGHT_Y: GoudGamepadAxis = 3;
+    pub const GAMEPAD_AXIS_LEFT_TRIGGER: GoudGamepadAxis = 4;
+    pub const GAMEPAD_AXIS_RIGHT_TRIGGER: GoudGamepadAxis = 5;
+}
+pub use gamepad_axes::*;

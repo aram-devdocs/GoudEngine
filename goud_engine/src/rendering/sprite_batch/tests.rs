@@ -183,6 +183,7 @@ fn test_gather_sprites_culls_outside_viewport() {
         height: 128,
         logical_width: 128,
         logical_height: 128,
+        scale_factor: 1.0,
     });
 
     batch.gather_sprites(&world, &mut asset_server).unwrap();

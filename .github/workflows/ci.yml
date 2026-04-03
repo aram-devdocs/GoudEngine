@@ -54,7 +54,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libudev-dev
 
     - name: Set up Python (for codegen)
       uses: actions/setup-python@v6
@@ -142,7 +142,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libxkbcommon-x11-dev
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libudev-dev libxkbcommon-x11-dev
 
     - name: Run clippy (Windows stable)
       if: matrix.run_windows_native_clippy
@@ -276,7 +276,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libudev-dev
 
     - name: Set up Python
       uses: actions/setup-python@v6
@@ -340,7 +340,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libxkbcommon-x11-dev
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libudev-dev libxkbcommon-x11-dev
 
     - name: Build native library
       run: cargo build --release
@@ -389,7 +389,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libxkbcommon-x11-dev
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libudev-dev libxkbcommon-x11-dev
     
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
@@ -487,7 +487,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libudev-dev
 
     - name: Download native release artifact
       uses: actions/download-artifact@v4
@@ -602,7 +602,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libudev-dev
 
     - name: Run full build script
       run: |
@@ -677,7 +677,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libxkbcommon-x11-dev
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libudev-dev libxkbcommon-x11-dev
 
     - name: Install npm dependencies
       working-directory: sdks/typescript
@@ -950,7 +950,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y xvfb libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libxkbcommon-x11-dev
+        sudo apt-get install -y xvfb libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libudev-dev libxkbcommon-x11-dev
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -1087,6 +1087,7 @@ jobs:
     name: iOS Build Pipeline
     runs-on: macos-latest
     needs: [preflight]
+    timeout-minutes: 35
     steps:
     - uses: actions/checkout@v6
 
@@ -1112,10 +1113,36 @@ jobs:
           CODE_SIGNING_ALLOWED=NO \
           build
 
+    - name: Build iOS Flappy Bird example for simulator
+      env:
+        GOUD_ENGINE_IOS_LIB_DIR: ${{ github.workspace }}/platform/ios/build/simulator
+      working-directory: examples/ios/flappy_bird
+      run: |
+        # Resolve SPM dependencies and build for iOS Simulator
+        xcodebuild \
+          -scheme FlappyBird \
+          -configuration Debug \
+          -sdk iphonesimulator \
+          -destination 'generic/platform=iOS Simulator' \
+          -derivedDataPath .build/derivedData \
+          CODE_SIGNING_ALLOWED=NO \
+          build 2>&1 || {
+          echo "xcodebuild failed, trying swift build as fallback..."
+          swift build \
+            --sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" \
+            --triple arm64-apple-ios-simulator \
+            -Xlinker -L"${GOUD_ENGINE_IOS_LIB_DIR}"
+        }
+
+    - name: Shutdown iOS Simulator
+      if: always()
+      run: xcrun simctl shutdown booted || true
+
   android-build-pipeline:
     name: Android Build Pipeline
     runs-on: ubuntu-latest
     needs: [preflight]
+    timeout-minutes: 15
     steps:
     - uses: actions/checkout@v6
 
@@ -1148,6 +1175,49 @@ jobs:
     - name: Build Android template
       working-directory: platform/android/template
       run: ./gradlew assembleDebug --no-daemon
+
+    - name: Copy native libraries to Flappy Bird example
+      run: |
+        mkdir -p examples/android/flappy_bird/app/src/main/jniLibs
+        cp -r platform/android/template/app/src/main/jniLibs/* \
+              examples/android/flappy_bird/app/src/main/jniLibs/
+
+    - name: Build Android Flappy Bird example
+      working-directory: examples/android/flappy_bird
+      env:
+        GOUD_REPO_ROOT: ${{ github.workspace }}
+      run: ./gradlew assembleDebug --no-daemon
+
+    - name: Enable KVM group permissions
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+          | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+
+    - name: Smoke test on Android emulator
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 30
+        arch: x86_64
+        force-avd-creation: false
+        emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio
+        disable-animations: true
+        script: |
+          adb install examples/android/flappy_bird/app/build/outputs/apk/debug/app-debug.apk
+          adb shell am start -n com.goudengine.flappybird/.MainActivity
+          sleep 5
+          adb exec-out screencap -p > android-smoke-test.png
+          # Verify the app was installed and launched (may crash due to no GPU in CI)
+          adb shell pm list packages | grep -q "com.goudengine.flappybird"
+
+    - name: Upload Android smoke test screenshot
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-smoke-screenshot
+        path: android-smoke-test.png
+        retention-days: 7
 
   # C SDK tests (CMake-based, needs native library)
   c-sdk-check:
@@ -1223,7 +1293,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libudev-dev
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable

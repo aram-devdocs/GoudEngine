@@ -346,8 +346,10 @@ impl GoudGame {
             },
         )?;
         let framebuffer_size = native_runtime.platform.get_framebuffer_size();
-        let render_viewport =
+        let platform_scale = native_runtime.platform.get_scale_factor();
+        let mut render_viewport =
             compute_render_viewport(framebuffer_size, window_size, ViewportScaleMode::Stretch);
+        render_viewport.scale_factor = platform_scale;
 
         let audio_manager = crate::assets::AudioManager::new().ok();
         let debugger_route =
@@ -442,6 +444,9 @@ impl GoudGame {
             self.viewport_scale_mode,
             self.config.aspect_ratio_lock,
         );
+        if let Some(ref platform) = self.platform {
+            self.render_viewport.scale_factor = platform.get_scale_factor();
+        }
         self.context.set_window_size(logical_size);
         self.apply_render_viewport();
     }

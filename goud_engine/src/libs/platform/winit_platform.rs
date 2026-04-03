@@ -62,6 +62,10 @@ struct WinitState {
 pub struct WinitPlatform {
     event_loop: EventLoop<()>,
     state: WinitState,
+    /// gilrs gamepad backend for platform-independent controller support.
+    /// Wrapped in `Option` for graceful fallback if initialization fails.
+    #[cfg(feature = "gilrs")]
+    gilrs: Option<gilrs::Gilrs>,
 }
 
 impl WinitPlatform {
@@ -103,7 +107,24 @@ impl WinitPlatform {
             ));
         }
 
-        let mut platform = Self { event_loop, state };
+        #[cfg(feature = "gilrs")]
+        let gilrs = match gilrs::Gilrs::new() {
+            Ok(g) => {
+                log::info!("gilrs gamepad backend initialized");
+                Some(g)
+            }
+            Err(e) => {
+                log::warn!("Failed to initialize gilrs gamepad backend: {e}");
+                None
+            }
+        };
+
+        let mut platform = Self {
+            event_loop,
+            state,
+            #[cfg(feature = "gilrs")]
+            gilrs,
+        };
 
         // Apply initial fullscreen mode from config.
         if config.fullscreen_mode != super::FullscreenMode::Windowed {
@@ -158,6 +179,12 @@ impl PlatformBackend for WinitPlatform {
             let _ = self
                 .event_loop
                 .pump_app_events(Some(Duration::ZERO), &mut handler);
+        }
+
+        // Poll gilrs gamepad events and forward to InputManager.
+        #[cfg(feature = "gilrs")]
+        if let Some(ref mut gilrs_instance) = self.gilrs {
+            super::gilrs_bridge::poll_gilrs_events(gilrs_instance, input);
         }
 
         let now = Instant::now();
@@ -232,6 +259,14 @@ impl PlatformBackend for WinitPlatform {
 
     fn is_suspended(&self) -> bool {
         self.state.is_suspended
+    }
+
+    fn get_scale_factor(&self) -> f32 {
+        self.state
+            .window
+            .as_ref()
+            .map(|w| w.scale_factor() as f32)
+            .unwrap_or(1.0)
     }
 }
 

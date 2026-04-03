@@ -1,0 +1,6 @@
+# This directory is populated by platform/android/build-android.sh
+# which builds the native .so files via cargo-ndk for:
+#   - arm64-v8a
+#   - x86_64
+#
+# Do not commit .so files to version control.

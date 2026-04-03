@@ -47,6 +47,7 @@
 
 mod fixed_timestep;
 mod lifecycle;
+mod mobile;
 mod properties;
 mod state;
 
@@ -64,6 +65,10 @@ pub use fixed_timestep::{
     goud_fixed_timestep_set, goud_fixed_timestep_set_max_steps, goud_fixed_timestep_step,
 };
 pub use lifecycle::{goud_window_create, goud_window_destroy};
+pub use mobile::{
+    goud_get_framebuffer_size, goud_get_logical_size, goud_get_safe_area_insets,
+    goud_get_scale_factor,
+};
 pub use properties::{
     goud_window_clear, goud_window_get_delta_time, goud_window_get_framebuffer_size,
     goud_window_get_fullscreen, goud_window_get_size, goud_window_poll_events,
