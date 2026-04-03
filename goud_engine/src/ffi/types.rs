@@ -49,6 +49,8 @@ pub struct FfiRenderMetrics {
 pub struct FfiFramePhaseTimings {
     /// Time to acquire the next surface texture (us).
     pub surface_acquire_us: u64,
+    /// GPU shadow depth pass recording and execution time (us).
+    pub shadow_pass_us: u64,
     /// Shadow map build time (us).
     pub shadow_build_us: u64,
     /// 3D scene render time (us).

@@ -466,8 +466,11 @@ impl Renderer3D {
         self.backend.set_uniform_int(uniforms.shadow_map, 1);
         self.backend
             .set_uniform_int(uniforms.shadows_enabled, i32::from(shadows_enabled));
+        let shadows = &self.config.shadows;
         self.backend
-            .set_uniform_float(uniforms.shadow_bias, self.config.shadows.bias);
+            .set_uniform_float(uniforms.shadow_bias, shadows.bias);
+        self.backend
+            .set_uniform_float(uniforms.shadow_strength, shadows.shadow_strength);
         let texel = if self.config.shadows.map_size > 0 {
             1.0 / self.config.shadows.map_size as f32
         } else {

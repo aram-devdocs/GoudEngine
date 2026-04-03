@@ -77,7 +77,8 @@ impl WgpuBackend {
             },
             alpha_mode: caps.alpha_modes[0],
             view_formats: vec![],
-            desired_maximum_frame_latency: 1,
+            // wgpu default; 2 allows double-buffering for smooth frame delivery on high-refresh displays
+            desired_maximum_frame_latency: 2,
         };
         surface.configure(&device, &surface_config);
 
@@ -215,91 +216,12 @@ impl WgpuBackend {
                 }],
             });
 
-        // Bind group layout for shadow depth texture + comparison sampler (group 3).
-        let shadow_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("shadow_bgl"),
-                entries: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Texture {
-                            sample_type: wgpu::TextureSampleType::Depth,
-                            view_dimension: wgpu::TextureViewDimension::D2,
-                            multisampled: false,
-                        },
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Comparison),
-                        count: None,
-                    },
-                ],
-            });
-
-        // Create a fallback 1x1 depth texture + bind group for draws without shadows.
-        let fallback_shadow_bind_group = {
-            let tex = device.create_texture(&wgpu::TextureDescriptor {
-                label: Some("fallback-shadow-1x1"),
-                size: wgpu::Extent3d {
-                    width: 1,
-                    height: 1,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: wgpu::TextureFormat::Depth32Float,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                    | wgpu::TextureUsages::TEXTURE_BINDING,
-                view_formats: &[],
-            });
-            // Initialize fallback depth to 1.0 via a clear render pass.
-            let view = tex.create_view(&wgpu::TextureViewDescriptor::default());
-            {
-                let mut init_encoder =
-                    device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-                let _ = init_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                    label: Some("fallback-shadow-clear"),
-                    color_attachments: &[],
-                    depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                        view: &view,
-                        depth_ops: Some(wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(1.0),
-                            store: wgpu::StoreOp::Store,
-                        }),
-                        stencil_ops: None,
-                    }),
-                    timestamp_writes: None,
-                    occlusion_query_set: None,
-                    multiview_mask: None,
-                });
-                queue.submit(std::iter::once(init_encoder.finish()));
-            }
-            let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-                label: Some("fallback-shadow-sampler"),
-                compare: Some(wgpu::CompareFunction::LessEqual),
-                mag_filter: wgpu::FilterMode::Linear,
-                min_filter: wgpu::FilterMode::Linear,
-                ..Default::default()
-            });
-            device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("fallback-shadow-bg"),
-                layout: &shadow_bind_group_layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&view),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: wgpu::BindingResource::Sampler(&sampler),
-                    },
-                ],
-            })
-        };
+        let shadow_bind_group_layout = super::shadow_pass::create_shadow_bind_group_layout(&device);
+        let fallback_shadow_bind_group = super::shadow_pass::create_fallback_shadow_bind_group(
+            &device,
+            &queue,
+            &shadow_bind_group_layout,
+        );
 
         // Create fallback storage buffer bind group (empty 64-byte buffer).
         let fallback_storage_bind_group = {

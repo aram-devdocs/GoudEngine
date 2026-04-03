@@ -182,7 +182,10 @@ pub fn create_native_runtime(
             let (w, h) = platform.get_framebuffer_size();
             let mut backend =
                 crate::libs::graphics::backend::wgpu_backend::WgpuBackend::new_from_raw_handle(
-                    handle, w, h, true,
+                    handle,
+                    w,
+                    h,
+                    window_config.vsync,
                 )?;
             backend.resize(w, h);
             Ok(NativeRuntime {

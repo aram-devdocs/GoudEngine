@@ -17,8 +17,8 @@ pub(super) struct SoftwareShadowMap {
 /// Maximum total vertex count for CPU shadow rasterization.
 ///
 /// Scenes exceeding this threshold skip the software shadow pass entirely.
-/// The CPU rasterizer is a compatibility bridge; once a GPU shadow pass exists
-/// this limit can be removed.
+/// This limit applies only to the CPU fallback/test rasterizer path. The GPU
+/// shadow pre-pass (wgpu backend) has no such vertex limit.
 const MAX_SHADOW_VERTICES: usize = 10_000;
 
 /// Computes the light-space matrix and light direction for the first enabled
@@ -53,8 +53,13 @@ pub(super) fn compute_light_space_matrix(
 
     let (scene_min, scene_max) = bounds(&world_positions);
     let center = (scene_min + scene_max) * 0.5;
+    let extent = scene_max - scene_min;
+    let scene_radius =
+        (extent.x * extent.x + extent.y * extent.y + extent.z * extent.z).sqrt() * 0.5;
+    // Place the light camera far enough to enclose the scene bounding sphere.
+    let light_dist = scene_radius + 1.0;
     let light_target = Point3::from_vec(center);
-    let light_origin = Point3::from_vec(center - direction * 20.0);
+    let light_origin = Point3::from_vec(center - direction * light_dist);
     let up = if direction.y.abs() > 0.95 {
         Vector3::new(0.0, 0.0, 1.0)
     } else {
@@ -70,13 +75,15 @@ pub(super) fn compute_light_space_matrix(
         })
         .collect();
     let (light_min, light_max) = bounds(&light_space_points);
+    // Pad the near/far planes proportionally to the scene size.
+    let ortho_pad = scene_radius * 0.25;
     let projection = cgmath::ortho(
         light_min.x,
         light_max.x,
         light_min.y,
         light_max.y,
-        -light_max.z - 10.0,
-        -light_min.z + 10.0,
+        -light_max.z - ortho_pad,
+        -light_min.z + ortho_pad,
     );
     let lsm = projection * light_view;
     Some((lsm, direction))
@@ -87,14 +94,7 @@ pub(super) fn build_directional_shadow_map(
     lights: &HashMap<u32, Light>,
     size: u32,
 ) -> Option<SoftwareShadowMap> {
-    let light = lights
-        .values()
-        .find(|light| light.enabled && light.light_type == LightType::Directional)?;
-    let direction = if light.direction.magnitude2() > 0.0 {
-        light.direction.normalize()
-    } else {
-        Vector3::new(0.0, -1.0, 0.0)
-    };
+    let (light_space_matrix, direction) = compute_light_space_matrix(objects, lights)?;
 
     // Count total vertices across all objects. Each vertex uses 8 floats
     // (pos + normal + uv), so divide by the stride to get the vertex count.
@@ -120,8 +120,9 @@ pub(super) fn build_directional_shadow_map(
         return None;
     }
 
-    Some(build_shadow_map_from_meshes(
+    Some(rasterize_shadow_map(
         &meshes,
+        light_space_matrix,
         direction,
         size.max(32),
     ))
@@ -165,45 +166,63 @@ pub(super) struct ShadowMesh<'a> {
     pub(super) model: Matrix4<f32>,
 }
 
+/// Builds a shadow map from meshes given a light direction.
+///
+/// Computes the light-space matrix internally from the scene geometry.
+/// Used by tests; production code should prefer `build_directional_shadow_map`.
+#[cfg(test)]
 pub(super) fn build_shadow_map_from_meshes(
     meshes: &[ShadowMesh<'_>],
     light_direction: Vector3<f32>,
     size: u32,
 ) -> SoftwareShadowMap {
-    let world_positions = meshes
+    let world_positions: Vec<Vector3<f32>> = meshes
         .iter()
         .flat_map(|mesh| world_positions(mesh.vertices, mesh.model))
-        .collect::<Vec<_>>();
-
+        .collect();
     let (scene_min, scene_max) = bounds(&world_positions);
     let center = (scene_min + scene_max) * 0.5;
+    let extent = scene_max - scene_min;
+    let scene_radius =
+        (extent.x * extent.x + extent.y * extent.y + extent.z * extent.z).sqrt() * 0.5;
+    let light_dist = scene_radius + 1.0;
+    let dir = light_direction.normalize();
     let light_target = Point3::from_vec(center);
-    let light_origin = Point3::from_vec(center - light_direction.normalize() * 20.0);
-    let up = if light_direction.y.abs() > 0.95 {
+    let light_origin = Point3::from_vec(center - dir * light_dist);
+    let up = if dir.y.abs() > 0.95 {
         Vector3::new(0.0, 0.0, 1.0)
     } else {
         Vector3::new(0.0, 1.0, 0.0)
     };
     let light_view = Matrix4::look_at_rh(light_origin, light_target, up);
-
-    let light_space_points = world_positions
+    let light_space_points: Vec<Vector3<f32>> = world_positions
         .iter()
-        .map(|position| {
-            let p = light_view * position.extend(1.0);
-            p.truncate()
-        })
-        .collect::<Vec<_>>();
+        .map(|p| (light_view * p.extend(1.0)).truncate())
+        .collect();
     let (light_min, light_max) = bounds(&light_space_points);
+    let ortho_pad = scene_radius * 0.25;
     let projection = cgmath::ortho(
         light_min.x,
         light_max.x,
         light_min.y,
         light_max.y,
-        -light_max.z - 10.0,
-        -light_min.z + 10.0,
+        -light_max.z - ortho_pad,
+        -light_min.z + ortho_pad,
     );
     let light_space_matrix = projection * light_view;
+    rasterize_shadow_map(meshes, light_space_matrix, light_direction, size)
+}
 
+/// Rasterizes a shadow map using a pre-computed light-space matrix.
+///
+/// Called by `build_directional_shadow_map` after the matrix is obtained from
+/// `compute_light_space_matrix`, avoiding duplicated computation.
+fn rasterize_shadow_map(
+    meshes: &[ShadowMesh<'_>],
+    light_space_matrix: Matrix4<f32>,
+    _light_direction: Vector3<f32>,
+    size: u32,
+) -> SoftwareShadowMap {
     let mut depth_values = vec![1.0f32; (size * size) as usize];
     for mesh in meshes {
         for triangle in mesh.vertices.chunks_exact(24) {

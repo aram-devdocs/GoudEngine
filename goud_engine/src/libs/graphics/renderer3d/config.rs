@@ -123,6 +123,11 @@ pub struct ShadowConfig {
     pub map_size: u32,
     /// Depth bias to reduce shadow acne (default: `0.005`).
     pub bias: f32,
+    /// Shadow intensity multiplier (default: `0.65`).
+    ///
+    /// Controls how dark shadows appear. `1.0` = fully black shadows,
+    /// `0.0` = no shadow darkening.
+    pub shadow_strength: f32,
     /// Vertex count threshold above which shadows auto-disable (default: `10_000`).
     pub auto_disable_vertex_threshold: usize,
 }
@@ -133,6 +138,7 @@ impl Default for ShadowConfig {
             enabled: false,
             map_size: 256,
             bias: 0.005,
+            shadow_strength: 0.65,
             auto_disable_vertex_threshold: 10_000,
         }
     }

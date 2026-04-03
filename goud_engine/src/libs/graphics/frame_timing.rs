@@ -21,6 +21,8 @@ pub struct FramePhaseTimings {
     pub readback_stall_us: u64,
     /// Surface present / vsync wait time.
     pub surface_present_us: u64,
+    /// GPU shadow depth pass recording and execution time.
+    pub shadow_pass_us: u64,
     /// Shadow map build time.
     pub shadow_build_us: u64,
     /// 3D scene render time.
@@ -42,11 +44,20 @@ pub fn record_timing(field: &str, value: u64) {
             "gpu_submit" => t.gpu_submit_us = value,
             "readback_stall" => t.readback_stall_us = value,
             "surface_present" => t.surface_present_us = value,
+            "shadow_pass" => t.shadow_pass_us = value,
             "shadow_build" => t.shadow_build_us = value,
             "render3d_scene" => t.render3d_scene_us = value,
             _ => {}
         }
     });
+}
+
+/// Records a single phase timing into both the thread-local cache and the
+/// debugger runtime. Replaces dual-call sites that previously called
+/// `record_timing()` and `debugger::record_phase_duration()` separately.
+pub fn record_phase(name: &str, us: u64) {
+    record_timing(name, us);
+    crate::core::debugger::record_phase_duration(name, us);
 }
 
 /// Returns the latest frame phase timings.
@@ -67,6 +78,7 @@ mod tests {
     fn record_and_read_timings() {
         reset_timings();
         record_timing("surface_acquire", 100);
+        record_timing("shadow_pass", 150);
         record_timing("shadow_build", 200);
         record_timing("render3d_scene", 300);
         record_timing("uniform_upload", 400);
@@ -77,6 +89,7 @@ mod tests {
 
         let t = latest_timings();
         assert_eq!(t.surface_acquire_us, 100);
+        assert_eq!(t.shadow_pass_us, 150);
         assert_eq!(t.shadow_build_us, 200);
         assert_eq!(t.render3d_scene_us, 300);
         assert_eq!(t.uniform_upload_us, 400);
@@ -110,6 +123,7 @@ mod tests {
     fn default_timings_are_zero() {
         let t = FramePhaseTimings::default();
         assert_eq!(t.surface_acquire_us, 0);
+        assert_eq!(t.shadow_pass_us, 0);
         assert_eq!(t.shadow_build_us, 0);
         assert_eq!(t.render3d_scene_us, 0);
         assert_eq!(t.uniform_upload_us, 0);

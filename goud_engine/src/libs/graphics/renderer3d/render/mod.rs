@@ -1,10 +1,11 @@
 //! Frame rendering logic for [`Renderer3D`].
 
+mod shadow_render;
 mod util;
 
 use super::core::Renderer3D;
 use super::frustum::Frustum;
-use super::shadow::{build_directional_shadow_map, compute_light_space_matrix};
+use super::shadow::build_directional_shadow_map;
 use super::texture::TextureManagerTrait;
 use crate::libs::graphics::backend::{
     types::TextureHandle, BlendFactor, CullFace, DepthFunc, FrontFace, PrimitiveTopology,
@@ -93,66 +94,7 @@ impl Renderer3D {
 
         let (shadow_matrix, shadow_active) = if self.config.shadows.enabled {
             if gpu_shadow {
-                // GPU shadow pre-pass: record draw commands into the shadow
-                // command list which the backend replays in a depth-only pass.
-                if let Some((lsm, _dir)) = compute_light_space_matrix(&self.objects, &self.lights) {
-                    let lsm_arr = mat4_to_array(&lsm);
-
-                    self.backend
-                        .ensure_shadow_resources(self.config.shadows.map_size);
-                    self.backend.begin_shadow_recording();
-                    let _ = self.backend.bind_shader(self.depth_only_shader_handle);
-
-                    let scene_obj_filter_shadow = self
-                        .current_scene
-                        .and_then(|sid| self.scenes.get(&sid))
-                        .map(|s| &s.objects);
-
-                    for (&id, obj) in &self.objects {
-                        if obj.vertices.is_empty() {
-                            continue;
-                        }
-                        if let Some(filter) = scene_obj_filter_shadow {
-                            if !filter.contains(&id) {
-                                continue;
-                            }
-                        }
-                        let model =
-                            Self::create_model_matrix(obj.position, obj.rotation, obj.scale);
-                        let mvp = lsm * model;
-                        let mvp_arr = mat4_to_array(&mvp);
-                        self.backend
-                            .set_uniform_mat4(self.depth_only_uniforms.mvp, &mvp_arr);
-                        let _ = self.backend.bind_buffer(obj.buffer);
-                        self.backend.set_vertex_attributes(&self.depth_only_layout);
-                        let _ = self.backend.draw_arrays(
-                            PrimitiveTopology::Triangles,
-                            0,
-                            obj.vertex_count as u32,
-                        );
-                    }
-
-                    // Also render skinned meshes to the shadow map.
-                    for sm in self.skinned_meshes.values() {
-                        let model = Self::create_model_matrix(sm.position, sm.rotation, sm.scale);
-                        let mvp = lsm * model;
-                        let mvp_arr = mat4_to_array(&mvp);
-                        self.backend
-                            .set_uniform_mat4(self.depth_only_uniforms.mvp, &mvp_arr);
-                        let _ = self.backend.bind_buffer(sm.buffer);
-                        self.backend.set_vertex_attributes(&self.depth_only_layout);
-                        let _ = self.backend.draw_arrays(
-                            PrimitiveTopology::Triangles,
-                            0,
-                            sm.vertex_count as u32,
-                        );
-                    }
-
-                    self.backend.end_shadow_recording();
-                    (lsm_arr, true)
-                } else {
-                    (mat4_to_array(&Matrix4::from_scale(1.0)), false)
-                }
+                self.record_gpu_shadow_pre_pass()
             } else {
                 // Legacy CPU shadow rasterizer for the OpenGL backend.
                 let shadow_map = build_directional_shadow_map(
@@ -174,8 +116,7 @@ impl Renderer3D {
         };
 
         let shadow_us = shadow_start.elapsed().as_micros() as u64;
-        crate::libs::graphics::frame_timing::record_timing("shadow_build", shadow_us);
-        crate::core::debugger::record_phase_duration("shadow_build", shadow_us);
+        crate::libs::graphics::frame_timing::record_phase("shadow_build", shadow_us);
 
         if eff_grid.enabled {
             let _ = self.backend.bind_shader(self.grid_shader_handle);
@@ -531,7 +472,6 @@ impl Renderer3D {
         self.backend.disable_culling();
 
         let render3d_us = render3d_start.elapsed().as_micros() as u64;
-        crate::libs::graphics::frame_timing::record_timing("render3d_scene", render3d_us);
-        crate::core::debugger::record_phase_duration("render3d_scene", render3d_us);
+        crate::libs::graphics::frame_timing::record_phase("render3d_scene", render3d_us);
     }
 }

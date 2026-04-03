@@ -96,6 +96,7 @@ pub unsafe extern "C" fn goud_renderer_get_frame_phase_timings(
     // SAFETY: out_timings is non-null and points to writable storage for one FfiFramePhaseTimings.
     *out_timings = FfiFramePhaseTimings {
         surface_acquire_us: timings.surface_acquire_us,
+        shadow_pass_us: timings.shadow_pass_us,
         shadow_build_us: timings.shadow_build_us,
         render3d_scene_us: timings.render3d_scene_us,
         uniform_upload_us: timings.uniform_upload_us,

@@ -26,14 +26,11 @@ impl WgpuBackend {
                 None => continue,
             };
 
-            // Use a 3-bind-group layout when the draw command has a storage
-            // buffer (GPU skinning), otherwise use the standard 2-group layout.
             // Build pipeline layout with 4 bind groups:
             //   group(0) = uniforms, group(1) = texture,
             //   group(2) = storage (GPU skinning), group(3) = shadow depth.
             // All 4 groups are always present; fallback bind groups are used
             // when storage or shadow resources are not actively needed.
-            let _has_storage = cmd.storage_buffer.is_some();
             let pipeline_layout =
                 self.device
                     .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {

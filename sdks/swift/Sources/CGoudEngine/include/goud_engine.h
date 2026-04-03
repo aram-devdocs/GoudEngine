@@ -1257,6 +1257,10 @@ typedef struct FfiFramePhaseTimings {
      */
     uint64_t surface_acquire_us;
     /**
+     * GPU shadow depth pass recording and execution time (us).
+     */
+    uint64_t shadow_pass_us;
+    /**
      * Shadow map build time (us).
      */
     uint64_t shadow_build_us;

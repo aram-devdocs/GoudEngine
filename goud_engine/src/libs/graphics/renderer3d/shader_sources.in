@@ -56,6 +56,7 @@ uniform bool useTexture;
 uniform vec4 objectColor;
 uniform bool shadowsEnabled;
 uniform float shadowBias;
+uniform float shadowStrength;
 uniform vec2 shadowTexelSize;
 
 vec3 calculatePointLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir) {
@@ -165,7 +166,7 @@ void main() {
     }
 
     float shadow = calculateShadowFactor();
-    vec3 finalColor = (1.0 - 0.65 * shadow) * result * baseColor.rgb;
+    vec3 finalColor = (1.0 - shadowStrength * shadow) * result * baseColor.rgb;
 
     if (fogEnabled) {
         float distance = length(FragPos - viewPos);
@@ -246,6 +247,7 @@ uniform vec3 fogColor;
 uniform float fogDensity;
 uniform bool shadowsEnabled;
 uniform float shadowBias;
+uniform float shadowStrength;
 uniform vec2 shadowTexelSize;
 
 vec3 calculatePointLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir) {
@@ -332,7 +334,7 @@ void main() {
     vec4 baseColor = useTexture ? texture(texture1, TexCoord) : objectColor;
     baseColor *= InstanceColor;
     float shadow = calculateShadowFactor();
-    vec3 finalColor = (1.0 - 0.65 * shadow) * result * baseColor.rgb;
+    vec3 finalColor = (1.0 - shadowStrength * shadow) * result * baseColor.rgb;
 
     if (fogEnabled) {
         float distance = length(FragPos - viewPos);
@@ -420,7 +422,7 @@ struct Uniforms {
     fogEnabled: i32,
     shadowBias: f32,
     shadowTexelSize: vec2<f32>,
-    _pad3: f32,
+    shadowStrength: f32,
     primaryLightDir: vec3<f32>,
     primaryLightIntensity: f32,
     primaryLightColor: vec3<f32>,
@@ -491,7 +493,7 @@ struct Uniforms {
     fogEnabled: i32,
     shadowBias: f32,
     shadowTexelSize: vec2<f32>,
-    _pad3: f32,
+    shadowStrength: f32,
     primaryLightDir: vec3<f32>,
     primaryLightIntensity: f32,
     primaryLightColor: vec3<f32>,
@@ -628,7 +630,7 @@ fn main(
     base_color = base_color * inst_color;
 
     let shadow = calculate_shadow_factor(frag_pos_light_space);
-    var final_color = (1.0 - 0.65 * shadow) * result * base_color.rgb;
+    var final_color = (1.0 - uniforms.shadowStrength * shadow) * result * base_color.rgb;
 
     if uniforms.fogEnabled != 0 {
         let dist = length(frag_pos - uniforms.viewPos);
@@ -667,7 +669,7 @@ struct Uniforms {
     fogEnabled: i32,
     shadowBias: f32,
     shadowTexelSize: vec2<f32>,
-    _pad3: f32,
+    shadowStrength: f32,
     primaryLightDir: vec3<f32>,
     primaryLightIntensity: f32,
     primaryLightColor: vec3<f32>,
@@ -731,7 +733,7 @@ struct Uniforms {
     fogEnabled: i32,
     shadowBias: f32,
     shadowTexelSize: vec2<f32>,
-    _pad3: f32,
+    shadowStrength: f32,
     primaryLightDir: vec3<f32>,
     primaryLightIntensity: f32,
     primaryLightColor: vec3<f32>,
@@ -866,7 +868,7 @@ fn main(
     }
 
     let shadow = calculate_shadow_factor(frag_pos_light_space);
-    var final_color = (1.0 - 0.65 * shadow) * result * base_color.rgb;
+    var final_color = (1.0 - uniforms.shadowStrength * shadow) * result * base_color.rgb;
 
     if uniforms.fogEnabled != 0 {
         let dist = length(frag_pos - uniforms.viewPos);
@@ -1281,7 +1283,7 @@ struct Uniforms {
     fogEnabled: i32,
     shadowBias: f32,
     shadowTexelSize: vec2<f32>,
-    _pad3: f32,
+    shadowStrength: f32,
     primaryLightDir: vec3<f32>,
     primaryLightIntensity: f32,
     primaryLightColor: vec3<f32>,

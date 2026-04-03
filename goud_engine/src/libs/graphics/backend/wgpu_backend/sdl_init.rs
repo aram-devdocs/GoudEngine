@@ -94,7 +94,8 @@ impl WgpuBackend {
             },
             alpha_mode: caps.alpha_modes[0],
             view_formats: vec![],
-            desired_maximum_frame_latency: 1,
+            // wgpu default; 2 allows double-buffering for smooth frame delivery on high-refresh displays
+            desired_maximum_frame_latency: 2,
         };
         surface.configure(&device, &surface_config);
 
@@ -246,6 +247,13 @@ impl WgpuBackend {
             })
         };
 
+        let shadow_bind_group_layout = super::shadow_pass::create_shadow_bind_group_layout(&device);
+        let fallback_shadow_bind_group = super::shadow_pass::create_fallback_shadow_bind_group(
+            &device,
+            &queue,
+            &shadow_bind_group_layout,
+        );
+
         Ok(Self {
             info,
             device,
@@ -296,6 +304,18 @@ impl WgpuBackend {
             bound_storage_buffer: None,
             storage_bind_group_cache: HashMap::new(),
             uniform_ring: Vec::with_capacity(UNIFORM_BUFFER_SIZE * 64),
+            shadow_bind_group_layout,
+            shadow_depth_texture: None,
+            shadow_depth_view: None,
+            shadow_sample_view: None,
+            shadow_sampler: None,
+            shadow_bind_group: None,
+            fallback_shadow_bind_group,
+            shadow_draw_commands: Vec::new(),
+            recording_shadow: false,
+            shadow_map_size: 0,
+            shadow_pipeline_cache: HashMap::new(),
+            readback_requested: false,
         })
     }
 }

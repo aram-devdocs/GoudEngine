@@ -50,6 +50,7 @@ impl Drop for Renderer3D {
             self.postprocess_shader_handle,
             self.skinned_shader_handle,
             self.instanced_skinned_shader_handle,
+            self.depth_only_shader_handle,
         ] {
             self.backend.destroy_shader(sh);
         }
