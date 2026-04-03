@@ -1014,6 +1014,7 @@ export class GoudGame implements IGoudGame {
   setGridEnabled(_enabled: boolean): boolean { return false; }
   configureSkybox(_enabled: boolean, _r: number, _g: number, _b: number, _a: number): boolean { return false; }
   configureFog(_enabled: boolean, _r: number, _g: number, _b: number, _density: number): boolean { return false; }
+  configureFogLinear(_enabled: boolean, _startDistance: number, _endDistance: number, _r: number, _g: number, _b: number): boolean { return false; }
   setFogEnabled(_enabled: boolean): boolean { return false; }
   render3D(): boolean { return false; }
   setFrustumCullingEnabled(_enabled: boolean): number { return 0; }

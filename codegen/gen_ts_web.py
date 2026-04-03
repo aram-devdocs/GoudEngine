@@ -1124,6 +1124,7 @@ def gen_web_wrapper():
     lines.append("  setGridEnabled(_enabled: boolean): boolean { return false; }")
     lines.append("  configureSkybox(_enabled: boolean, _r: number, _g: number, _b: number, _a: number): boolean { return false; }")
     lines.append("  configureFog(_enabled: boolean, _r: number, _g: number, _b: number, _density: number): boolean { return false; }")
+    lines.append("  configureFogLinear(_enabled: boolean, _startDistance: number, _endDistance: number, _r: number, _g: number, _b: number): boolean { return false; }")
     lines.append("  setFogEnabled(_enabled: boolean): boolean { return false; }")
     lines.append("  render3D(): boolean { return false; }")
     lines.append("  setFrustumCullingEnabled(_enabled: boolean): number { return 0; }")
