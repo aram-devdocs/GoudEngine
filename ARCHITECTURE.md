@@ -102,7 +102,7 @@ The `RenderBackend` trait abstracts the GPU backend. Both 2D (SpriteBatch) and 3
 | Feature | Dependencies |
 |---------|-------------|
 | `default` | `desktop-native` |
-| `native` | `wgpu-backend`, `cc`, `bindgen`, `cbindgen`, `tiled`, `rayon`, `env_logger`, `toml`, `gltf`, `tobj`, `fbxcel`, `net-udp`, `net-tcp`, `net-ws`, `rapier2d`, `rapier3d` |
+| `native` | `wgpu-backend`, `cc`, `bindgen`, `cbindgen`, `tiled`, `rayon`, `env_logger`, `toml`, `gltf`, `tobj`, `fbxcel`, `net-udp`, `net-tcp`, `net-ws`, `rapier2d`, `rapier3d`, `gilrs` |
 | `desktop-native` | `native`, `interprocess`, `notify`, `rodio` |
 | `jni-bridge` | `jni` |
 | `legacy-glfw-opengl` | `gl`, `glfw` |
@@ -115,6 +115,7 @@ The `RenderBackend` trait abstracts the GPU backend. Both 2D (SpriteBatch) and 3
 | `web` | `wgpu-backend`, `wasm-bindgen`, `wasm-bindgen-futures`, `web-sys`, `js-sys` |
 | `rapier2d` | `rapier2d` |
 | `rapier3d` | `rapier3d` |
+| `gilrs` | `gilrs` |
 | `headless` | (empty) |
 | `xbox-gdk` | `wgpu-backend` |
 | `sdl-window` | `wgpu-backend`, `sdl2` |
