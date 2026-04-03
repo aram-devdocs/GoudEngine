@@ -1,12 +1,5 @@
-//! # SDK 3D Rendering API
-//!
-//! Provides methods on [`GoudGame`] for 3D rendering operations
-//! including primitive creation, object manipulation, lighting, camera control,
-//! and scene configuration.
-//!
-//! # Availability
-//!
-//! This module requires the `native` feature (desktop platform with OpenGL).
+//! SDK 3D Rendering API: primitives, objects, lighting, camera, and scene configuration.
+//! Requires the `native` feature (desktop platform).
 
 use super::GoudGame;
 #[cfg(feature = "native")]

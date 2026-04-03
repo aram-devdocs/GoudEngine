@@ -144,10 +144,6 @@ impl Renderer3D {
     }
 
     /// Render skinned Model3D and ModelInstance3D entries using the skinned shader.
-    ///
-    /// Iterates models and instances that have `is_skinned == true`, binds the
-    /// skinned shader, uploads bone matrices from the matching `AnimationPlayer`,
-    /// and draws each sub-mesh with the skinned vertex layout.
     pub(super) fn render_skinned_models(
         &mut self,
         view_arr: &[f32; 16],
@@ -400,8 +396,6 @@ impl Renderer3D {
             }
         }
     }
-
-    // render_instanced_skinned_models is in render_instanced_skinned.rs
 
     /// Upload view/projection/fog/light uniforms to the currently-bound shader.
     pub(super) fn apply_main_uniforms(
