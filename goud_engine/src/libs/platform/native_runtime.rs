@@ -43,6 +43,8 @@ pub fn detect_best_backend() -> (WindowBackendKind, RenderBackendKind) {
     {
         return (WindowBackendKind::SwitchVulkan, RenderBackendKind::Wgpu);
     }
+    // SDL works on all desktops but auto-detect prefers it only on Linux
+    // where it replaces GLFW as the portkit-friendly windowing layer.
     #[cfg(all(feature = "sdl-window", target_os = "linux"))]
     {
         return (WindowBackendKind::SdlWindow, RenderBackendKind::Wgpu);
