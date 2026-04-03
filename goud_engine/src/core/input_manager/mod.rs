@@ -83,5 +83,5 @@ mod types;
 #[cfg(test)]
 mod tests;
 
-pub use manager::InputManager;
+pub use manager::{InputManager, MAX_GAMEPAD_SLOTS};
 pub use types::InputBinding;

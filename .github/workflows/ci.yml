@@ -1087,6 +1087,7 @@ jobs:
     name: iOS Build Pipeline
     runs-on: macos-latest
     needs: [preflight]
+    timeout-minutes: 15
     steps:
     - uses: actions/checkout@v6
 
@@ -1112,10 +1113,57 @@ jobs:
           CODE_SIGNING_ALLOWED=NO \
           build
 
+    - name: Build iOS Flappy Bird example for simulator
+      env:
+        GOUD_ENGINE_IOS_LIB_DIR: ${{ github.workspace }}/platform/ios/build/simulator
+      run: |
+        xcodebuild \
+          -scheme FlappyBird \
+          -configuration Debug \
+          -sdk iphonesimulator \
+          -destination 'platform=iOS Simulator,name=iPhone 15' \
+          -derivedDataPath examples/ios/flappy_bird/.build/derivedData \
+          CODE_SIGNING_ALLOWED=NO \
+          build
+      working-directory: examples/ios/flappy_bird
+
+    - name: Boot iOS Simulator
+      run: xcrun simctl boot "iPhone 15" || true
+
+    - name: Install iOS Flappy Bird on simulator
+      run: |
+        APP_PATH=$(find examples/ios/flappy_bird/.build/derivedData -name "FlappyBird.app" -type d | head -1)
+        echo "Installing app from: ${APP_PATH}"
+        xcrun simctl install booted "${APP_PATH}"
+
+    - name: Launch iOS Flappy Bird on simulator
+      run: xcrun simctl launch booted com.goudengine.FlappyBird
+
+    - name: Smoke test - wait and screenshot
+      run: |
+        sleep 5
+        xcrun simctl io booted screenshot ios-smoke-test.png
+
+    - name: Smoke test - assert process is alive
+      run: xcrun simctl spawn booted launchctl list | grep -q "com.goudengine.FlappyBird"
+
+    - name: Upload iOS smoke test screenshot
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-smoke-screenshot
+        path: ios-smoke-test.png
+        retention-days: 7
+
+    - name: Shutdown iOS Simulator
+      if: always()
+      run: xcrun simctl shutdown booted || true
+
   android-build-pipeline:
     name: Android Build Pipeline
     runs-on: ubuntu-latest
     needs: [preflight]
+    timeout-minutes: 15
     steps:
     - uses: actions/checkout@v6
 
@@ -1148,6 +1196,48 @@ jobs:
     - name: Build Android template
       working-directory: platform/android/template
       run: ./gradlew assembleDebug --no-daemon
+
+    - name: Copy native libraries to Flappy Bird example
+      run: |
+        mkdir -p examples/android/flappy_bird/app/src/main/jniLibs
+        cp -r platform/android/template/app/src/main/jniLibs/* \
+              examples/android/flappy_bird/app/src/main/jniLibs/
+
+    - name: Build Android Flappy Bird example
+      working-directory: examples/android/flappy_bird
+      env:
+        GOUD_REPO_ROOT: ${{ github.workspace }}
+      run: ./gradlew assembleDebug --no-daemon
+
+    - name: Enable KVM group permissions
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+          | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+
+    - name: Smoke test on Android emulator
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 30
+        arch: x86_64
+        force-avd-creation: false
+        emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio
+        disable-animations: true
+        script: |
+          adb install examples/android/flappy_bird/app/build/outputs/apk/debug/app-debug.apk
+          adb shell am start -n com.goudengine.flappybird/.MainActivity
+          sleep 5
+          adb exec-out screencap -p > android-smoke-test.png
+          adb shell dumpsys activity activities | grep -q "com.goudengine.flappybird"
+
+    - name: Upload Android smoke test screenshot
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-smoke-screenshot
+        path: android-smoke-test.png
+        retention-days: 7
 
   # C SDK tests (CMake-based, needs native library)
   c-sdk-check:

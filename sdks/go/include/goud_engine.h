@@ -41,6 +41,11 @@ extern "C" {
 #define PROTOCOL_VERSION 1
 
 /**
+ * Maximum number of gamepad slots supported by the engine.
+ */
+#define MAX_GAMEPAD_SLOTS 4
+
+/**
  * Sentinel value for an invalid entity ID.
  */
 #define GOUD_INVALID_ENTITY_ID UINT64_MAX
@@ -1438,6 +1443,16 @@ typedef struct FfiUiStyle {
 } FfiUiStyle;
 
 /**
+ * FFI-compatible gamepad button code.
+ */
+typedef uint32_t GoudGamepadButton;
+
+/**
+ * FFI-compatible gamepad axis code.
+ */
+typedef uint32_t GoudGamepadAxis;
+
+/**
  * Opaque shader handle for FFI.
  */
 typedef uint64_t GoudShaderHandle;
@@ -1695,6 +1710,60 @@ typedef struct GoudResult {
  * Invalid engine state.
  */
 #define ERR_INVALID_STATE 902
+
+/**
+ * A / Cross
+ */
+#define GAMEPAD_BUTTON_SOUTH 0
+
+/**
+ * B / Circle
+ */
+#define GAMEPAD_BUTTON_EAST 1
+
+/**
+ * X / Square
+ */
+#define GAMEPAD_BUTTON_WEST 2
+
+/**
+ * Y / Triangle
+ */
+#define GAMEPAD_BUTTON_NORTH 3
+
+#define GAMEPAD_BUTTON_LEFT_BUMPER 4
+
+#define GAMEPAD_BUTTON_RIGHT_BUMPER 5
+
+#define GAMEPAD_BUTTON_BACK 6
+
+#define GAMEPAD_BUTTON_START 7
+
+#define GAMEPAD_BUTTON_GUIDE 8
+
+#define GAMEPAD_BUTTON_LEFT_STICK 9
+
+#define GAMEPAD_BUTTON_RIGHT_STICK 10
+
+#define GAMEPAD_BUTTON_DPAD_UP 11
+
+#define GAMEPAD_BUTTON_DPAD_RIGHT 12
+
+#define GAMEPAD_BUTTON_DPAD_DOWN 13
+
+#define GAMEPAD_BUTTON_DPAD_LEFT 14
+
+#define GAMEPAD_AXIS_LEFT_X 0
+
+#define GAMEPAD_AXIS_LEFT_Y 1
+
+#define GAMEPAD_AXIS_RIGHT_X 2
+
+#define GAMEPAD_AXIS_RIGHT_Y 3
+
+#define GAMEPAD_AXIS_LEFT_TRIGGER 4
+
+#define GAMEPAD_AXIS_RIGHT_TRIGGER 5
 
 /**
  * Invalid atlas handle constant.
@@ -2868,6 +2937,61 @@ bool goud_input_action_just_pressed(struct GoudContextId context_id, const char 
  * Returns `true` if the specified action was just released this frame.
  */
 bool goud_input_action_just_released(struct GoudContextId context_id, const char *action_name);
+
+/**
+ * Returns `true` if the specified gamepad button is currently pressed.
+ */
+bool goud_input_gamepad_button_pressed(struct GoudContextId context_id, uint32_t gamepad_id, uint32_t button);
+
+/**
+ * Returns `true` if the specified gamepad button was just pressed this frame.
+ */
+bool goud_input_gamepad_button_just_pressed(struct GoudContextId context_id, uint32_t gamepad_id, uint32_t button);
+
+/**
+ * Returns `true` if the specified gamepad button was just released this frame.
+ */
+bool goud_input_gamepad_button_just_released(struct GoudContextId context_id, uint32_t gamepad_id, uint32_t button);
+
+/**
+ * Returns the current value of a gamepad analog axis (-1.0 to 1.0).
+ */
+float goud_input_gamepad_axis(struct GoudContextId context_id, uint32_t gamepad_id, uint32_t axis);
+
+/**
+ * Returns `true` if the specified gamepad is currently connected.
+ */
+bool goud_input_gamepad_connected(struct GoudContextId context_id, uint32_t gamepad_id);
+
+/**
+ * Returns the number of currently connected gamepads.
+ */
+uint32_t goud_input_gamepad_connected_count(struct GoudContextId context_id);
+
+/**
+ * Sets the vibration intensity for a gamepad (0.0-1.0).
+ */
+bool goud_input_gamepad_set_vibration(struct GoudContextId context_id, uint32_t gamepad_id, float intensity);
+
+/**
+ * Writes the left stick position to the output pointers.
+ */
+bool goud_input_gamepad_left_stick(struct GoudContextId context_id, uint32_t gamepad_id, float *out_x, float *out_y);
+
+/**
+ * Writes the right stick position to the output pointers.
+ */
+bool goud_input_gamepad_right_stick(struct GoudContextId context_id, uint32_t gamepad_id, float *out_x, float *out_y);
+
+/**
+ * Returns the left trigger value (0.0 to 1.0).
+ */
+float goud_input_gamepad_left_trigger(struct GoudContextId context_id, uint32_t gamepad_id);
+
+/**
+ * Returns the right trigger value (0.0 to 1.0).
+ */
+float goud_input_gamepad_right_trigger(struct GoudContextId context_id, uint32_t gamepad_id);
 
 /**
  * Returns `true` if the specified key is currently pressed.
@@ -5182,6 +5306,26 @@ bool goud_fixed_timestep_set(struct GoudContextId context_id, float step);
  * Sets the maximum fixed steps per frame at runtime for an existing context.
  */
 bool goud_fixed_timestep_set_max_steps(struct GoudContextId context_id, uint32_t max);
+
+/**
+ * Gets the display scale factor (DPI ratio) for the window.
+ */
+float goud_get_scale_factor(struct GoudContextId context_id);
+
+/**
+ * Gets the safe area insets for the current display.
+ */
+bool goud_get_safe_area_insets(struct GoudContextId context_id, float *top, float *bottom, float *left, float *right);
+
+/**
+ * Gets the logical window size.
+ */
+bool goud_get_logical_size(struct GoudContextId context_id, uint32_t *width, uint32_t *height);
+
+/**
+ * Gets the physical framebuffer size.
+ */
+bool goud_get_framebuffer_size(struct GoudContextId context_id, uint32_t *width, uint32_t *height);
 
 #ifdef __cplusplus
 } /* extern "C" */

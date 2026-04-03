@@ -30,6 +30,8 @@
 //! let mut platform = GlfwPlatform::new(&config)?;
 //! ```
 
+#[cfg(feature = "gilrs")]
+mod gilrs_bridge;
 #[cfg(feature = "legacy-glfw-opengl")]
 pub mod glfw_platform;
 #[cfg(any(
@@ -65,6 +67,25 @@ pub mod xbox_gdk_platform;
     feature = "switch-vulkan"
 ))]
 use crate::core::input_manager::InputManager;
+
+/// Describes the non-interactive safe area on devices with notches, rounded
+/// corners, or system bars (e.g. iOS/Android). Values are in logical points.
+///
+/// This struct lives at the platform (Layer 2) level so that both the
+/// [`PlatformBackend`] trait and higher layers (rendering) can reference it
+/// without violating the dependency hierarchy.
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[repr(C)]
+pub struct SafeAreaInsets {
+    /// Inset from the top edge in logical points.
+    pub top: f32,
+    /// Inset from the bottom edge in logical points.
+    pub bottom: f32,
+    /// Inset from the left edge in logical points.
+    pub left: f32,
+    /// Inset from the right edge in logical points.
+    pub right: f32,
+}
 
 /// Fullscreen mode for the native window.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
@@ -271,6 +292,23 @@ pub trait PlatformBackend {
     /// Returns `true` if the platform is currently in a suspended state.
     fn is_suspended(&self) -> bool {
         false
+    }
+
+    /// Returns the display scale factor (DPI ratio).
+    ///
+    /// A value of `1.0` means standard density; `2.0` corresponds to Apple
+    /// Retina or Android xxhdpi. The default implementation returns `1.0`.
+    fn get_scale_factor(&self) -> f32 {
+        1.0
+    }
+
+    /// Returns the safe area insets for the current display.
+    ///
+    /// Safe area insets describe regions of the screen obscured by hardware
+    /// features (notch, rounded corners) or system UI (status bar, home
+    /// indicator). The default implementation returns zero insets.
+    fn get_safe_area_insets(&self) -> SafeAreaInsets {
+        SafeAreaInsets::default()
     }
 }
 

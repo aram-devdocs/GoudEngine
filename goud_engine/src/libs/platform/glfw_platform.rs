@@ -270,4 +270,17 @@ impl PlatformBackend for GlfwPlatform {
     fn get_fullscreen(&self) -> super::FullscreenMode {
         self.fullscreen_mode
     }
+
+    fn get_scale_factor(&self) -> f32 {
+        let (fb_w, fb_h) = self.window.get_framebuffer_size();
+        let (win_w, win_h) = self.window.get_size();
+        if win_w > 0 && win_h > 0 {
+            // Average the X and Y scale factors for robustness.
+            let sx = fb_w as f32 / win_w as f32;
+            let sy = fb_h as f32 / win_h as f32;
+            ((sx + sy) * 0.5).max(1.0)
+        } else {
+            1.0
+        }
+    }
 }

@@ -9,6 +9,12 @@ use crate::core::providers::input_types::{KeyCode as Key, MouseButton, TouchPhas
 
 use super::types::{BufferedInput, GamepadState, InputBinding, TouchState};
 
+/// Maximum number of gamepad slots supported by the engine.
+///
+/// This is the single source of truth for the gamepad slot limit used by
+/// both the platform layer (gilrs bridge) and the FFI gamepad module.
+pub const MAX_GAMEPAD_SLOTS: usize = 4;
+
 /// Input management resource for ECS integration.
 ///
 /// Tracks keyboard, mouse, and gamepad input state across frames,
