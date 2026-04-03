@@ -21,6 +21,67 @@ pub(super) struct SoftwareShadowMap {
 /// this limit can be removed.
 const MAX_SHADOW_VERTICES: usize = 10_000;
 
+/// Computes the light-space matrix and light direction for the first enabled
+/// directional light. Returns `None` if no directional light is present or
+/// the scene has no geometry.
+pub(super) fn compute_light_space_matrix(
+    objects: &HashMap<u32, Object3D>,
+    lights: &HashMap<u32, Light>,
+) -> Option<(Matrix4<f32>, Vector3<f32>)> {
+    let light = lights
+        .values()
+        .find(|light| light.enabled && light.light_type == LightType::Directional)?;
+    let direction = if light.direction.magnitude2() > 0.0 {
+        light.direction.normalize()
+    } else {
+        Vector3::new(0.0, -1.0, 0.0)
+    };
+
+    let world_positions: Vec<Vector3<f32>> = objects
+        .values()
+        .filter(|o| !o.vertices.is_empty())
+        .flat_map(|o| {
+            let model =
+                super::core::Renderer3D::create_model_matrix(o.position, o.rotation, o.scale);
+            world_positions(&o.vertices, model)
+        })
+        .collect();
+
+    if world_positions.is_empty() {
+        return None;
+    }
+
+    let (scene_min, scene_max) = bounds(&world_positions);
+    let center = (scene_min + scene_max) * 0.5;
+    let light_target = Point3::from_vec(center);
+    let light_origin = Point3::from_vec(center - direction * 20.0);
+    let up = if direction.y.abs() > 0.95 {
+        Vector3::new(0.0, 0.0, 1.0)
+    } else {
+        Vector3::new(0.0, 1.0, 0.0)
+    };
+    let light_view = Matrix4::look_at_rh(light_origin, light_target, up);
+
+    let light_space_points: Vec<Vector3<f32>> = world_positions
+        .iter()
+        .map(|p| {
+            let proj = light_view * p.extend(1.0);
+            proj.truncate()
+        })
+        .collect();
+    let (light_min, light_max) = bounds(&light_space_points);
+    let projection = cgmath::ortho(
+        light_min.x,
+        light_max.x,
+        light_min.y,
+        light_max.y,
+        -light_max.z - 10.0,
+        -light_min.z + 10.0,
+    );
+    let lsm = projection * light_view;
+    Some((lsm, direction))
+}
+
 pub(super) fn build_directional_shadow_map(
     objects: &HashMap<u32, Object3D>,
     lights: &HashMap<u32, Light>,

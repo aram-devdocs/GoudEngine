@@ -28,8 +28,13 @@ impl WgpuBackend {
 
             // Use a 3-bind-group layout when the draw command has a storage
             // buffer (GPU skinning), otherwise use the standard 2-group layout.
-            let has_storage = cmd.storage_buffer.is_some();
-            let pipeline_layout = if has_storage {
+            // Build pipeline layout with 4 bind groups:
+            //   group(0) = uniforms, group(1) = texture,
+            //   group(2) = storage (GPU skinning), group(3) = shadow depth.
+            // All 4 groups are always present; fallback bind groups are used
+            // when storage or shadow resources are not actively needed.
+            let _has_storage = cmd.storage_buffer.is_some();
+            let pipeline_layout =
                 self.device
                     .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                         label: None,
@@ -37,20 +42,10 @@ impl WgpuBackend {
                             Some(&self.uniform_bind_group_layout),
                             Some(&self.texture_bind_group_layout),
                             Some(&self.storage_bind_group_layout),
+                            Some(&self.shadow_bind_group_layout),
                         ],
                         immediate_size: 0,
-                    })
-            } else {
-                self.device
-                    .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                        label: None,
-                        bind_group_layouts: &[
-                            Some(&self.uniform_bind_group_layout),
-                            Some(&self.texture_bind_group_layout),
-                        ],
-                        immediate_size: 0,
-                    })
-            };
+                    });
 
             let blend_state = if key.blend_enabled {
                 // SAFETY: key.blend_src is stored as u8 cast from BlendFactor (repr(u8)); the reverse transmute is always valid.

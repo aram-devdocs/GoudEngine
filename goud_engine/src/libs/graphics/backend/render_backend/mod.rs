@@ -104,6 +104,26 @@ pub trait RenderBackend:
     fn shader_language(&self) -> ShaderLanguage {
         self.info().shader_language
     }
+
+    /// Ensures shadow map GPU resources exist at the given resolution.
+    ///
+    /// Backends that do not support GPU shadow passes keep the default no-op.
+    fn ensure_shadow_resources(&mut self, _size: u32) {}
+
+    /// Begins recording draw commands for the shadow pre-pass.
+    ///
+    /// While recording, draw commands are routed to an internal shadow
+    /// command list instead of the main draw list.
+    fn begin_shadow_recording(&mut self) {}
+
+    /// Ends shadow recording mode and returns to normal draw recording.
+    fn end_shadow_recording(&mut self) {}
+
+    /// Requests that the current frame's surface be read back after rendering.
+    ///
+    /// Without calling this, no readback buffer is prepared, avoiding the
+    /// GPU stall cost on frames that do not need post-processing.
+    fn request_readback(&mut self) {}
 }
 
 /// Marker trait bridging the "render provider" naming to the existing

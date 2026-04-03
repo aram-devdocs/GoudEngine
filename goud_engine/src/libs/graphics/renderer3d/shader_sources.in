@@ -419,8 +419,7 @@ struct Uniforms {
     shadowsEnabled: i32,
     fogEnabled: i32,
     shadowBias: f32,
-    _pad1: f32,
-    _pad2: f32,
+    shadowTexelSize: vec2<f32>,
     _pad3: f32,
     primaryLightDir: vec3<f32>,
     primaryLightIntensity: f32,
@@ -448,6 +447,7 @@ struct VertexOutput {
     @location(1) normal: vec3<f32>,
     @location(2) tex_coord: vec2<f32>,
     @location(3) inst_color: vec4<f32>,
+    @location(4) frag_pos_light_space: vec4<f32>,
 };
 
 @vertex
@@ -460,6 +460,7 @@ fn main(input: VertexInput) -> VertexOutput {
     output.normal = (model * vec4<f32>(input.normal, 0.0)).xyz;
     output.tex_coord = input.tex_coord;
     output.inst_color = input.color;
+    output.frag_pos_light_space = uniforms.lightSpaceMatrix * world_pos;
     return output;
 }
 "#;
@@ -489,8 +490,7 @@ struct Uniforms {
     shadowsEnabled: i32,
     fogEnabled: i32,
     shadowBias: f32,
-    _pad1: f32,
-    _pad2: f32,
+    shadowTexelSize: vec2<f32>,
     _pad3: f32,
     primaryLightDir: vec3<f32>,
     primaryLightIntensity: f32,
@@ -502,6 +502,8 @@ struct Uniforms {
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
 @group(1) @binding(0) var u_texture: texture_2d<f32>;
 @group(1) @binding(1) var u_sampler: sampler;
+@group(3) @binding(0) var shadow_map: texture_depth_2d;
+@group(3) @binding(1) var shadow_sampler: sampler_comparison;
 
 fn calculate_point_light(light: Light, normal: vec3<f32>, frag_pos: vec3<f32>, view_dir: vec3<f32>) -> vec3<f32> {
     let light_dir = normalize(light.position - frag_pos);
@@ -539,12 +541,38 @@ fn calculate_spot_light(light: Light, normal: vec3<f32>, frag_pos: vec3<f32>, vi
     return vec3<f32>(0.0);
 }
 
+fn calculate_shadow_factor(frag_pos_ls: vec4<f32>) -> f32 {
+    if uniforms.shadowsEnabled == 0 {
+        return 0.0;
+    }
+    let proj_coords = frag_pos_ls.xyz / frag_pos_ls.w;
+    let uv = proj_coords.xy * 0.5 + 0.5;
+    let uv_flipped = vec2(uv.x, 1.0 - uv.y);
+
+    if uv_flipped.x < 0.0 || uv_flipped.x > 1.0 || uv_flipped.y < 0.0 || uv_flipped.y > 1.0 || proj_coords.z > 1.0 {
+        return 0.0;
+    }
+
+    let current_depth = proj_coords.z;
+    let bias = uniforms.shadowBias;
+    let texel = uniforms.shadowTexelSize;
+    var shadow = 0.0;
+    for (var x: i32 = -1; x <= 1; x++) {
+        for (var y: i32 = -1; y <= 1; y++) {
+            let offset = vec2(f32(x), f32(y)) * texel;
+            shadow += textureSampleCompare(shadow_map, shadow_sampler, uv_flipped + offset, current_depth - bias);
+        }
+    }
+    return 1.0 - shadow / 9.0;
+}
+
 @fragment
 fn main(
     @location(0) frag_pos: vec3<f32>,
     @location(1) normal: vec3<f32>,
     @location(2) tex_coord: vec2<f32>,
     @location(3) inst_color: vec4<f32>,
+    @location(4) frag_pos_light_space: vec4<f32>,
 ) -> @location(0) vec4<f32> {
     let norm = normalize(normal);
     let view_dir = normalize(uniforms.viewPos - frag_pos);
@@ -599,7 +627,8 @@ fn main(
     }
     base_color = base_color * inst_color;
 
-    var final_color = result * base_color.rgb;
+    let shadow = calculate_shadow_factor(frag_pos_light_space);
+    var final_color = (1.0 - 0.65 * shadow) * result * base_color.rgb;
 
     if uniforms.fogEnabled != 0 {
         let dist = length(frag_pos - uniforms.viewPos);
@@ -637,8 +666,7 @@ struct Uniforms {
     shadowsEnabled: i32,
     fogEnabled: i32,
     shadowBias: f32,
-    _pad1: f32,
-    _pad2: f32,
+    shadowTexelSize: vec2<f32>,
     _pad3: f32,
     primaryLightDir: vec3<f32>,
     primaryLightIntensity: f32,
@@ -660,6 +688,7 @@ struct VertexOutput {
     @location(0) frag_pos: vec3<f32>,
     @location(1) normal: vec3<f32>,
     @location(2) tex_coord: vec2<f32>,
+    @location(3) frag_pos_light_space: vec4<f32>,
 };
 
 @vertex
@@ -670,6 +699,7 @@ fn main(input: VertexInput) -> VertexOutput {
     output.frag_pos = world_pos.xyz;
     output.normal = (uniforms.model * vec4<f32>(input.normal, 0.0)).xyz;
     output.tex_coord = input.tex_coord;
+    output.frag_pos_light_space = uniforms.lightSpaceMatrix * world_pos;
     return output;
 }
 "#;
@@ -700,8 +730,7 @@ struct Uniforms {
     shadowsEnabled: i32,
     fogEnabled: i32,
     shadowBias: f32,
-    _pad1: f32,
-    _pad2: f32,
+    shadowTexelSize: vec2<f32>,
     _pad3: f32,
     primaryLightDir: vec3<f32>,
     primaryLightIntensity: f32,
@@ -713,6 +742,8 @@ struct Uniforms {
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
 @group(1) @binding(0) var u_texture: texture_2d<f32>;
 @group(1) @binding(1) var u_sampler: sampler;
+@group(3) @binding(0) var shadow_map: texture_depth_2d;
+@group(3) @binding(1) var shadow_sampler: sampler_comparison;
 
 fn calculate_point_light(light: Light, normal: vec3<f32>, frag_pos: vec3<f32>, view_dir: vec3<f32>) -> vec3<f32> {
     let light_dir = normalize(light.position - frag_pos);
@@ -750,11 +781,37 @@ fn calculate_spot_light(light: Light, normal: vec3<f32>, frag_pos: vec3<f32>, vi
     return vec3<f32>(0.0);
 }
 
+fn calculate_shadow_factor(frag_pos_ls: vec4<f32>) -> f32 {
+    if uniforms.shadowsEnabled == 0 {
+        return 0.0;
+    }
+    let proj_coords = frag_pos_ls.xyz / frag_pos_ls.w;
+    let uv = proj_coords.xy * 0.5 + 0.5;
+    let uv_flipped = vec2(uv.x, 1.0 - uv.y);
+
+    if uv_flipped.x < 0.0 || uv_flipped.x > 1.0 || uv_flipped.y < 0.0 || uv_flipped.y > 1.0 || proj_coords.z > 1.0 {
+        return 0.0;
+    }
+
+    let current_depth = proj_coords.z;
+    let bias = uniforms.shadowBias;
+    let texel = uniforms.shadowTexelSize;
+    var shadow = 0.0;
+    for (var x: i32 = -1; x <= 1; x++) {
+        for (var y: i32 = -1; y <= 1; y++) {
+            let offset = vec2(f32(x), f32(y)) * texel;
+            shadow += textureSampleCompare(shadow_map, shadow_sampler, uv_flipped + offset, current_depth - bias);
+        }
+    }
+    return 1.0 - shadow / 9.0;
+}
+
 @fragment
 fn main(
     @location(0) frag_pos: vec3<f32>,
     @location(1) normal: vec3<f32>,
     @location(2) tex_coord: vec2<f32>,
+    @location(3) frag_pos_light_space: vec4<f32>,
 ) -> @location(0) vec4<f32> {
     let norm = normalize(normal);
     let view_dir = normalize(uniforms.viewPos - frag_pos);
@@ -808,7 +865,8 @@ fn main(
         base_color = uniforms.objectColor;
     }
 
-    var final_color = result * base_color.rgb;
+    let shadow = calculate_shadow_factor(frag_pos_light_space);
+    var final_color = (1.0 - 0.65 * shadow) * result * base_color.rgb;
 
     if uniforms.fogEnabled != 0 {
         let dist = length(frag_pos - uniforms.viewPos);
@@ -1095,8 +1153,7 @@ struct Uniforms {
     fogEnabled: i32,
     shadowBias: f32,
     boneOffset: i32,
-    _pad2: f32,
-    _pad3: f32,
+    shadowTexelSize: vec2<f32>,
     primaryLightDir: vec3<f32>,
     primaryLightIntensity: f32,
     primaryLightColor: vec3<f32>,
@@ -1120,6 +1177,7 @@ struct VertexOutput {
     @location(0) frag_pos: vec3<f32>,
     @location(1) normal: vec3<f32>,
     @location(2) tex_coord: vec2<f32>,
+    @location(3) frag_pos_light_space: vec4<f32>,
 };
 
 @vertex
@@ -1146,6 +1204,7 @@ fn main(input: VertexInput) -> VertexOutput {
     output.frag_pos = world_pos.xyz;
     output.normal = world_normal;
     output.tex_coord = input.tex_coord;
+    output.frag_pos_light_space = uniforms.lightSpaceMatrix * world_pos;
     return output;
 }
 "#;
@@ -1221,8 +1280,7 @@ struct Uniforms {
     shadowsEnabled: i32,
     fogEnabled: i32,
     shadowBias: f32,
-    _pad1: f32,
-    _pad2: f32,
+    shadowTexelSize: vec2<f32>,
     _pad3: f32,
     primaryLightDir: vec3<f32>,
     primaryLightIntensity: f32,
@@ -1255,6 +1313,7 @@ struct VertexOutput {
     @location(1) normal: vec3<f32>,
     @location(2) tex_coord: vec2<f32>,
     @location(3) inst_color: vec4<f32>,
+    @location(4) frag_pos_light_space: vec4<f32>,
 };
 
 @vertex
@@ -1280,6 +1339,7 @@ fn main(input: VertexInput) -> VertexOutput {
     output.normal = world_normal;
     output.tex_coord = input.tex_coord;
     output.inst_color = input.color;
+    output.frag_pos_light_space = uniforms.lightSpaceMatrix * world_pos;
     return output;
 }
 "#;
@@ -1291,4 +1351,54 @@ fn main(@location(0) normal: vec3<f32>) -> @location(0) vec4<f32> {
     let lit = 0.35 + 0.65 * abs(normalize(normal).z);
     return vec4<f32>(lit, lit, lit, 1.0);
 }
+"#;
+
+/// Depth-only vertex shader for the GPU shadow pre-pass.
+///
+/// Transforms vertices by a single MVP matrix. No fragment output is needed;
+/// wgpu writes depth automatically when no fragment stage is attached.
+pub(super) const DEPTH_ONLY_VERTEX_SHADER_WGSL: &str = r#"
+struct Uniforms {
+    mvp: mat4x4<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
+struct VertexInput {
+    @location(0) position: vec3<f32>,
+};
+
+struct VertexOutput {
+    @builtin(position) clip_position: vec4<f32>,
+};
+
+@vertex
+fn main(input: VertexInput) -> VertexOutput {
+    var output: VertexOutput;
+    output.clip_position = uniforms.mvp * vec4<f32>(input.position, 1.0);
+    return output;
+}
+"#;
+
+/// Depth-only GLSL vertex shader for the GPU shadow pre-pass (legacy OpenGL path).
+pub(super) const DEPTH_ONLY_VERTEX_SHADER: &str = r#"
+#version 330 core
+layout (location = 0) in vec3 aPos;
+uniform mat4 mvp;
+void main() {
+    gl_Position = mvp * vec4(aPos, 1.0);
+}
+"#;
+
+/// Depth-only GLSL fragment shader (legacy OpenGL path).
+pub(super) const DEPTH_ONLY_FRAGMENT_SHADER: &str = r#"
+#version 330 core
+void main() {}
+"#;
+
+/// Depth-only WGSL fragment shader -- empty; wgpu writes depth with no fragment stage.
+/// This exists only for the GLSL transpile path which requires a fragment shader.
+pub(super) const DEPTH_ONLY_FRAGMENT_SHADER_WGSL: &str = r#"
+@fragment
+fn main() {}
 "#;

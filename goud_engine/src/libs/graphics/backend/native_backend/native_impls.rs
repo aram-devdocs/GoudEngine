@@ -53,6 +53,62 @@ impl RenderBackend for NativeRenderBackend {
             Self::Wgpu(backend) => backend.read_default_framebuffer_rgba8(width, height),
         }
     }
+
+    fn ensure_shadow_resources(&mut self, size: u32) {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(_) => {}
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
+            ))]
+            Self::Wgpu(backend) => backend.ensure_shadow_resources(size),
+        }
+    }
+
+    fn begin_shadow_recording(&mut self) {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(_) => {}
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
+            ))]
+            Self::Wgpu(backend) => backend.begin_shadow_recording(),
+        }
+    }
+
+    fn end_shadow_recording(&mut self) {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(_) => {}
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
+            ))]
+            Self::Wgpu(backend) => backend.end_shadow_recording(),
+        }
+    }
+
+    fn request_readback(&mut self) {
+        match self {
+            #[cfg(feature = "legacy-glfw-opengl")]
+            Self::OpenGlLegacy(_) => {}
+            #[cfg(any(
+                all(feature = "native", feature = "wgpu-backend"),
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
+            ))]
+            Self::Wgpu(backend) => backend.request_readback(),
+        }
+    }
 }
 
 impl FrameOps for NativeRenderBackend {

@@ -166,6 +166,21 @@ pub(super) fn resolve_instanced_skinned_uniforms(
     InstancedSkinnedUniforms { main }
 }
 
+/// Cached uniform locations for the depth-only shadow shader.
+#[derive(Clone)]
+pub(super) struct DepthOnlyUniforms {
+    /// MVP matrix uniform location.
+    pub(super) mvp: i32,
+}
+
+pub(super) fn resolve_depth_only_uniforms(
+    backend: &dyn RenderBackend,
+    shader: ShaderHandle,
+) -> DepthOnlyUniforms {
+    let loc = |name: &str| -> i32 { uniform_location_or_inactive(backend, shader, name) };
+    DepthOnlyUniforms { mvp: loc("mvp") }
+}
+
 pub(super) fn resolve_grid_uniforms(
     backend: &dyn RenderBackend,
     shader: ShaderHandle,

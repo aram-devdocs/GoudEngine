@@ -56,6 +56,7 @@ impl Renderer3D {
     pub(super) fn apply_fxaa_pass(&mut self) {
         let width = self.viewport.2.max(1);
         let height = self.viewport.3.max(1);
+        self.backend.request_readback();
         let Ok(frame) = self.backend.read_default_framebuffer_rgba8(width, height) else {
             return;
         };
@@ -90,6 +91,7 @@ impl Renderer3D {
     pub(super) fn apply_postprocess_pipeline(&mut self) {
         let width = self.viewport.2.max(1);
         let height = self.viewport.3.max(1);
+        self.backend.request_readback();
         let Ok(mut frame) = self.backend.read_default_framebuffer_rgba8(width, height) else {
             return;
         };

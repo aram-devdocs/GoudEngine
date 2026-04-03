@@ -16,6 +16,19 @@ use cgmath::Matrix4;
 // ============================================================================
 
 /// Build the vertex layout for 3D objects: pos (3f) + normal (3f) + texcoord (2f) = 32 bytes
+/// Build the vertex layout for the depth-only shadow shader: only position (3f).
+///
+/// The stride is 32 bytes (same as `object_vertex_layout`) because the same
+/// vertex buffers are reused; the normal and UV attributes are simply ignored.
+pub(super) fn depth_only_vertex_layout() -> VertexLayout {
+    VertexLayout::new(32).with_attribute(VertexAttribute::new(
+        0,
+        VertexAttributeType::Float3,
+        0,
+        false,
+    ))
+}
+
 pub(super) fn object_vertex_layout() -> VertexLayout {
     VertexLayout::new(32)
         .with_attribute(VertexAttribute::new(

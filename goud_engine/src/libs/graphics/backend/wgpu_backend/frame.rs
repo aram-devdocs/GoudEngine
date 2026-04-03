@@ -45,6 +45,7 @@ impl FrameOps for WgpuBackend {
             surface_view,
         });
         self.draw_commands.clear();
+        self.shadow_draw_commands.clear();
         self.uniform_ring.clear();
         // Always clear each frame to match OpenGL's glClear() behavior and avoid
         // uninitialized surface data showing through as garbage artifacts.
@@ -110,9 +111,16 @@ impl FrameOps for WgpuBackend {
         frame_timing::record_timing("uniform_upload", uniform_us);
         crate::core::debugger::record_phase_duration("uniform_upload", uniform_us);
 
-        let readback = self
-            .surface_supports_copy_src
+        // -- shadow_pass phase ---------------------------------------------------
+        let shadow_pass_start = std::time::Instant::now();
+        self.execute_shadow_pass(&mut encoder);
+        let shadow_pass_us = shadow_pass_start.elapsed().as_micros() as u64;
+        frame_timing::record_timing("shadow_pass", shadow_pass_us);
+        crate::core::debugger::record_phase_duration("shadow_pass", shadow_pass_us);
+
+        let readback = (self.surface_supports_copy_src && self.readback_requested)
             .then(|| self.prepare_frame_readback());
+        self.readback_requested = false;
 
         // -- render_pass phase ----------------------------------------------------
         let render_pass_start = std::time::Instant::now();
@@ -167,13 +175,21 @@ impl FrameOps for WgpuBackend {
                 }
 
                 // Set storage buffer bind group at group(2) for GPU skinning.
+                // Always bind group(2) since the pipeline layout includes it.
                 if let Some(bg) = cmd
                     .storage_buffer
                     .and_then(|h| self.storage_bind_group_cache.get(&h))
                 {
                     pass.set_bind_group(2, bg, &[]);
-                } else if cmd.storage_buffer.is_some() {
+                } else {
                     pass.set_bind_group(2, &self.fallback_storage_bind_group, &[]);
+                }
+
+                // Set shadow depth texture bind group at group(3).
+                if let Some(ref shadow_bg) = self.shadow_bind_group {
+                    pass.set_bind_group(3, shadow_bg, &[]);
+                } else {
+                    pass.set_bind_group(3, &self.fallback_shadow_bind_group, &[]);
                 }
 
                 if let Some(ib_handle) = cmd.index_buffer {
