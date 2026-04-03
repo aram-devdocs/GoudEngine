@@ -116,6 +116,13 @@ jobs:
         include: ${{ fromJSON(github.event_name == 'pull_request' && '[{"os":"ubuntu-latest","rust":"stable","lane":"full","run_windows_native_clippy":false},{"os":"ubuntu-latest","rust":"nightly","lane":"smoke","run_windows_native_clippy":false},{"os":"macos-latest","rust":"stable","lane":"smoke","run_windows_native_clippy":false},{"os":"windows-latest","rust":"stable","lane":"clippy-only","run_windows_native_clippy":true}]' || '[{"os":"ubuntu-latest","rust":"stable","lane":"full","run_windows_native_clippy":false},{"os":"macos-latest","rust":"stable","lane":"full","run_windows_native_clippy":false},{"os":"windows-latest","rust":"stable","lane":"full","run_windows_native_clippy":true},{"os":"ubuntu-latest","rust":"nightly","lane":"smoke","run_windows_native_clippy":false},{"os":"macos-latest","rust":"nightly","lane":"smoke","run_windows_native_clippy":false}]') }}
 
     steps:
+    - name: Free disk space (Ubuntu)
+      if: matrix.os == 'ubuntu-latest' && matrix.lane == 'full'
+      run: |
+        sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+        sudo docker image prune --all --force || true
+        df -h /
+
     - uses: actions/checkout@v6
 
     - name: Download shared codegen artifact
