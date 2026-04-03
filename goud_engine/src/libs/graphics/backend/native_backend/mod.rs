@@ -19,7 +19,9 @@ use super::render_backend::RenderBackend;
 use super::render_backend::StateOps;
 #[cfg(any(
     all(feature = "native", feature = "wgpu-backend"),
-    feature = "xbox-gdk"
+    feature = "xbox-gdk",
+    feature = "sdl-window",
+    feature = "switch-vulkan"
 ))]
 use super::wgpu_backend::WgpuBackend;
 
