@@ -110,7 +110,7 @@ uniform float fogEnd;
 
 float calculateFog(float distance) {
     if (fogMode == 1) {
-        return clamp((fogEnd - distance) / (fogEnd - fogStart), 0.0, 1.0);
+        return clamp((fogEnd - distance) / max(fogEnd - fogStart, 0.00001), 0.0, 1.0);
     }
     float fog = exp(-pow(fogDensity * distance, 2.0));
     return clamp(fog, 0.0, 1.0);
@@ -295,7 +295,7 @@ vec3 calculateSpotLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir) {
 
 float calculateFog(float distance) {
     if (fogMode == 1) {
-        return clamp((fogEnd - distance) / (fogEnd - fogStart), 0.0, 1.0);
+        return clamp((fogEnd - distance) / max(fogEnd - fogStart, 0.00001), 0.0, 1.0);
     }
     float fog = exp(-pow(fogDensity * distance, 2.0));
     return clamp(fog, 0.0, 1.0);
@@ -403,7 +403,7 @@ void main()
         float distance = length(viewPos - fragPos);
         float fogFactor;
         if (fogMode == 1) {
-            fogFactor = clamp((fogEnd - distance) / (fogEnd - fogStart), 0.0, 1.0);
+            fogFactor = clamp((fogEnd - distance) / max(fogEnd - fogStart, 0.00001), 0.0, 1.0);
         } else {
             fogFactor = exp(-fogDensity * distance);
             fogFactor = clamp(fogFactor, 0.0, 1.0);
@@ -664,7 +664,7 @@ fn main(
         let dist = length(frag_pos - uniforms.viewPos);
         var fog_factor: f32;
         if uniforms.fogMode == 1 {
-            fog_factor = clamp((uniforms.fogEnd - dist) / (uniforms.fogEnd - uniforms.fogStart), 0.0, 1.0);
+            fog_factor = clamp((uniforms.fogEnd - dist) / max(uniforms.fogEnd - uniforms.fogStart, 0.00001), 0.0, 1.0);
         } else {
             fog_factor = clamp(exp(-pow(uniforms.fogDensity * dist, 2.0)), 0.0, 1.0);
         }
@@ -915,7 +915,7 @@ fn main(
         let dist = length(frag_pos - uniforms.viewPos);
         var fog_factor: f32;
         if uniforms.fogMode == 1 {
-            fog_factor = clamp((uniforms.fogEnd - dist) / (uniforms.fogEnd - uniforms.fogStart), 0.0, 1.0);
+            fog_factor = clamp((uniforms.fogEnd - dist) / max(uniforms.fogEnd - uniforms.fogStart, 0.00001), 0.0, 1.0);
         } else {
             fog_factor = clamp(exp(-pow(uniforms.fogDensity * dist, 2.0)), 0.0, 1.0);
         }
@@ -990,7 +990,7 @@ fn main(
         let dist = length(uniforms.viewPos - frag_pos);
         var fog_factor: f32;
         if uniforms.fogMode == 1 {
-            fog_factor = clamp((uniforms.fogEnd - dist) / (uniforms.fogEnd - uniforms.fogStart), 0.0, 1.0);
+            fog_factor = clamp((uniforms.fogEnd - dist) / max(uniforms.fogEnd - uniforms.fogStart, 0.00001), 0.0, 1.0);
         } else {
             fog_factor = clamp(exp(-pow(uniforms.fogDensity * dist, 2.0)), 0.0, 1.0);
         }
