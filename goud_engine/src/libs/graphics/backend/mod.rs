@@ -23,7 +23,12 @@
 
 pub mod blend;
 pub mod capabilities;
-#[cfg(any(feature = "native", feature = "xbox-gdk"))]
+#[cfg(any(
+    feature = "native",
+    feature = "xbox-gdk",
+    feature = "sdl-window",
+    feature = "switch-vulkan"
+))]
 pub mod native_backend;
 pub mod null;
 #[cfg(feature = "legacy-glfw-opengl")]
@@ -32,7 +37,9 @@ pub mod render_backend;
 pub mod types;
 #[cfg(any(
     all(feature = "native", feature = "wgpu-backend"),
-    feature = "xbox-gdk"
+    feature = "xbox-gdk",
+    feature = "sdl-window",
+    feature = "switch-vulkan"
 ))]
 pub mod wgpu_backend;
 

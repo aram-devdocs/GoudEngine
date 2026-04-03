@@ -14,7 +14,9 @@ impl RenderBackend for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.bind_default_vertex_array(),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.bind_default_vertex_array(),
         }
@@ -26,7 +28,9 @@ impl RenderBackend for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.validate_text_draw_state(),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.validate_text_draw_state(),
         }
@@ -42,7 +46,9 @@ impl RenderBackend for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.read_default_framebuffer_rgba8(width, height),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.read_default_framebuffer_rgba8(width, height),
         }
@@ -56,7 +62,9 @@ impl FrameOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.begin_frame(),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.begin_frame(),
         }
@@ -68,7 +76,9 @@ impl FrameOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.end_frame(),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.end_frame(),
         }
@@ -82,7 +92,9 @@ impl ClearOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.set_clear_color(r, g, b, a),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.set_clear_color(r, g, b, a),
         }
@@ -94,7 +106,9 @@ impl ClearOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.clear_color(),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.clear_color(),
         }
@@ -106,7 +120,9 @@ impl ClearOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.clear_depth(),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.clear_depth(),
         }
@@ -120,7 +136,9 @@ impl StateOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.set_viewport(x, y, width, height),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.set_viewport(x, y, width, height),
         }
@@ -132,7 +150,9 @@ impl StateOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.enable_depth_test(),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.enable_depth_test(),
         }
@@ -144,7 +164,9 @@ impl StateOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.disable_depth_test(),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.disable_depth_test(),
         }
@@ -156,7 +178,9 @@ impl StateOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.enable_blending(),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.enable_blending(),
         }
@@ -168,7 +192,9 @@ impl StateOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.disable_blending(),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.disable_blending(),
         }
@@ -184,7 +210,9 @@ impl StateOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.set_blend_func(src, dst),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.set_blend_func(src, dst),
         }
@@ -196,7 +224,9 @@ impl StateOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.enable_culling(),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.enable_culling(),
         }
@@ -208,7 +238,9 @@ impl StateOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.disable_culling(),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.disable_culling(),
         }
@@ -220,7 +252,9 @@ impl StateOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.set_cull_face(face),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.set_cull_face(face),
         }
@@ -232,7 +266,9 @@ impl StateOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.set_depth_func(func),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.set_depth_func(func),
         }
@@ -244,7 +280,9 @@ impl StateOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.set_front_face(face),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.set_front_face(face),
         }
@@ -256,7 +294,9 @@ impl StateOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.set_depth_mask(enabled),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.set_depth_mask(enabled),
         }
@@ -268,7 +308,9 @@ impl StateOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.set_multisampling_enabled(enabled),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.set_multisampling_enabled(enabled),
         }
@@ -280,7 +322,9 @@ impl StateOps for NativeRenderBackend {
             Self::OpenGlLegacy(backend) => backend.set_line_width(width),
             #[cfg(any(
                 all(feature = "native", feature = "wgpu-backend"),
-                feature = "xbox-gdk"
+                feature = "xbox-gdk",
+                feature = "sdl-window",
+                feature = "switch-vulkan"
             ))]
             Self::Wgpu(backend) => backend.set_line_width(width),
         }

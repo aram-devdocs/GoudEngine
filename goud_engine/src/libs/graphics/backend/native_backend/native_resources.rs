@@ -15,7 +15,7 @@ macro_rules! dispatch {
         match $self {
             #[cfg(feature = "legacy-glfw-opengl")]
             Self::OpenGlLegacy(b) => b.$method($($arg),*),
-            #[cfg(any(all(feature = "native", feature = "wgpu-backend"), feature = "xbox-gdk"))]
+            #[cfg(any(all(feature = "native", feature = "wgpu-backend"), feature = "xbox-gdk", feature = "sdl-window", feature = "switch-vulkan"))]
             Self::Wgpu(b) => b.$method($($arg),*),
         }
     };

@@ -32,8 +32,17 @@
 
 #[cfg(feature = "legacy-glfw-opengl")]
 pub mod glfw_platform;
-#[cfg(any(feature = "native", feature = "xbox-gdk"))]
+#[cfg(any(
+    feature = "native",
+    feature = "xbox-gdk",
+    feature = "sdl-window",
+    feature = "switch-vulkan"
+))]
 pub mod native_runtime;
+#[cfg(feature = "sdl-window")]
+pub mod sdl_platform;
+#[cfg(feature = "switch-vulkan")]
+pub mod switch_vulkan_platform;
 #[cfg(all(
     feature = "wgpu-backend",
     feature = "native",
@@ -49,7 +58,12 @@ pub mod winit_platform;
 #[cfg(feature = "xbox-gdk")]
 pub mod xbox_gdk_platform;
 
-#[cfg(any(feature = "native", feature = "xbox-gdk"))]
+#[cfg(any(
+    feature = "native",
+    feature = "xbox-gdk",
+    feature = "sdl-window",
+    feature = "switch-vulkan"
+))]
 use crate::core::input_manager::InputManager;
 
 /// Fullscreen mode for the native window.
@@ -114,6 +128,12 @@ pub enum WindowBackendKind {
     /// Xbox GDK windowing path (PoC).
     #[cfg(feature = "xbox-gdk")]
     XboxGdk = 2,
+    /// SDL2 windowing path (Linux).
+    #[cfg(feature = "sdl-window")]
+    SdlWindow = 3,
+    /// Nintendo Switch Vulkan path (PoC).
+    #[cfg(feature = "switch-vulkan")]
+    SwitchVulkan = 4,
 }
 
 impl WindowBackendKind {
@@ -124,6 +144,10 @@ impl WindowBackendKind {
             1 => Some(Self::GlfwLegacy),
             #[cfg(feature = "xbox-gdk")]
             2 => Some(Self::XboxGdk),
+            #[cfg(feature = "sdl-window")]
+            3 => Some(Self::SdlWindow),
+            #[cfg(feature = "switch-vulkan")]
+            4 => Some(Self::SwitchVulkan),
             _ => None,
         }
     }
@@ -184,7 +208,12 @@ impl Default for WindowConfig {
 ///
 /// Most windowing APIs require main-thread access. Implementations are NOT
 /// required to be `Send` or `Sync`.
-#[cfg(any(feature = "native", feature = "xbox-gdk"))]
+#[cfg(any(
+    feature = "native",
+    feature = "xbox-gdk",
+    feature = "sdl-window",
+    feature = "switch-vulkan"
+))]
 pub trait PlatformBackend {
     /// Returns `true` if the window has been requested to close.
     fn should_close(&self) -> bool;
@@ -313,6 +342,24 @@ mod tests {
         assert_eq!(
             WindowBackendKind::from_u32(2),
             Some(WindowBackendKind::XboxGdk)
+        );
+    }
+
+    #[cfg(feature = "sdl-window")]
+    #[test]
+    fn sdl_window_backend_round_trip() {
+        assert_eq!(
+            WindowBackendKind::from_u32(3),
+            Some(WindowBackendKind::SdlWindow)
+        );
+    }
+
+    #[cfg(feature = "switch-vulkan")]
+    #[test]
+    fn switch_vulkan_window_backend_round_trip() {
+        assert_eq!(
+            WindowBackendKind::from_u32(4),
+            Some(WindowBackendKind::SwitchVulkan)
         );
     }
 }
