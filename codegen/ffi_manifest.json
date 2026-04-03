@@ -4325,6 +4325,14 @@
       "return_type": "i32",
       "is_unsafe": true
     },
+    "goud_renderer_get_frame_phase_timings": {
+      "source_file": "ffi/renderer/metrics.rs",
+      "params": [
+        "out_timings: *mut FfiFramePhaseTimings"
+      ],
+      "return_type": "i32",
+      "is_unsafe": true
+    },
     "goud_renderer_get_stats": {
       "source_file": "ffi/renderer/handles.rs",
       "params": [
@@ -6396,5 +6404,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 648
+  "total_count": 649
 }

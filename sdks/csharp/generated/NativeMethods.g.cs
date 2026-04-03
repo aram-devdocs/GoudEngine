@@ -110,6 +110,19 @@ namespace GoudEngine
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct FfiFramePhaseTimings
+    {
+        public ulong SurfaceAcquireUs;
+        public ulong ShadowBuildUs;
+        public ulong Render3dSceneUs;
+        public ulong UniformUploadUs;
+        public ulong RenderPassUs;
+        public ulong GpuSubmitUs;
+        public ulong ReadbackStallUs;
+        public ulong SurfacePresentUs;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct GoudDebuggerConfig
     {
         [MarshalAs(UnmanagedType.U1)]
@@ -2459,6 +2472,9 @@ namespace GoudEngine
         // render_metrics
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int goud_renderer_get_frame_metrics(GoudContextId context_id, ref FfiRenderMetrics out_metrics);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int goud_renderer_get_frame_phase_timings(ref FfiFramePhaseTimings out_timings);
 
         // batch rendering
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

@@ -100,6 +100,19 @@
         "ui_draw_calls"
       ]
     },
+    "FramePhaseTimings": {
+      "ffi_name": "FfiFramePhaseTimings",
+      "fields": [
+        "surface_acquire_us",
+        "shadow_build_us",
+        "render3d_scene_us",
+        "uniform_upload_us",
+        "render_pass_us",
+        "gpu_submit_us",
+        "readback_stall_us",
+        "surface_present_us"
+      ]
+    },
     "DebuggerConfig": {
       "ffi_name": "GoudDebuggerConfig",
       "fields": [
@@ -486,6 +499,7 @@
     "*mut FfiPoolStats": "ctypes.POINTER(FfiPoolStats)",
     "*mut FfiArenaStats": "ctypes.POINTER(FfiArenaStats)",
     "*mut FfiRenderMetrics": "ctypes.POINTER(RenderMetrics)",
+    "*mut FfiFramePhaseTimings": "ctypes.POINTER(FfiFramePhaseTimings)",
     "*const u32": "ctypes.POINTER(ctypes.c_uint32)"
   },
   "ffi_functions": {
@@ -1223,7 +1237,8 @@
       "goud_frame_arena_stats": {}
     },
     "render_metrics": {
-      "goud_renderer_get_frame_metrics": {}
+      "goud_renderer_get_frame_metrics": {},
+      "goud_renderer_get_frame_phase_timings": {}
     }
   }
 }

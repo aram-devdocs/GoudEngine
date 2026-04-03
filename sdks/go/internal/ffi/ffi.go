@@ -2668,6 +2668,14 @@ func GoudRendererGetFrameMetrics(context_id C.GoudContextId, out_metrics *C.FfiR
 	return int32(C.goud_renderer_get_frame_metrics(context_id, out_metrics))
 }
 
+// GoudRendererGetFramePhaseTimings wraps goud_renderer_get_frame_phase_timings.
+func GoudRendererGetFramePhaseTimings(out_timings *C.FfiFramePhaseTimings) int32 {
+	if out_timings == nil {
+		return -1
+	}
+	return int32(C.goud_renderer_get_frame_phase_timings(out_timings))
+}
+
 // GoudRendererGetStats wraps goud_renderer_get_stats.
 func GoudRendererGetStats(context_id C.GoudContextId, out_stats *C.GoudRenderStats) bool {
 	if out_stats == nil {

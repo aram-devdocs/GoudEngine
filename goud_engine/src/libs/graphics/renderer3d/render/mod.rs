@@ -19,6 +19,8 @@ impl Renderer3D {
     /// scene are rendered and the scene's fog/skybox/grid configs are used.
     /// When no scene is active all entities are rendered (backward-compatible).
     pub fn render(&mut self, texture_manager: Option<&dyn TextureManagerTrait>) {
+        let render3d_start = std::time::Instant::now();
+
         // Rebuild the static batch VBO if any static flags changed.
         if self.static_batch_dirty && self.config.batching.static_batching_enabled {
             self.rebuild_static_batch();
@@ -80,6 +82,7 @@ impl Renderer3D {
         let view = self.camera.view_matrix();
         let view_arr = mat4_to_array(&view);
         let proj_arr = mat4_to_array(&projection);
+        let shadow_start = std::time::Instant::now();
         let shadow_map = if self.config.shadows.enabled {
             build_directional_shadow_map(&self.objects, &self.lights, self.config.shadows.map_size)
         } else {
@@ -92,6 +95,9 @@ impl Renderer3D {
         if let Some(map) = shadow_map.as_ref() {
             self.update_shadow_texture(&map.rgba8, map.size, map.size);
         }
+        let shadow_us = shadow_start.elapsed().as_micros() as u64;
+        crate::libs::graphics::frame_timing::record_timing("shadow_build", shadow_us);
+        crate::core::debugger::record_phase_duration("shadow_build", shadow_us);
 
         if eff_grid.enabled {
             let _ = self.backend.bind_shader(self.grid_shader_handle);
@@ -445,5 +451,9 @@ impl Renderer3D {
 
         self.render_debug_draw(&view_arr, &proj_arr, &eff_fog);
         self.backend.disable_culling();
+
+        let render3d_us = render3d_start.elapsed().as_micros() as u64;
+        crate::libs::graphics::frame_timing::record_timing("render3d_scene", render3d_us);
+        crate::core::debugger::record_phase_duration("render3d_scene", render3d_us);
     }
 }

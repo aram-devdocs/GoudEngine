@@ -19,11 +19,11 @@ impl WgpuBackend {
     /// Creates a new wgpu backend from a winit window.
     ///
     /// Blocks on async wgpu initialization via pollster.
-    pub fn new(window: Arc<winit::window::Window>) -> GoudResult<Self> {
-        pollster::block_on(Self::new_async(window))
+    pub fn new(window: Arc<winit::window::Window>, vsync: bool) -> GoudResult<Self> {
+        pollster::block_on(Self::new_async(window, vsync))
     }
 
-    async fn new_async(window: Arc<winit::window::Window>) -> GoudResult<Self> {
+    async fn new_async(window: Arc<winit::window::Window>, vsync: bool) -> GoudResult<Self> {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_with_display_handle(
             Box::new(window.clone()),
         ));
@@ -70,10 +70,14 @@ impl WgpuBackend {
             format: surface_format,
             width: size.width.max(1),
             height: size.height.max(1),
-            present_mode: wgpu::PresentMode::AutoVsync,
+            present_mode: if vsync {
+                wgpu::PresentMode::AutoVsync
+            } else {
+                wgpu::PresentMode::AutoNoVsync
+            },
             alpha_mode: caps.alpha_modes[0],
             view_formats: vec![],
-            desired_maximum_frame_latency: 2,
+            desired_maximum_frame_latency: 1,
         };
         surface.configure(&device, &surface_config);
 

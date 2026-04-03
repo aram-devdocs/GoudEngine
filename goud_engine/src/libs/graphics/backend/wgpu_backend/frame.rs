@@ -9,10 +9,15 @@ use crate::libs::error::{GoudError, GoudResult};
 
 impl FrameOps for WgpuBackend {
     fn begin_frame(&mut self) -> GoudResult<()> {
+        use crate::libs::graphics::frame_timing;
+
+        frame_timing::reset_timings();
+
         let surface = match self.surface.as_ref() {
             Some(s) => s,
             None => return Ok(()), // Surface dropped (mobile suspended) -- skip frame
         };
+        let acquire_start = std::time::Instant::now();
         let surface_texture = match surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(tex) => tex,
             wgpu::CurrentSurfaceTexture::Suboptimal(tex) => {
@@ -30,6 +35,10 @@ impl FrameOps for WgpuBackend {
                 return Err(GoudError::InternalError("Surface validation error".into()));
             }
         };
+        let acquire_us = acquire_start.elapsed().as_micros() as u64;
+        frame_timing::record_timing("surface_acquire", acquire_us);
+        crate::core::debugger::record_phase_duration("surface_acquire", acquire_us);
+
         let surface_view = surface_texture
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
@@ -46,6 +55,8 @@ impl FrameOps for WgpuBackend {
     }
 
     fn end_frame(&mut self) -> GoudResult<()> {
+        use crate::libs::graphics::frame_timing;
+
         let frame = self
             .current_frame
             .take()
@@ -54,6 +65,9 @@ impl FrameOps for WgpuBackend {
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
+        // -- uniform_upload phase -------------------------------------------------
+        let uniform_start = std::time::Instant::now();
 
         // Upload per-draw-command uniform data into aligned dynamic-offset
         // slots.  Returns the byte offset for each command.
@@ -94,10 +108,16 @@ impl FrameOps for WgpuBackend {
             }
         }
 
+        let uniform_us = uniform_start.elapsed().as_micros() as u64;
+        frame_timing::record_timing("uniform_upload", uniform_us);
+        crate::core::debugger::record_phase_duration("uniform_upload", uniform_us);
+
         let readback = self
             .surface_supports_copy_src
             .then(|| self.prepare_frame_readback());
 
+        // -- render_pass phase ----------------------------------------------------
+        let render_pass_start = std::time::Instant::now();
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: None,
@@ -192,6 +212,9 @@ impl FrameOps for WgpuBackend {
                 }
             }
         }
+        let render_pass_us = render_pass_start.elapsed().as_micros() as u64;
+        frame_timing::record_timing("render_pass", render_pass_us);
+        crate::core::debugger::record_phase_duration("render_pass", render_pass_us);
 
         if let Some(readback) = readback {
             encoder.copy_texture_to_buffer(
@@ -216,13 +239,37 @@ impl FrameOps for WgpuBackend {
                 },
             );
 
+            // -- gpu_submit phase (readback path) ---------------------------------
+            let submit_start = std::time::Instant::now();
             self.queue.submit(std::iter::once(encoder.finish()));
+            let submit_us = submit_start.elapsed().as_micros() as u64;
+            frame_timing::record_timing("gpu_submit", submit_us);
+            crate::core::debugger::record_phase_duration("gpu_submit", submit_us);
+
+            // -- readback_stall phase ---------------------------------------------
+            let readback_start = std::time::Instant::now();
             self.finish_frame_readback(readback)?;
+            let readback_us = readback_start.elapsed().as_micros() as u64;
+            frame_timing::record_timing("readback_stall", readback_us);
+            crate::core::debugger::record_phase_duration("readback_stall", readback_us);
         } else {
+            // -- gpu_submit phase (no-readback path) ------------------------------
+            let submit_start = std::time::Instant::now();
             self.queue.submit(std::iter::once(encoder.finish()));
+            let submit_us = submit_start.elapsed().as_micros() as u64;
+            frame_timing::record_timing("gpu_submit", submit_us);
+            crate::core::debugger::record_phase_duration("gpu_submit", submit_us);
+
             self.last_frame_readback = None;
         }
+
+        // -- surface_present phase ------------------------------------------------
+        let present_start = std::time::Instant::now();
         frame.surface_texture.present();
+        let present_us = present_start.elapsed().as_micros() as u64;
+        frame_timing::record_timing("surface_present", present_us);
+        crate::core::debugger::record_phase_duration("surface_present", present_us);
+
         self.draw_commands.clear();
         self.flush_pending_buffer_destroys();
         Ok(())

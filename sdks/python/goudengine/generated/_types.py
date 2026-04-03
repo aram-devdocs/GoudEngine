@@ -1411,6 +1411,21 @@ class RenderMetrics:
     def __repr__(self):
         return f"RenderMetrics(draw_call_count={self.draw_call_count}, sprites_submitted={self.sprites_submitted}, sprites_drawn={self.sprites_drawn}, sprites_culled={self.sprites_culled}, batches_submitted={self.batches_submitted}, avg_sprites_per_batch={self.avg_sprites_per_batch}, sprite_render_ms={self.sprite_render_ms}, text_render_ms={self.text_render_ms}, ui_render_ms={self.ui_render_ms}, total_render_ms={self.total_render_ms}, text_draw_calls={self.text_draw_calls}, text_glyph_count={self.text_glyph_count}, ui_draw_calls={self.ui_draw_calls})"
 
+class FramePhaseTimings:
+    """Per-frame phase timings for performance diagnosis. All values in microseconds."""
+    def __init__(self, surface_acquire_us: int = 0, shadow_build_us: int = 0, render3d_scene_us: int = 0, uniform_upload_us: int = 0, render_pass_us: int = 0, gpu_submit_us: int = 0, readback_stall_us: int = 0, surface_present_us: int = 0):
+        self.surface_acquire_us = surface_acquire_us
+        self.shadow_build_us = shadow_build_us
+        self.render3d_scene_us = render3d_scene_us
+        self.uniform_upload_us = uniform_upload_us
+        self.render_pass_us = render_pass_us
+        self.gpu_submit_us = gpu_submit_us
+        self.readback_stall_us = readback_stall_us
+        self.surface_present_us = surface_present_us
+
+    def __repr__(self):
+        return f"FramePhaseTimings(surface_acquire_us={self.surface_acquire_us}, shadow_build_us={self.shadow_build_us}, render3d_scene_us={self.render3d_scene_us}, uniform_upload_us={self.uniform_upload_us}, render_pass_us={self.render_pass_us}, gpu_submit_us={self.gpu_submit_us}, readback_stall_us={self.readback_stall_us}, surface_present_us={self.surface_present_us})"
+
 class DebuggerConfig:
     """Pre-init debugger runtime configuration for desktop contexts."""
     def __init__(self, enabled: bool = False, publish_local_attach: bool = False, route_label: str = ""):

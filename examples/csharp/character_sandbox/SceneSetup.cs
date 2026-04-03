@@ -10,7 +10,7 @@ static class SceneSetup
     static bool _animationLod = true;
     static bool _sharedAnimEval = true;
 
-    public static uint Initialize(GoudGame game)
+    public static uint Initialize(GoudGame game, bool shadows = false, uint shadowSize = 1024)
     {
         uint sceneId = game.CreateScene("main");
         game.SetCurrentScene(sceneId);
@@ -27,6 +27,12 @@ static class SceneSetup
         game.SetMaterialSortingEnabled(true);
         game.SetAnimationLodEnabled(true);
         game.SetSharedAnimationEval(true);
+
+        if (shadows)
+        {
+            game.SetShadowsEnabled(true);
+            game.SetShadowMapSize(shadowSize);
+        }
 
         return sceneId;
     }

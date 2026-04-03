@@ -6,6 +6,7 @@
 
 mod anti_aliasing;
 pub mod backend;
+pub mod frame_timing;
 #[cfg(feature = "native")]
 pub mod renderer3d;
 
