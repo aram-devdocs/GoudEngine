@@ -1087,7 +1087,7 @@ jobs:
     name: iOS Build Pipeline
     runs-on: macos-latest
     needs: [preflight]
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
     - uses: actions/checkout@v6
 
