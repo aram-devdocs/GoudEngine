@@ -23,6 +23,10 @@ let package = Package(
             path: "Sources/FlappyBird",
             linkerSettings: [
                 .unsafeFlags(["-L", libSearchPath]),
+                .linkedFramework("Metal"),
+                .linkedFramework("QuartzCore"),
+                .linkedFramework("UIKit"),
+                .linkedLibrary("z"),
             ]
         ),
     ]
