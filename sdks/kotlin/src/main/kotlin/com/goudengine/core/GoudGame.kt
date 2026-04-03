@@ -137,17 +137,17 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
         return com.goudengine.types.Vec2.fromNative(r)
     }
 
-    fun isGamepadButtonPressed(gamepadId: Int, button: Int): Boolean =
-        GoudGameNative.isGamepadButtonPressed(contextId, gamepadId, button)
+    fun isGamepadButtonPressed(gamepadId: Int, button: com.goudengine.input.GamepadButton): Boolean =
+        GoudGameNative.isGamepadButtonPressed(contextId, gamepadId, button.value)
 
-    fun isGamepadButtonJustPressed(gamepadId: Int, button: Int): Boolean =
-        GoudGameNative.isGamepadButtonJustPressed(contextId, gamepadId, button)
+    fun isGamepadButtonJustPressed(gamepadId: Int, button: com.goudengine.input.GamepadButton): Boolean =
+        GoudGameNative.isGamepadButtonJustPressed(contextId, gamepadId, button.value)
 
-    fun isGamepadButtonJustReleased(gamepadId: Int, button: Int): Boolean =
-        GoudGameNative.isGamepadButtonJustReleased(contextId, gamepadId, button)
+    fun isGamepadButtonJustReleased(gamepadId: Int, button: com.goudengine.input.GamepadButton): Boolean =
+        GoudGameNative.isGamepadButtonJustReleased(contextId, gamepadId, button.value)
 
-    fun getGamepadAxis(gamepadId: Int, axis: Int): Float =
-        GoudGameNative.getGamepadAxis(contextId, gamepadId, axis)
+    fun getGamepadAxis(gamepadId: Int, axis: com.goudengine.input.GamepadAxis): Float =
+        GoudGameNative.getGamepadAxis(contextId, gamepadId, axis.value)
 
     fun spawnEmpty(): com.goudengine.core.EntityHandle {
         val r = GoudGameNative.spawnEmpty(contextId)
