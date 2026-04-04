@@ -153,7 +153,7 @@ impl Renderer3D {
         fog: &super::types::FogConfig,
         lights: &[super::types::Light],
         texture_manager: Option<&dyn super::texture::TextureManagerTrait>,
-        instanced_ids: &std::collections::HashSet<u32>,
+        instanced_ids: &rustc_hash::FxHashSet<u32>,
     ) {
         let scene_model_filter = self
             .current_scene

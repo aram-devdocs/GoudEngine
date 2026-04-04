@@ -86,12 +86,12 @@ def gen_node_wrapper():
     lines = [
         f"// {HEADER_COMMENT}",
         "",
-        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IRenderMetrics, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IDebuggerCapture, IDebuggerReplayArtifact, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D, IP2pMeshConfig, IRollbackConfig, IBoundingBox3D, ICharacterMoveResult, PreloadAssetInput, PreloadAssetKind, ISpriteCmd, ITextCmd } from '../types/engine.g.js';",
+        "import type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IRenderMetrics, IFramePhaseTimings, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IDebuggerCapture, IDebuggerReplayArtifact, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IPreloadAssetRequest, IPreloadOptions, IPreloadProgress, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D, IP2pMeshConfig, IRollbackConfig, IBoundingBox3D, ICharacterMoveResult, PreloadAssetInput, PreloadAssetKind, ISpriteCmd, ITextCmd } from '../types/engine.g.js';",
         "import { PhysicsBackend2D, RenderBackendKind, WindowBackendKind } from '../types/input.g.js';",
         "import { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Color, Vec2, Vec3 } from '../types/math.g.js';",
         "export { Key, MouseButton, PhysicsBackend2D, RenderBackendKind, WindowBackendKind } from '../types/input.g.js';",
-        "export type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IRenderMetrics, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IDebuggerCapture, IDebuggerReplayArtifact, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D, IP2pMeshConfig, IRollbackConfig, IBoundingBox3D, ICharacterMoveResult } from '../types/engine.g.js';",
+        "export type { IGoudGame, IUiManager, IUiStyle, IUiEvent, UiNodeId, IEntity, IColor, IVec2, IVec3, ITransform2DData, ISpriteData, IRenderStats, IContact, IFpsStats, IRenderMetrics, IFramePhaseTimings, IDebuggerConfig, IContextConfig, IMemoryCategoryStats, IMemorySummary, IDebuggerCapture, IDebuggerReplayArtifact, IPhysicsRaycastHit2D, IPhysicsCollisionEvent2D, IAnimationEventData, IRenderCapabilities, IPhysicsCapabilities, IAudioCapabilities, IInputCapabilities, INetworkCapabilities, INetworkStats, INetworkSimulationConfig, IPhysicsWorld2D, IPhysicsWorld3D, IP2pMeshConfig, IRollbackConfig, IBoundingBox3D, ICharacterMoveResult } from '../types/engine.g.js';",
         "",
         "export interface INetworkConnectResult { handle: number; peerId: number; }",
         "export interface INetworkPacket { peerId: number; data: Uint8Array; }",
@@ -360,6 +360,8 @@ def gen_node_wrapper():
             lines.append("    return this.native.getFpsStats() as unknown as IFpsStats;")
         elif mn == "getRenderMetrics":
             lines.append("    return this.native.getRenderMetrics() as unknown as IRenderMetrics;")
+        elif mn == "getFramePhaseTimings":
+            lines.append("    return this.native.getFramePhaseTimings() as unknown as IFramePhaseTimings;")
         elif mn == "getMemorySummary":
             lines.append("    return mapMemorySummary(this.native.getMemorySummary());")
         elif mn == "getNetworkStats":

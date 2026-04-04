@@ -34,6 +34,7 @@ IFACE_TYPES = {
     "RenderStats": "IRenderStats",
     "FpsStats": "IFpsStats",
     "RenderMetrics": "IRenderMetrics",
+    "FramePhaseTimings": "IFramePhaseTimings",
     "DebuggerConfig": "IDebuggerConfig",
     "ContextConfig": "IContextConfig",
     "MemoryCategoryStats": "IMemoryCategoryStats",

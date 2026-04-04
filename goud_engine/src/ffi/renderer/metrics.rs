@@ -104,6 +104,9 @@ pub unsafe extern "C" fn goud_renderer_get_frame_phase_timings(
         gpu_submit_us: timings.gpu_submit_us,
         readback_stall_us: timings.readback_stall_us,
         surface_present_us: timings.surface_present_us,
+        anim_eval_us: timings.anim_eval_us,
+        bone_pack_us: timings.bone_pack_us,
+        bone_upload_us: timings.bone_upload_us,
     };
     0
 }

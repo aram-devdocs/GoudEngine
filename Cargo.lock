@@ -1870,6 +1870,7 @@ dependencies = [
  "rayon",
  "rcgen",
  "rodio",
+ "rustc-hash 2.1.1",
  "rustls",
  "rustybuzz",
  "sdl2",

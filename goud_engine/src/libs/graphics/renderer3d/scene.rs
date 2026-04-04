@@ -1,6 +1,6 @@
 //! Named 3D scene containing a subset of renderer objects, models, lights, and environment config.
 
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 
 use super::types::{FogConfig, GridConfig, SkyboxConfig};
 
@@ -13,11 +13,11 @@ pub struct Scene3D {
     /// Human-readable scene name.
     pub name: String,
     /// [`Object3D`](super::types::Object3D) IDs belonging to this scene.
-    pub objects: HashSet<u32>,
+    pub objects: FxHashSet<u32>,
     /// [`Model3D`](super::model::Model3D) / [`ModelInstance3D`](super::model::ModelInstance3D) IDs.
-    pub models: HashSet<u32>,
+    pub models: FxHashSet<u32>,
     /// [`Light`](super::types::Light) IDs belonging to this scene.
-    pub lights: HashSet<u32>,
+    pub lights: FxHashSet<u32>,
     /// Per-scene fog configuration.
     pub fog: FogConfig,
     /// Per-scene skybox configuration.
@@ -31,9 +31,9 @@ impl Scene3D {
     pub fn new(name: String) -> Self {
         Self {
             name,
-            objects: HashSet::new(),
-            models: HashSet::new(),
-            lights: HashSet::new(),
+            objects: FxHashSet::default(),
+            models: FxHashSet::default(),
+            lights: FxHashSet::default(),
             fog: FogConfig::default(),
             skybox: SkyboxConfig::default(),
             grid: GridConfig::default(),

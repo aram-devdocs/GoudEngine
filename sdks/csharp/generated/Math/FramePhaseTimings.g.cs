@@ -8,6 +8,7 @@ namespace GoudEngine
     public struct FramePhaseTimings
     {
         public ulong SurfaceAcquireUs;
+        public ulong ShadowPassUs;
         public ulong ShadowBuildUs;
         public ulong Render3dSceneUs;
         public ulong UniformUploadUs;
@@ -15,10 +16,14 @@ namespace GoudEngine
         public ulong GpuSubmitUs;
         public ulong ReadbackStallUs;
         public ulong SurfacePresentUs;
+        public ulong AnimEvalUs;
+        public ulong BonePackUs;
+        public ulong BoneUploadUs;
 
-        public FramePhaseTimings(ulong surfaceacquireus, ulong shadowbuildus, ulong render3dsceneus, ulong uniformuploadus, ulong renderpassus, ulong gpusubmitus, ulong readbackstallus, ulong surfacepresentus)
+        public FramePhaseTimings(ulong surfaceacquireus, ulong shadowpassus, ulong shadowbuildus, ulong render3dsceneus, ulong uniformuploadus, ulong renderpassus, ulong gpusubmitus, ulong readbackstallus, ulong surfacepresentus, ulong animevalus, ulong bonepackus, ulong boneuploadus)
         {
             SurfaceAcquireUs = surfaceacquireus;
+            ShadowPassUs = shadowpassus;
             ShadowBuildUs = shadowbuildus;
             Render3dSceneUs = render3dsceneus;
             UniformUploadUs = uniformuploadus;
@@ -26,10 +31,13 @@ namespace GoudEngine
             GpuSubmitUs = gpusubmitus;
             ReadbackStallUs = readbackstallus;
             SurfacePresentUs = surfacepresentus;
+            AnimEvalUs = animevalus;
+            BonePackUs = bonepackus;
+            BoneUploadUs = boneuploadus;
         }
 
 
 
-        public override string ToString() => $"FramePhaseTimings({SurfaceAcquireUs}, {ShadowBuildUs}, {Render3dSceneUs}, {UniformUploadUs}, {RenderPassUs}, {GpuSubmitUs}, {ReadbackStallUs}, {SurfacePresentUs})";
+        public override string ToString() => $"FramePhaseTimings({SurfaceAcquireUs}, {ShadowPassUs}, {ShadowBuildUs}, {Render3dSceneUs}, {UniformUploadUs}, {RenderPassUs}, {GpuSubmitUs}, {ReadbackStallUs}, {SurfacePresentUs}, {AnimEvalUs}, {BonePackUs}, {BoneUploadUs})";
     }
 }

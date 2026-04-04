@@ -40,6 +40,10 @@ impl Renderer3D {
                 rotation: cgmath::Vector3::new(0.0, 0.0, 0.0),
                 scale: cgmath::Vector3::new(1.0, 1.0, 1.0),
                 color: self.config.default_material_color,
+                cached_model_matrix: [
+                    1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+                ],
+                transform_dirty: true,
             },
         );
         id
@@ -59,6 +63,7 @@ impl Renderer3D {
     pub fn set_skinned_mesh_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         if let Some(mesh) = self.skinned_meshes.get_mut(&id) {
             mesh.position = cgmath::Vector3::new(x, y, z);
+            mesh.transform_dirty = true;
             true
         } else {
             false
@@ -69,6 +74,7 @@ impl Renderer3D {
     pub fn set_skinned_mesh_rotation(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         if let Some(mesh) = self.skinned_meshes.get_mut(&id) {
             mesh.rotation = cgmath::Vector3::new(x, y, z);
+            mesh.transform_dirty = true;
             true
         } else {
             false
@@ -79,6 +85,7 @@ impl Renderer3D {
     pub fn set_skinned_mesh_scale(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         if let Some(mesh) = self.skinned_meshes.get_mut(&id) {
             mesh.scale = cgmath::Vector3::new(x, y, z);
+            mesh.transform_dirty = true;
             true
         } else {
             false

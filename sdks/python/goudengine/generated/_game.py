@@ -728,6 +728,12 @@ class GoudGame:
         """Returns the number of animation evaluations avoided last frame"""
         return self._lib.goud_renderer3d_get_animation_evaluation_saved_count(self._ctx)
 
+    def get_frame_phase_timings(self):
+        """Returns per-frame phase timings for performance diagnosis (all values in microseconds)"""
+        _out_timings = FfiFramePhaseTimings()
+        self._lib.goud_renderer_get_frame_phase_timings(ctypes.byref(_out_timings))
+        return FramePhaseTimings(_out_timings.surface_acquire_us, _out_timings.shadow_pass_us, _out_timings.shadow_build_us, _out_timings.render3d_scene_us, _out_timings.uniform_upload_us, _out_timings.render_pass_us, _out_timings.gpu_submit_us, _out_timings.readback_stall_us, _out_timings.surface_present_us, _out_timings.anim_eval_us, _out_timings.bone_pack_us, _out_timings.bone_upload_us)
+
     def render3_d(self):
         """Renders all 3D objects"""
         return self._lib.goud_renderer3d_render(self._ctx)

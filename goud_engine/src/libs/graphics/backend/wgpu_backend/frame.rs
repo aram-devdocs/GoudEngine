@@ -1,7 +1,7 @@
 //! Sub-trait and RenderBackend implementations for `WgpuBackend`.
 use super::{
     super::types::BufferUsage, BlendFactor, BufferHandle, BufferOps, BufferType, CullFace,
-    DepthFunc, DrawType, FrameOps, FrameState, FrontFace, PipelineKey, StateOps, WgpuBackend,
+    DepthFunc, DrawType, FrameOps, FrameState, FrontFace, StateOps, WgpuBackend,
 };
 use crate::libs::error::{GoudError, GoudResult};
 
@@ -78,12 +78,16 @@ impl FrameOps for WgpuBackend {
             wgpu::LoadOp::Load
         };
 
-        // Collect pipeline keys and ensure pipelines exist before the render pass borrow
-        let cmd_keys: Vec<PipelineKey> = self
-            .draw_commands
-            .iter()
-            .map(|cmd| self.make_pipeline_key(cmd))
-            .collect();
+        // Reuse the persistent scratch buffer for pipeline keys to avoid
+        // allocating a new Vec every frame.  We temporarily take ownership
+        // to satisfy the borrow checker, then put it back.
+        let mut cmd_keys = std::mem::take(&mut self.scratch_pipeline_keys);
+        cmd_keys.clear();
+        cmd_keys.extend(
+            self.draw_commands
+                .iter()
+                .map(|cmd| self.make_pipeline_key(cmd)),
+        );
 
         self.build_missing_pipelines(&cmd_keys);
 
@@ -225,6 +229,9 @@ impl FrameOps for WgpuBackend {
         }
         let render_pass_us = render_pass_start.elapsed().as_micros() as u64;
         frame_timing::record_phase("render_pass", render_pass_us);
+
+        // Return the scratch Vec so it is reused next frame.
+        self.scratch_pipeline_keys = cmd_keys;
 
         if let Some(readback) = readback {
             encoder.copy_texture_to_buffer(

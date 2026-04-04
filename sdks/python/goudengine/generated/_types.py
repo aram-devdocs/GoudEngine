@@ -1413,8 +1413,9 @@ class RenderMetrics:
 
 class FramePhaseTimings:
     """Per-frame phase timings for performance diagnosis. All values in microseconds."""
-    def __init__(self, surface_acquire_us: int = 0, shadow_build_us: int = 0, render3d_scene_us: int = 0, uniform_upload_us: int = 0, render_pass_us: int = 0, gpu_submit_us: int = 0, readback_stall_us: int = 0, surface_present_us: int = 0):
+    def __init__(self, surface_acquire_us: int = 0, shadow_pass_us: int = 0, shadow_build_us: int = 0, render3d_scene_us: int = 0, uniform_upload_us: int = 0, render_pass_us: int = 0, gpu_submit_us: int = 0, readback_stall_us: int = 0, surface_present_us: int = 0, anim_eval_us: int = 0, bone_pack_us: int = 0, bone_upload_us: int = 0):
         self.surface_acquire_us = surface_acquire_us
+        self.shadow_pass_us = shadow_pass_us
         self.shadow_build_us = shadow_build_us
         self.render3d_scene_us = render3d_scene_us
         self.uniform_upload_us = uniform_upload_us
@@ -1422,9 +1423,12 @@ class FramePhaseTimings:
         self.gpu_submit_us = gpu_submit_us
         self.readback_stall_us = readback_stall_us
         self.surface_present_us = surface_present_us
+        self.anim_eval_us = anim_eval_us
+        self.bone_pack_us = bone_pack_us
+        self.bone_upload_us = bone_upload_us
 
     def __repr__(self):
-        return f"FramePhaseTimings(surface_acquire_us={self.surface_acquire_us}, shadow_build_us={self.shadow_build_us}, render3d_scene_us={self.render3d_scene_us}, uniform_upload_us={self.uniform_upload_us}, render_pass_us={self.render_pass_us}, gpu_submit_us={self.gpu_submit_us}, readback_stall_us={self.readback_stall_us}, surface_present_us={self.surface_present_us})"
+        return f"FramePhaseTimings(surface_acquire_us={self.surface_acquire_us}, shadow_pass_us={self.shadow_pass_us}, shadow_build_us={self.shadow_build_us}, render3d_scene_us={self.render3d_scene_us}, uniform_upload_us={self.uniform_upload_us}, render_pass_us={self.render_pass_us}, gpu_submit_us={self.gpu_submit_us}, readback_stall_us={self.readback_stall_us}, surface_present_us={self.surface_present_us}, anim_eval_us={self.anim_eval_us}, bone_pack_us={self.bone_pack_us}, bone_upload_us={self.bone_upload_us})"
 
 class DebuggerConfig:
     """Pre-init debugger runtime configuration for desktop contexts."""

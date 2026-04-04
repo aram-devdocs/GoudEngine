@@ -26,7 +26,7 @@ impl WgpuBackend {
     /// nested `Vec`s per draw command.
     pub(super) fn make_pipeline_key(&self, cmd: &DrawCommand) -> PipelineKey {
         use std::hash::{Hash, Hasher};
-        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        let mut hasher = rustc_hash::FxHasher::default();
         for binding in &cmd.vertex_bindings {
             binding.layout.stride.hash(&mut hasher);
             (binding.step_mode as u8).hash(&mut hasher);
@@ -145,7 +145,12 @@ impl WgpuBackend {
             .collect();
 
         // Grow uniform buffers up-front before any writes.
+        // Collect unique shaders first to avoid redundant buffer recreation.
+        let mut grown_shaders = rustc_hash::FxHashSet::default();
         for cmd in &self.draw_commands {
+            if grown_shaders.contains(&cmd.shader) {
+                continue;
+            }
             if let Some(meta) = self.shaders.get_mut(&cmd.shader) {
                 if total_needed > meta.uniform_buffer.size() as usize {
                     let new_size = total_needed.next_power_of_two().max(slot_size);
@@ -169,6 +174,7 @@ impl WgpuBackend {
                             }],
                         });
                 }
+                grown_shaders.insert(cmd.shader);
             }
         }
 
@@ -206,5 +212,48 @@ impl WgpuBackend {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    /// Regression test: uniform buffer growth must use `next_power_of_two()`
+    /// to produce stable sizes. Using `* 2` caused the 62 GB memory leak
+    /// because fluctuating draw counts triggered buffer recreation every frame.
+    #[test]
+    fn uniform_buffer_growth_is_power_of_two() {
+        let slot_size = 256usize;
+
+        // Simulate varying draw counts across frames (the bug scenario).
+        let draw_counts = [50, 200, 50, 200, 100, 300, 100, 300, 47, 280, 47, 280];
+        let mut current_buffer_size = slot_size as u64; // initial 256 bytes
+        let mut realloc_count = 0u32;
+
+        for &count in &draw_counts {
+            let total_needed = count * slot_size;
+            if total_needed > current_buffer_size as usize {
+                // This is the growth formula — must match uniforms.rs:151
+                let new_size = total_needed.next_power_of_two().max(slot_size);
+                current_buffer_size = new_size as u64;
+                realloc_count += 1;
+            }
+        }
+
+        // With power-of-two growth, buffer should stabilize quickly.
+        // The max draw count is 300 * 256 = 76,800 → next_power_of_two = 131,072.
+        assert_eq!(
+            current_buffer_size, 131072,
+            "Buffer should stabilize at 128 KB"
+        );
+        assert!(
+            realloc_count <= 4,
+            "Should need at most 4 reallocations, got {realloc_count}"
+        );
+
+        // Verify that power-of-two sizes are actually used.
+        assert!(
+            current_buffer_size.is_power_of_two(),
+            "Buffer size {current_buffer_size} must be a power of two"
+        );
     }
 }

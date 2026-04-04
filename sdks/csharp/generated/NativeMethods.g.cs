@@ -113,6 +113,7 @@ namespace GoudEngine
     public struct FfiFramePhaseTimings
     {
         public ulong SurfaceAcquireUs;
+        public ulong ShadowPassUs;
         public ulong ShadowBuildUs;
         public ulong Render3dSceneUs;
         public ulong UniformUploadUs;
@@ -120,6 +121,9 @@ namespace GoudEngine
         public ulong GpuSubmitUs;
         public ulong ReadbackStallUs;
         public ulong SurfacePresentUs;
+        public ulong AnimEvalUs;
+        public ulong BonePackUs;
+        public ulong BoneUploadUs;
     }
 
     [StructLayout(LayoutKind.Sequential)]

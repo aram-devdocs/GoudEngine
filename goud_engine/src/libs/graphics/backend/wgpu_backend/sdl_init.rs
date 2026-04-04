@@ -316,6 +316,8 @@ impl WgpuBackend {
             shadow_map_size: 0,
             shadow_pipeline_cache: HashMap::new(),
             readback_requested: false,
+            scratch_pipeline_keys: Vec::new(),
+            scratch_shadow_pipeline_keys: Vec::new(),
         })
     }
 }

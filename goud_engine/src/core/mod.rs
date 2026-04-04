@@ -26,5 +26,10 @@ pub mod pool;
 pub mod providers;
 pub mod serialization;
 
+/// Fast hash map using `FxHashMap` — ideal for integer keys on hot paths.
+pub type FastMap<K, V> = rustc_hash::FxHashMap<K, V>;
+/// Fast hash set using `FxHashSet` — ideal for integer keys on hot paths.
+pub type FastSet<V> = rustc_hash::FxHashSet<V>;
+
 #[cfg(feature = "native")]
 pub mod input_manager;

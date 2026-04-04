@@ -107,12 +107,16 @@ class Program
                 int animEval = game.GetAnimationEvaluationCount();
                 int animSaved = game.GetAnimationEvaluationSavedCount();
                 int boneUploads = game.GetBoneMatrixUploadCount();
+                var pt = game.GetFramePhaseTimings();
 
                 Console.Write(
                     $"\rFPS: {fpsFrames / fpsTimer:F1}  Agents: {crowd.Count}  " +
                     $"Draws: {draws}  Visible: {visible}/{visible + culled}  " +
                     $"Instanced: {instanced}  Instances: {activeInst}  " +
-                    $"AnimEval: {animEval}  Saved: {animSaved}  Bones: {boneUploads}   "
+                    $"AnimEval: {animEval}  Saved: {animSaved}  Bones: {boneUploads}  " +
+                    $"[anim={pt.AnimEvalUs}us bone={pt.BonePackUs}+{pt.BoneUploadUs}us " +
+                    $"shadow={pt.ShadowPassUs}us render={pt.RenderPassUs}us " +
+                    $"present={pt.SurfacePresentUs}us]   "
                 );
 
                 fpsFrames = 0;
@@ -206,6 +210,7 @@ class Program
         int instanced = game.GetInstancedDrawCalls();
         int animEval = game.GetAnimationEvaluationCount();
         int animSaved = game.GetAnimationEvaluationSavedCount();
+        var pt = game.GetFramePhaseTimings();
 
         // Console summary
         Console.WriteLine();
@@ -217,6 +222,11 @@ class Program
         Console.WriteLine($"  Frame Time: Min {minFrame:F2}ms / Max {maxFrame:F2}ms / Avg {avgFrame:F2}ms");
         Console.WriteLine($"  Draws: {draws}  Visible: {visible}/{visible + culled}  Instanced: {instanced}");
         Console.WriteLine($"  AnimEval: {animEval}  Saved: {animSaved}  Agents: {crowd.Count}");
+        Console.WriteLine($"  Phase Timings (last frame, us):");
+        Console.WriteLine($"    surface_acquire={pt.SurfaceAcquireUs}  shadow_pass={pt.ShadowPassUs}  shadow_build={pt.ShadowBuildUs}");
+        Console.WriteLine($"    render3d_scene={pt.Render3dSceneUs}  uniform_upload={pt.UniformUploadUs}  render_pass={pt.RenderPassUs}");
+        Console.WriteLine($"    gpu_submit={pt.GpuSubmitUs}  readback_stall={pt.ReadbackStallUs}  surface_present={pt.SurfacePresentUs}");
+        Console.WriteLine($"    anim_eval={pt.AnimEvalUs}  bone_pack={pt.BonePackUs}  bone_upload={pt.BoneUploadUs}");
 
         // Write markdown report
         string profilingDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "profiling");
@@ -246,6 +256,22 @@ class Program
         md.AppendLine($"- Visible: {visible}/{visible + culled}");
         md.AppendLine($"- Instanced: {instanced}");
         md.AppendLine($"- AnimEval: {animEval}, Saved: {animSaved}");
+        md.AppendLine();
+        md.AppendLine("## Phase Timings (last frame, microseconds)");
+        md.AppendLine($"| Phase | Time (us) |");
+        md.AppendLine($"|-------|-----------|");
+        md.AppendLine($"| surface_acquire | {pt.SurfaceAcquireUs} |");
+        md.AppendLine($"| shadow_pass | {pt.ShadowPassUs} |");
+        md.AppendLine($"| shadow_build | {pt.ShadowBuildUs} |");
+        md.AppendLine($"| render3d_scene | {pt.Render3dSceneUs} |");
+        md.AppendLine($"| uniform_upload | {pt.UniformUploadUs} |");
+        md.AppendLine($"| render_pass | {pt.RenderPassUs} |");
+        md.AppendLine($"| gpu_submit | {pt.GpuSubmitUs} |");
+        md.AppendLine($"| readback_stall | {pt.ReadbackStallUs} |");
+        md.AppendLine($"| surface_present | {pt.SurfacePresentUs} |");
+        md.AppendLine($"| anim_eval | {pt.AnimEvalUs} |");
+        md.AppendLine($"| bone_pack | {pt.BonePackUs} |");
+        md.AppendLine($"| bone_upload | {pt.BoneUploadUs} |");
 
         File.WriteAllText(mdPath, md.ToString());
         Console.WriteLine($"\nReport written to: {mdPath}");

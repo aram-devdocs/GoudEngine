@@ -74,4 +74,9 @@ pub struct SkinnedMesh3D {
     pub(in crate::libs::graphics::renderer3d) scale: Vector3<f32>,
     /// Base color for the skinned mesh (RGBA).
     pub(in crate::libs::graphics::renderer3d) color: [f32; 4],
+    /// Cached model matrix (column-major 4x4). Recomputed only when
+    /// position/rotation/scale change (`transform_dirty` is set).
+    pub(in crate::libs::graphics::renderer3d) cached_model_matrix: [f32; 16],
+    /// Whether the cached model matrix needs recomputation.
+    pub(in crate::libs::graphics::renderer3d) transform_dirty: bool,
 }

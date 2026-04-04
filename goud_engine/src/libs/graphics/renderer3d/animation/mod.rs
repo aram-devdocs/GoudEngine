@@ -64,6 +64,10 @@ pub struct AnimationPlayer {
     /// When true, this player uses a global shared clock instead of per-instance
     /// time, guaranteeing G5 cache hits for all instances of the same model+clip.
     pub phase_locked: bool,
+    /// Cached fallback `BonePropertyNames` for the `update()` path that lacks
+    /// pre-built channel maps. Built lazily on first use and reused across frames
+    /// to avoid per-frame `format!()` string allocations.
+    cached_fallback_names: Option<Vec<BonePropertyNames>>,
 }
 
 impl AnimationPlayer {
@@ -78,6 +82,7 @@ impl AnimationPlayer {
             scratch_local: vec![IDENTITY_MAT4; bone_count],
             scratch_global: vec![IDENTITY_MAT4; bone_count],
             phase_locked: false,
+            cached_fallback_names: None,
         }
     }
 
@@ -181,11 +186,21 @@ impl AnimationPlayer {
 
     /// Advance animation time and compute bone matrices.
     pub fn update(&mut self, dt: f32, skeleton: &SkeletonData, animations: &[KeyframeAnimation]) {
-        // Fallback: build property names per call when no cached names available.
-        let fallback: Vec<BonePropertyNames> = (0..skeleton.bones.len())
-            .map(BonePropertyNames::new)
-            .collect();
-        self.update_with_names(dt, skeleton, animations, &fallback);
+        // Lazily build and cache fallback property names to avoid per-frame
+        // `format!()` string allocations.
+        let bone_count = skeleton.bones.len();
+        let needs_rebuild = self
+            .cached_fallback_names
+            .as_ref()
+            .is_none_or(|names| names.len() != bone_count);
+        if needs_rebuild {
+            self.cached_fallback_names =
+                Some((0..bone_count).map(BonePropertyNames::new).collect());
+        }
+        // Take the cached names out of self to avoid borrow conflict with &mut self.
+        let names = self.cached_fallback_names.take().unwrap();
+        self.update_with_names(dt, skeleton, animations, &names);
+        self.cached_fallback_names = Some(names);
     }
 
     /// Advance animation time and compute bone matrices using pre-cached

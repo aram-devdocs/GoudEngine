@@ -83,18 +83,16 @@ impl Renderer3D {
             }
         }
 
-        let source_buffers: std::collections::HashSet<
-            crate::libs::graphics::backend::BufferHandle,
-        > = self
-            .models
-            .get(&inst.source_model_id)
-            .map(|m| {
-                m.mesh_object_ids
-                    .iter()
-                    .filter_map(|&oid| self.objects.get(&oid).map(|o| o.buffer))
-                    .collect()
-            })
-            .unwrap_or_default();
+        let source_buffers: rustc_hash::FxHashSet<crate::libs::graphics::backend::BufferHandle> =
+            self.models
+                .get(&inst.source_model_id)
+                .map(|m| {
+                    m.mesh_object_ids
+                        .iter()
+                        .filter_map(|&oid| self.objects.get(&oid).map(|o| o.buffer))
+                        .collect()
+                })
+                .unwrap_or_default();
 
         for &obj_id in &inst.mesh_object_ids {
             self.skinned_object_ids.remove(&obj_id);

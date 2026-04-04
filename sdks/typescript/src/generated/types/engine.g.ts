@@ -22,6 +22,8 @@ export interface IPhysicsCollisionEvent2D { bodyA: number; bodyB: number; kind: 
 export interface IFpsStats { currentFps: number; minFps: number; maxFps: number; avgFps: number; frameTimeMs: number; }
 /** Per-frame render metrics: draw call counts, culling stats, batch efficiency, and per-category timing */
 export interface IRenderMetrics { drawCallCount: number; spritesSubmitted: number; spritesDrawn: number; spritesCulled: number; batchesSubmitted: number; avgSpritesPerBatch: number; spriteRenderMs: number; textRenderMs: number; uiRenderMs: number; totalRenderMs: number; textDrawCalls: number; textGlyphCount: number; uiDrawCalls: number; }
+/** Per-frame phase timings for performance diagnosis. All values in microseconds. */
+export interface IFramePhaseTimings { surfaceAcquireUs: number; shadowPassUs: number; shadowBuildUs: number; render3dSceneUs: number; uniformUploadUs: number; renderPassUs: number; gpuSubmitUs: number; readbackStallUs: number; surfacePresentUs: number; animEvalUs: number; bonePackUs: number; boneUploadUs: number; }
 /** Pre-init debugger runtime configuration for desktop contexts. */
 export interface IDebuggerConfig { enabled: boolean; publishLocalAttach: boolean; routeLabel: string; }
 /** Pre-init configuration for headless context creation. */
@@ -448,6 +450,8 @@ export interface IGoudGame {
   getAnimationEvaluationCount(): number;
   /** Returns the number of animation evaluations avoided last frame */
   getAnimationEvaluationSavedCount(): number;
+  /** Returns per-frame phase timings for performance diagnosis (all values in microseconds) */
+  getFramePhaseTimings(): IFramePhaseTimings;
   /** Renders all 3D objects */
   render3D(): boolean;
   /** Creates a 3D material */
