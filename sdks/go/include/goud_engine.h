@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define GOUD_ENGINE_VERSION "0.0.840" /* x-release-please-version */
+#define GOUD_ENGINE_VERSION "0.0.841" /* x-release-please-version */
 
 #ifndef GOUD_DEPRECATED
 #  if defined(_MSC_VER)

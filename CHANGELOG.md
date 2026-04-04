@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.841](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.840...v0.0.841) (2026-04-04)
+
+
+### Bug Fixes
+
+* **ci:** add libudev-dev to release workflow Linux builds ([a47a334](https://github.com/aram-devdocs/GoudEngine/commit/a47a33411f86b67c7bc005aab693de49a14bd480))
+
 ## [0.0.840](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.839...v0.0.840) (2026-04-04)
 
 

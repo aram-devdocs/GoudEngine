@@ -1,5 +1,5 @@
 {
-  "version": "0.0.840",
+  "version": "0.0.841",
   "description": "Universal GoudEngine SDK schema. Every SDK (C#, Python, TypeScript, Rust, Go, Kotlin, Swift, Lua, C++) is generated from this single file. Same tools, same methods, same inputs, same outputs.",
   "types": {
     "Color": {
