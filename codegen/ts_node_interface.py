@@ -60,6 +60,11 @@ def gen_interface():
     if schema["types"]["RenderMetrics"].get("doc"):
         lines.append(f"/** {schema['types']['RenderMetrics']['doc']} */")
     lines.append(f"export interface IRenderMetrics {{ {rm_str}; }}")
+    fpt_fields = schema["types"]["FramePhaseTimings"]["fields"]
+    fpt_str = "; ".join(f"{to_camel(f['name'])}: number" for f in fpt_fields)
+    if schema["types"]["FramePhaseTimings"].get("doc"):
+        lines.append(f"/** {schema['types']['FramePhaseTimings']['doc']} */")
+    lines.append(f"export interface IFramePhaseTimings {{ {fpt_str}; }}")
     dbg_cfg_fields = []
     for f in schema["types"]["DebuggerConfig"]["fields"]:
         ts_ft = "boolean" if f["type"] == "bool" else "string"

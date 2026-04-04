@@ -197,13 +197,10 @@ impl AnimationPlayer {
             self.cached_fallback_names =
                 Some((0..bone_count).map(BonePropertyNames::new).collect());
         }
-        // SAFETY: we just ensured `cached_fallback_names` is `Some`.
-        let names = self.cached_fallback_names.as_ref().unwrap();
-        // Take a raw pointer to avoid the borrow conflict with `&mut self`.
-        let names_ptr = names as *const Vec<BonePropertyNames>;
-        // SAFETY: `update_with_names` does not modify `cached_fallback_names`.
-        let names_ref = unsafe { &*names_ptr };
-        self.update_with_names(dt, skeleton, animations, names_ref);
+        // Take the cached names out of self to avoid borrow conflict with &mut self.
+        let names = self.cached_fallback_names.take().unwrap();
+        self.update_with_names(dt, skeleton, animations, &names);
+        self.cached_fallback_names = Some(names);
     }
 
     /// Advance animation time and compute bone matrices using pre-cached

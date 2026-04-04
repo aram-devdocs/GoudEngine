@@ -285,6 +285,11 @@ fn rasterize_shadow_map(
 ) -> SoftwareShadowMap {
     let mut depth_values = vec![1.0f32; (size * size) as usize];
     for mesh in meshes {
+        debug_assert!(
+            mesh.vertices.len() % 24 == 0,
+            "mesh vertex buffer length {} is not a multiple of 24 (stride: 8 floats × 3 verts)",
+            mesh.vertices.len()
+        );
         for triangle in mesh.vertices.chunks_exact(24) {
             let v0 = mesh.model * Vector4::new(triangle[0], triangle[1], triangle[2], 1.0);
             let v1 = mesh.model * Vector4::new(triangle[8], triangle[9], triangle[10], 1.0);
