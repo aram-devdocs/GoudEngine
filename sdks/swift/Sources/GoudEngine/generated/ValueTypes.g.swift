@@ -474,6 +474,8 @@ public struct RenderMetrics: Equatable {
 public struct FramePhaseTimings: Equatable {
     /// Time to acquire the next surface texture (us)
     public var surfaceAcquireUs: UInt64
+    /// GPU shadow depth pass recording and execution time (us)
+    public var shadowPassUs: UInt64
     /// Shadow map build time (us)
     public var shadowBuildUs: UInt64
     /// 3D scene render time (us)
@@ -488,9 +490,16 @@ public struct FramePhaseTimings: Equatable {
     public var readbackStallUs: UInt64
     /// Surface present / vsync wait time (us)
     public var surfacePresentUs: UInt64
+    /// Animation evaluation time (us)
+    public var animEvalUs: UInt64
+    /// Bone matrix packing time (us)
+    public var bonePackUs: UInt64
+    /// Bone matrix GPU upload time (us)
+    public var boneUploadUs: UInt64
 
-    public init(surfaceAcquireUs: UInt64 = 0, shadowBuildUs: UInt64 = 0, render3dSceneUs: UInt64 = 0, uniformUploadUs: UInt64 = 0, renderPassUs: UInt64 = 0, gpuSubmitUs: UInt64 = 0, readbackStallUs: UInt64 = 0, surfacePresentUs: UInt64 = 0) {
+    public init(surfaceAcquireUs: UInt64 = 0, shadowPassUs: UInt64 = 0, shadowBuildUs: UInt64 = 0, render3dSceneUs: UInt64 = 0, uniformUploadUs: UInt64 = 0, renderPassUs: UInt64 = 0, gpuSubmitUs: UInt64 = 0, readbackStallUs: UInt64 = 0, surfacePresentUs: UInt64 = 0, animEvalUs: UInt64 = 0, bonePackUs: UInt64 = 0, boneUploadUs: UInt64 = 0) {
         self.surfaceAcquireUs = surfaceAcquireUs
+        self.shadowPassUs = shadowPassUs
         self.shadowBuildUs = shadowBuildUs
         self.render3dSceneUs = render3dSceneUs
         self.uniformUploadUs = uniformUploadUs
@@ -498,10 +507,14 @@ public struct FramePhaseTimings: Equatable {
         self.gpuSubmitUs = gpuSubmitUs
         self.readbackStallUs = readbackStallUs
         self.surfacePresentUs = surfacePresentUs
+        self.animEvalUs = animEvalUs
+        self.bonePackUs = bonePackUs
+        self.boneUploadUs = boneUploadUs
     }
 
     internal init(ffi: FfiFramePhaseTimings) {
         self.surfaceAcquireUs = ffi.surface_acquire_us
+        self.shadowPassUs = ffi.shadow_pass_us
         self.shadowBuildUs = ffi.shadow_build_us
         self.render3dSceneUs = ffi.render3d_scene_us
         self.uniformUploadUs = ffi.uniform_upload_us
@@ -509,11 +522,15 @@ public struct FramePhaseTimings: Equatable {
         self.gpuSubmitUs = ffi.gpu_submit_us
         self.readbackStallUs = ffi.readback_stall_us
         self.surfacePresentUs = ffi.surface_present_us
+        self.animEvalUs = ffi.anim_eval_us
+        self.bonePackUs = ffi.bone_pack_us
+        self.boneUploadUs = ffi.bone_upload_us
     }
 
     internal func toFFI() -> FfiFramePhaseTimings {
         var ffi = FfiFramePhaseTimings()
         ffi.surface_acquire_us = surfaceAcquireUs
+        ffi.shadow_pass_us = shadowPassUs
         ffi.shadow_build_us = shadowBuildUs
         ffi.render3d_scene_us = render3dSceneUs
         ffi.uniform_upload_us = uniformUploadUs
@@ -521,6 +538,9 @@ public struct FramePhaseTimings: Equatable {
         ffi.gpu_submit_us = gpuSubmitUs
         ffi.readback_stall_us = readbackStallUs
         ffi.surface_present_us = surfacePresentUs
+        ffi.anim_eval_us = animEvalUs
+        ffi.bone_pack_us = bonePackUs
+        ffi.bone_upload_us = boneUploadUs
         return ffi
     }
 

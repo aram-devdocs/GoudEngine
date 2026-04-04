@@ -2330,6 +2330,11 @@
           "doc": "Time to acquire the next surface texture (us)"
         },
         {
+          "name": "shadowPassUs",
+          "type": "u64",
+          "doc": "GPU shadow depth pass recording and execution time (us)"
+        },
+        {
           "name": "shadowBuildUs",
           "type": "u64",
           "doc": "Shadow map build time (us)"
@@ -2363,6 +2368,21 @@
           "name": "surfacePresentUs",
           "type": "u64",
           "doc": "Surface present / vsync wait time (us)"
+        },
+        {
+          "name": "animEvalUs",
+          "type": "u64",
+          "doc": "Animation evaluation time (us)"
+        },
+        {
+          "name": "bonePackUs",
+          "type": "u64",
+          "doc": "Bone matrix packing time (us)"
+        },
+        {
+          "name": "boneUploadUs",
+          "type": "u64",
+          "doc": "Bone matrix GPU upload time (us)"
         }
       ]
     },
@@ -5946,6 +5966,12 @@
           "doc": "Returns the number of animation evaluations avoided last frame",
           "params": [],
           "returns": "i32"
+        },
+        {
+          "name": "getFramePhaseTimings",
+          "doc": "Returns per-frame phase timings for performance diagnosis (all values in microseconds)",
+          "params": [],
+          "returns": "FramePhaseTimings"
         },
         {
           "name": "render3D",
@@ -13308,6 +13334,17 @@
         },
         "getAnimationEvaluationSavedCount": {
           "ffi": "goud_renderer3d_get_animation_evaluation_saved_count"
+        },
+        "getFramePhaseTimings": {
+          "ffi": "goud_renderer_get_frame_phase_timings",
+          "no_context": true,
+          "out_params": [
+            {
+              "name": "out_timings",
+              "type": "FramePhaseTimings"
+            }
+          ],
+          "returns_struct": "FramePhaseTimings"
         },
         "render3D": {
           "ffi": "goud_renderer3d_render"

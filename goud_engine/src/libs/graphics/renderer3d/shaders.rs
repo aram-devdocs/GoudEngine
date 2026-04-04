@@ -10,7 +10,7 @@ use super::types::MAX_LIGHTS;
 
 include!("shader_sources.in");
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub(super) struct LightUniforms {
     pub(super) light_type: i32,
     pub(super) position: i32,

@@ -305,8 +305,12 @@ impl WgpuBackend {
             .map(|i| (i * shadow_slot_size) as u32)
             .collect();
 
-        // Grow uniform buffers if needed.
+        // Grow uniform buffers if needed (deduplicate by shader to avoid redundant recreation).
+        let mut grown_shaders = rustc_hash::FxHashSet::default();
         for cmd in &self.shadow_draw_commands {
+            if grown_shaders.contains(&cmd.shader) {
+                continue;
+            }
             if let Some(meta) = self.shaders.get_mut(&cmd.shader) {
                 if shadow_total > meta.uniform_buffer.size() as usize {
                     let new_size = shadow_total.next_power_of_two().max(shadow_slot_size);
@@ -330,6 +334,7 @@ impl WgpuBackend {
                             }],
                         });
                 }
+                grown_shaders.insert(cmd.shader);
             }
         }
 
@@ -349,11 +354,14 @@ impl WgpuBackend {
             }
         }
 
-        let shadow_keys: Vec<PipelineKey> = self
-            .shadow_draw_commands
-            .iter()
-            .map(|cmd| self.make_pipeline_key(cmd))
-            .collect();
+        // Reuse the persistent scratch buffer for shadow pipeline keys.
+        let mut shadow_keys = std::mem::take(&mut self.scratch_shadow_pipeline_keys);
+        shadow_keys.clear();
+        shadow_keys.extend(
+            self.shadow_draw_commands
+                .iter()
+                .map(|cmd| self.make_pipeline_key(cmd)),
+        );
         self.build_missing_shadow_pipelines(&shadow_keys);
 
         // SAFETY: shadow_depth_view is confirmed Some above.
@@ -425,5 +433,7 @@ impl WgpuBackend {
             }
         }
         self.shadow_draw_commands.clear();
+        // Return the scratch Vec so it is reused next frame.
+        self.scratch_shadow_pipeline_keys = shadow_keys;
     }
 }

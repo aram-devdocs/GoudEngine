@@ -65,6 +65,12 @@ pub struct FfiFramePhaseTimings {
     pub readback_stall_us: u64,
     /// Surface present / vsync wait time (us).
     pub surface_present_us: u64,
+    /// Animation evaluation time (us).
+    pub anim_eval_us: u64,
+    /// Bone matrix packing time (us).
+    pub bone_pack_us: u64,
+    /// Bone matrix GPU upload time (us).
+    pub bone_upload_us: u64,
 }
 
 // ============================================================================

@@ -24,16 +24,16 @@ impl Renderer3D {
         fog: &super::types::FogConfig,
         lights: &[super::types::Light],
         _texture_manager: Option<&dyn super::texture::TextureManagerTrait>,
-    ) -> std::collections::HashSet<u32> {
+    ) -> rustc_hash::FxHashSet<u32> {
         let gpu_skinning = matches!(self.config.skinning.mode, super::config::SkinningMode::Gpu)
             && self.backend.supports_storage_buffers();
 
         if !gpu_skinning {
-            return std::collections::HashSet::new();
+            return rustc_hash::FxHashSet::default();
         }
 
         // Group instances by source_model_id.
-        let mut groups: std::collections::HashMap<u32, Vec<u32>> = std::collections::HashMap::new();
+        let mut groups: rustc_hash::FxHashMap<u32, Vec<u32>> = rustc_hash::FxHashMap::default();
         for (&inst_id, inst) in &self.model_instances {
             match self.models.get(&inst.source_model_id) {
                 Some(m) if m.is_skinned => {}
@@ -60,11 +60,11 @@ impl Renderer3D {
             .collect();
 
         if groups.is_empty() {
-            return std::collections::HashSet::new();
+            return rustc_hash::FxHashSet::default();
         }
 
         // Collect all IDs that will be rendered via instancing.
-        let mut handled_ids: std::collections::HashSet<u32> = std::collections::HashSet::new();
+        let mut handled_ids: rustc_hash::FxHashSet<u32> = rustc_hash::FxHashSet::default();
         for (_, ids) in &groups {
             for &id in ids {
                 handled_ids.insert(id);
@@ -118,18 +118,24 @@ impl Renderer3D {
         // Each instance's bone_offset in the instance data includes the
         // group's base offset into the packed buffer.
         struct GroupRenderData {
-            instance_data: Vec<f32>,
             instance_count: u32,
             mesh_object_ids: Vec<u32>,
             mesh_material_ids: Vec<u32>,
+            /// Byte offset into scratch_inst_data for this group's instance data.
+            inst_data_start: usize,
+            inst_data_end: usize,
         }
 
-        let mut all_packed_bones: Vec<f32> = Vec::new();
+        let mut all_packed_bones = std::mem::take(&mut self.scratch_inst_packed_bones);
+        all_packed_bones.clear();
+        let mut scratch_inst_data = std::mem::take(&mut self.scratch_inst_data);
+        scratch_inst_data.clear();
         let mut group_render_data: Vec<GroupRenderData> = Vec::new();
+        let mut group_data = group_data;
 
-        for gd in &group_data {
+        for gd in &mut group_data {
             let group_bone_offset = all_packed_bones.len() / 16;
-            let mut instance_data: Vec<f32> = Vec::new();
+            let inst_data_start = scratch_inst_data.len();
 
             for (inst_idx, &inst_id) in gd.instance_ids.iter().enumerate() {
                 let bone_offset = (group_bone_offset + inst_idx * gd.bone_count) as f32;
@@ -147,15 +153,15 @@ impl Renderer3D {
                     }
                 }
 
-                let obj_ids = if let Some(m) = self.models.get(&inst_id) {
-                    m.mesh_object_ids.clone()
+                let first_obj_id = if let Some(m) = self.models.get(&inst_id) {
+                    m.mesh_object_ids.first().copied()
                 } else if let Some(inst) = self.model_instances.get(&inst_id) {
-                    inst.mesh_object_ids.clone()
+                    inst.mesh_object_ids.first().copied()
                 } else {
                     continue;
                 };
 
-                let (pos, rot, scl) = if let Some(&first_oid) = obj_ids.first() {
+                let (pos, rot, scl) = if let Some(first_oid) = first_obj_id {
                     if let Some(obj) = self.objects.get(&first_oid) {
                         (obj.position, obj.rotation, obj.scale)
                     } else {
@@ -167,17 +173,18 @@ impl Renderer3D {
 
                 let model_mat = Self::create_model_matrix(pos, rot, scl);
                 let model_arr = super::render::mat4_to_array(&model_mat);
-                instance_data.extend_from_slice(&model_arr);
-                instance_data.push(bone_offset);
-                instance_data.extend_from_slice(&[0.0, 0.0, 0.0]); // padding
-                instance_data.extend_from_slice(&[1.0, 1.0, 1.0, 1.0]); // color
+                scratch_inst_data.extend_from_slice(&model_arr);
+                scratch_inst_data.push(bone_offset);
+                scratch_inst_data.extend_from_slice(&[0.0, 0.0, 0.0]); // padding
+                scratch_inst_data.extend_from_slice(&[1.0, 1.0, 1.0, 1.0]); // color
             }
 
             group_render_data.push(GroupRenderData {
-                instance_data,
                 instance_count: gd.instance_ids.len() as u32,
-                mesh_object_ids: gd.mesh_object_ids.clone(),
-                mesh_material_ids: gd.mesh_material_ids.clone(),
+                mesh_object_ids: std::mem::take(&mut gd.mesh_object_ids),
+                mesh_material_ids: std::mem::take(&mut gd.mesh_material_ids),
+                inst_data_start,
+                inst_data_end: scratch_inst_data.len(),
             });
         }
 
@@ -191,6 +198,8 @@ impl Renderer3D {
                     .update_storage_buffer(storage_handle, 0, bone_data)
                 {
                     log::error!("Instanced skinning storage buffer upload failed: {e}");
+                    self.scratch_inst_packed_bones = all_packed_bones;
+                    self.scratch_inst_data = scratch_inst_data;
                     return handled_ids;
                 }
                 let _ = self.backend.bind_storage_buffer(storage_handle, 0);
@@ -207,7 +216,8 @@ impl Renderer3D {
         // write_buffer calls and only the last write to a given offset
         // survives into the render pass.  Reuse a pool of per-group buffers.
         for (group_idx, grd) in group_render_data.iter().enumerate() {
-            let instance_bytes: &[u8] = bytemuck::cast_slice(&grd.instance_data);
+            let instance_slice = &scratch_inst_data[grd.inst_data_start..grd.inst_data_end];
+            let instance_bytes: &[u8] = bytemuck::cast_slice(instance_slice);
             let required_size = instance_bytes.len();
 
             // Grow the pool if needed.
@@ -311,6 +321,10 @@ impl Renderer3D {
                 self.stats.skinned_instances += grd.instance_count;
             }
         }
+
+        // Return scratch buffers so they can be reused next frame.
+        self.scratch_inst_packed_bones = all_packed_bones;
+        self.scratch_inst_data = scratch_inst_data;
 
         self.backend.unbind_storage_buffer();
 

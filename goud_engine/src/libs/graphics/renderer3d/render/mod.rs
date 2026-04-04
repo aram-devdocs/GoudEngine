@@ -27,6 +27,16 @@ impl Renderer3D {
             self.rebuild_static_batch();
         }
 
+        // Recompute cached model matrices for any dirty skinned meshes, before
+        // the shadow pass and main render pass that both read them.
+        for sm in self.skinned_meshes.values_mut() {
+            if sm.transform_dirty {
+                let model = Self::create_model_matrix(sm.position, sm.rotation, sm.scale);
+                sm.cached_model_matrix = mat4_to_array(&model);
+                sm.transform_dirty = false;
+            }
+        }
+
         self.frame_counter = self.frame_counter.wrapping_add(1);
         let anim_evals = self.stats.animation_evaluations;
         let anim_saved = self.stats.animation_evaluations_saved;
@@ -47,20 +57,12 @@ impl Renderer3D {
 
         let (eff_fog, eff_skybox, eff_grid) = if let Some(scene_id) = self.current_scene {
             if let Some(scene) = self.scenes.get(&scene_id) {
-                (scene.fog.clone(), scene.skybox.clone(), scene.grid.clone())
+                (scene.fog, scene.skybox, scene.grid)
             } else {
-                (
-                    self.fog_config.clone(),
-                    self.skybox_config.clone(),
-                    self.grid_config.clone(),
-                )
+                (self.fog_config, self.skybox_config, self.grid_config)
             }
         } else {
-            (
-                self.fog_config.clone(),
-                self.skybox_config.clone(),
-                self.grid_config.clone(),
-            )
+            (self.fog_config, self.skybox_config, self.grid_config)
         };
 
         if eff_skybox.enabled {
@@ -197,6 +199,22 @@ impl Renderer3D {
         let has_static_batch =
             self.static_batch_buffer.is_some() && self.config.batching.static_batching_enabled;
 
+        // Pre-resolved draw data for visible objects, avoiding repeated HashMap
+        // lookups in the draw loop.
+        #[derive(Clone)]
+        struct VisibleDrawData {
+            mat_id: u32,
+            texture_id: u32,
+            buffer: crate::libs::graphics::backend::BufferHandle,
+            vertex_count: i32,
+            position: cgmath::Vector3<f32>,
+            rotation: cgmath::Vector3<f32>,
+            scale: cgmath::Vector3<f32>,
+            color: [f32; 4],
+        }
+
+        let default_color = self.config.default_material_color;
+        let mut visible_draw_data: Vec<VisibleDrawData> = Vec::new();
         self.visible_object_ids.clear();
         for (&id, obj) in &self.objects {
             if skinned_obj_ids.contains(&id) {
@@ -218,20 +236,49 @@ impl Renderer3D {
                     continue;
                 }
             }
+            // Resolve material and color at visibility-check time.
+            let mat_id = self.object_materials.get(&id).copied().unwrap_or(0);
+            let color = if let Some(mat) = self.materials.get(&mat_id) {
+                let c = &mat.color;
+                [c.x, c.y, c.z, c.w]
+            } else if obj.texture_id > 0 {
+                [1.0, 1.0, 1.0, 1.0]
+            } else {
+                default_color
+            };
             self.visible_object_ids.push(id);
+            visible_draw_data.push(VisibleDrawData {
+                mat_id,
+                texture_id: obj.texture_id,
+                buffer: obj.buffer,
+                vertex_count: obj.vertex_count,
+                position: obj.position,
+                rotation: obj.rotation,
+                scale: obj.scale,
+                color,
+            });
         }
 
         let material_sorting = self.config.batching.material_sorting_enabled;
         if material_sorting {
-            let objects = &self.objects;
-            let object_materials = &self.object_materials;
-            self.visible_object_ids.sort_by(|&a, &b| {
-                let mat_a = object_materials.get(&a).copied().unwrap_or(0);
-                let mat_b = object_materials.get(&b).copied().unwrap_or(0);
-                let tex_a = objects.get(&a).map_or(0, |o| o.texture_id);
-                let tex_b = objects.get(&b).map_or(0, |o| o.texture_id);
-                (mat_a, tex_a).cmp(&(mat_b, tex_b))
+            // Build index-based sort keys to avoid moving the full VisibleDrawData during sort.
+            let mut indices: Vec<usize> = (0..visible_draw_data.len()).collect();
+            indices.sort_unstable_by_key(|&i| {
+                (visible_draw_data[i].mat_id, visible_draw_data[i].texture_id)
             });
+            // Reorder visible_draw_data and visible_object_ids in-place via the
+            // sorted indices.
+            let mut sorted_data: Vec<VisibleDrawData> = Vec::with_capacity(visible_draw_data.len());
+            let mut sorted_ids: Vec<u32> = Vec::with_capacity(self.visible_object_ids.len());
+            for &i in &indices {
+                // SAFETY: each index in `indices` is unique and in-bounds.
+                sorted_ids.push(self.visible_object_ids[i]);
+            }
+            for &i in &indices {
+                sorted_data.push(visible_draw_data[i].clone());
+            }
+            visible_draw_data = sorted_data;
+            self.visible_object_ids = sorted_ids;
         }
 
         self.stats.visible_objects = self.visible_object_ids.len() as u32;
@@ -240,12 +287,15 @@ impl Renderer3D {
             .total_objects
             .saturating_sub(self.stats.visible_objects);
 
-        let filtered_lights: Vec<super::types::Light> = self
-            .lights
-            .iter()
-            .filter(|(&id, _)| scene_light_filter.is_none_or(|set| set.contains(&id)))
-            .map(|(_, l)| l.clone())
-            .collect();
+        self.scratch_filtered_lights.clear();
+        for (&id, l) in &self.lights {
+            if scene_light_filter.is_none_or(|set| set.contains(&id)) {
+                self.scratch_filtered_lights.push(*l);
+            }
+        }
+        // Take ownership of the scratch buffer for the duration of the frame,
+        // returning it at the end to avoid borrow conflicts with `&mut self`.
+        let filtered_lights = std::mem::take(&mut self.scratch_filtered_lights);
 
         let _ = self.backend.bind_shader(self.shader_handle);
         let uniforms = self.uniforms.clone();
@@ -264,41 +314,20 @@ impl Renderer3D {
         }
 
         let mut last_texture_id = u32::MAX;
-        for i in 0..self.visible_object_ids.len() {
-            let obj_id = self.visible_object_ids[i];
-            let obj = match self.objects.get(&obj_id) {
-                Some(o) => o,
-                None => continue,
-            };
-            let buffer = obj.buffer;
-            let vertex_count = obj.vertex_count;
-            let position = obj.position;
-            let rotation = obj.rotation;
-            let scale = obj.scale;
-            let texture_id = obj.texture_id;
-            let mat_id = self.object_materials.get(&obj_id).copied().unwrap_or(0);
-            let color = if let Some(mat) = self.materials.get(&mat_id) {
-                let c = &mat.color;
-                [c.x, c.y, c.z, c.w]
-            } else if texture_id > 0 {
-                [1.0, 1.0, 1.0, 1.0]
-            } else {
-                self.config.default_material_color
-            };
-
-            let model = Self::create_model_matrix(position, rotation, scale);
+        for draw in &visible_draw_data {
+            let model = Self::create_model_matrix(draw.position, draw.rotation, draw.scale);
             let model_arr = mat4_to_array(&model);
             self.backend
                 .set_uniform_mat4(self.uniforms.model, &model_arr);
-            if texture_id > 0 {
-                if texture_id != last_texture_id {
+            if draw.texture_id > 0 {
+                if draw.texture_id != last_texture_id {
                     if let Some(tm) = texture_manager {
-                        tm.bind_texture(texture_id, 0);
+                        tm.bind_texture(draw.texture_id, 0);
                     } else {
-                        let texture_handle = TextureHandle::new(texture_id, 1);
+                        let texture_handle = TextureHandle::new(draw.texture_id, 1);
                         let _ = self.backend.bind_texture(texture_handle, 0);
                     }
-                    last_texture_id = texture_id;
+                    last_texture_id = draw.texture_id;
                     self.stats.texture_binds += 1;
                 }
                 self.backend.set_uniform_int(self.uniforms.use_texture, 1);
@@ -307,16 +336,16 @@ impl Renderer3D {
             }
             self.backend.set_uniform_vec4(
                 self.uniforms.object_color,
-                color[0],
-                color[1],
-                color[2],
-                color[3],
+                draw.color[0],
+                draw.color[1],
+                draw.color[2],
+                draw.color[3],
             );
-            let _ = self.backend.bind_buffer(buffer);
+            let _ = self.backend.bind_buffer(draw.buffer);
             self.backend.set_vertex_attributes(&self.object_layout);
-            let _ = self
-                .backend
-                .draw_arrays(PrimitiveTopology::Triangles, 0, vertex_count as u32);
+            let _ =
+                self.backend
+                    .draw_arrays(PrimitiveTopology::Triangles, 0, draw.vertex_count as u32);
             self.stats.draw_calls += 1;
         }
 
@@ -338,41 +367,42 @@ impl Renderer3D {
                 &filtered_lights,
             );
 
-            let skinned_snaps: Vec<(
-                crate::libs::graphics::backend::BufferHandle,
-                i32,
-                cgmath::Vector3<f32>,
-                cgmath::Vector3<f32>,
-                cgmath::Vector3<f32>,
-                Vec<[f32; 16]>,
-                [f32; 4],
-            )> = self
-                .skinned_meshes
-                .values()
-                .map(|sm| {
-                    (
-                        sm.buffer,
-                        sm.vertex_count,
-                        sm.position,
-                        sm.rotation,
-                        sm.scale,
-                        sm.bone_matrices.clone(),
-                        sm.color,
-                    )
-                })
-                .collect();
+            // Lightweight per-mesh metadata (no bone data cloned).
+            struct SkinnedSnap {
+                buffer: crate::libs::graphics::backend::BufferHandle,
+                vertex_count: i32,
+                model_matrix: [f32; 16],
+                color: [f32; 4],
+            }
 
-            let mut bone_offsets: Vec<i32> = Vec::new();
+            // Pass 1: pack bones into scratch buffer and collect metadata.
+            let mut scratch_packed = std::mem::take(&mut self.scratch_packed_bones);
+            scratch_packed.clear();
+            let mut scratch_offsets = std::mem::take(&mut self.scratch_bone_offsets);
+            scratch_offsets.clear();
+
+            let mut skinned_snaps: Vec<SkinnedSnap> = Vec::with_capacity(self.skinned_meshes.len());
+
             if gpu_skinning {
-                let mut packed_bones: Vec<f32> = Vec::new();
-                for (_buffer, _vc, _pos, _rot, _scl, bone_mats, _color) in &skinned_snaps {
-                    bone_offsets.push((packed_bones.len() / 16) as i32);
-                    for mat in bone_mats.iter() {
-                        packed_bones.extend_from_slice(mat);
+                let bone_pack_start = std::time::Instant::now();
+                for sm in self.skinned_meshes.values() {
+                    scratch_offsets.push((scratch_packed.len() / 16) as i32);
+                    for mat in &sm.bone_matrices {
+                        scratch_packed.extend_from_slice(mat);
                     }
+                    skinned_snaps.push(SkinnedSnap {
+                        buffer: sm.buffer,
+                        vertex_count: sm.vertex_count,
+                        model_matrix: sm.cached_model_matrix,
+                        color: sm.color,
+                    });
                 }
-                if !packed_bones.is_empty() {
-                    let bone_data: &[u8] = bytemuck::cast_slice(&packed_bones);
+                let bone_pack_us = bone_pack_start.elapsed().as_micros() as u64;
+                crate::libs::graphics::frame_timing::record_phase("bone_pack", bone_pack_us);
+
+                if !scratch_packed.is_empty() {
+                    let bone_upload_start = std::time::Instant::now();
+                    let bone_data: &[u8] = bytemuck::cast_slice(&scratch_packed);
                     self.ensure_bone_storage_buffer(bone_data.len());
                     if let Some(storage_handle) = self.bone_storage_buffer {
                         if let Err(e) =
@@ -383,33 +413,51 @@ impl Renderer3D {
                         }
                         let _ = self.backend.bind_storage_buffer(storage_handle, 0);
                     }
+                    let bone_upload_us = bone_upload_start.elapsed().as_micros() as u64;
+                    crate::libs::graphics::frame_timing::record_phase(
+                        "bone_upload",
+                        bone_upload_us,
+                    );
                     self.stats.bone_matrix_uploads += 1;
+                }
+            } else {
+                // CPU skinning path: collect metadata only (bones uploaded per-mesh below).
+                for sm in self.skinned_meshes.values() {
+                    skinned_snaps.push(SkinnedSnap {
+                        buffer: sm.buffer,
+                        vertex_count: sm.vertex_count,
+                        model_matrix: sm.cached_model_matrix,
+                        color: sm.color,
+                    });
                 }
             }
 
-            for (snap_idx, (buffer, vc, pos, rot, scl, bone_mats, color)) in
-                skinned_snaps.iter().enumerate()
-            {
-                let model = Self::create_model_matrix(*pos, *rot, *scl);
-                let model_arr = mat4_to_array(&model);
+            // Pass 2: draw each skinned mesh using metadata.
+            // For CPU skinning we need to read bone_matrices from skinned_meshes
+            // again, but only to upload uniforms (no clone).
+            let skinned_mesh_keys: Vec<u32> = self.skinned_meshes.keys().copied().collect();
+            for (snap_idx, snap) in skinned_snaps.iter().enumerate() {
                 self.backend
-                    .set_uniform_mat4(skinned_unis.main.model, &model_arr);
+                    .set_uniform_mat4(skinned_unis.main.model, &snap.model_matrix);
                 self.backend
                     .set_uniform_int(skinned_unis.main.use_texture, 0);
                 self.backend.set_uniform_vec4(
                     skinned_unis.main.object_color,
-                    color[0],
-                    color[1],
-                    color[2],
-                    color[3],
+                    snap.color[0],
+                    snap.color[1],
+                    snap.color[2],
+                    snap.color[3],
                 );
                 self.stats.skinned_instances += 1;
 
                 if gpu_skinning {
                     self.backend
-                        .set_uniform_int(skinned_unis.bone_offset, bone_offsets[snap_idx]);
-                } else {
-                    for (i, mat) in bone_mats.iter().enumerate() {
+                        .set_uniform_int(skinned_unis.bone_offset, scratch_offsets[snap_idx]);
+                } else if let Some(sm) = skinned_mesh_keys
+                    .get(snap_idx)
+                    .and_then(|k| self.skinned_meshes.get(k))
+                {
+                    for (i, mat) in sm.bone_matrices.iter().enumerate() {
                         if i < skinned_unis.bone_matrices.len() {
                             self.backend
                                 .set_uniform_mat4(skinned_unis.bone_matrices[i], mat);
@@ -418,13 +466,19 @@ impl Renderer3D {
                     self.stats.bone_matrix_uploads += 1;
                 }
 
-                let _ = self.backend.bind_buffer(*buffer);
+                let _ = self.backend.bind_buffer(snap.buffer);
                 self.backend.set_vertex_attributes(&self.skinned_layout);
-                let _ = self
-                    .backend
-                    .draw_arrays(PrimitiveTopology::Triangles, 0, *vc as u32);
+                let _ = self.backend.draw_arrays(
+                    PrimitiveTopology::Triangles,
+                    0,
+                    snap.vertex_count as u32,
+                );
                 self.stats.draw_calls += 1;
             }
+
+            // Return scratch buffers.
+            self.scratch_packed_bones = scratch_packed;
+            self.scratch_bone_offsets = scratch_offsets;
 
             if gpu_skinning {
                 self.backend.unbind_storage_buffer();
@@ -476,6 +530,9 @@ impl Renderer3D {
 
         self.render_debug_draw(&view_arr, &proj_arr, &eff_fog);
         self.backend.disable_culling();
+
+        // Return the scratch buffer so it can be reused next frame.
+        self.scratch_filtered_lights = filtered_lights;
 
         let render3d_us = render3d_start.elapsed().as_micros() as u64;
         crate::libs::graphics::frame_timing::record_phase("render3d_scene", render3d_us);

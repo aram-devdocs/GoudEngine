@@ -83,6 +83,7 @@ impl BoneChannelMap {
 }
 
 /// Compute bone matrices using pre-cached property names (zero per-frame allocation).
+#[inline]
 pub(in crate::libs::graphics::renderer3d) fn compute_bone_matrices_with_names(
     skeleton: &SkeletonData,
     anim: &KeyframeAnimation,
@@ -116,6 +117,7 @@ pub(in crate::libs::graphics::renderer3d) fn compute_bone_matrices_with_names(
 }
 
 /// Compute bone matrices into pre-allocated scratch buffers (zero per-frame allocation).
+#[inline]
 pub(in crate::libs::graphics::renderer3d) fn compute_bone_matrices_into(
     skeleton: &SkeletonData,
     anim: &KeyframeAnimation,
@@ -146,6 +148,7 @@ pub(in crate::libs::graphics::renderer3d) fn compute_bone_matrices_into(
 }
 
 /// Compute bone matrices using pre-built [`BoneChannelMap`] (zero string lookups).
+#[inline]
 pub(in crate::libs::graphics::renderer3d) fn compute_bone_matrices_into_fast(
     skeleton: &SkeletonData,
     anim: &KeyframeAnimation,
@@ -181,10 +184,11 @@ pub(in crate::libs::graphics::renderer3d) fn compute_bone_matrices_into_fast(
         let sy = sample(cm[8], 1.0);
         let sz = sample(cm[9], 1.0);
 
-        // Normalize quaternion.
+        // Normalize quaternion (1 reciprocal + 4 multiplications instead of 4 divisions).
         let len = (rx * rx + ry * ry + rz * rz + rw * rw).sqrt();
         let (rx, ry, rz, rw) = if len > f32::EPSILON {
-            (rx / len, ry / len, rz / len, rw / len)
+            let inv_len = 1.0 / len;
+            (rx * inv_len, ry * inv_len, rz * inv_len, rw * inv_len)
         } else {
             (0.0, 0.0, 0.0, 1.0)
         };
@@ -232,6 +236,7 @@ pub(in crate::libs::graphics::renderer3d) fn compute_bone_matrices_with_channel_
 // ---------------------------------------------------------------------------
 
 /// Walk the bone hierarchy to compute global transforms from local transforms.
+#[inline]
 fn walk_hierarchy(
     skeleton: &SkeletonData,
     local_transforms: &[[f32; 16]],
@@ -269,10 +274,11 @@ fn sample_rotation_indexed(
     let y = sample_channel(anim, &names.rotation[1], time).unwrap_or(0.0);
     let z = sample_channel(anim, &names.rotation[2], time).unwrap_or(0.0);
     let w = sample_channel(anim, &names.rotation[3], time).unwrap_or(1.0);
-    // Normalize quaternion.
+    // Normalize quaternion (1 reciprocal + 4 multiplications instead of 4 divisions).
     let len = (x * x + y * y + z * z + w * w).sqrt();
     if len > f32::EPSILON {
-        (x / len, y / len, z / len, w / len)
+        let inv_len = 1.0 / len;
+        (x * inv_len, y * inv_len, z * inv_len, w * inv_len)
     } else {
         (0.0, 0.0, 0.0, 1.0)
     }
@@ -295,6 +301,7 @@ fn sample_channel(anim: &KeyframeAnimation, property: &str, time: f32) -> Option
 }
 
 /// Build a column-major 4x4 TRS matrix from translation, quaternion rotation, and scale.
+#[inline]
 pub(crate) fn build_trs_matrix(
     tx: f32,
     ty: f32,
@@ -338,15 +345,19 @@ pub(crate) fn build_trs_matrix(
 }
 
 /// Multiply two column-major 4x4 matrices.
+///
+/// Unrolled inner loop to help the compiler auto-vectorize.
+#[inline]
 pub(crate) fn mat4_mul(a: &[f32; 16], b: &[f32; 16]) -> [f32; 16] {
+    // Column-major: out[col*4+row] = sum_k(a[k*4+row] * b[col*4+k])
     let mut out = [0.0f32; 16];
     for col in 0..4 {
+        let b0 = b[col * 4];
+        let b1 = b[col * 4 + 1];
+        let b2 = b[col * 4 + 2];
+        let b3 = b[col * 4 + 3];
         for row in 0..4 {
-            let mut sum = 0.0f32;
-            for k in 0..4 {
-                sum += a[k * 4 + row] * b[col * 4 + k];
-            }
-            out[col * 4 + row] = sum;
+            out[col * 4 + row] = a[row] * b0 + a[4 + row] * b1 + a[8 + row] * b2 + a[12 + row] * b3;
         }
     }
     out

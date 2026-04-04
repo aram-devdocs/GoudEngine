@@ -141,6 +141,7 @@ public final class GoudGameNative {
     public static native int getBoneMatrixUploadCount(long contextId);
     public static native int getAnimationEvaluationCount(long contextId);
     public static native int getAnimationEvaluationSavedCount(long contextId);
+    public static native FramePhaseTimings getFramePhaseTimings();
     public static native boolean render3D(long contextId);
     public static native int createMaterial(long contextId, int materialType, float r, float g, float b, float a, float shininess, float metallic, float roughness, float ao);
     public static native boolean updateMaterial(long contextId, int materialId, int materialType, float r, float g, float b, float a, float shininess, float metallic, float roughness, float ao);

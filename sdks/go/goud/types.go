@@ -427,6 +427,7 @@ func NewRenderMetrics(drawCallCount uint32, spritesSubmitted uint32, spritesDraw
 // FramePhaseTimings Per-frame phase timings for performance diagnosis. All values in microseconds.
 type FramePhaseTimings struct {
 	SurfaceAcquireUs uint64
+	ShadowPassUs uint64
 	ShadowBuildUs uint64
 	Render3dSceneUs uint64
 	UniformUploadUs uint64
@@ -434,12 +435,16 @@ type FramePhaseTimings struct {
 	GpuSubmitUs uint64
 	ReadbackStallUs uint64
 	SurfacePresentUs uint64
+	AnimEvalUs uint64
+	BonePackUs uint64
+	BoneUploadUs uint64
 }
 
 // NewFramePhaseTimings creates a new FramePhaseTimings.
-func NewFramePhaseTimings(surfaceAcquireUs uint64, shadowBuildUs uint64, render3dSceneUs uint64, uniformUploadUs uint64, renderPassUs uint64, gpuSubmitUs uint64, readbackStallUs uint64, surfacePresentUs uint64) FramePhaseTimings {
+func NewFramePhaseTimings(surfaceAcquireUs uint64, shadowPassUs uint64, shadowBuildUs uint64, render3dSceneUs uint64, uniformUploadUs uint64, renderPassUs uint64, gpuSubmitUs uint64, readbackStallUs uint64, surfacePresentUs uint64, animEvalUs uint64, bonePackUs uint64, boneUploadUs uint64) FramePhaseTimings {
 	return FramePhaseTimings{
 		SurfaceAcquireUs: surfaceAcquireUs,
+		ShadowPassUs: shadowPassUs,
 		ShadowBuildUs: shadowBuildUs,
 		Render3dSceneUs: render3dSceneUs,
 		UniformUploadUs: uniformUploadUs,
@@ -447,6 +452,9 @@ func NewFramePhaseTimings(surfaceAcquireUs uint64, shadowBuildUs uint64, render3
 		GpuSubmitUs: gpuSubmitUs,
 		ReadbackStallUs: readbackStallUs,
 		SurfacePresentUs: surfacePresentUs,
+		AnimEvalUs: animEvalUs,
+		BonePackUs: bonePackUs,
+		BoneUploadUs: boneUploadUs,
 	}
 }
 

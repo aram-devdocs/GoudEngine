@@ -20,7 +20,7 @@ impl Renderer3D {
                 self.grid_vertex_count = count;
             }
         }
-        self.grid_config = config.clone();
+        self.grid_config = config;
         if let Some(scene_id) = self.current_scene {
             if let Some(scene) = self.scenes.get_mut(&scene_id) {
                 scene.grid = config;
@@ -51,7 +51,7 @@ impl Renderer3D {
     }
 
     pub fn configure_skybox(&mut self, config: SkyboxConfig) {
-        self.skybox_config = config.clone();
+        self.skybox_config = config;
         if let Some(scene_id) = self.current_scene {
             if let Some(scene) = self.scenes.get_mut(&scene_id) {
                 scene.skybox = config;
@@ -60,7 +60,7 @@ impl Renderer3D {
     }
 
     pub fn configure_fog(&mut self, config: FogConfig) {
-        self.fog_config = config.clone();
+        self.fog_config = config;
         if let Some(scene_id) = self.current_scene {
             if let Some(scene) = self.scenes.get_mut(&scene_id) {
                 scene.fog = config;

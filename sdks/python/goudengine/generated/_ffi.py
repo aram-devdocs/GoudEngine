@@ -161,13 +161,17 @@ class FfiRenderMetrics(ctypes.Structure):
 class FfiFramePhaseTimings(ctypes.Structure):
     _fields_ = [
         ("surface_acquire_us", ctypes.c_uint64),
+        ("shadow_pass_us", ctypes.c_uint64),
         ("shadow_build_us", ctypes.c_uint64),
         ("render3d_scene_us", ctypes.c_uint64),
         ("uniform_upload_us", ctypes.c_uint64),
         ("render_pass_us", ctypes.c_uint64),
         ("gpu_submit_us", ctypes.c_uint64),
         ("readback_stall_us", ctypes.c_uint64),
-        ("surface_present_us", ctypes.c_uint64)
+        ("surface_present_us", ctypes.c_uint64),
+        ("anim_eval_us", ctypes.c_uint64),
+        ("bone_pack_us", ctypes.c_uint64),
+        ("bone_upload_us", ctypes.c_uint64)
     ]
 
 class GoudDebuggerConfig(ctypes.Structure):

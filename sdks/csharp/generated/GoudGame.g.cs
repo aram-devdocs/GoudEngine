@@ -1110,6 +1110,14 @@ namespace GoudEngine
             return NativeMethods.goud_renderer3d_get_animation_evaluation_saved_count(_ctx);
         }
 
+        /// <summary>Returns per-frame phase timings for performance diagnosis (all values in microseconds)</summary>
+        public FramePhaseTimings GetFramePhaseTimings()
+        {
+            FfiFramePhaseTimings _out_timings = default;
+            NativeMethods.goud_renderer_get_frame_phase_timings(ref _out_timings);
+            return new FramePhaseTimings(_out_timings.SurfaceAcquireUs, _out_timings.ShadowPassUs, _out_timings.ShadowBuildUs, _out_timings.Render3dSceneUs, _out_timings.UniformUploadUs, _out_timings.RenderPassUs, _out_timings.GpuSubmitUs, _out_timings.ReadbackStallUs, _out_timings.SurfacePresentUs, _out_timings.AnimEvalUs, _out_timings.BonePackUs, _out_timings.BoneUploadUs);
+        }
+
         /// <summary>Renders all 3D objects</summary>
         public bool Render3D()
         {

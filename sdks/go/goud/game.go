@@ -814,6 +814,11 @@ func (g *Game) GetAnimationEvaluationSavedCount() int32 {
 	return 0
 }
 
+// GetFramePhaseTimings Returns per-frame phase timings for performance diagnosis (all values in microseconds)
+func (g *Game) GetFramePhaseTimings() FramePhaseTimings {
+	return FramePhaseTimings{}
+}
+
 // Render3D Renders all 3D objects
 func (g *Game) Render3D() bool {
 	return false

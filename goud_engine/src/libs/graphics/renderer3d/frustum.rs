@@ -152,4 +152,75 @@ mod tests {
         // Object beyond far plane should be culled.
         assert!(!frustum.intersects_sphere(Vector3::new(0.0, 0.0, -200.0), 1.0));
     }
+
+    /// Regression test: objects placed away from origin must remain visible
+    /// when the camera is near them. Previously, cached bounding spheres
+    /// were initialized in local space (near origin) causing objects to be
+    /// culled when the camera moved away from the origin.
+    #[test]
+    fn test_world_space_bounds_near_camera() {
+        // Camera at (50, 5, 50) looking at (50, 0, 45) — far from origin,
+        // looking roughly along -Z. Simulates walking toward a building
+        // at (50, 0, 45).
+        let proj = perspective(Deg(60.0), 16.0 / 9.0, 0.1, 200.0);
+        let view = Matrix4::look_at_rh(
+            Point3::new(50.0, 5.0, 50.0),
+            Point3::new(50.0, 0.0, 45.0),
+            Vector3::new(0.0, 1.0, 0.0),
+        );
+        let frustum = Frustum::from_view_projection(&(proj * view));
+
+        // Object at (50, 0, 45) with local bounds center (0, 1, 0) and radius 2.0.
+        let obj_position = Vector3::new(50.0, 0.0, 45.0);
+        let bounds_center = Vector3::new(0.0, 1.0, 0.0);
+        let bounds_radius = 2.0f32;
+
+        // CORRECT: world-space center = position + local bounds center
+        let world_center = obj_position + bounds_center;
+        assert!(
+            frustum.intersects_sphere(world_center, bounds_radius),
+            "Object at world ({}, {}, {}) should be visible when camera looks at it",
+            world_center.x,
+            world_center.y,
+            world_center.z,
+        );
+
+        // BUG REGRESSION: if we used local-space center (near origin) instead,
+        // the object would be incorrectly placed at (0, 1, 0) — far from
+        // the camera at (50, 5, 50). It should be culled.
+        let stale_local_center = bounds_center;
+        assert!(
+            !frustum.intersects_sphere(stale_local_center, bounds_radius),
+            "Local-space center at origin should NOT be visible from camera at (50, 5, 50)"
+        );
+    }
+
+    /// Regression test: objects with non-unit scale must have their bounding
+    /// radius scaled correctly.
+    #[test]
+    fn test_scaled_object_bounds() {
+        let proj = perspective(Deg(60.0), 1.0, 0.1, 100.0);
+        let view = Matrix4::look_at_rh(
+            Point3::new(0.0, 0.0, 20.0),
+            Point3::new(0.0, 0.0, 0.0),
+            Vector3::new(0.0, 1.0, 0.0),
+        );
+        let frustum = Frustum::from_view_projection(&(proj * view));
+
+        // Small object at origin with large scale should still be visible.
+        let position = Vector3::new(0.0, 0.0, 0.0);
+        let bounds_center = Vector3::new(0.0, 0.0, 0.0);
+        let bounds_radius = 0.1f32;
+        let scale = Vector3::new(50.0f32, 50.0, 50.0);
+
+        let world_center = position + bounds_center;
+        let max_scale = scale.x.max(scale.y).max(scale.z);
+        let world_radius = bounds_radius * max_scale;
+
+        assert!(frustum.intersects_sphere(world_center, world_radius));
+
+        // Without scale factor, the tiny radius should be visible (it's at origin
+        // which is in view), but this verifies the math is correct.
+        assert!(frustum.intersects_sphere(world_center, bounds_radius));
+    }
 }

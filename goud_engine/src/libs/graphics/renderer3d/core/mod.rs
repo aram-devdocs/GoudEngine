@@ -2,7 +2,7 @@
 
 mod drop;
 
-use std::collections::HashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::config::Render3DConfig;
 use super::scene::Scene3D;
@@ -51,10 +51,10 @@ pub struct Renderer3D {
     pub(in crate::libs::graphics::renderer3d) debug_draw_buffer: BufferHandle,
     pub(in crate::libs::graphics::renderer3d) debug_draw_buffer_capacity_bytes: usize,
     pub(in crate::libs::graphics::renderer3d) debug_draw_vertex_count: i32,
-    pub(in crate::libs::graphics::renderer3d) objects: HashMap<u32, Object3D>,
-    pub(in crate::libs::graphics::renderer3d) instanced_meshes: HashMap<u32, InstancedMesh>,
-    pub(in crate::libs::graphics::renderer3d) particle_emitters: HashMap<u32, ParticleEmitter>,
-    pub(in crate::libs::graphics::renderer3d) lights: HashMap<u32, Light>,
+    pub(in crate::libs::graphics::renderer3d) objects: FxHashMap<u32, Object3D>,
+    pub(in crate::libs::graphics::renderer3d) instanced_meshes: FxHashMap<u32, InstancedMesh>,
+    pub(in crate::libs::graphics::renderer3d) particle_emitters: FxHashMap<u32, ParticleEmitter>,
+    pub(in crate::libs::graphics::renderer3d) lights: FxHashMap<u32, Light>,
     pub(in crate::libs::graphics::renderer3d) next_object_id: u32,
     pub(in crate::libs::graphics::renderer3d) next_instanced_mesh_id: u32,
     pub(in crate::libs::graphics::renderer3d) next_light_id: u32,
@@ -81,18 +81,18 @@ pub struct Renderer3D {
     pub(in crate::libs::graphics::renderer3d) postprocess_texture_size: (u32, u32),
     pub(in crate::libs::graphics::renderer3d) shadow_texture:
         Option<crate::libs::graphics::backend::TextureHandle>,
-    pub(in crate::libs::graphics::renderer3d) materials: HashMap<u32, Material3D>,
-    pub(in crate::libs::graphics::renderer3d) object_materials: HashMap<u32, u32>,
+    pub(in crate::libs::graphics::renderer3d) materials: FxHashMap<u32, Material3D>,
+    pub(in crate::libs::graphics::renderer3d) object_materials: FxHashMap<u32, u32>,
     pub(in crate::libs::graphics::renderer3d) next_material_id: u32,
-    pub(in crate::libs::graphics::renderer3d) skinned_meshes: HashMap<u32, SkinnedMesh3D>,
+    pub(in crate::libs::graphics::renderer3d) skinned_meshes: FxHashMap<u32, SkinnedMesh3D>,
     pub(in crate::libs::graphics::renderer3d) next_skinned_mesh_id: u32,
     pub(in crate::libs::graphics::renderer3d) skinned_shader_handle: ShaderHandle,
     pub(in crate::libs::graphics::renderer3d) skinned_uniforms: SkinnedUniforms,
     pub(in crate::libs::graphics::renderer3d) skinned_layout: VertexLayout,
-    pub(in crate::libs::graphics::renderer3d) models: HashMap<u32, Model3D>,
-    pub(in crate::libs::graphics::renderer3d) model_instances: HashMap<u32, ModelInstance3D>,
+    pub(in crate::libs::graphics::renderer3d) models: FxHashMap<u32, Model3D>,
+    pub(in crate::libs::graphics::renderer3d) model_instances: FxHashMap<u32, ModelInstance3D>,
     pub(in crate::libs::graphics::renderer3d) next_model_id: u32,
-    pub(in crate::libs::graphics::renderer3d) animation_players: HashMap<u32, AnimationPlayer>,
+    pub(in crate::libs::graphics::renderer3d) animation_players: FxHashMap<u32, AnimationPlayer>,
     /// Shader and uniforms for instanced skinned rendering.
     pub(in crate::libs::graphics::renderer3d) instanced_skinned_shader_handle: ShaderHandle,
     pub(in crate::libs::graphics::renderer3d) instanced_skinned_uniforms: InstancedSkinnedUniforms,
@@ -111,12 +111,12 @@ pub struct Renderer3D {
     pub(in crate::libs::graphics::renderer3d) stats: Renderer3DStats,
     pub(in crate::libs::graphics::renderer3d) anti_aliasing_mode: AntiAliasingMode,
     pub(in crate::libs::graphics::renderer3d) msaa_samples: u32,
-    pub(in crate::libs::graphics::renderer3d) scenes: HashMap<u32, Scene3D>,
+    pub(in crate::libs::graphics::renderer3d) scenes: FxHashMap<u32, Scene3D>,
     pub(in crate::libs::graphics::renderer3d) next_scene_id: u32,
     pub(in crate::libs::graphics::renderer3d) current_scene: Option<u32>,
     /// Object IDs belonging to skinned models/instances -- maintained
     /// incrementally to avoid per-frame recomputation.
-    pub(in crate::libs::graphics::renderer3d) skinned_object_ids: std::collections::HashSet<u32>,
+    pub(in crate::libs::graphics::renderer3d) skinned_object_ids: FxHashSet<u32>,
     /// Game-developer-controlled configuration for the 3D renderer.
     pub(in crate::libs::graphics::renderer3d) config: Render3DConfig,
     /// Reusable scratch buffer for CPU skinning output (avoids per-submesh allocation).
@@ -125,14 +125,14 @@ pub struct Renderer3D {
     pub(in crate::libs::graphics::renderer3d) frame_counter: u64,
     /// Global animation clocks for phase-locked playback.
     /// Key: (source_model_id, clip_index). Value: elapsed time in seconds.
-    pub(in crate::libs::graphics::renderer3d) phase_lock_clocks: HashMap<(u32, usize), f32>,
+    pub(in crate::libs::graphics::renderer3d) phase_lock_clocks: FxHashMap<(u32, usize), f32>,
     /// Pool of per-group instance buffers for instanced skinned rendering.
     /// Each group gets its own buffer to avoid wgpu write-staging overwrites.
     pub(in crate::libs::graphics::renderer3d) instanced_skinned_instance_buffers:
         Vec<(BufferHandle, usize)>,
     /// Reusable G5 shared animation evaluation cache -- cleared each frame.
     pub(in crate::libs::graphics::renderer3d) bone_eval_cache:
-        HashMap<(u32, usize, u32), Vec<[f32; 16]>>,
+        FxHashMap<(u32, usize, u32), Vec<[f32; 16]>>,
     /// Depth-only shader handle for the GPU shadow pre-pass.
     pub(in crate::libs::graphics::renderer3d) depth_only_shader_handle: ShaderHandle,
     /// Cached uniform locations for the depth-only shadow shader.
@@ -142,6 +142,18 @@ pub struct Renderer3D {
     /// Pre-allocated buffer of visible object IDs, reused across frames to avoid
     /// per-frame Vec allocation during the render snapshot phase.
     pub(in crate::libs::graphics::renderer3d) visible_object_ids: Vec<u32>,
+    /// Reusable scratch buffer for filtered lights each frame.
+    pub(in crate::libs::graphics::renderer3d) scratch_filtered_lights: Vec<Light>,
+    /// Reusable scratch buffer for animation player IDs each frame.
+    pub(in crate::libs::graphics::renderer3d) scratch_player_ids: Vec<u32>,
+    /// Reusable scratch buffer for packed bone floats (skinned mesh pass).
+    pub(in crate::libs::graphics::renderer3d) scratch_packed_bones: Vec<f32>,
+    /// Reusable scratch buffer for per-mesh bone offsets (skinned mesh pass).
+    pub(in crate::libs::graphics::renderer3d) scratch_bone_offsets: Vec<i32>,
+    /// Reusable scratch buffer for instanced skinned packed bones.
+    pub(in crate::libs::graphics::renderer3d) scratch_inst_packed_bones: Vec<f32>,
+    /// Reusable scratch buffer for instanced skinned per-group instance data.
+    pub(in crate::libs::graphics::renderer3d) scratch_inst_data: Vec<f32>,
     /// Whether the static batch VBO needs rebuilding (set when `set_object_static` changes).
     pub(in crate::libs::graphics::renderer3d) static_batch_dirty: bool,
     /// Pre-baked VBO containing all static objects' transformed vertices.
@@ -152,7 +164,7 @@ pub struct Renderer3D {
     pub(in crate::libs::graphics::renderer3d) static_batch_vertex_count: u32,
     /// Object IDs that were actually included in the static batch (not overflowed).
     /// Used to distinguish batched objects from overflow objects that need individual draws.
-    pub(in crate::libs::graphics::renderer3d) static_batched_ids: std::collections::HashSet<u32>,
+    pub(in crate::libs::graphics::renderer3d) static_batched_ids: FxHashSet<u32>,
 }
 
 // StaticBatchGroup is defined in core_static_batch.rs
@@ -276,10 +288,10 @@ impl Renderer3D {
             debug_draw_buffer: BufferHandle::INVALID,
             debug_draw_buffer_capacity_bytes: 0,
             debug_draw_vertex_count: 0,
-            objects: HashMap::new(),
-            instanced_meshes: HashMap::new(),
-            particle_emitters: HashMap::new(),
-            lights: HashMap::new(),
+            objects: FxHashMap::default(),
+            instanced_meshes: FxHashMap::default(),
+            particle_emitters: FxHashMap::default(),
+            lights: FxHashMap::default(),
             next_object_id: 1,
             next_instanced_mesh_id: 1,
             next_light_id: 1,
@@ -304,18 +316,18 @@ impl Renderer3D {
             postprocess_texture: None,
             postprocess_texture_size: (0, 0),
             shadow_texture: None,
-            materials: HashMap::new(),
-            object_materials: HashMap::new(),
+            materials: FxHashMap::default(),
+            object_materials: FxHashMap::default(),
             next_material_id: 1,
-            skinned_meshes: HashMap::new(),
+            skinned_meshes: FxHashMap::default(),
             next_skinned_mesh_id: 1,
             skinned_shader_handle,
             skinned_uniforms,
             skinned_layout: skinned_vertex_layout(),
-            models: HashMap::new(),
-            model_instances: HashMap::new(),
+            models: FxHashMap::default(),
+            model_instances: FxHashMap::default(),
             next_model_id: 1,
-            animation_players: HashMap::new(),
+            animation_players: FxHashMap::default(),
             instanced_skinned_shader_handle,
             instanced_skinned_uniforms,
             instanced_skinned_instance_layout: instanced_skinned_instance_layout(),
@@ -327,29 +339,37 @@ impl Renderer3D {
             stats: Renderer3DStats::default(),
             anti_aliasing_mode: AntiAliasingMode::Off,
             msaa_samples: 1,
-            scenes: HashMap::new(),
+            scenes: FxHashMap::default(),
             next_scene_id: 1,
             current_scene: None,
-            skinned_object_ids: std::collections::HashSet::new(),
+            skinned_object_ids: FxHashSet::default(),
             config: Render3DConfig::default(),
             skin_scratch_buffer: Vec::new(),
             frame_counter: 0,
-            phase_lock_clocks: HashMap::new(),
+            phase_lock_clocks: FxHashMap::default(),
             instanced_skinned_instance_buffers: Vec::new(),
-            bone_eval_cache: HashMap::new(),
+            bone_eval_cache: FxHashMap::default(),
             depth_only_shader_handle,
             depth_only_uniforms,
             depth_only_layout: depth_only_vertex_layout(),
             visible_object_ids: Vec::with_capacity(1024),
+            scratch_filtered_lights: Vec::with_capacity(16),
+            scratch_player_ids: Vec::with_capacity(64),
+            scratch_packed_bones: Vec::with_capacity(4096),
+            scratch_bone_offsets: Vec::with_capacity(64),
+            scratch_inst_packed_bones: Vec::with_capacity(4096),
+            scratch_inst_data: Vec::with_capacity(1024),
             static_batch_dirty: false,
             static_batch_buffer: None,
             static_batch_groups: Vec::new(),
             static_batch_vertex_count: 0,
-            static_batched_ids: std::collections::HashSet::new(),
+            static_batched_ids: FxHashSet::default(),
         })
     }
     pub fn set_object_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
-        let ok = self.mutate_object(id, |obj| obj.position = Vector3::new(x, y, z));
+        let ok = self.mutate_object(id, |obj| {
+            obj.position = Vector3::new(x, y, z);
+        });
         if ok && self.objects.get(&id).is_some_and(|o| o.is_static) {
             self.static_batch_dirty = true;
         }
@@ -363,7 +383,9 @@ impl Renderer3D {
         ok
     }
     pub fn set_object_scale(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
-        let ok = self.mutate_object(id, |obj| obj.scale = Vector3::new(x, y, z));
+        let ok = self.mutate_object(id, |obj| {
+            obj.scale = Vector3::new(x, y, z);
+        });
         if ok && self.objects.get(&id).is_some_and(|o| o.is_static) {
             self.static_batch_dirty = true;
         }

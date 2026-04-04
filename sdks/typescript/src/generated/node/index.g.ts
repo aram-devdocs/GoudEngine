@@ -910,6 +910,11 @@ export class GoudGame implements IGoudGame {
     return (this.native as any).getAnimationEvaluationSavedCount();
   }
 
+  /** Returns per-frame phase timings for performance diagnosis (all values in microseconds) */
+  getFramePhaseTimings(): FramePhaseTimings {
+    return (this.native as any).getFramePhaseTimings();
+  }
+
   /** Renders all 3D objects */
   render3D(): boolean {
     return this.native.render3D();

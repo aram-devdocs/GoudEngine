@@ -1,6 +1,7 @@
+use super::skinned_mesh::SkinnedMesh3D;
 use super::types::{Light, LightType, Object3D};
 use cgmath::{EuclideanSpace, InnerSpace, Matrix4, Point3, Vector3, Vector4};
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 /// CPU-built directional shadow map used as a compatibility fallback.
 ///
@@ -25,8 +26,21 @@ const MAX_SHADOW_VERTICES: usize = 10_000;
 /// directional light. Returns `None` if no directional light is present or
 /// the scene has no geometry.
 pub(super) fn compute_light_space_matrix(
-    objects: &HashMap<u32, Object3D>,
-    lights: &HashMap<u32, Light>,
+    objects: &FxHashMap<u32, Object3D>,
+    lights: &FxHashMap<u32, Light>,
+) -> Option<(Matrix4<f32>, Vector3<f32>)> {
+    compute_light_space_matrix_with_skinned(objects, lights, None)
+}
+
+/// Computes the light-space matrix considering both regular objects (via
+/// cached world-space bounding spheres) and optionally skinned meshes.
+///
+/// Using bounding spheres instead of transforming every vertex reduces the
+/// cost from O(total_vertices) to O(num_objects) per frame.
+pub(super) fn compute_light_space_matrix_with_skinned(
+    objects: &FxHashMap<u32, Object3D>,
+    lights: &FxHashMap<u32, Light>,
+    skinned_meshes: Option<&FxHashMap<u32, SkinnedMesh3D>>,
 ) -> Option<(Matrix4<f32>, Vector3<f32>)> {
     let light = lights
         .values()
@@ -37,21 +51,51 @@ pub(super) fn compute_light_space_matrix(
         Vector3::new(0.0, -1.0, 0.0)
     };
 
-    let world_positions: Vec<Vector3<f32>> = objects
-        .values()
-        .filter(|o| !o.vertices.is_empty())
-        .flat_map(|o| {
-            let model =
-                super::core::Renderer3D::create_model_matrix(o.position, o.rotation, o.scale);
-            world_positions(&o.vertices, model)
-        })
-        .collect();
+    // Use cached world-space bounding spheres instead of transforming every vertex.
+    // This reduces cost from O(total_vertices) to O(num_objects).
+    let mut scene_min = Vector3::new(f32::MAX, f32::MAX, f32::MAX);
+    let mut scene_max = Vector3::new(f32::MIN, f32::MIN, f32::MIN);
+    let mut has_geometry = false;
 
-    if world_positions.is_empty() {
+    for obj in objects.values() {
+        if obj.vertices.is_empty() {
+            continue;
+        }
+        let center = obj.position + obj.bounds.center;
+        let max_scale = obj.scale.x.max(obj.scale.y).max(obj.scale.z);
+        let r = obj.bounds.radius * max_scale;
+        scene_min.x = scene_min.x.min(center.x - r);
+        scene_min.y = scene_min.y.min(center.y - r);
+        scene_min.z = scene_min.z.min(center.z - r);
+        scene_max.x = scene_max.x.max(center.x + r);
+        scene_max.y = scene_max.y.max(center.y + r);
+        scene_max.z = scene_max.z.max(center.z + r);
+        has_geometry = true;
+    }
+
+    // Include skinned meshes in scene bounds. They lack a dedicated bounding
+    // sphere, so approximate with position and max-axis scale as radius.
+    if let Some(skinned) = skinned_meshes {
+        for sm in skinned.values() {
+            if sm.vertices.is_empty() {
+                continue;
+            }
+            let center = sm.position;
+            let r = sm.scale.x.max(sm.scale.y).max(sm.scale.z);
+            scene_min.x = scene_min.x.min(center.x - r);
+            scene_min.y = scene_min.y.min(center.y - r);
+            scene_min.z = scene_min.z.min(center.z - r);
+            scene_max.x = scene_max.x.max(center.x + r);
+            scene_max.y = scene_max.y.max(center.y + r);
+            scene_max.z = scene_max.z.max(center.z + r);
+            has_geometry = true;
+        }
+    }
+
+    if !has_geometry {
         return None;
     }
 
-    let (scene_min, scene_max) = bounds(&world_positions);
     let center = (scene_min + scene_max) * 0.5;
     let extent = scene_max - scene_min;
     let scene_radius =
@@ -67,14 +111,30 @@ pub(super) fn compute_light_space_matrix(
     };
     let light_view = Matrix4::look_at_rh(light_origin, light_target, up);
 
-    let light_space_points: Vec<Vector3<f32>> = world_positions
-        .iter()
-        .map(|p| {
-            let proj = light_view * p.extend(1.0);
-            proj.truncate()
-        })
-        .collect();
-    let (light_min, light_max) = bounds(&light_space_points);
+    // Project the eight corners of the scene AABB into light space to compute
+    // a tight orthographic frustum. This is O(8) instead of O(total_vertices).
+    let corners = [
+        Vector3::new(scene_min.x, scene_min.y, scene_min.z),
+        Vector3::new(scene_min.x, scene_min.y, scene_max.z),
+        Vector3::new(scene_min.x, scene_max.y, scene_min.z),
+        Vector3::new(scene_min.x, scene_max.y, scene_max.z),
+        Vector3::new(scene_max.x, scene_min.y, scene_min.z),
+        Vector3::new(scene_max.x, scene_min.y, scene_max.z),
+        Vector3::new(scene_max.x, scene_max.y, scene_min.z),
+        Vector3::new(scene_max.x, scene_max.y, scene_max.z),
+    ];
+    let mut light_min = Vector3::new(f32::INFINITY, f32::INFINITY, f32::INFINITY);
+    let mut light_max = Vector3::new(f32::NEG_INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
+    for c in &corners {
+        let proj = (light_view * c.extend(1.0)).truncate();
+        light_min.x = light_min.x.min(proj.x);
+        light_min.y = light_min.y.min(proj.y);
+        light_min.z = light_min.z.min(proj.z);
+        light_max.x = light_max.x.max(proj.x);
+        light_max.y = light_max.y.max(proj.y);
+        light_max.z = light_max.z.max(proj.z);
+    }
+
     // Pad the near/far planes proportionally to the scene size.
     let ortho_pad = scene_radius * 0.25;
     let projection = cgmath::ortho(
@@ -90,8 +150,8 @@ pub(super) fn compute_light_space_matrix(
 }
 
 pub(super) fn build_directional_shadow_map(
-    objects: &HashMap<u32, Object3D>,
-    lights: &HashMap<u32, Light>,
+    objects: &FxHashMap<u32, Object3D>,
+    lights: &FxHashMap<u32, Light>,
     size: u32,
 ) -> Option<SoftwareShadowMap> {
     let (light_space_matrix, direction) = compute_light_space_matrix(objects, lights)?;
@@ -257,6 +317,9 @@ fn rasterize_shadow_map(
     }
 }
 
+/// Transforms all vertices into world space. Retained for the software shadow
+/// rasterizer test path (`build_shadow_map_from_meshes`).
+#[allow(dead_code)]
 fn world_positions(vertices: &[f32], model: Matrix4<f32>) -> Vec<Vector3<f32>> {
     vertices
         .chunks_exact(8)
@@ -267,6 +330,9 @@ fn world_positions(vertices: &[f32], model: Matrix4<f32>) -> Vec<Vector3<f32>> {
         .collect()
 }
 
+/// Computes axis-aligned bounding box from a set of points. Retained for the
+/// software shadow rasterizer test path.
+#[allow(dead_code)]
 fn bounds(points: &[Vector3<f32>]) -> (Vector3<f32>, Vector3<f32>) {
     let mut min = Vector3::new(f32::INFINITY, f32::INFINITY, f32::INFINITY);
     let mut max = Vector3::new(f32::NEG_INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);

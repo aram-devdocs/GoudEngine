@@ -1293,6 +1293,18 @@ typedef struct FfiFramePhaseTimings {
      * Surface present / vsync wait time (us).
      */
     uint64_t surface_present_us;
+    /**
+     * Animation evaluation time (us).
+     */
+    uint64_t anim_eval_us;
+    /**
+     * Bone matrix packing time (us).
+     */
+    uint64_t bone_pack_us;
+    /**
+     * Bone matrix GPU upload time (us).
+     */
+    uint64_t bone_upload_us;
 } FfiFramePhaseTimings;
 
 /**

@@ -172,6 +172,12 @@ pub struct WgpuBackend {
     shadow_pipeline_cache: HashMap<PipelineKey, wgpu::RenderPipeline>,
     /// Whether a readback has been requested for the current frame.
     readback_requested: bool,
+
+    /// Scratch buffer reused each frame to collect main-pass pipeline keys,
+    /// avoiding a per-frame `Vec<PipelineKey>` allocation.
+    scratch_pipeline_keys: Vec<PipelineKey>,
+    /// Scratch buffer reused each frame to collect shadow-pass pipeline keys.
+    scratch_shadow_pipeline_keys: Vec<PipelineKey>,
 }
 
 // SAFETY: wgpu Device and Queue are Send+Sync. Surface is Send.

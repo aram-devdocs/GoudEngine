@@ -33,7 +33,7 @@ struct SkinUpload {
 fn gather_skin_uploads(
     model: &Model3D,
     obj_ids: &[u32],
-    objects: &std::collections::HashMap<u32, super::types::Object3D>,
+    objects: &rustc_hash::FxHashMap<u32, super::types::Object3D>,
 ) -> Vec<SkinUpload> {
     let sub_count = model.bind_pose_vertices.len().min(obj_ids.len());
     if model.bind_pose_vertices.len() != obj_ids.len() {
@@ -134,6 +134,8 @@ impl Renderer3D {
     /// - **G6 (Animation LOD)**: Skips or half-rates animation updates for
     ///   models that are far from the camera.
     pub fn update_animations(&mut self, dt: f32) {
+        let anim_eval_start = std::time::Instant::now();
+
         // Advance all phase-lock global clocks.
         for clock in self.phase_lock_clocks.values_mut() {
             *clock += dt;
@@ -144,8 +146,12 @@ impl Renderer3D {
             }
         }
 
-        // Collect model IDs and instance IDs that have animation players.
-        let player_ids: Vec<u32> = self.animation_players.keys().copied().collect();
+        // Collect model IDs and instance IDs that have animation players,
+        // reusing the scratch buffer to avoid per-frame allocation.
+        self.scratch_player_ids.clear();
+        self.scratch_player_ids
+            .extend(self.animation_players.keys().copied());
+        let player_ids = std::mem::take(&mut self.scratch_player_ids);
 
         // Phase 1: advance animation time and compute bone matrices.
         //
@@ -337,6 +343,9 @@ impl Renderer3D {
         // Return the cache to self so it can be reused next frame.
         self.bone_eval_cache = bone_cache;
 
+        let anim_eval_us = anim_eval_start.elapsed().as_micros() as u64;
+        crate::libs::graphics::frame_timing::record_phase("anim_eval", anim_eval_us);
+
         // Phase 2: CPU skinning
         let gpu_skinning = matches!(self.config.skinning.mode, super::config::SkinningMode::Gpu)
             && self.backend.supports_storage_buffers();
@@ -393,6 +402,9 @@ impl Renderer3D {
                 }
             }
         }
+
+        // Return the scratch buffer so it can be reused next frame.
+        self.scratch_player_ids = player_ids;
     }
 
     /// Returns the number of animations in a model.

@@ -269,6 +269,54 @@ pub(crate) fn write_back_FpsStats<'local>(env: &mut jni::JNIEnv<'local>, obj: &j
     set_FpsStats_fields(env, obj, value)
 }
 
+pub(crate) fn set_FramePhaseTimings_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::types::FfiFramePhaseTimings) -> crate::jni::helpers::JniCallResult<()> {
+    crate::jni::helpers::ensure_no_pending_exception(env)?;
+    crate::jni::helpers::set_long_field(env, obj, "surfaceAcquireUs", value.surface_acquire_us as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "shadowPassUs", value.shadow_build_us as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "shadowBuildUs", value.render3d_scene_us as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "render3dSceneUs", value.uniform_upload_us as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "uniformUploadUs", value.render_pass_us as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "renderPassUs", value.gpu_submit_us as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "gpuSubmitUs", value.readback_stall_us as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "readbackStallUs", value.surface_present_us as i64)?;
+    Ok(())
+}
+
+pub(crate) fn new_FramePhaseTimings<'local>(env: &mut jni::JNIEnv<'local>, value: crate::ffi::types::FfiFramePhaseTimings) -> crate::jni::helpers::JniCallResult<jni::objects::JObject<'local>> {
+    let obj = crate::jni::helpers::new_object(env, "com/goudengine/internal/FramePhaseTimings")?;
+    set_FramePhaseTimings_fields(env, &obj, value)?;
+    Ok(obj)
+}
+
+pub(crate) fn read_FramePhaseTimings<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, param_name: &str) -> crate::jni::helpers::JniCallResult<crate::ffi::types::FfiFramePhaseTimings> {
+    if obj.is_null() {
+        crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
+        return Err(());
+    }
+    let field_surfaceAcquireUs = crate::jni::helpers::get_long_field(env, obj, "surfaceAcquireUs")? as u64;
+    let field_shadowPassUs = crate::jni::helpers::get_long_field(env, obj, "shadowPassUs")? as u64;
+    let field_shadowBuildUs = crate::jni::helpers::get_long_field(env, obj, "shadowBuildUs")? as u64;
+    let field_render3dSceneUs = crate::jni::helpers::get_long_field(env, obj, "render3dSceneUs")? as u64;
+    let field_uniformUploadUs = crate::jni::helpers::get_long_field(env, obj, "uniformUploadUs")? as u64;
+    let field_renderPassUs = crate::jni::helpers::get_long_field(env, obj, "renderPassUs")? as u64;
+    let field_gpuSubmitUs = crate::jni::helpers::get_long_field(env, obj, "gpuSubmitUs")? as u64;
+    let field_readbackStallUs = crate::jni::helpers::get_long_field(env, obj, "readbackStallUs")? as u64;
+    Ok(crate::ffi::types::FfiFramePhaseTimings {
+        surface_acquire_us: field_surfaceAcquireUs,
+        shadow_build_us: field_shadowPassUs,
+        render3d_scene_us: field_shadowBuildUs,
+        uniform_upload_us: field_render3dSceneUs,
+        render_pass_us: field_uniformUploadUs,
+        gpu_submit_us: field_renderPassUs,
+        readback_stall_us: field_gpuSubmitUs,
+        surface_present_us: field_readbackStallUs,
+    })
+}
+
+pub(crate) fn write_back_FramePhaseTimings<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::types::FfiFramePhaseTimings) -> crate::jni::helpers::JniCallResult<()> {
+    set_FramePhaseTimings_fields(env, obj, value)
+}
+
 pub(crate) fn set_InputCapabilities_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::core::providers::input_types::InputCapabilities) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
     crate::jni::helpers::set_boolean_field(env, obj, "supportsGamepad", value.supports_gamepad)?;
@@ -4705,6 +4753,29 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getAnimationE
                 return Err(());
             }
             Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_getFramePhaseTimings<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+) -> jni::sys::jobject {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_getFramePhaseTimings", crate::jni::helpers::null_object(), |env| -> crate::jni::helpers::JniCallResult<jni::sys::jobject> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let mut out_out_timings = unsafe { // SAFETY: zeroed out-parameter storage is only used before the FFI call writes it.
+        std::mem::zeroed()
+    };
+            let status = unsafe { // SAFETY: out-parameter storage and marshaled inputs remain valid for the duration of the FFI call.
+        crate::ffi::renderer::goud_renderer_get_frame_phase_timings(&mut out_out_timings as _)
+    };
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer_get_frame_phase_timings", None);
+                return Err(());
+            }
+            Ok(new_FramePhaseTimings(env, out_out_timings)?.into_raw())
     })
 }
 

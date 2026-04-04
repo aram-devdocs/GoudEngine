@@ -283,7 +283,7 @@ pub(in crate::libs::graphics::renderer3d) struct ParticleEmitter {
 }
 
 /// A light in the scene
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 #[allow(missing_docs)]
 pub struct Light {
     /// Type of light
@@ -320,7 +320,7 @@ impl Default for Light {
 }
 
 /// Grid configuration
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 #[allow(missing_docs)]
 pub struct GridConfig {
     /// Whether grid is enabled
@@ -360,7 +360,7 @@ impl Default for GridConfig {
 }
 
 /// Skybox configuration
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 #[allow(missing_docs)]
 pub struct SkyboxConfig {
     /// Whether skybox is enabled
@@ -396,7 +396,7 @@ pub enum FogMode {
 }
 
 /// Fog configuration
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 #[allow(missing_docs)]
 pub struct FogConfig {
     /// Whether fog is enabled

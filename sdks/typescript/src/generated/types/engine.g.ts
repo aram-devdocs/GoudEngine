@@ -448,6 +448,8 @@ export interface IGoudGame {
   getAnimationEvaluationCount(): number;
   /** Returns the number of animation evaluations avoided last frame */
   getAnimationEvaluationSavedCount(): number;
+  /** Returns per-frame phase timings for performance diagnosis (all values in microseconds) */
+  getFramePhaseTimings(): FramePhaseTimings;
   /** Renders all 3D objects */
   render3D(): boolean;
   /** Creates a 3D material */
