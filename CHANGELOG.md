@@ -1,5 +1,97 @@
 # Changelog
 
+## [0.0.840](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.839...v0.0.840) (2026-04-04)
+
+
+### Features
+
+* **platform:** add mobile platform support (iOS, Android, scaling, gamepad, CI) ([895f588](https://github.com/aram-devdocs/GoudEngine/commit/895f5880f06eff35a4dd421e20960352d5f1ab61))
+* **platform:** add mobile platform support for iOS, Android, responsive scaling, gamepad, and CI ([009ff69](https://github.com/aram-devdocs/GoudEngine/commit/009ff69ee2d41fbc4ee236bfad36113cdd5fb70d))
+* **platform:** add mobile touch input and app lifecycle for iOS/Android ([81f844e](https://github.com/aram-devdocs/GoudEngine/commit/81f844e96231397ee69a18c4703aeee4566cdf44))
+* **platform:** add mobile touch input and app lifecycle for iOS/Android ([d4b5a0b](https://github.com/aram-devdocs/GoudEngine/commit/d4b5a0b495cedca22677d09650136f4e8ad49ff1))
+* **platform:** add SDL windowing provider and Switch Vulkan feasibility PoC ([615e3b1](https://github.com/aram-devdocs/GoudEngine/commit/615e3b1a23387ba413fe85ec34eac7d4cafde0fb))
+* **platform:** add SDL windowing provider and Switch Vulkan feasibility PoC ([3908ac4](https://github.com/aram-devdocs/GoudEngine/commit/3908ac4a6d4240a68c4f09f91f07f2f2be7e6d9b))
+* **platform:** add Xbox GDK feasibility PoC behind feature flag ([d9c711a](https://github.com/aram-devdocs/GoudEngine/commit/d9c711a8a463f84f8cb9c9aede6144631aa4532d)), closes [#334](https://github.com/aram-devdocs/GoudEngine/issues/334)
+* **platform:** Xbox GDK feasibility PoC ([71d477b](https://github.com/aram-devdocs/GoudEngine/commit/71d477ba179242fe9ec699f87cb42e8c59075213))
+* **renderer3d:** add linear fog mode with start/end distance controls ([a0a7b49](https://github.com/aram-devdocs/GoudEngine/commit/a0a7b4904a4f0a4e44f59cdab1d23692772c4145))
+* **renderer3d:** add linear fog mode with start/end distance controls ([278f12d](https://github.com/aram-devdocs/GoudEngine/commit/278f12d14069e8e5d63c35b88da82ed713c7cbe2)), closes [#631](https://github.com/aram-devdocs/GoudEngine/issues/631)
+
+
+### Bug Fixes
+
+* address Claude Code review warnings (W3, W4, W5) ([5d830a0](https://github.com/aram-devdocs/GoudEngine/commit/5d830a0919b8efae2adb8df00abad332f58b1568))
+* **android:** pass GamepadButton enum value as Int to SDK methods ([c5e0b09](https://github.com/aram-devdocs/GoudEngine/commit/c5e0b0982dffbdd74ee780bf3c6febd660629d87))
+* **backend:** align surface lifecycle cfg gates with xbox-gdk merge ([06ae1ad](https://github.com/aram-devdocs/GoudEngine/commit/06ae1adc29b078bb5316f9057ca3c7ea92a37aa5))
+* **ci:** accept scoped conventional commits in PR title validation ([761fe89](https://github.com/aram-devdocs/GoudEngine/commit/761fe895edf88d800e7c2005e1e627f6a7cbf7d5))
+* **ci:** add gradlew to Android example and increase iOS timeout to 25min ([1017d5d](https://github.com/aram-devdocs/GoudEngine/commit/1017d5dc23f341fc6fb3bfd064c520bc26d77eb5))
+* **ci:** add libudev-dev to Linux CI for gilrs gamepad support ([0a33b4a](https://github.com/aram-devdocs/GoudEngine/commit/0a33b4a29223f134a6bb1a757689ab7e63acfc8e))
+* **ci:** add missing libudev-dev to docs workflow, skip GPU smoke test in CI ([4c98d9e](https://github.com/aram-devdocs/GoudEngine/commit/4c98d9e521f25a41436862854776e173cf45b429))
+* **ci:** add missing libudev-dev to docs, skip GPU smoke in CI ([b65a510](https://github.com/aram-devdocs/GoudEngine/commit/b65a510997d07d3b1a1478c12e365945c3de9091))
+* **ci:** fix iOS xcodebuild scheme discovery and Android smoke test assertion ([b240566](https://github.com/aram-devdocs/GoudEngine/commit/b240566c5eb18ba3909c25dc0e075eec7b0652dc))
+* **ci:** free disk space on ubuntu full lane before Rust build ([487d292](https://github.com/aram-devdocs/GoudEngine/commit/487d292594f86c99abb6de38f8c1b6920609d772))
+* **ci:** increase Android build pipeline timeout to 25min ([3af026d](https://github.com/aram-devdocs/GoudEngine/commit/3af026d966a93ea7c6ecef7900742df1215be561))
+* **ci:** increase Android build pipeline timeout to 25min ([5e573a5](https://github.com/aram-devdocs/GoudEngine/commit/5e573a5a354d29db5adb669ee3fe1dcabb39bf08))
+* **ci:** increase iOS build pipeline timeout to 35min ([8a6ddd5](https://github.com/aram-devdocs/GoudEngine/commit/8a6ddd5f90dde4dd6738b2818e88965268503fdf))
+* **ci:** skip native_main_thread_ffi test in headless CI ([b95925d](https://github.com/aram-devdocs/GoudEngine/commit/b95925d202561234d844424732d13d685fcdc2e0))
+* **ci:** split Xbox init and reduce native_resources line count ([5f2dd16](https://github.com/aram-devdocs/GoudEngine/commit/5f2dd16142315be69991200c91dbc4ff5ce23cf8))
+* **codegen:** add configureFogLinear stub to TS web SDK ([5218718](https://github.com/aram-devdocs/GoudEngine/commit/5218718c0daa149af88f79ad7703ebd87e750c6a))
+* **codegen:** add gamepad stubs to TS web SDK ([4df9ad7](https://github.com/aram-devdocs/GoudEngine/commit/4df9ad7a2b6ef70b4c44e674c6e380ad5bc5e9fb))
+* **codegen:** add WASM web stubs for new config getters/setters ([4bf852d](https://github.com/aram-devdocs/GoudEngine/commit/4bf852de1a9aa9a9a618b2d64779638c19e6a545))
+* **codegen:** register gamepad FFI functions in schema and ffi_mapping ([009e7eb](https://github.com/aram-devdocs/GoudEngine/commit/009e7ebc4916d58a29691d0ce3c53772d8310354))
+* **deps:** revert jni to 0.21, ignore 0.22+ in dependabot ([5616478](https://github.com/aram-devdocs/GoudEngine/commit/5616478f1f0c34ed156c6265abecdc790060d34b))
+* **docs:** regenerate architecture docs for new codegen step count ([3a139f9](https://github.com/aram-devdocs/GoudEngine/commit/3a139f9ab460978a298769945a6d6f448624a00e))
+* **dx:** standardize SDK naming, consolidate Lua, generate READMEs ([ad7f738](https://github.com/aram-devdocs/GoudEngine/commit/ad7f738c2d3c21dd3c848df2a2b3a89742ba6f6e))
+* **ffi:** split gamepad FFI tests into separate file to meet 500-line limit ([92fde33](https://github.com/aram-devdocs/GoudEngine/commit/92fde337912ea638d70a5dfa95a4985c2934f98b))
+* **go:** use monorepo module path for Go SDK ([c7ee265](https://github.com/aram-devdocs/GoudEngine/commit/c7ee265a7b543a2b191384001f90fd9a0ede8820))
+* **ios:** add Metal and system framework linker settings to Package.swift ([e6892a2](https://github.com/aram-devdocs/GoudEngine/commit/e6892a2d84beaf6782e60e2b6cab7793dd9f4419))
+* **kotlin:** upgrade Kotlin to 2.0.21 and add pluginManagement fallback repos ([af5aeeb](https://github.com/aram-devdocs/GoudEngine/commit/af5aeebac752c68c780448eec6ae7fb6f05b6111))
+* **kotlin:** use GamepadButton/GamepadAxis enum types in SDK ([1854273](https://github.com/aram-devdocs/GoudEngine/commit/185427334f77a2b3dac4cfeb04ac5987998be797))
+* **platform:** add sdl-window and switch-vulkan to NativeRenderBackend cfg gates ([5658dce](https://github.com/aram-devdocs/GoudEngine/commit/5658dce6a0ccfa1a396f05f9bd269f8de9316624))
+* **platform:** address review feedback for Xbox GDK PoC ([bc1170b](https://github.com/aram-devdocs/GoudEngine/commit/bc1170b08d2f3428ed8afd08351c7c67501aff87))
+* **platform:** guard Xbox auto-detect with target_env=msvc ([879d21b](https://github.com/aram-devdocs/GoudEngine/commit/879d21b3f9f102100661faabae3e498a1795ead6))
+* **platform:** upgrade sdl2 to 0.38 for CI CMake compatibility ([5e8e815](https://github.com/aram-devdocs/GoudEngine/commit/5e8e815bdd12eb8d5c27e41d5cd9fe9a94b505cb))
+* **release:** base64-decode GPG key before import in Maven signing ([6b7e044](https://github.com/aram-devdocs/GoudEngine/commit/6b7e0446c8a83f936146e917080ec82639224009))
+* **release:** fix GPG import ordering and pinentry for Maven signing ([f746d19](https://github.com/aram-devdocs/GoudEngine/commit/f746d190b68633d3560dccbac0beca41c8d30bbc))
+* **release:** fix Maven Central GPG signing and LuaRocks publish ([e435653](https://github.com/aram-devdocs/GoudEngine/commit/e43565320e619752e8185622869bb20453f636cf))
+* **release:** fix Maven codegen template, LuaRocks 413, skip-existing ([7d52294](https://github.com/aram-devdocs/GoudEngine/commit/7d5229416ae77bdab1c75ee8009a4da306e0e731))
+* **release:** install dkjson for luarocks upload ([78869cd](https://github.com/aram-devdocs/GoudEngine/commit/78869cdc0bcdd47583ba35ce91057ed2367f03bd))
+* **release:** switch Maven signing back to useGpgCmd with GPG import ([bfec844](https://github.com/aram-devdocs/GoudEngine/commit/bfec8446ec6b5c287eec0e276c92a3caa5dfd0ac))
+* **release:** use Central Portal upload API for Maven publishing ([97ca9a0](https://github.com/aram-devdocs/GoudEngine/commit/97ca9a057a4533a7b7450c53084185a492105a39))
+* **release:** use OSSRH staging URL for Maven Central publishing ([8351bd6](https://github.com/aram-devdocs/GoudEngine/commit/8351bd6d60a6ce027dbcac2dcfd1406d9a28394b))
+* **renderer3d:** populate Object3D.vertices for models and instances ([4acfa0e](https://github.com/aram-devdocs/GoudEngine/commit/4acfa0e8bca1ebb6005c8b4a13fc46839a51bfe4)), closes [#630](https://github.com/aram-devdocs/GoudEngine/issues/630)
+* **renderer3d:** populate Object3D.vertices for static batch ([#630](https://github.com/aram-devdocs/GoudEngine/issues/630)) ([f39f310](https://github.com/aram-devdocs/GoudEngine/commit/f39f31056a5ff340764b24024b27626bb70583f3))
+* **renderer3d:** static batch overflow renders objects invisible, expose missing config to SDK ([5edccd7](https://github.com/aram-devdocs/GoudEngine/commit/5edccd7d1b49ac7c6dbb692a26812913913520a6))
+* **renderer3d:** static batch overflow renders objects invisible, expose missing config to SDK ([01ae94c](https://github.com/aram-devdocs/GoudEngine/commit/01ae94cf07d49a97f72a6852e5fd37408cb0c0c0))
+* revert FFI symbol renames in Python codegen and generated files ([f5c0abe](https://github.com/aram-devdocs/GoudEngine/commit/f5c0abeeb37c8d98fe73a084c4a67788897064f4))
+* revert native lib name in Python tests and example sandbox ([fd2c8ae](https://github.com/aram-devdocs/GoudEngine/commit/fd2c8ae53259ecb5d858b3a412cb2f21d23606e7))
+* standardize SDK naming, consolidate Lua, generate READMEs ([755f520](https://github.com/aram-devdocs/GoudEngine/commit/755f5201ea28c1fe46ae310770335942f231980c))
+* **ts-web:** add stub methods for new config getters/setters in WASM SDK ([a38e746](https://github.com/aram-devdocs/GoudEngine/commit/a38e746ddfcb98a8eef5fb96ff06d9f2996d55b9))
+* update codegen.sh step numbering and Python header path ([841fc3f](https://github.com/aram-devdocs/GoudEngine/commit/841fc3f82960cf1ed6bf66e3f653f0a89a8ea206))
+* update Python path in clean-room and artifact check scripts ([faf0378](https://github.com/aram-devdocs/GoudEngine/commit/faf03787681469153300cc3001c05967421eb5e4))
+* update Python path in generate-doc-snippets.py ([0caac81](https://github.com/aram-devdocs/GoudEngine/commit/0caac817242a74984a1a0ed790d9ca03a2dccd0f))
+* update remaining goud_engine path refs in build, config, and docs ([5d67f03](https://github.com/aram-devdocs/GoudEngine/commit/5d67f0388e3e6b001a808453e7016da04cd29286))
+* **wasm:** adapt wasm target to wgpu 29 API changes ([6573939](https://github.com/aram-devdocs/GoudEngine/commit/6573939a89d3ffae81b26d7fa9d960448c3a7c55))
+* **wgpu:** CI blockers, frame pacing, enterprise hardening ([0e61c66](https://github.com/aram-devdocs/GoudEngine/commit/0e61c6631f83d51f45ff7797eff559b5eb933297))
+* **wgpu:** make window field optional for Xbox GDK compatibility ([1ee824e](https://github.com/aram-devdocs/GoudEngine/commit/1ee824e2d6646c6db904be458ae30f4277e708cb))
+* **wgpu:** pass display handle when creating wgpu Instance ([ae32365](https://github.com/aram-devdocs/GoudEngine/commit/ae32365eaa558a6a53c067694eaa5a9c96852108))
+* **wgpu:** split frame.rs under 500 lines, add render3d_scene timing ([7b16e80](https://github.com/aram-devdocs/GoudEngine/commit/7b16e80fe8ae0f6aeebc9a4437a62114eb81e02d))
+* **wgpu:** wire vsync to SDL and Switch init paths from PR [#661](https://github.com/aram-devdocs/GoudEngine/issues/661) ([f5f739c](https://github.com/aram-devdocs/GoudEngine/commit/f5f739c994eed1b0a47f18c8a9d061239d7379a6))
+
+
+### Performance
+
+* **renderer3d:** optimize 3D rendering pipeline for 44% FPS improvement ([fbffb85](https://github.com/aram-devdocs/GoudEngine/commit/fbffb8549de50d2ae14140a76b960718d3cd30d7))
+* **renderer3d:** optimize 3D rendering pipeline for 44% FPS improvement ([13906c5](https://github.com/aram-devdocs/GoudEngine/commit/13906c57d865a18a5c812779d3595b6e61280735))
+* **wgpu:** replace CPU shadow rasterization with GPU depth pass ([786439d](https://github.com/aram-devdocs/GoudEngine/commit/786439da6e1b2c55a47d7a736623c42c1ac2186b))
+* **wgpu:** wire vsync config, add frame phase timing instrumentation ([13007c1](https://github.com/aram-devdocs/GoudEngine/commit/13007c15cd57e380f3c0ddb51c759b69e0971971))
+* **wgpu:** wire vsync config, add frame phase timing instrumentation ([2353336](https://github.com/aram-devdocs/GoudEngine/commit/235333668beb85a2ef73bbd817f3e9467ca5c0bc)), closes [#660](https://github.com/aram-devdocs/GoudEngine/issues/660)
+
+
+### Refactoring
+
+* **renderer3d:** split oversized files to meet 500-line CI limit ([442e4ab](https://github.com/aram-devdocs/GoudEngine/commit/442e4ab71c155ea06fada60b4fb05eee9bb6e019))
+* **renderer3d:** split oversized files to meet 500-line limit ([7efa066](https://github.com/aram-devdocs/GoudEngine/commit/7efa066dbf831a0a2238484fd905a783be6cf5cd))
+
 ## [0.0.839](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.838...v0.0.839) (2026-04-02)
 
 
