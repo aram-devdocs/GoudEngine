@@ -42,4 +42,4 @@ jobs:
         with:
           name: criterion-reports
           path: goud_engine/target/criterion/
-          retention-days: 30
+          retention-days: 7

@@ -109,7 +109,7 @@ jobs:
     needs: [preflight]
     env:
       RUSTC_WRAPPER: sccache
-      SCCACHE_GHA_ENABLED: "true"
+      SCCACHE_GHA_ENABLED: ${{ (github.event_name != 'pull_request' || (matrix.os == 'ubuntu-latest' && matrix.rust == 'stable' && matrix.lane == 'full')) && 'true' || 'false' }}
     strategy:
       fail-fast: ${{ github.event_name == 'pull_request' }}
       matrix:
@@ -235,7 +235,7 @@ jobs:
       with:
         name: coverage-report
         path: coverage-report/
-        retention-days: 7
+        retention-days: 1
 
     - name: Upload coverage to Codecov
       if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest' && github.event_name == 'merge_group'
@@ -265,7 +265,7 @@ jobs:
     needs: [preflight]
     env:
       RUSTC_WRAPPER: sccache
-      SCCACHE_GHA_ENABLED: "true"
+      SCCACHE_GHA_ENABLED: ${{ github.event_name != 'pull_request' && 'true' || 'false' }}
     steps:
     - uses: actions/checkout@v6
 
@@ -317,7 +317,7 @@ jobs:
     needs: [preflight]
     env:
       RUSTC_WRAPPER: sccache
-      SCCACHE_GHA_ENABLED: "true"
+      SCCACHE_GHA_ENABLED: ${{ github.event_name != 'pull_request' && 'true' || 'false' }}
     strategy:
       fail-fast: ${{ github.event_name == 'pull_request' }}
       matrix:
@@ -370,7 +370,7 @@ jobs:
         name: native-release-${{ matrix.os }}
         path: native-release/
         if-no-files-found: error
-        retention-days: 7
+        retention-days: 1
 
   # Python SDK checks and tests
   python-sdk-check:
@@ -470,6 +470,7 @@ jobs:
         name: python-coverage
         path: sdks/python/coverage.xml
         if-no-files-found: error
+        retention-days: 3
 
   # .NET SDK checks and tests
   dotnet-check:
@@ -553,6 +554,7 @@ jobs:
       with:
         name: dotnet-test-results-${{ matrix.os }}
         path: '**/test-results.trx'
+        retention-days: 3
 
     - name: Upload C# coverage results
       uses: actions/upload-artifact@v4
@@ -560,6 +562,7 @@ jobs:
       with:
         name: dotnet-coverage-${{ matrix.os }}
         path: 'sdks/csharp.tests/TestResults/${{ matrix.os }}/coverage/coverage.cobertura.xml'
+        retention-days: 3
 
   # Build check to ensure everything compiles together
   integration-build:
@@ -569,7 +572,7 @@ jobs:
     needs: [preflight]
     env:
       RUSTC_WRAPPER: sccache
-      SCCACHE_GHA_ENABLED: "true"
+      SCCACHE_GHA_ENABLED: ${{ github.event_name != 'pull_request' && 'true' || 'false' }}
     strategy:
       fail-fast: ${{ github.event_name == 'pull_request' }}
       matrix:
@@ -647,7 +650,7 @@ jobs:
     needs: [preflight]
     env:
       RUSTC_WRAPPER: sccache
-      SCCACHE_GHA_ENABLED: "true"
+      SCCACHE_GHA_ENABLED: ${{ (github.event_name != 'pull_request' || matrix.os == 'ubuntu-latest') && 'true' || 'false' }}
     strategy:
       fail-fast: ${{ github.event_name == 'pull_request' }}
       matrix:
@@ -762,14 +765,15 @@ jobs:
         name: ts-coverage
         path: sdks/typescript/coverage/native/cobertura-coverage.xml
         if-no-files-found: error
+        retention-days: 3
 
     - name: Upload native addon
-      if: github.event_name != 'pull_request' || matrix.os == 'ubuntu-latest'
+      if: github.event_name != 'pull_request'
       uses: actions/upload-artifact@v4
       with:
         name: ts-native-${{ matrix.os }}
         path: sdks/typescript/*.node
-        retention-days: 7
+        retention-days: 1
 
   # TypeScript SDK — wasm build (Ubuntu only, one platform sufficient)
   typescript-sdk-wasm:
@@ -779,7 +783,7 @@ jobs:
     needs: [preflight]
     env:
       RUSTC_WRAPPER: sccache
-      SCCACHE_GHA_ENABLED: "true"
+      SCCACHE_GHA_ENABLED: ${{ github.event_name != 'pull_request' && 'true' || 'false' }}
 
     steps:
     - uses: actions/checkout@v6
@@ -861,8 +865,10 @@ jobs:
         name: ts-web-coverage
         path: sdks/typescript/coverage/web/cobertura-coverage.xml
         if-no-files-found: error
+        retention-days: 3
 
     - name: Upload wasm artifacts
+      if: github.event_name != 'pull_request'
       uses: actions/upload-artifact@v4
       with:
         name: ts-wasm
@@ -870,7 +876,7 @@ jobs:
           sdks/typescript/wasm/*.wasm
           sdks/typescript/wasm/*.js
           sdks/typescript/wasm/*.d.ts
-        retention-days: 7
+        retention-days: 1
 
   # C++ SDK tests (non-GL only, headless CI safe)
   # Windows C++ CI is excluded: MSVC support is scaffolded in FindGoudEngine.cmake
@@ -1219,12 +1225,12 @@ jobs:
           adb shell pm list packages | grep -q "com.goudengine.flappybird"
 
     - name: Upload Android smoke test screenshot
-      if: always()
+      if: failure()
       uses: actions/upload-artifact@v4
       with:
         name: android-smoke-screenshot
         path: android-smoke-test.png
-        retention-days: 7
+        retention-days: 1
 
   # C SDK tests (CMake-based, needs native library)
   c-sdk-check:

@@ -111,6 +111,7 @@ jobs:
       with:
         name: rust-outdated-report
         path: outdated.md
+        retention-days: 3
 
   dotnet-security:
     name: .NET Security Scan
