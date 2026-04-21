@@ -106,8 +106,11 @@ fi
 export CMAKE_POLICY_VERSION_MINIMUM=3.5
 
 # --- Pre-fetch + pre-build so the agent phase works without internet --------
+# Setup phase has internet, so let cargo refresh Cargo.lock if it's stale.
+# Workspace version bumps sometimes land before the lockfile is regenerated;
+# --locked would fail hard in that window, so we omit it here.
 log "Pre-fetching cargo registry"
-cargo fetch --locked
+cargo fetch
 
 log "Priming target/ (builds ffi_manifest.json required by codegen)"
 cargo build -p goud-engine-core -p goud-engine
