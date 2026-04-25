@@ -50,7 +50,7 @@ jobs:
     
     - name: Create issue for vulnerabilities
       if: failure()
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         script: |
           const title = '🚨 Security vulnerabilities found in Rust dependencies';
