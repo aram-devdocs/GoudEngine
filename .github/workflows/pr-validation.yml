@@ -15,7 +15,7 @@ jobs:
     
     steps:
     - name: Check PR title format
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         script: |
           const title = context.payload.pull_request.title;
@@ -212,7 +212,7 @@ jobs:
         fetch-depth: 0
     
     - name: Add size labels
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         script: |
           const { data: pr } = await github.rest.pulls.get({
