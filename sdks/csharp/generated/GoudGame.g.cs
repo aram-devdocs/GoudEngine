@@ -1115,7 +1115,7 @@ namespace GoudEngine
         {
             FfiFramePhaseTimings _out_timings = default;
             NativeMethods.goud_renderer_get_frame_phase_timings(ref _out_timings);
-            return new FramePhaseTimings(_out_timings.SurfaceAcquireUs, _out_timings.ShadowPassUs, _out_timings.ShadowBuildUs, _out_timings.Render3dSceneUs, _out_timings.UniformUploadUs, _out_timings.RenderPassUs, _out_timings.GpuSubmitUs, _out_timings.ReadbackStallUs, _out_timings.SurfacePresentUs, _out_timings.AnimEvalUs, _out_timings.BonePackUs, _out_timings.BoneUploadUs);
+            return new FramePhaseTimings(_out_timings.BeginFrameUs, _out_timings.EndFrameUs, _out_timings.SurfaceAcquireUs, _out_timings.ShadowPassUs, _out_timings.ShadowBuildUs, _out_timings.Render3dSceneUs, _out_timings.UniformUploadUs, _out_timings.RenderPassUs, _out_timings.GpuSubmitUs, _out_timings.ReadbackStallUs, _out_timings.SurfacePresentUs, _out_timings.AnimEvalUs, _out_timings.BonePackUs, _out_timings.BoneUploadUs);
         }
 
         /// <summary>Renders all 3D objects</summary>

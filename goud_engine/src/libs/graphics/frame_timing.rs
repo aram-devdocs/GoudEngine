@@ -9,6 +9,10 @@ use std::cell::RefCell;
 /// Per-frame phase timings (all values in microseconds).
 #[derive(Debug, Clone, Copy, Default)]
 pub struct FramePhaseTimings {
+    /// Total `goud_renderer_begin()` frame-boundary time.
+    pub begin_frame_us: u64,
+    /// Total `goud_renderer_end()` frame-boundary time.
+    pub end_frame_us: u64,
     /// Time to acquire the next surface texture.
     pub surface_acquire_us: u64,
     /// Uniform upload and pipeline creation time.
@@ -44,6 +48,8 @@ pub fn record_timing(field: &str, value: u64) {
     FRAME_TIMINGS.with(|t| {
         let mut t = t.borrow_mut();
         match field {
+            "begin_frame" => t.begin_frame_us = value,
+            "end_frame" => t.end_frame_us = value,
             "surface_acquire" => t.surface_acquire_us = value,
             "uniform_upload" => t.uniform_upload_us = value,
             "render_pass" => t.render_pass_us = value,
@@ -87,6 +93,8 @@ mod tests {
     fn record_and_read_timings() {
         reset_timings();
         record_timing("surface_acquire", 100);
+        record_timing("begin_frame", 90);
+        record_timing("end_frame", 120);
         record_timing("shadow_pass", 150);
         record_timing("shadow_build", 200);
         record_timing("render3d_scene", 300);
@@ -100,6 +108,8 @@ mod tests {
         record_timing("bone_upload", 1100);
 
         let t = latest_timings();
+        assert_eq!(t.begin_frame_us, 90);
+        assert_eq!(t.end_frame_us, 120);
         assert_eq!(t.surface_acquire_us, 100);
         assert_eq!(t.shadow_pass_us, 150);
         assert_eq!(t.shadow_build_us, 200);
@@ -123,6 +133,8 @@ mod tests {
         let t = latest_timings();
         assert_eq!(t.surface_acquire_us, 0);
         assert_eq!(t.render3d_scene_us, 0);
+        assert_eq!(t.begin_frame_us, 0);
+        assert_eq!(t.end_frame_us, 0);
     }
 
     #[test]
@@ -130,6 +142,7 @@ mod tests {
         reset_timings();
         record_timing("nonexistent_phase", 12345);
         let t = latest_timings();
+        assert_eq!(t.begin_frame_us, 0);
         assert_eq!(t.surface_acquire_us, 0);
         assert_eq!(t.shadow_build_us, 0);
     }
@@ -137,6 +150,8 @@ mod tests {
     #[test]
     fn default_timings_are_zero() {
         let t = FramePhaseTimings::default();
+        assert_eq!(t.begin_frame_us, 0);
+        assert_eq!(t.end_frame_us, 0);
         assert_eq!(t.surface_acquire_us, 0);
         assert_eq!(t.shadow_pass_us, 0);
         assert_eq!(t.shadow_build_us, 0);

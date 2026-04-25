@@ -23,7 +23,7 @@ export interface IFpsStats { currentFps: number; minFps: number; maxFps: number;
 /** Per-frame render metrics: draw call counts, culling stats, batch efficiency, and per-category timing */
 export interface IRenderMetrics { drawCallCount: number; spritesSubmitted: number; spritesDrawn: number; spritesCulled: number; batchesSubmitted: number; avgSpritesPerBatch: number; spriteRenderMs: number; textRenderMs: number; uiRenderMs: number; totalRenderMs: number; textDrawCalls: number; textGlyphCount: number; uiDrawCalls: number; }
 /** Per-frame phase timings for performance diagnosis. All values in microseconds. */
-export interface IFramePhaseTimings { surfaceAcquireUs: number; shadowPassUs: number; shadowBuildUs: number; render3dSceneUs: number; uniformUploadUs: number; renderPassUs: number; gpuSubmitUs: number; readbackStallUs: number; surfacePresentUs: number; animEvalUs: number; bonePackUs: number; boneUploadUs: number; }
+export interface IFramePhaseTimings { beginFrameUs: number; endFrameUs: number; surfaceAcquireUs: number; shadowPassUs: number; shadowBuildUs: number; render3dSceneUs: number; uniformUploadUs: number; renderPassUs: number; gpuSubmitUs: number; readbackStallUs: number; surfacePresentUs: number; animEvalUs: number; bonePackUs: number; boneUploadUs: number; }
 /** Pre-init debugger runtime configuration for desktop contexts. */
 export interface IDebuggerConfig { enabled: boolean; publishLocalAttach: boolean; routeLabel: string; }
 /** Pre-init configuration for headless context creation. */

@@ -160,6 +160,8 @@ class FfiRenderMetrics(ctypes.Structure):
 
 class FfiFramePhaseTimings(ctypes.Structure):
     _fields_ = [
+        ("begin_frame_us", ctypes.c_uint64),
+        ("end_frame_us", ctypes.c_uint64),
         ("surface_acquire_us", ctypes.c_uint64),
         ("shadow_pass_us", ctypes.c_uint64),
         ("shadow_build_us", ctypes.c_uint64),
