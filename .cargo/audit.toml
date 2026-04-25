@@ -1,5 +1,5 @@
 [advisories]
-ignore = [
-    # rustls-webpki CRL matching issue; limited impact, requires compromised CA; transitive dep via tungstenite
-    "RUSTSEC-2026-0049",
-]
+# rustls-webpki advisories (RUSTSEC-2026-0049/0098/0099/0104) were resolved by upgrading
+# rustls-webpki to >=0.103.13. Keep this file present so future ignores can be added without
+# editing the workflow.
+ignore = []
