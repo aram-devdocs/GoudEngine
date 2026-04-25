@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.0.842](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.841...v0.0.842) (2026-04-25)
+
+
+### Features
+
+* **renderer:** record begin/end frame timings and surface them via FFI ([#682](https://github.com/aram-devdocs/GoudEngine/issues/682)) ([a524dc2](https://github.com/aram-devdocs/GoudEngine/commit/a524dc27058d559f971f5670c7ff0777b3163227))
+
+
+### Bug Fixes
+
+* **ci:** bump rustls-webpki to 0.103.13 to clear RUSTSEC-2026-0098/0099/0104 ([#683](https://github.com/aram-devdocs/GoudEngine/issues/683)) ([53247db](https://github.com/aram-devdocs/GoudEngine/commit/53247db15ed74520572b13bc738372832557aa69)), closes [#599](https://github.com/aram-devdocs/GoudEngine/issues/599)
+* **ci:** clear clippy while_let_loop and yanked core2 advisory ([1d70d0d](https://github.com/aram-devdocs/GoudEngine/commit/1d70d0dda0a9390662711f628bfeaae9d6fe55de))
+* **ci:** ignore new upstream advisories RUSTSEC-2026-0097/0098/0099 ([607967d](https://github.com/aram-devdocs/GoudEngine/commit/607967d6520a713e3d4578c9758b1a4843e446aa))
+* **codex:** drop --locked from cargo fetch in setup ([e688e1c](https://github.com/aram-devdocs/GoudEngine/commit/e688e1c30bbeca8ec7ecebfb83e5102a27a643c8))
+
 ## [0.0.841](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.840...v0.0.841) (2026-04-04)
 
 
