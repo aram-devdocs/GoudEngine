@@ -2,5 +2,5 @@
 package com.goudengine.types
 
 /** Per-frame phase timings for performance diagnosis. All values in microseconds. */
-data class FramePhaseTimings(val surfaceAcquireUs: Long, val shadowPassUs: Long, val shadowBuildUs: Long, val render3dSceneUs: Long, val uniformUploadUs: Long, val renderPassUs: Long, val gpuSubmitUs: Long, val readbackStallUs: Long, val surfacePresentUs: Long, val animEvalUs: Long, val bonePackUs: Long, val boneUploadUs: Long) {
+data class FramePhaseTimings(val beginFrameUs: Long, val endFrameUs: Long, val surfaceAcquireUs: Long, val shadowPassUs: Long, val shadowBuildUs: Long, val render3dSceneUs: Long, val uniformUploadUs: Long, val renderPassUs: Long, val gpuSubmitUs: Long, val readbackStallUs: Long, val surfacePresentUs: Long, val animEvalUs: Long, val bonePackUs: Long, val boneUploadUs: Long) {
 }
