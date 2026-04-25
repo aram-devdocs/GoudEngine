@@ -271,6 +271,8 @@ pub(crate) fn write_back_FpsStats<'local>(env: &mut jni::JNIEnv<'local>, obj: &j
 
 pub(crate) fn set_FramePhaseTimings_fields<'local>(env: &mut jni::JNIEnv<'local>, obj: &jni::objects::JObject<'local>, value: crate::ffi::types::FfiFramePhaseTimings) -> crate::jni::helpers::JniCallResult<()> {
     crate::jni::helpers::ensure_no_pending_exception(env)?;
+    crate::jni::helpers::set_long_field(env, obj, "beginFrameUs", value.begin_frame_us as i64)?;
+    crate::jni::helpers::set_long_field(env, obj, "endFrameUs", value.end_frame_us as i64)?;
     crate::jni::helpers::set_long_field(env, obj, "surfaceAcquireUs", value.surface_acquire_us as i64)?;
     crate::jni::helpers::set_long_field(env, obj, "shadowPassUs", value.shadow_build_us as i64)?;
     crate::jni::helpers::set_long_field(env, obj, "shadowBuildUs", value.render3d_scene_us as i64)?;
@@ -293,6 +295,8 @@ pub(crate) fn read_FramePhaseTimings<'local>(env: &mut jni::JNIEnv<'local>, obj:
         crate::jni::helpers::throw_null_pointer(env, format!("{param_name} is null"))?;
         return Err(());
     }
+    let field_beginFrameUs = crate::jni::helpers::get_long_field(env, obj, "beginFrameUs")? as u64;
+    let field_endFrameUs = crate::jni::helpers::get_long_field(env, obj, "endFrameUs")? as u64;
     let field_surfaceAcquireUs = crate::jni::helpers::get_long_field(env, obj, "surfaceAcquireUs")? as u64;
     let field_shadowPassUs = crate::jni::helpers::get_long_field(env, obj, "shadowPassUs")? as u64;
     let field_shadowBuildUs = crate::jni::helpers::get_long_field(env, obj, "shadowBuildUs")? as u64;
@@ -302,6 +306,8 @@ pub(crate) fn read_FramePhaseTimings<'local>(env: &mut jni::JNIEnv<'local>, obj:
     let field_gpuSubmitUs = crate::jni::helpers::get_long_field(env, obj, "gpuSubmitUs")? as u64;
     let field_readbackStallUs = crate::jni::helpers::get_long_field(env, obj, "readbackStallUs")? as u64;
     Ok(crate::ffi::types::FfiFramePhaseTimings {
+        begin_frame_us: field_beginFrameUs,
+        end_frame_us: field_endFrameUs,
         surface_acquire_us: field_surfaceAcquireUs,
         shadow_build_us: field_shadowPassUs,
         render3d_scene_us: field_shadowBuildUs,

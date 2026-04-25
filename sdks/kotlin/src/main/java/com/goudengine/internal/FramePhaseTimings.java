@@ -2,6 +2,8 @@
 package com.goudengine.internal;
 
 public final class FramePhaseTimings {
+    public long beginFrameUs;
+    public long endFrameUs;
     public long surfaceAcquireUs;
     public long shadowPassUs;
     public long shadowBuildUs;
@@ -17,7 +19,9 @@ public final class FramePhaseTimings {
 
     public FramePhaseTimings() {}
 
-    public FramePhaseTimings(long surfaceAcquireUs, long shadowPassUs, long shadowBuildUs, long render3dSceneUs, long uniformUploadUs, long renderPassUs, long gpuSubmitUs, long readbackStallUs, long surfacePresentUs, long animEvalUs, long bonePackUs, long boneUploadUs) {
+    public FramePhaseTimings(long beginFrameUs, long endFrameUs, long surfaceAcquireUs, long shadowPassUs, long shadowBuildUs, long render3dSceneUs, long uniformUploadUs, long renderPassUs, long gpuSubmitUs, long readbackStallUs, long surfacePresentUs, long animEvalUs, long bonePackUs, long boneUploadUs) {
+        this.beginFrameUs = beginFrameUs;
+        this.endFrameUs = endFrameUs;
         this.surfaceAcquireUs = surfaceAcquireUs;
         this.shadowPassUs = shadowPassUs;
         this.shadowBuildUs = shadowBuildUs;

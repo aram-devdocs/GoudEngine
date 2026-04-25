@@ -1254,60 +1254,6 @@ typedef struct FfiRenderMetrics {
 } FfiRenderMetrics;
 
 /**
- * FFI-safe per-frame phase timings for performance diagnosis.
- */
-typedef struct FfiFramePhaseTimings {
-    /**
-     * Time to acquire the next surface texture (us).
-     */
-    uint64_t surface_acquire_us;
-    /**
-     * GPU shadow depth pass recording and execution time (us).
-     */
-    uint64_t shadow_pass_us;
-    /**
-     * Shadow map build time (us).
-     */
-    uint64_t shadow_build_us;
-    /**
-     * 3D scene render time (us).
-     */
-    uint64_t render3d_scene_us;
-    /**
-     * Uniform upload and pipeline creation time (us).
-     */
-    uint64_t uniform_upload_us;
-    /**
-     * GPU render pass recording time (us).
-     */
-    uint64_t render_pass_us;
-    /**
-     * GPU command submission time (us).
-     */
-    uint64_t gpu_submit_us;
-    /**
-     * GPU readback stall time (us).
-     */
-    uint64_t readback_stall_us;
-    /**
-     * Surface present / vsync wait time (us).
-     */
-    uint64_t surface_present_us;
-    /**
-     * Animation evaluation time (us).
-     */
-    uint64_t anim_eval_us;
-    /**
-     * Bone matrix packing time (us).
-     */
-    uint64_t bone_pack_us;
-    /**
-     * Bone matrix GPU upload time (us).
-     */
-    uint64_t bone_upload_us;
-} FfiFramePhaseTimings;
-
-/**
  * Opaque font handle for native FFI text rendering.
  */
 typedef uint64_t GoudFontHandle;
@@ -2099,6 +2045,68 @@ uint32_t goud_scene_load(struct GoudContextId context_id, const uint8_t *name_pt
 GoudResult goud_scene_unload(struct GoudContextId context_id, const uint8_t *name_ptr, uint32_t name_len);
 
 /* === Renderer === */
+
+/**
+ * FFI-safe per-frame phase timings for performance diagnosis.
+ */
+typedef struct FfiFramePhaseTimings {
+    /**
+     * Total `goud_renderer_begin()` frame-boundary time (us).
+     */
+    uint64_t begin_frame_us;
+    /**
+     * Total `goud_renderer_end()` frame-boundary time (us).
+     */
+    uint64_t end_frame_us;
+    /**
+     * Time to acquire the next surface texture (us).
+     */
+    uint64_t surface_acquire_us;
+    /**
+     * GPU shadow depth pass recording and execution time (us).
+     */
+    uint64_t shadow_pass_us;
+    /**
+     * Shadow map build time (us).
+     */
+    uint64_t shadow_build_us;
+    /**
+     * 3D scene render time (us).
+     */
+    uint64_t render3d_scene_us;
+    /**
+     * Uniform upload and pipeline creation time (us).
+     */
+    uint64_t uniform_upload_us;
+    /**
+     * GPU render pass recording time (us).
+     */
+    uint64_t render_pass_us;
+    /**
+     * GPU command submission time (us).
+     */
+    uint64_t gpu_submit_us;
+    /**
+     * GPU readback stall time (us).
+     */
+    uint64_t readback_stall_us;
+    /**
+     * Surface present / vsync wait time (us).
+     */
+    uint64_t surface_present_us;
+    /**
+     * Animation evaluation time (us).
+     */
+    uint64_t anim_eval_us;
+    /**
+     * Bone matrix packing time (us).
+     */
+    uint64_t bone_pack_us;
+    /**
+     * Bone matrix GPU upload time (us).
+     */
+    uint64_t bone_upload_us;
+} FfiFramePhaseTimings;
 
 /**
  * Draws a batch of sprites in a single GPU pass. Sprites are sorted by

@@ -1089,7 +1089,7 @@ export class GoudGame implements IGoudGame {
   // TODO: wasm FPS overlay -- these stub methods satisfy the IGoudGame interface
   getFpsStats(): IFpsStats { return { currentFps: this.handle.fps, minFps: 0, maxFps: 0, avgFps: 0, frameTimeMs: 0 }; }
   getRenderMetrics(): IRenderMetrics { return { drawCallCount: 0, spritesSubmitted: 0, spritesDrawn: 0, spritesCulled: 0, batchesSubmitted: 0, avgSpritesPerBatch: 0, spriteRenderMs: 0, textRenderMs: 0, uiRenderMs: 0, totalRenderMs: 0, textDrawCalls: 0, textGlyphCount: 0, uiDrawCalls: 0 }; }
-  getFramePhaseTimings(): IFramePhaseTimings { return { surfaceAcquireUs: 0, shadowPassUs: 0, shadowBuildUs: 0, render3dSceneUs: 0, uniformUploadUs: 0, renderPassUs: 0, gpuSubmitUs: 0, readbackStallUs: 0, surfacePresentUs: 0, animEvalUs: 0, bonePackUs: 0, boneUploadUs: 0 }; }
+  getFramePhaseTimings(): IFramePhaseTimings { return { beginFrameUs: 0, endFrameUs: 0, surfaceAcquireUs: 0, shadowPassUs: 0, shadowBuildUs: 0, render3dSceneUs: 0, uniformUploadUs: 0, renderPassUs: 0, gpuSubmitUs: 0, readbackStallUs: 0, surfacePresentUs: 0, animEvalUs: 0, bonePackUs: 0, boneUploadUs: 0 }; }
   setFpsOverlayEnabled(_enabled: boolean): void {}
   setFpsUpdateInterval(_interval: number): void {}
   setFpsOverlayCorner(_corner: number): void {}

@@ -47,6 +47,10 @@ pub struct FfiRenderMetrics {
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct FfiFramePhaseTimings {
+    /// Total `goud_renderer_begin()` frame-boundary time (us).
+    pub begin_frame_us: u64,
+    /// Total `goud_renderer_end()` frame-boundary time (us).
+    pub end_frame_us: u64,
     /// Time to acquire the next surface texture (us).
     pub surface_acquire_us: u64,
     /// GPU shadow depth pass recording and execution time (us).

@@ -7,6 +7,8 @@ namespace GoudEngine
     /// <summary>Per-frame phase timings for performance diagnosis. All values in microseconds.</summary>
     public struct FramePhaseTimings
     {
+        public ulong BeginFrameUs;
+        public ulong EndFrameUs;
         public ulong SurfaceAcquireUs;
         public ulong ShadowPassUs;
         public ulong ShadowBuildUs;
@@ -20,8 +22,10 @@ namespace GoudEngine
         public ulong BonePackUs;
         public ulong BoneUploadUs;
 
-        public FramePhaseTimings(ulong surfaceacquireus, ulong shadowpassus, ulong shadowbuildus, ulong render3dsceneus, ulong uniformuploadus, ulong renderpassus, ulong gpusubmitus, ulong readbackstallus, ulong surfacepresentus, ulong animevalus, ulong bonepackus, ulong boneuploadus)
+        public FramePhaseTimings(ulong beginframeus, ulong endframeus, ulong surfaceacquireus, ulong shadowpassus, ulong shadowbuildus, ulong render3dsceneus, ulong uniformuploadus, ulong renderpassus, ulong gpusubmitus, ulong readbackstallus, ulong surfacepresentus, ulong animevalus, ulong bonepackus, ulong boneuploadus)
         {
+            BeginFrameUs = beginframeus;
+            EndFrameUs = endframeus;
             SurfaceAcquireUs = surfaceacquireus;
             ShadowPassUs = shadowpassus;
             ShadowBuildUs = shadowbuildus;
@@ -38,6 +42,6 @@ namespace GoudEngine
 
 
 
-        public override string ToString() => $"FramePhaseTimings({SurfaceAcquireUs}, {ShadowPassUs}, {ShadowBuildUs}, {Render3dSceneUs}, {UniformUploadUs}, {RenderPassUs}, {GpuSubmitUs}, {ReadbackStallUs}, {SurfacePresentUs}, {AnimEvalUs}, {BonePackUs}, {BoneUploadUs})";
+        public override string ToString() => $"FramePhaseTimings({BeginFrameUs}, {EndFrameUs}, {SurfaceAcquireUs}, {ShadowPassUs}, {ShadowBuildUs}, {Render3dSceneUs}, {UniformUploadUs}, {RenderPassUs}, {GpuSubmitUs}, {ReadbackStallUs}, {SurfacePresentUs}, {AnimEvalUs}, {BonePackUs}, {BoneUploadUs})";
     }
 }

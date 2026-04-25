@@ -2325,6 +2325,16 @@
       "doc": "Per-frame phase timings for performance diagnosis. All values in microseconds.",
       "fields": [
         {
+          "name": "beginFrameUs",
+          "type": "u64",
+          "doc": "Total `goud_renderer_begin()` frame-boundary time (us)"
+        },
+        {
+          "name": "endFrameUs",
+          "type": "u64",
+          "doc": "Total `goud_renderer_end()` frame-boundary time (us)"
+        },
+        {
           "name": "surfaceAcquireUs",
           "type": "u64",
           "doc": "Time to acquire the next surface texture (us)"

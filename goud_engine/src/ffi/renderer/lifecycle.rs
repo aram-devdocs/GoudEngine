@@ -71,6 +71,7 @@ pub extern "C" fn goud_renderer_begin(context_id: GoudContextId) -> bool {
 
     // Begin frame on the backend and set viewport to framebuffer size
     with_window_state(context_id, |state| {
+        let begin_frame_start = std::time::Instant::now();
         if let Err(e) = state.backend_mut().begin_frame() {
             set_last_error(e);
             return false;
@@ -78,6 +79,10 @@ pub extern "C" fn goud_renderer_begin(context_id: GoudContextId) -> bool {
 
         let (fb_width, fb_height) = state.get_framebuffer_size();
         state.backend_mut().set_viewport(0, 0, fb_width, fb_height);
+        crate::libs::graphics::frame_timing::record_phase(
+            "begin_frame",
+            begin_frame_start.elapsed().as_micros() as u64,
+        );
 
         true
     })
@@ -112,6 +117,7 @@ pub extern "C" fn goud_renderer_end(context_id: GoudContextId) -> bool {
 
     // End frame on the backend
     with_window_state(context_id, |state| {
+        let end_frame_start = std::time::Instant::now();
         update_network_overlay_for_frame_end(
             context_id,
             &mut state.network_overlay,
@@ -132,6 +138,10 @@ pub extern "C" fn goud_renderer_end(context_id: GoudContextId) -> bool {
             set_last_error(e);
             return false;
         }
+        crate::libs::graphics::frame_timing::record_phase(
+            "end_frame",
+            end_frame_start.elapsed().as_micros() as u64,
+        );
         true
     })
     .unwrap_or_else(|| {

@@ -103,6 +103,8 @@
     "FramePhaseTimings": {
       "ffi_name": "FfiFramePhaseTimings",
       "fields": [
+        "begin_frame_us",
+        "end_frame_us",
         "surface_acquire_us",
         "shadow_build_us",
         "render3d_scene_us",

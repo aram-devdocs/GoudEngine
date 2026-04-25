@@ -95,6 +95,8 @@ pub unsafe extern "C" fn goud_renderer_get_frame_phase_timings(
     let timings = crate::libs::graphics::frame_timing::latest_timings();
     // SAFETY: out_timings is non-null and points to writable storage for one FfiFramePhaseTimings.
     *out_timings = FfiFramePhaseTimings {
+        begin_frame_us: timings.begin_frame_us,
+        end_frame_us: timings.end_frame_us,
         surface_acquire_us: timings.surface_acquire_us,
         shadow_pass_us: timings.shadow_pass_us,
         shadow_build_us: timings.shadow_build_us,
