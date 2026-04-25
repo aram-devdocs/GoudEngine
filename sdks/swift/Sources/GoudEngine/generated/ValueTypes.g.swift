@@ -472,6 +472,10 @@ public struct RenderMetrics: Equatable {
 
 /// Per-frame phase timings for performance diagnosis. All values in microseconds.
 public struct FramePhaseTimings: Equatable {
+    /// Total `goud_renderer_begin()` frame-boundary time (us)
+    public var beginFrameUs: UInt64
+    /// Total `goud_renderer_end()` frame-boundary time (us)
+    public var endFrameUs: UInt64
     /// Time to acquire the next surface texture (us)
     public var surfaceAcquireUs: UInt64
     /// GPU shadow depth pass recording and execution time (us)
@@ -497,7 +501,9 @@ public struct FramePhaseTimings: Equatable {
     /// Bone matrix GPU upload time (us)
     public var boneUploadUs: UInt64
 
-    public init(surfaceAcquireUs: UInt64 = 0, shadowPassUs: UInt64 = 0, shadowBuildUs: UInt64 = 0, render3dSceneUs: UInt64 = 0, uniformUploadUs: UInt64 = 0, renderPassUs: UInt64 = 0, gpuSubmitUs: UInt64 = 0, readbackStallUs: UInt64 = 0, surfacePresentUs: UInt64 = 0, animEvalUs: UInt64 = 0, bonePackUs: UInt64 = 0, boneUploadUs: UInt64 = 0) {
+    public init(beginFrameUs: UInt64 = 0, endFrameUs: UInt64 = 0, surfaceAcquireUs: UInt64 = 0, shadowPassUs: UInt64 = 0, shadowBuildUs: UInt64 = 0, render3dSceneUs: UInt64 = 0, uniformUploadUs: UInt64 = 0, renderPassUs: UInt64 = 0, gpuSubmitUs: UInt64 = 0, readbackStallUs: UInt64 = 0, surfacePresentUs: UInt64 = 0, animEvalUs: UInt64 = 0, bonePackUs: UInt64 = 0, boneUploadUs: UInt64 = 0) {
+        self.beginFrameUs = beginFrameUs
+        self.endFrameUs = endFrameUs
         self.surfaceAcquireUs = surfaceAcquireUs
         self.shadowPassUs = shadowPassUs
         self.shadowBuildUs = shadowBuildUs
@@ -513,6 +519,8 @@ public struct FramePhaseTimings: Equatable {
     }
 
     internal init(ffi: FfiFramePhaseTimings) {
+        self.beginFrameUs = ffi.begin_frame_us
+        self.endFrameUs = ffi.end_frame_us
         self.surfaceAcquireUs = ffi.surface_acquire_us
         self.shadowPassUs = ffi.shadow_pass_us
         self.shadowBuildUs = ffi.shadow_build_us
@@ -529,6 +537,8 @@ public struct FramePhaseTimings: Equatable {
 
     internal func toFFI() -> FfiFramePhaseTimings {
         var ffi = FfiFramePhaseTimings()
+        ffi.begin_frame_us = beginFrameUs
+        ffi.end_frame_us = endFrameUs
         ffi.surface_acquire_us = surfaceAcquireUs
         ffi.shadow_pass_us = shadowPassUs
         ffi.shadow_build_us = shadowBuildUs

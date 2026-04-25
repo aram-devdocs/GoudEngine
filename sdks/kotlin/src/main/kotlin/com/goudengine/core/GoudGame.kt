@@ -462,7 +462,7 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
 
     fun getFramePhaseTimings(): FramePhaseTimings {
         val r = GoudGameNative.getFramePhaseTimings()
-        return com.goudengine.types.FramePhaseTimings(r.surfaceAcquireUs, r.shadowPassUs, r.shadowBuildUs, r.render3dSceneUs, r.uniformUploadUs, r.renderPassUs, r.gpuSubmitUs, r.readbackStallUs, r.surfacePresentUs, r.animEvalUs, r.bonePackUs, r.boneUploadUs)
+        return com.goudengine.types.FramePhaseTimings(r.beginFrameUs, r.endFrameUs, r.surfaceAcquireUs, r.shadowPassUs, r.shadowBuildUs, r.render3dSceneUs, r.uniformUploadUs, r.renderPassUs, r.gpuSubmitUs, r.readbackStallUs, r.surfacePresentUs, r.animEvalUs, r.bonePackUs, r.boneUploadUs)
     }
 
     fun render3D(): Boolean =

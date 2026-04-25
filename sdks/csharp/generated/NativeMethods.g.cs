@@ -112,6 +112,8 @@ namespace GoudEngine
     [StructLayout(LayoutKind.Sequential)]
     public struct FfiFramePhaseTimings
     {
+        public ulong BeginFrameUs;
+        public ulong EndFrameUs;
         public ulong SurfaceAcquireUs;
         public ulong ShadowPassUs;
         public ulong ShadowBuildUs;
