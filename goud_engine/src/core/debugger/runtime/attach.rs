@@ -242,10 +242,7 @@ fn handle_client_connection(mut stream: Stream) -> io::Result<()> {
         &serde_json::to_value(accepted).map_err(io::Error::other)?,
     )?;
 
-    loop {
-        let Some(frame) = read_frame(&mut stream)? else {
-            break;
-        };
+    while let Some(frame) = read_frame(&mut stream)? {
         let value: Value = match serde_json::from_slice(&frame) {
             Ok(value) => value,
             Err(_) => {

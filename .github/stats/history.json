@@ -402,5 +402,60 @@
     "luarocks": 0,
     "go_versions": 0,
     "total": 9769
+  },
+  {
+    "date": "2026-04-21",
+    "crates_io": 44,
+    "nuget": 2428,
+    "pypi": 5189,
+    "npm": 2138,
+    "maven": 0,
+    "luarocks": 0,
+    "go_versions": 0,
+    "total": 9799
+  },
+  {
+    "date": "2026-04-22",
+    "crates_io": 44,
+    "nuget": 2476,
+    "pypi": 5193,
+    "npm": 2139,
+    "maven": 0,
+    "luarocks": 0,
+    "go_versions": 0,
+    "total": 9852
+  },
+  {
+    "date": "2026-04-23",
+    "crates_io": 44,
+    "nuget": 2479,
+    "pypi": 5197,
+    "npm": 2141,
+    "maven": 0,
+    "luarocks": 0,
+    "go_versions": 0,
+    "total": 9861
+  },
+  {
+    "date": "2026-04-24",
+    "crates_io": 44,
+    "nuget": 2487,
+    "pypi": 5205,
+    "npm": 2141,
+    "maven": 0,
+    "luarocks": 0,
+    "go_versions": 0,
+    "total": 9877
+  },
+  {
+    "date": "2026-04-25",
+    "crates_io": 44,
+    "nuget": 2488,
+    "pypi": 5213,
+    "npm": 2145,
+    "maven": 0,
+    "luarocks": 0,
+    "go_versions": 0,
+    "total": 9890
   }
 ]
