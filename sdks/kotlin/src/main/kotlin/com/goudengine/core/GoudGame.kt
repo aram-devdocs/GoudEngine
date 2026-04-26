@@ -247,6 +247,9 @@ class GoudGame internal constructor(internal val contextId: Long) : AutoCloseabl
     fun createPlane(textureId: Int, width: Float, depth: Float): Int =
         GoudGameNative.createPlane(contextId, textureId, width, depth)
 
+    fun instantiatePlane(sourcePlaneId: Int): Int =
+        GoudGameNative.instantiatePlane(contextId, sourcePlaneId)
+
     fun createSphere(textureId: Int, diameter: Float, segments: Int): Int =
         GoudGameNative.createSphere(contextId, textureId, diameter, segments)
 

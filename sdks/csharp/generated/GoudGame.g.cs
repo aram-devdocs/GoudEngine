@@ -684,6 +684,12 @@ namespace GoudEngine
             return NativeMethods.goud_renderer3d_create_plane(_ctx, textureId, width, depth);
         }
 
+        /// <summary>Creates an instanced plane that shares geometry with a source plane (issue #679). All instances of the same source plane render through one instanced draw call. Use one source plane per material to draw multiple materials.</summary>
+        public uint InstantiatePlane(uint sourcePlaneId)
+        {
+            return NativeMethods.goud_renderer3d_instantiate_plane(_ctx, sourcePlaneId);
+        }
+
         /// <summary>Creates a 3D sphere</summary>
         public uint CreateSphere(uint textureId, float diameter, uint segments = 16)
         {

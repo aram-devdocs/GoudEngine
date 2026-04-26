@@ -24,6 +24,7 @@ mod core_model_animation;
 mod core_model_instances;
 mod core_models;
 mod core_particles;
+mod core_plane_instances;
 mod core_primitives;
 mod core_scenes;
 mod core_skinned;

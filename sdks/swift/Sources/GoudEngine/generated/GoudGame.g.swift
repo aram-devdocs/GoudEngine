@@ -218,6 +218,11 @@ public final class GoudGame {
         return goud_renderer3d_create_plane(_ctx, textureId, width, depth)
     }
 
+    /// Creates an instanced plane that shares geometry with a source plane (issue #679). All instances of the same source plane render through one instanced draw call. Use one source plane per material to draw multiple materials.
+    public func instantiatePlane(sourcePlaneId: UInt32) -> UInt32 {
+        return goud_renderer3d_instantiate_plane(_ctx, sourcePlaneId)
+    }
+
     /// Creates a 3D sphere
     public func createSphere(textureId: UInt32, diameter: Float, segments: UInt32 = 16) -> UInt32 {
         return goud_renderer3d_create_sphere(_ctx, textureId, diameter, segments)

@@ -5056,6 +5056,17 @@
           "returns": "u32"
         },
         {
+          "name": "instantiatePlane",
+          "doc": "Creates an instanced plane that shares geometry with a source plane (issue #679). All instances of the same source plane render through one instanced draw call. Use one source plane per material to draw multiple materials.",
+          "params": [
+            {
+              "name": "sourcePlaneId",
+              "type": "u32"
+            }
+          ],
+          "returns": "u32"
+        },
+        {
           "name": "createSphere",
           "doc": "Creates a 3D sphere",
           "params": [
@@ -13031,6 +13042,9 @@
         },
         "createPlane": {
           "ffi": "goud_renderer3d_create_plane"
+        },
+        "instantiatePlane": {
+          "ffi": "goud_renderer3d_instantiate_plane"
         },
         "createSphere": {
           "ffi": "goud_renderer3d_create_sphere"

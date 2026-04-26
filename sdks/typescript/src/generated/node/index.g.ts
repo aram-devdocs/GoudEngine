@@ -540,6 +540,11 @@ export class GoudGame implements IGoudGame {
     return this.native.createPlane(textureId, width, depth);
   }
 
+  /** Creates an instanced plane that shares geometry with a source plane (issue #679). All instances of the same source plane render through one instanced draw call. Use one source plane per material to draw multiple materials. */
+  instantiatePlane(sourcePlaneId: number): number {
+    return (this.native as any).instantiatePlane(sourcePlaneId);
+  }
+
   /** Creates a 3D sphere */
   createSphere(textureId: number, diameter: number, segments?: number): number {
     return this.native.createSphere(textureId, diameter, segments ?? 16);

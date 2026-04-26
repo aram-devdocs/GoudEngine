@@ -444,6 +444,11 @@ func (g *Game) CreatePlane(textureId uint32, width float32, depth float32) uint3
 	return 0
 }
 
+// InstantiatePlane Creates an instanced plane that shares geometry with a source plane (issue #679). All instances of the same source plane render through one instanced draw call. Use one source plane per material to draw multiple materials.
+func (g *Game) InstantiatePlane(sourcePlaneId uint32) uint32 {
+	return 0
+}
+
 // CreateSphere Creates a 3D sphere
 func (g *Game) CreateSphere(textureId uint32, diameter float32, segments uint32) uint32 {
 	return 0

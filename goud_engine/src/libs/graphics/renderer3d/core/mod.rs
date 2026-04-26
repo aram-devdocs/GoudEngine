@@ -165,6 +165,16 @@ pub struct Renderer3D {
     /// Object IDs that were actually included in the static batch (not overflowed).
     /// Used to distinguish batched objects from overflow objects that need individual draws.
     pub(in crate::libs::graphics::renderer3d) static_batched_ids: FxHashSet<u32>,
+    /// Pools of instanced plane primitives, keyed by `instanced_mesh_id`.
+    /// One pool per source plane; every instance through `instantiate_plane`
+    /// goes into the corresponding pool's `InstancedMesh`, collapsing to a
+    /// single instanced draw call per source plane (#679).
+    pub(in crate::libs::graphics::renderer3d) plane_instance_pools:
+        FxHashMap<u32, super::core_plane_instances::PlaneInstancePool>,
+    /// Reverse lookup from a plane-instance handle to `(instanced_mesh_id, slot)`.
+    pub(in crate::libs::graphics::renderer3d) plane_instance_index: FxHashMap<u32, (u32, usize)>,
+    /// Reverse lookup from a source plane object id to its pool's `instanced_mesh_id`.
+    pub(in crate::libs::graphics::renderer3d) source_plane_to_pool: FxHashMap<u32, u32>,
 }
 
 // StaticBatchGroup is defined in core_static_batch.rs
@@ -364,6 +374,9 @@ impl Renderer3D {
             static_batch_groups: Vec::new(),
             static_batch_vertex_count: 0,
             static_batched_ids: FxHashSet::default(),
+            plane_instance_pools: FxHashMap::default(),
+            plane_instance_index: FxHashMap::default(),
+            source_plane_to_pool: FxHashMap::default(),
         })
     }
 }

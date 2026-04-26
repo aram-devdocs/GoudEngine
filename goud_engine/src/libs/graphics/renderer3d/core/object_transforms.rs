@@ -8,6 +8,9 @@ use cgmath::Vector3;
 #[allow(missing_docs)]
 impl Renderer3D {
     pub fn set_object_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
+        if self.try_update_plane_instance_transform(id, Some(Vector3::new(x, y, z)), None, None) {
+            return true;
+        }
         let ok = self.mutate_object(id, |obj| {
             obj.position = Vector3::new(x, y, z);
         });
@@ -17,6 +20,9 @@ impl Renderer3D {
         ok
     }
     pub fn set_object_rotation(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
+        if self.try_update_plane_instance_transform(id, None, Some(Vector3::new(x, y, z)), None) {
+            return true;
+        }
         let ok = self.mutate_object(id, |obj| obj.rotation = Vector3::new(x, y, z));
         if ok && self.objects.get(&id).is_some_and(|o| o.is_static) {
             self.static_batch_dirty = true;
@@ -24,6 +30,9 @@ impl Renderer3D {
         ok
     }
     pub fn set_object_scale(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
+        if self.try_update_plane_instance_transform(id, None, None, Some(Vector3::new(x, y, z))) {
+            return true;
+        }
         let ok = self.mutate_object(id, |obj| {
             obj.scale = Vector3::new(x, y, z);
         });
@@ -57,6 +66,9 @@ impl Renderer3D {
     }
 
     pub fn remove_object(&mut self, id: u32) -> bool {
+        if self.try_remove_plane_instance(id) {
+            return true;
+        }
         if let Some(obj) = self.objects.remove(&id) {
             if obj.is_static {
                 self.static_batch_dirty = true;

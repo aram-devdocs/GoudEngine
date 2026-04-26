@@ -106,6 +106,48 @@ pub extern "C" fn goud_renderer3d_create_plane(
     .unwrap_or(GOUD_INVALID_OBJECT)
 }
 
+/// Creates an instance of a source plane primitive.
+///
+/// Mirrors `goud_renderer3d_instantiate_model` for primitives. Every instance
+/// of the same source plane renders through one instanced draw call, so a
+/// terrain of identical-geometry tiles collapses to one batch per source plane
+/// (issue #679).
+///
+/// The returned id behaves like an object id for transform updates
+/// (`set_object_position`, `set_object_rotation`, `set_object_scale`,
+/// `destroy_object`). Per-instance materials are not supported -- the source
+/// plane's material/texture is captured when the first instance is created.
+/// Use one source plane per material to draw multiple materials.
+///
+/// # Arguments
+/// * `context_id` - The windowed context
+/// * `source_plane_id` - Object id returned by `goud_renderer3d_create_plane`
+///
+/// # Returns
+/// Plane-instance handle on success, GOUD_INVALID_OBJECT on failure.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_instantiate_plane(
+    context_id: GoudContextId,
+    source_plane_id: u32,
+) -> u32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return GOUD_INVALID_OBJECT;
+    }
+
+    if let Err(e) = ensure_renderer3d_state(context_id) {
+        set_last_error(e);
+        return GOUD_INVALID_OBJECT;
+    }
+
+    with_renderer(context_id, |renderer| {
+        renderer
+            .instantiate_plane(source_plane_id)
+            .unwrap_or(GOUD_INVALID_OBJECT)
+    })
+    .unwrap_or(GOUD_INVALID_OBJECT)
+}
+
 /// Creates a 3D sphere object.
 #[no_mangle]
 pub extern "C" fn goud_renderer3d_create_sphere(

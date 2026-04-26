@@ -302,6 +302,8 @@ export interface IGoudGame {
   createCube(textureId: number, width: number, height: number, depth: number): number;
   /** Creates a 3D plane */
   createPlane(textureId: number, width: number, depth: number): number;
+  /** Creates an instanced plane that shares geometry with a source plane (issue #679). All instances of the same source plane render through one instanced draw call. Use one source plane per material to draw multiple materials. */
+  instantiatePlane(sourcePlaneId: number): number;
   /** Creates a 3D sphere */
   createSphere(textureId: number, diameter: number, segments?: number): number;
   /** Creates a 3D cylinder */
