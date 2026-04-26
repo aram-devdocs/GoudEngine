@@ -413,3 +413,8 @@ fn test_static_primitive_renders_via_batch() {
         "static object should not appear in dynamic pass"
     );
 }
+
+// #678: BeginFrame/EndFrame scaling with total scene-object count. Scaling
+// + parity coverage lives in its own submodule so the renderer3d test file
+// stays under the repo's per-file line limit.
+mod scene_culling_678;

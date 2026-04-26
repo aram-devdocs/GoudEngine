@@ -5,7 +5,7 @@ mod skinned_render;
 mod util;
 
 use super::core::Renderer3D;
-use super::frustum::Frustum;
+use super::frustum::{frustum_world_aabb, Frustum};
 use super::shadow::build_directional_shadow_map;
 use super::texture::TextureManagerTrait;
 use crate::libs::graphics::backend::{
@@ -193,6 +193,45 @@ impl Renderer3D {
             None
         };
 
+        let use_spatial_index = self.config.spatial_index.enabled
+            && self.config.frustum_culling.enabled
+            && frustum.is_some();
+        // Refresh cell size if config changed since last frame.
+        if (self.spatial_index.cell_size() - self.config.spatial_index.cell_size).abs()
+            > f32::EPSILON
+        {
+            let new_size = self.config.spatial_index.cell_size;
+            self.spatial_index = super::spatial_index::SpatialIndex::new(new_size);
+            // Re-populate from current objects to keep the index in sync.
+            // Done here (not on every config write) so games that hot-tune
+            // cell size do not pay the cost on each setter call.
+            let object_state: Vec<(
+                u32,
+                cgmath::Vector3<f32>,
+                cgmath::Vector3<f32>,
+                f32,
+                cgmath::Vector3<f32>,
+            )> = self
+                .objects
+                .iter()
+                .map(|(&id, obj)| {
+                    (
+                        id,
+                        obj.position,
+                        obj.bounds.center,
+                        obj.bounds.radius,
+                        obj.scale,
+                    )
+                })
+                .collect();
+            for (id, position, b_center, b_radius, scale) in object_state {
+                let (min, max) = super::spatial_index::world_aabb_from_sphere(
+                    position, b_center, b_radius, scale,
+                );
+                self.spatial_index.insert(id, min, max);
+            }
+        }
+
         let skinned_obj_ids = &self.skinned_object_ids;
 
         self.stats.total_objects = self.objects.len() as u32;
@@ -217,7 +256,33 @@ impl Renderer3D {
         let default_color = self.config.default_material_color;
         let mut visible_draw_data: Vec<VisibleDrawData> = Vec::new();
         self.visible_object_ids.clear();
-        for (&id, obj) in &self.objects {
+
+        // Collect cull candidates: spatial-index pre-filter when enabled, else
+        // every registered object ID.
+        let mut candidates = std::mem::take(&mut self.scratch_cull_candidates);
+        candidates.clear();
+        let mut cells_visited: u32 = 0;
+        if use_spatial_index {
+            if let Some((aabb_min, aabb_max)) = frustum_world_aabb(&view, &projection) {
+                self.spatial_index.query_aabb(aabb_min, aabb_max, |id| {
+                    candidates.push(id);
+                });
+                cells_visited = self.spatial_index.last_query_visited_cells();
+            } else {
+                // Inverse VP failed (degenerate camera) -- fall back to a full
+                // scan for this frame so culling still produces correct output.
+                candidates.extend(self.objects.keys().copied());
+            }
+        } else {
+            candidates.extend(self.objects.keys().copied());
+        }
+        self.stats.spatial_index_candidates = candidates.len() as u32;
+        self.stats.spatial_index_cells_visited = cells_visited;
+
+        for &id in &candidates {
+            let Some(obj) = self.objects.get(&id) else {
+                continue;
+            };
             if skinned_obj_ids.contains(&id) {
                 continue;
             }
@@ -259,6 +324,8 @@ impl Renderer3D {
                 color,
             });
         }
+        // Return the scratch buffer for next-frame reuse.
+        self.scratch_cull_candidates = candidates;
 
         let material_sorting = self.config.batching.material_sorting_enabled;
         if material_sorting {
