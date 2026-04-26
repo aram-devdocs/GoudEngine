@@ -49,15 +49,22 @@ impl Renderer3D {
     ///
     /// Returns `None` when the source plane does not exist.
     pub fn instantiate_plane(&mut self, source_plane_id: u32) -> Option<u32> {
-        let source = self.objects.get(&source_plane_id)?;
-        let texture_id = source.texture_id;
-        let source_vertices = source.vertices.clone();
-        let vertex_count = source.vertex_count;
+        // Cheap existence check first; the expensive vertex clone happens only
+        // when we actually need to create a new pool. For a 40 000-instance
+        // terrain over 9 source planes this saves ~39 991 redundant clones.
+        if !self.objects.contains_key(&source_plane_id) {
+            return None;
+        }
 
         let pool_mesh_id = if let Some(&existing) = self.source_plane_to_pool.get(&source_plane_id)
         {
             existing
         } else {
+            let source = self.objects.get(&source_plane_id)?;
+            let texture_id = source.texture_id;
+            let source_vertices = source.vertices.clone();
+            let vertex_count = source.vertex_count;
+
             let mesh_buffer = match upload_buffer(self.backend.as_mut(), &source_vertices) {
                 Ok(handle) => handle,
                 Err(e) => {
@@ -296,22 +303,20 @@ impl Renderer3D {
                     pool.dirty = false;
                 }
             } else {
-                // In-place update: split-borrow `self.instanced_meshes` and
-                // `self.backend` (disjoint fields) to avoid cloning the Vec.
-                let (buffer_handle, instances_ptr, instances_len) =
-                    match self.instanced_meshes.get(&mesh_id) {
-                        Some(m) => (m.instance_buffer, m.instances.as_ptr(), m.instances.len()),
-                        None => continue,
-                    };
-                // SAFETY: instances_ptr/len are derived from
-                // self.instanced_meshes[mesh_id].instances above. No code in
-                // update_instance_buffer mutates self.instanced_meshes (it
-                // only touches self.backend, a disjoint field), so the slice
-                // is valid for the duration of this call.
-                let slice = unsafe { std::slice::from_raw_parts(instances_ptr, instances_len) };
-                if let Err(e) = update_instance_buffer(self.backend.as_mut(), buffer_handle, slice)
-                {
-                    log::error!("Failed to update plane-instance buffer: {e}");
+                // In-place update: relies on the borrow checker proving that
+                // `self.instanced_meshes` and `self.backend` are disjoint
+                // fields. No clone, no unsafe.
+                if let Some(mesh) = self.instanced_meshes.get(&mesh_id) {
+                    let buffer_handle = mesh.instance_buffer;
+                    if let Err(e) = update_instance_buffer(
+                        self.backend.as_mut(),
+                        buffer_handle,
+                        &mesh.instances,
+                    ) {
+                        log::error!("Failed to update plane-instance buffer: {e}");
+                        continue;
+                    }
+                } else {
                     continue;
                 }
                 if let Some(pool) = self.plane_instance_pools.get_mut(&mesh_id) {

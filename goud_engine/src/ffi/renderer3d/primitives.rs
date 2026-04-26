@@ -119,6 +119,20 @@ pub extern "C" fn goud_renderer3d_create_plane(
 /// plane's material/texture is captured when the first instance is created.
 /// Use one source plane per material to draw multiple materials.
 ///
+/// # Source plane visibility
+///
+/// The source plane is a regular `Object3D`, so it is also drawn by the
+/// per-object pass. Each pool therefore costs **one extra per-object draw on
+/// top of the instanced draw** (e.g., 9 source planes + 9 pools = 18 draws,
+/// not 9). The pool's draw call collapse is still the dominant win for
+/// large terrains, but if the source plane is camera-visible callers should
+/// either:
+///
+/// * Position the source plane outside the camera frustum / view region so
+///   frustum culling drops it (recommended for terrain templates), or
+/// * Use it as the first visible tile (place it where one of the pool's
+///   instances would have been) so the per-object draw is not "extra".
+///
 /// # Lifecycle
 ///
 /// Destroying the source plane via `destroy_object` cascades: the underlying
