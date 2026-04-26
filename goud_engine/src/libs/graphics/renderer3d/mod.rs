@@ -43,6 +43,7 @@ pub mod scene;
 mod shaders;
 mod shadow;
 mod skinned_mesh;
+mod spatial_index;
 mod texture;
 mod types;
 

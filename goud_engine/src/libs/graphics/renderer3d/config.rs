@@ -9,6 +9,8 @@
 pub struct Render3DConfig {
     /// Frustum culling settings.
     pub frustum_culling: FrustumCullingConfig,
+    /// Spatial index settings used to accelerate frustum culling.
+    pub spatial_index: SpatialIndexConfig,
     /// Draw call batching and instancing settings.
     pub batching: BatchingConfig,
     /// Skeletal animation skinning settings.
@@ -17,6 +19,30 @@ pub struct Render3DConfig {
     pub shadows: ShadowConfig,
     /// Fallback RGBA color used when a mesh has no assigned material (default: light gray).
     pub default_material_color: [f32; 4],
+}
+
+/// Spatial index configuration. The renderer uses a sparse uniform grid to
+/// shrink the per-frame frustum-cull candidate set from "every scene object"
+/// down to "objects whose grid cell touches the frustum AABB".
+#[derive(Debug, Clone)]
+pub struct SpatialIndexConfig {
+    /// Whether the spatial index is consulted during frustum culling
+    /// (default: `true`). When `false` the renderer falls back to a linear
+    /// scan over every registered object — same behavior as before #678.
+    pub enabled: bool,
+    /// Grid cell size in world units (default: `32.0`). Cells smaller than
+    /// `0.5` are clamped up to keep grid coordinates finite. Tune this for
+    /// scenes where most objects fit inside one cell.
+    pub cell_size: f32,
+}
+
+impl Default for SpatialIndexConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            cell_size: 32.0,
+        }
+    }
 }
 
 /// Frustum culling configuration.
@@ -148,6 +174,7 @@ impl Default for Render3DConfig {
     fn default() -> Self {
         Self {
             frustum_culling: FrustumCullingConfig::default(),
+            spatial_index: SpatialIndexConfig::default(),
             batching: BatchingConfig::default(),
             skinning: SkinningConfig::default(),
             shadows: ShadowConfig::default(),
@@ -215,6 +242,13 @@ mod tests {
 
         // Material color default
         assert_eq!(config.default_material_color, [0.8, 0.8, 0.8, 1.0]);
+    }
+
+    #[test]
+    fn test_spatial_index_config_default() {
+        let si = SpatialIndexConfig::default();
+        assert!(si.enabled);
+        assert!((si.cell_size - 32.0).abs() < f32::EPSILON);
     }
 
     #[test]

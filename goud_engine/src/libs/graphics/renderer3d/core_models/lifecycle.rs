@@ -55,6 +55,7 @@ impl Renderer3D {
         for &obj_id in &model.mesh_object_ids {
             self.skinned_object_ids.remove(&obj_id);
             if let Some(obj) = self.objects.remove(&obj_id) {
+                self.spatial_index_remove(obj_id);
                 self.backend.destroy_buffer(obj.buffer);
             }
             self.object_materials.remove(&obj_id);
@@ -100,6 +101,7 @@ impl Renderer3D {
                 if obj.is_static {
                     self.static_batch_dirty = true;
                 }
+                self.spatial_index_remove(obj_id);
                 if !source_buffers.contains(&obj.buffer) {
                     self.backend.destroy_buffer(obj.buffer);
                 }
@@ -117,17 +119,19 @@ impl Renderer3D {
 
     /// Set position on all sub-mesh objects of a model or instance.
     pub fn set_model_position(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
-        self.set_model_transform(id, |obj| obj.position = Vector3::new(x, y, z))
+        self.set_model_transform(id, true, |obj| obj.position = Vector3::new(x, y, z))
     }
 
     /// Set rotation (degrees) on all sub-mesh objects of a model or instance.
     pub fn set_model_rotation(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
-        self.set_model_transform(id, |obj| obj.rotation = Vector3::new(x, y, z))
+        // Rotation alone does not move or resize the world-space bounding
+        // sphere, so the spatial index does not need refreshing here.
+        self.set_model_transform(id, false, |obj| obj.rotation = Vector3::new(x, y, z))
     }
 
     /// Set scale on all sub-mesh objects of a model or instance.
     pub fn set_model_scale(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
-        self.set_model_transform(id, |obj| obj.scale = Vector3::new(x, y, z))
+        self.set_model_transform(id, true, |obj| obj.scale = Vector3::new(x, y, z))
     }
 
     /// Mark all sub-mesh objects of a model or instance as static for batching.
@@ -284,14 +288,19 @@ impl Renderer3D {
             .unwrap_or(&[])
     }
 
-    fn set_model_transform(&mut self, id: u32, f: impl Fn(&mut Object3D)) -> bool {
+    fn set_model_transform(
+        &mut self,
+        id: u32,
+        affects_world_aabb: bool,
+        f: impl Fn(&mut Object3D),
+    ) -> bool {
         let obj_ids = self.collect_model_object_ids(id).to_vec();
         if obj_ids.is_empty() {
             return false;
         }
         let mut has_static = false;
-        for obj_id in obj_ids {
-            if let Some(obj) = self.objects.get_mut(&obj_id) {
+        for obj_id in &obj_ids {
+            if let Some(obj) = self.objects.get_mut(obj_id) {
                 f(obj);
                 if obj.is_static {
                     has_static = true;
@@ -300,6 +309,11 @@ impl Renderer3D {
         }
         if has_static {
             self.static_batch_dirty = true;
+        }
+        if affects_world_aabb {
+            for obj_id in obj_ids {
+                self.spatial_index_refresh(obj_id);
+            }
         }
         true
     }

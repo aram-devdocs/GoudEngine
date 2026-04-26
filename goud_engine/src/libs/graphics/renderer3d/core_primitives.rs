@@ -50,6 +50,7 @@ impl Renderer3D {
                 is_static: false,
             },
         );
+        self.spatial_index_refresh(id);
 
         id
     }

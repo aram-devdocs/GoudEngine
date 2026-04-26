@@ -177,6 +177,14 @@ pub struct Renderer3DStats {
     pub animation_evaluations: u32,
     /// Number of animation evaluations saved (cache hits / LOD skips) this frame.
     pub animation_evaluations_saved: u32,
+    /// Number of objects that survived the spatial-index pre-filter and were
+    /// fed into the frustum sphere test this frame. Equals `total_objects`
+    /// when the spatial index is disabled.
+    pub spatial_index_candidates: u32,
+    /// Number of grid cells visited by the spatial index this frame.
+    /// Useful for tuning [`crate::libs::graphics::renderer3d::Render3DConfig`]
+    /// `spatial_index.cell_size` against the active scene.
+    pub spatial_index_cells_visited: u32,
 }
 
 /// Local-space bounding sphere for frustum culling.
