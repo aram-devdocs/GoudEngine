@@ -43,6 +43,16 @@ pub(in crate::libs::graphics::renderer3d) struct SpatialIndex {
     object_ranges: FxHashMap<u32, CellRange>,
     /// Per-object visit stamp for query dedup. Indexed by object ID; grown
     /// lazily on first sight of an ID.
+    ///
+    /// Memory note: this `Vec` is keyed by raw `u32` object ID, so its size
+    /// tracks the renderer's monotonically increasing `next_object_id`. For
+    /// long-running sessions that churn through many millions of object
+    /// allocations the vec grows unboundedly. In practice the renderer skips
+    /// `0` and wraps at `u32::MAX`, so a worst-case session would need to
+    /// burn through ~2^32 object IDs before this becomes a real RAM hog.
+    /// Trimming on object removal is intentionally not done — clearing a
+    /// slot would require either re-stamping every live entry or tracking
+    /// an explicit free list, neither of which is worth the complexity.
     query_stamp: Vec<u64>,
     next_stamp: u64,
     last_query_visited_cells: u32,
@@ -534,5 +544,36 @@ mod tests {
     fn cell_size_floor_clamp_protects_against_zero() {
         let idx = SpatialIndex::new(0.0);
         assert!(idx.cell_size() >= 0.5);
+    }
+
+    /// Forces the `query_aabb` occupied-cell-scan branch by populating just a
+    /// handful of cells in a tiny region but querying a huge AABB whose cell
+    /// sweep would cost orders of magnitude more lookups than the populated
+    /// cell count. The query must still report exactly the populated objects
+    /// and the visited-cells stat must not exceed the populated cell count.
+    #[test]
+    fn occupied_cell_scan_used_for_huge_aabb() {
+        let mut idx = SpatialIndex::new(8.0);
+        // Populate a small cluster: three objects in a few cells at ~origin.
+        idx.insert(1, Vector3::new(0.0, 0.0, 0.0), Vector3::new(1.0, 1.0, 1.0));
+        idx.insert(2, Vector3::new(8.0, 0.0, 0.0), Vector3::new(9.0, 1.0, 1.0));
+        idx.insert(3, Vector3::new(0.0, 8.0, 0.0), Vector3::new(1.0, 9.0, 1.0));
+        let occupied = idx.cell_count() as u32;
+
+        // Query a far-plane-sized AABB; sweep cost would be ~(20000/8)^3
+        // > 10^10, way more than 3 occupied cells, so the implementation
+        // must switch to occupied-cell scan.
+        let got = collect(
+            &mut idx,
+            Vector3::new(-10000.0, -10000.0, -10000.0),
+            Vector3::new(10000.0, 10000.0, 10000.0),
+        );
+        assert_eq!(got, vec![1, 2, 3]);
+        assert!(
+            idx.last_query_visited_cells() <= occupied,
+            "occupied-cell scan should not visit more than {} cells, got {}",
+            occupied,
+            idx.last_query_visited_cells()
+        );
     }
 }

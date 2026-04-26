@@ -22,6 +22,11 @@ impl Renderer3D {
     pub fn set_object_rotation(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         // Rotation does not change the bounding-sphere AABB, so no spatial-index
         // refresh is needed here.
+        //
+        // INVARIANT: only safe while the per-object bound is a sphere
+        // (uniform radius around `bounds.center`). If `Object3D::bounds` is
+        // ever switched to an axis-aligned or oriented box, this skip must
+        // be removed and `spatial_index_refresh` called below.
         let ok = self.mutate_object(id, |obj| obj.rotation = Vector3::new(x, y, z));
         if ok && self.objects.get(&id).is_some_and(|o| o.is_static) {
             self.static_batch_dirty = true;

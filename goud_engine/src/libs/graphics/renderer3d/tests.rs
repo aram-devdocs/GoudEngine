@@ -496,6 +496,19 @@ mod scene_culling_678 {
     }
 
     #[test]
+    fn spatial_index_stays_sublinear_at_30k_objects() {
+        let mut renderer = make_renderer();
+        let _ids = populate_grid(&mut renderer, 174, 4.0); // 30_276 objects.
+        aim_camera_at_origin(&mut renderer);
+        let (candidates, total) = collect_candidate_ratio(&mut renderer);
+        assert_eq!(total, 30_276);
+        assert!(
+            candidates * 10 < total,
+            "expected <10% candidate ratio at 30k, got {candidates}/{total}"
+        );
+    }
+
+    #[test]
     fn spatial_index_stays_sublinear_at_50k_objects() {
         let mut renderer = make_renderer();
         let _ids = populate_grid(&mut renderer, 224, 4.0); // 50_176 objects.

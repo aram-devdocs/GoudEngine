@@ -46,7 +46,14 @@ fn aim_camera_at_origin(renderer: &mut Renderer3D) {
 fn bench_render_with_spatial_index(c: &mut Criterion) {
     let mut group = c.benchmark_group("scene_culling_spatial_index_on");
 
-    for &(side, label) in &[(32i32, 1_024usize), (100, 10_000), (224, 50_176)] {
+    // 1k / 10k / 30k / 50k matches the scaling table in #678 so the bench
+    // output lines up with the issue's three named checkpoints.
+    for &(side, label) in &[
+        (32i32, 1_024usize),
+        (100, 10_000),
+        (174, 30_276),
+        (224, 50_176),
+    ] {
         group.bench_with_input(BenchmarkId::from_parameter(label), &side, |b, &side| {
             let mut renderer = make_renderer();
             populate_grid(&mut renderer, side, 4.0);
@@ -63,7 +70,12 @@ fn bench_render_with_spatial_index(c: &mut Criterion) {
 fn bench_render_with_linear_scan(c: &mut Criterion) {
     let mut group = c.benchmark_group("scene_culling_spatial_index_off");
 
-    for &(side, label) in &[(32i32, 1_024usize), (100, 10_000), (224, 50_176)] {
+    for &(side, label) in &[
+        (32i32, 1_024usize),
+        (100, 10_000),
+        (174, 30_276),
+        (224, 50_176),
+    ] {
         group.bench_with_input(BenchmarkId::from_parameter(label), &side, |b, &side| {
             let mut renderer = make_renderer();
             let mut config = renderer.render_config().clone();

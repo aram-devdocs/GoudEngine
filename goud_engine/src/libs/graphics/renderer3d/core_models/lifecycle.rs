@@ -126,6 +126,9 @@ impl Renderer3D {
     pub fn set_model_rotation(&mut self, id: u32, x: f32, y: f32, z: f32) -> bool {
         // Rotation alone does not move or resize the world-space bounding
         // sphere, so the spatial index does not need refreshing here.
+        //
+        // INVARIANT: matches the assumption in `set_object_rotation` —
+        // safe only while per-object bounds are uniform spheres.
         self.set_model_transform(id, false, |obj| obj.rotation = Vector3::new(x, y, z))
     }
 
