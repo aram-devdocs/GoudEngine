@@ -503,6 +503,47 @@ fn test_instantiate_plane_two_source_planes_two_draw_calls() {
     assert_eq!(stats.active_instances, 3_000);
 }
 
+/// Regression for #679: removing the source plane must cascade-tear-down its
+/// pool so the source-plane id cannot route future instances into a stale
+/// pool. The instance handles are invalidated too.
+#[test]
+fn test_remove_source_plane_cascades_pool_teardown() {
+    let mut renderer = make_renderer();
+    let source_plane = renderer.create_primitive(PrimitiveCreateInfo {
+        primitive_type: PrimitiveType::Plane,
+        width: 1.0,
+        height: 0.0,
+        depth: 1.0,
+        segments: 1,
+        texture_id: 0,
+    });
+    let inst_a = renderer.instantiate_plane(source_plane).unwrap();
+    let inst_b = renderer.instantiate_plane(source_plane).unwrap();
+
+    renderer.render(None);
+    assert_eq!(renderer.stats().instanced_draw_calls, 1);
+    assert_eq!(renderer.stats().active_instances, 2);
+
+    // Destroying the source plane must also tear down the pool.
+    assert!(renderer.remove_object(source_plane));
+    renderer.render(None);
+    assert_eq!(
+        renderer.stats().instanced_draw_calls,
+        0,
+        "pool must be torn down when its source plane is destroyed"
+    );
+
+    // Stale instance handles are invalidated, not silently kept alive.
+    assert!(
+        !renderer.set_object_position(inst_a, 1.0, 2.0, 3.0),
+        "instance handle should be invalid after source teardown"
+    );
+    assert!(
+        !renderer.remove_object(inst_b),
+        "instance handle should be unknown after source teardown"
+    );
+}
+
 /// Regression for #680: when a current scene is set, plane-instance pools
 /// should only draw if their source plane was added to the scene.
 #[test]

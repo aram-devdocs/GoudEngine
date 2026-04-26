@@ -10,6 +10,7 @@ use super::core::Renderer3D;
 use super::mesh::{update_instance_buffer, upload_buffer, upload_instance_buffer};
 use super::types::{InstanceTransform, InstancedMesh};
 use cgmath::Vector3;
+use std::mem;
 
 /// Bookkeeping for the pool of plane instances that share one source primitive.
 ///
@@ -37,6 +38,14 @@ impl Renderer3D {
     /// returned id can be passed to `set_object_position` / `set_object_rotation`
     /// / `set_object_scale` / `remove_object` (per-instance transform updates),
     /// and to `add_object_to_scene` (scene membership uses the source plane).
+    ///
+    /// Per-instance materials are not supported: the source plane's
+    /// material/texture is captured at the time the pool is first created.
+    /// Use one source plane per material to draw multiple materials.
+    ///
+    /// Destroying the source plane via [`Renderer3D::remove_object`] cascades
+    /// to the pool: every instance handle is invalidated and the pool's GPU
+    /// buffers are freed.
     ///
     /// Returns `None` when the source plane does not exist.
     pub fn instantiate_plane(&mut self, source_plane_id: u32) -> Option<u32> {
@@ -96,20 +105,16 @@ impl Renderer3D {
             new_mesh_id
         };
 
+        // Append the slot before allocating an id so a missing pool short-circuits
+        // without burning an id from the shared object-id counter.
+        let mesh = self.instanced_meshes.get_mut(&pool_mesh_id)?;
+        let pool = self.plane_instance_pools.get_mut(&pool_mesh_id)?;
+
         let instance_id = self.next_object_id;
         self.next_object_id = self.next_object_id.wrapping_add(1);
         if self.next_object_id == 0 {
             self.next_object_id = 1;
         }
-
-        let mesh = self
-            .instanced_meshes
-            .get_mut(&pool_mesh_id)
-            .expect("pool mesh must exist");
-        let pool = self
-            .plane_instance_pools
-            .get_mut(&pool_mesh_id)
-            .expect("pool must exist");
 
         let slot = mesh.instances.len();
         mesh.instances.push(InstanceTransform::default());
@@ -120,6 +125,30 @@ impl Renderer3D {
             .insert(instance_id, (pool_mesh_id, slot));
 
         Some(instance_id)
+    }
+
+    /// Cascade-destroy any plane-instance pool seeded from `source_plane_id`.
+    ///
+    /// Called from `remove_object` when the user destroys the source plane:
+    /// the pool's GPU buffers are freed, every instance handle is invalidated,
+    /// and the `source_plane_to_pool` reverse map is cleaned up so that the
+    /// source-plane id cannot route future instances into a stale pool.
+    pub(in crate::libs::graphics::renderer3d) fn destroy_plane_pool_for_source(
+        &mut self,
+        source_plane_id: u32,
+    ) {
+        let Some(mesh_id) = self.source_plane_to_pool.remove(&source_plane_id) else {
+            return;
+        };
+        if let Some(pool) = self.plane_instance_pools.remove(&mesh_id) {
+            for instance_id in &pool.instance_ids {
+                self.plane_instance_index.remove(instance_id);
+            }
+        }
+        if let Some(mesh) = self.instanced_meshes.remove(&mesh_id) {
+            self.backend.destroy_buffer(mesh.mesh_buffer);
+            self.backend.destroy_buffer(mesh.instance_buffer);
+        }
     }
 
     /// Update a plane-instance transform component (position/rotation/scale).
@@ -204,15 +233,22 @@ impl Renderer3D {
     /// Re-upload GPU instance buffers for any pool whose CPU instances changed
     /// since the last upload. Called once per frame before the instanced pass.
     pub(in crate::libs::graphics::renderer3d) fn flush_dirty_plane_instance_pools(&mut self) {
-        let mesh_ids: Vec<u32> = self
-            .plane_instance_pools
-            .iter()
-            .filter_map(|(id, p)| if p.dirty { Some(*id) } else { None })
-            .collect();
-        if mesh_ids.is_empty() {
+        // Reuse the persistent scratch Vec so the per-frame allocation is
+        // bounded by the largest pool count we have ever seen.
+        let mut dirty_ids = mem::take(&mut self.scratch_dirty_plane_pool_ids);
+        dirty_ids.clear();
+        for (id, pool) in &self.plane_instance_pools {
+            if pool.dirty {
+                dirty_ids.push(*id);
+            }
+        }
+        if dirty_ids.is_empty() {
+            self.scratch_dirty_plane_pool_ids = dirty_ids;
             return;
         }
-        for mesh_id in mesh_ids {
+
+        for mesh_id in dirty_ids.drain(..) {
+            // Borrow the InstancedMesh for instance slice and capacity in one read.
             let needed_slots = match self.instanced_meshes.get(&mesh_id) {
                 Some(m) => m.instances.len(),
                 None => continue,
@@ -224,14 +260,26 @@ impl Renderer3D {
                 .unwrap_or(0);
 
             if needed_slots > capacity {
+                // Grow path: swap the live instances out, pad to the new
+                // capacity (zero-initialized tail slots are not drawn since
+                // the draw call's instance_count uses the live len), upload,
+                // swap the live vec back. No .clone() of the instance vec.
                 let new_capacity = needed_slots.next_power_of_two().max(8);
-                let mut padded: Vec<InstanceTransform> = match self.instanced_meshes.get(&mesh_id) {
-                    Some(m) => m.instances.clone(),
+                let mut padded = match self.instanced_meshes.get_mut(&mesh_id) {
+                    Some(m) => mem::take(&mut m.instances),
                     None => continue,
                 };
                 padded.resize(new_capacity, InstanceTransform::default());
 
-                let new_buffer = match upload_instance_buffer(self.backend.as_mut(), &padded) {
+                let upload_result = upload_instance_buffer(self.backend.as_mut(), &padded);
+
+                // Restore the live slice (truncate the tail back to needed_slots).
+                padded.truncate(needed_slots);
+                if let Some(mesh) = self.instanced_meshes.get_mut(&mesh_id) {
+                    mesh.instances = padded;
+                }
+
+                let new_buffer = match upload_result {
                     Ok(handle) => handle,
                     Err(e) => {
                         log::error!("Failed to grow plane-instance buffer: {e}");
@@ -248,17 +296,20 @@ impl Renderer3D {
                     pool.dirty = false;
                 }
             } else {
-                let buffer_handle = match self.instanced_meshes.get(&mesh_id) {
-                    Some(m) => m.instance_buffer,
-                    None => continue,
-                };
-                let instances_clone: Vec<InstanceTransform> =
+                // In-place update: split-borrow `self.instanced_meshes` and
+                // `self.backend` (disjoint fields) to avoid cloning the Vec.
+                let (buffer_handle, instances_ptr, instances_len) =
                     match self.instanced_meshes.get(&mesh_id) {
-                        Some(m) => m.instances.clone(),
+                        Some(m) => (m.instance_buffer, m.instances.as_ptr(), m.instances.len()),
                         None => continue,
                     };
-                if let Err(e) =
-                    update_instance_buffer(self.backend.as_mut(), buffer_handle, &instances_clone)
+                // SAFETY: instances_ptr/len are derived from
+                // self.instanced_meshes[mesh_id].instances above. No code in
+                // update_instance_buffer mutates self.instanced_meshes (it
+                // only touches self.backend, a disjoint field), so the slice
+                // is valid for the duration of this call.
+                let slice = unsafe { std::slice::from_raw_parts(instances_ptr, instances_len) };
+                if let Err(e) = update_instance_buffer(self.backend.as_mut(), buffer_handle, slice)
                 {
                     log::error!("Failed to update plane-instance buffer: {e}");
                     continue;
@@ -268,5 +319,7 @@ impl Renderer3D {
                 }
             }
         }
+
+        self.scratch_dirty_plane_pool_ids = dirty_ids;
     }
 }

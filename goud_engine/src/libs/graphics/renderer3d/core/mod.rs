@@ -175,6 +175,8 @@ pub struct Renderer3D {
     pub(in crate::libs::graphics::renderer3d) plane_instance_index: FxHashMap<u32, (u32, usize)>,
     /// Reverse lookup from a source plane object id to its pool's `instanced_mesh_id`.
     pub(in crate::libs::graphics::renderer3d) source_plane_to_pool: FxHashMap<u32, u32>,
+    /// Reusable scratch buffer of dirty pool ids (avoids per-frame alloc).
+    pub(in crate::libs::graphics::renderer3d) scratch_dirty_plane_pool_ids: Vec<u32>,
 }
 
 // StaticBatchGroup is defined in core_static_batch.rs
@@ -377,6 +379,7 @@ impl Renderer3D {
             plane_instance_pools: FxHashMap::default(),
             plane_instance_index: FxHashMap::default(),
             source_plane_to_pool: FxHashMap::default(),
+            scratch_dirty_plane_pool_ids: Vec::new(),
         })
     }
 }

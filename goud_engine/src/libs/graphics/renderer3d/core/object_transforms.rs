@@ -74,6 +74,10 @@ impl Renderer3D {
                 self.static_batch_dirty = true;
             }
             self.backend.destroy_buffer(obj.buffer);
+            // If this object was the source of a plane-instance pool, tear
+            // the whole pool down so the source-plane id cannot route future
+            // instances into a stale pool (#679 review feedback).
+            self.destroy_plane_pool_for_source(id);
             true
         } else {
             false

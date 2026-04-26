@@ -444,7 +444,7 @@ func (g *Game) CreatePlane(textureId uint32, width float32, depth float32) uint3
 	return 0
 }
 
-// InstantiatePlane Creates an instanced plane that shares geometry with a source plane (issue #679). All instances of the same source plane render through one instanced draw call. Use one source plane per material to draw multiple materials.
+// InstantiatePlane Creates an instanced plane that shares geometry with a source plane (issue #679). All instances of the same source plane render through one instanced draw call regardless of setStaticBatchingEnabled / setInstancingEnabled / setMinInstancesForBatching (those flags govern non-instanced primitives and skinned models, not plane-instance pools). Use one source plane per material to draw multiple materials. Destroying the source plane cascades: the pool is freed and existing instance handles are invalidated.
 func (g *Game) InstantiatePlane(sourcePlaneId uint32) uint32 {
 	return 0
 }

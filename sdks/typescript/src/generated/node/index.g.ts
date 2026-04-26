@@ -540,7 +540,7 @@ export class GoudGame implements IGoudGame {
     return this.native.createPlane(textureId, width, depth);
   }
 
-  /** Creates an instanced plane that shares geometry with a source plane (issue #679). All instances of the same source plane render through one instanced draw call. Use one source plane per material to draw multiple materials. */
+  /** Creates an instanced plane that shares geometry with a source plane (issue #679). All instances of the same source plane render through one instanced draw call regardless of setStaticBatchingEnabled / setInstancingEnabled / setMinInstancesForBatching (those flags govern non-instanced primitives and skinned models, not plane-instance pools). Use one source plane per material to draw multiple materials. Destroying the source plane cascades: the pool is freed and existing instance handles are invalidated. */
   instantiatePlane(sourcePlaneId: number): number {
     return (this.native as any).instantiatePlane(sourcePlaneId);
   }
