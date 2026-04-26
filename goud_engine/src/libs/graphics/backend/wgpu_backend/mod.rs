@@ -38,6 +38,8 @@ mod sdl_init;
 pub(crate) mod sdl_surface;
 mod shader;
 mod shadow_pass;
+#[cfg(test)]
+mod shadow_pass_tests;
 #[cfg(feature = "switch-vulkan")]
 mod switch_init;
 #[cfg(feature = "switch-vulkan")]
