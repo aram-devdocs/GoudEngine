@@ -191,3 +191,43 @@ fn spatial_index_tracks_object_movement() {
         "object should be visible again after move-back"
     );
 }
+
+#[test]
+fn spatial_index_tracks_object_scale_growth() {
+    // Place a small object far enough off to one side that its tight
+    // bounding sphere never reaches the frustum, then scale it up so the
+    // sphere swells into view. The spatial index must refresh on the
+    // scale change so the now-overlapping object becomes a candidate.
+    let mut renderer = make_renderer();
+    let id = renderer.create_primitive(PrimitiveCreateInfo {
+        primitive_type: PrimitiveType::Cube,
+        width: 0.5,
+        height: 0.5,
+        depth: 0.5,
+        segments: 1,
+        texture_id: 0,
+    });
+    // Camera at origin looking down +Z; object at (0, 0, 80) is in front.
+    renderer.set_camera_position(0.0, 0.0, -5.0);
+    renderer.set_camera_rotation(0.0, 0.0, 0.0);
+    // Park the object far out to the side at +X so a unit-scale bounding
+    // sphere does not intersect the camera's central frustum.
+    assert!(renderer.set_object_position(id, 200.0, 0.0, 50.0));
+
+    renderer.render(None);
+    assert_eq!(
+        renderer.stats().visible_objects,
+        0,
+        "tiny far-side object should be culled at unit scale"
+    );
+
+    // Scale it up so its world-space sphere swells through the frustum.
+    assert!(renderer.set_object_scale(id, 800.0, 800.0, 800.0));
+    renderer.render(None);
+    assert_eq!(
+        renderer.stats().visible_objects,
+        1,
+        "scaled-up object should be picked up by the spatial index after \
+         the scale change refreshes its cell membership"
+    );
+}

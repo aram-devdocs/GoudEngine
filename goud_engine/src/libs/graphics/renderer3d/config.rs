@@ -33,6 +33,11 @@ pub struct SpatialIndexConfig {
     /// Grid cell size in world units (default: `32.0`). Cells smaller than
     /// `0.5` are clamped up to keep grid coordinates finite. Tune this for
     /// scenes where most objects fit inside one cell.
+    ///
+    /// Note: changing this at runtime forces a rebuild of the spatial index
+    /// over every registered scene object. That is cheap for small scenes
+    /// but is `O(n)` work over the whole `objects` registry, so prefer to
+    /// set it once at startup for large scenes.
     pub cell_size: f32,
 }
 
