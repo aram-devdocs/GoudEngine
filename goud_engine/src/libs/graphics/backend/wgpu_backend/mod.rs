@@ -178,6 +178,12 @@ pub struct WgpuBackend {
     scratch_pipeline_keys: Vec<PipelineKey>,
     /// Scratch buffer reused each frame to collect shadow-pass pipeline keys.
     scratch_shadow_pipeline_keys: Vec<PipelineKey>,
+    /// Scratch buffer reused each frame for shadow uniform offsets.
+    /// With ~1.4k shadow casters per frame this avoids a 5KB+ Vec<u32> alloc.
+    scratch_shadow_offsets: Vec<u32>,
+    /// Scratch set reused each frame to dedupe shadow uniform-buffer growth
+    /// per shader, avoiding a per-frame FxHashSet allocation.
+    scratch_shadow_grown_shaders: rustc_hash::FxHashSet<ShaderHandle>,
 }
 
 // SAFETY: wgpu Device and Queue are Send+Sync. Surface is Send.
