@@ -49,6 +49,8 @@ mod types;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_plane_instances;
 
 // Public API re-exports — the external interface is unchanged.
 pub use animation::{AnimationPlayer, AnimationState, AnimationTransition};
