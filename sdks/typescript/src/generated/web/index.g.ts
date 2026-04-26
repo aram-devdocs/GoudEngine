@@ -1050,6 +1050,7 @@ export class GoudGame implements IGoudGame {
   loadModel(_path: string): number { return 0; }
   destroyModel(_modelId: number): boolean { return false; }
   instantiateModel(_sourceModelId: number): number { return 0; }
+  instantiatePlane(_sourcePlaneId: number): number { return 0; }
   setModelMaterial(_modelId: number, _meshIndex: number, _materialId: number): boolean { return false; }
   getModelMeshCount(_modelId: number): number { return 0; }
   getModelBoundingBox(_modelId: number): { minX: number; minY: number; minZ: number; maxX: number; maxY: number; maxZ: number } { return { minX: 0, minY: 0, minZ: 0, maxX: 0, maxY: 0, maxZ: 0 }; }
