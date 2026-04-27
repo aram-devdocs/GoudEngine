@@ -432,6 +432,10 @@ class GoudGame:
         """Creates a 3D plane"""
         return self._lib.goud_renderer3d_create_plane(self._ctx, texture_id, width, depth)
 
+    def instantiate_plane(self, source_plane_id):
+        """Creates an instanced plane that shares geometry with a source plane (issue #679). All instances of the same source plane render through one instanced draw call regardless of setStaticBatchingEnabled / setInstancingEnabled / setMinInstancesForBatching (those flags govern non-instanced primitives and skinned models, not plane-instance pools). Use one source plane per material to draw multiple materials. Destroying the source plane cascades: the pool is freed and existing instance handles are invalidated."""
+        return self._lib.goud_renderer3d_instantiate_plane(self._ctx, source_plane_id)
+
     def create_sphere(self, texture_id, diameter, segments = 16):
         """Creates a 3D sphere"""
         return self._lib.goud_renderer3d_create_sphere(self._ctx, texture_id, diameter, segments)
