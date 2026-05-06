@@ -673,6 +673,8 @@ def _setup():
     _lib.goud_renderer3d_create_cube.restype = ctypes.c_uint32
     _lib.goud_renderer3d_create_plane.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_float, ctypes.c_float]
     _lib.goud_renderer3d_create_plane.restype = ctypes.c_uint32
+    _lib.goud_renderer3d_instantiate_plane.argtypes = [GoudContextId, ctypes.c_uint32]
+    _lib.goud_renderer3d_instantiate_plane.restype = ctypes.c_uint32
     _lib.goud_renderer3d_create_sphere.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_float, ctypes.c_uint32]
     _lib.goud_renderer3d_create_sphere.restype = ctypes.c_uint32
     _lib.goud_renderer3d_create_cylinder.argtypes = [GoudContextId, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_uint32]

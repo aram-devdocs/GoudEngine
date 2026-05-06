@@ -67,6 +67,7 @@ public final class GoudGameNative {
     public static native int setParameterFloat(long contextId, long entity, String name, float value);
     public static native int createCube(long contextId, int textureId, float width, float height, float depth);
     public static native int createPlane(long contextId, int textureId, float width, float depth);
+    public static native int instantiatePlane(long contextId, int sourcePlaneId);
     public static native int createSphere(long contextId, int textureId, float diameter, int segments);
     public static native int createCylinder(long contextId, int textureId, float radius, float height, int segments);
     public static native boolean setObjectPosition(long contextId, int objectId, float x, float y, float z);

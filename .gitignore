@@ -132,3 +132,4 @@ examples/go/*/sandbox
 # Coverage artifacts
 .coverage
 **/coverage/
+.claude/scheduled_tasks.lock
