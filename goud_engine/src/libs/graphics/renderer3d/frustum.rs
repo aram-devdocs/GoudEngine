@@ -4,7 +4,7 @@
 //! frustum planes from a view-projection matrix and tests bounding spheres
 //! against them.
 
-use cgmath::{Matrix4, Vector3};
+use cgmath::{Matrix4, SquareMatrix, Vector3, Vector4};
 
 /// A plane in 3D space represented as `normal · point + d = 0`.
 #[derive(Debug, Clone, Copy)]
@@ -83,6 +83,55 @@ impl Frustum {
         }
         true
     }
+}
+
+/// World-space AABB enclosing the view frustum produced by `view * projection`.
+///
+/// Computed by transforming the eight clip-space cube corners through the
+/// inverse view-projection matrix and taking the per-axis min/max. Used by
+/// the spatial index to pick the cell range to query — if `inv(VP)` is
+/// non-invertible (degenerate camera), returns `None` so the caller can fall
+/// back to a full scan.
+///
+/// NDC z is sampled at `-1` (near) and `+1` (far), matching cgmath's
+/// `perspective()` output. Even when the active backend clips at `[0, 1]`,
+/// this AABB is a conservative superset of the actual visible volume.
+pub(in crate::libs::graphics::renderer3d) fn frustum_world_aabb(
+    view: &Matrix4<f32>,
+    projection: &Matrix4<f32>,
+) -> Option<(Vector3<f32>, Vector3<f32>)> {
+    let vp = projection * view;
+    let inv_vp = vp.invert()?;
+    const NDC_CORNERS: [[f32; 3]; 8] = [
+        [-1.0, -1.0, -1.0],
+        [1.0, -1.0, -1.0],
+        [-1.0, 1.0, -1.0],
+        [1.0, 1.0, -1.0],
+        [-1.0, -1.0, 1.0],
+        [1.0, -1.0, 1.0],
+        [-1.0, 1.0, 1.0],
+        [1.0, 1.0, 1.0],
+    ];
+    let mut min = Vector3::new(f32::INFINITY, f32::INFINITY, f32::INFINITY);
+    let mut max = Vector3::new(f32::NEG_INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
+    for c in &NDC_CORNERS {
+        let v = inv_vp * Vector4::new(c[0], c[1], c[2], 1.0);
+        if v.w.abs() < f32::EPSILON {
+            return None;
+        }
+        let inv_w = 1.0 / v.w;
+        let p = Vector3::new(v.x * inv_w, v.y * inv_w, v.z * inv_w);
+        if !(p.x.is_finite() && p.y.is_finite() && p.z.is_finite()) {
+            return None;
+        }
+        min.x = min.x.min(p.x);
+        min.y = min.y.min(p.y);
+        min.z = min.z.min(p.z);
+        max.x = max.x.max(p.x);
+        max.y = max.y.max(p.y);
+        max.z = max.z.max(p.z);
+    }
+    Some((min, max))
 }
 
 fn make_plane(a: f32, b: f32, c: f32, d: f32) -> Plane {
@@ -193,6 +242,42 @@ mod tests {
             !frustum.intersects_sphere(stale_local_center, bounds_radius),
             "Local-space center at origin should NOT be visible from camera at (50, 5, 50)"
         );
+    }
+
+    #[test]
+    fn test_frustum_world_aabb_encloses_visible_object() {
+        let proj = perspective(Deg(60.0), 16.0 / 9.0, 0.1, 200.0);
+        let view = Matrix4::look_at_rh(
+            Point3::new(0.0, 0.0, 5.0),
+            Point3::new(0.0, 0.0, 0.0),
+            Vector3::new(0.0, 1.0, 0.0),
+        );
+        let (min, max) = super::frustum_world_aabb(&view, &proj)
+            .expect("perspective frustum must be invertible");
+        // Camera at z=5 looking toward origin (-z). Far plane should be roughly
+        // at z = 5 - 200 = -195, near at z = 5 - 0.1 = 4.9.
+        assert!(
+            min.z <= -190.0 && max.z >= 4.0,
+            "frustum z range {:?}..{:?} should span near to far plane",
+            min.z,
+            max.z
+        );
+        // X/Y extent grows with distance; far plane half-extent at fov=60,
+        // aspect=16/9, far=200 is large.
+        assert!(
+            max.x.abs() > 10.0 && max.y.abs() > 10.0,
+            "frustum should be wide at far plane, got max=({},{},{})",
+            max.x,
+            max.y,
+            max.z
+        );
+    }
+
+    #[test]
+    fn test_frustum_world_aabb_returns_none_for_degenerate_projection() {
+        // Zero matrix is non-invertible; helper should bail out cleanly.
+        let zero = Matrix4::from_scale(0.0);
+        assert!(super::frustum_world_aabb(&zero, &zero).is_none());
     }
 
     /// Regression test: objects with non-unit scale must have their bounding
