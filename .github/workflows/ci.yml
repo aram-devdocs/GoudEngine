@@ -44,7 +44,7 @@ jobs:
         components: rustfmt, clippy
 
     - name: Set up sccache
-      uses: mozilla-actions/sccache-action@v0.0.9
+      uses: mozilla-actions/sccache-action@v0.0.10
 
     - name: Restore Rust cache
       uses: Swatinem/rust-cache@v2
@@ -138,7 +138,7 @@ jobs:
         components: clippy
 
     - name: Set up sccache
-      uses: mozilla-actions/sccache-action@v0.0.9
+      uses: mozilla-actions/sccache-action@v0.0.10
 
     - name: Restore Rust cache
       uses: Swatinem/rust-cache@v2
@@ -273,7 +273,7 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
 
     - name: Set up sccache
-      uses: mozilla-actions/sccache-action@v0.0.9
+      uses: mozilla-actions/sccache-action@v0.0.10
 
     - name: Restore Rust cache
       uses: Swatinem/rust-cache@v2
@@ -330,7 +330,7 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
 
     - name: Set up sccache
-      uses: mozilla-actions/sccache-action@v0.0.9
+      uses: mozilla-actions/sccache-action@v0.0.10
 
     - name: Restore Rust cache
       uses: Swatinem/rust-cache@v2
@@ -591,7 +591,7 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
 
     - name: Set up sccache
-      uses: mozilla-actions/sccache-action@v0.0.9
+      uses: mozilla-actions/sccache-action@v0.0.10
 
     - name: Restore Rust cache
       uses: Swatinem/rust-cache@v2
@@ -669,7 +669,7 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
 
     - name: Set up sccache
-      uses: mozilla-actions/sccache-action@v0.0.9
+      uses: mozilla-actions/sccache-action@v0.0.10
 
     - name: Restore Rust cache
       uses: Swatinem/rust-cache@v2
@@ -800,7 +800,7 @@ jobs:
         targets: wasm32-unknown-unknown
 
     - name: Set up sccache
-      uses: mozilla-actions/sccache-action@v0.0.9
+      uses: mozilla-actions/sccache-action@v0.0.10
 
     - name: Restore Rust cache
       uses: Swatinem/rust-cache@v2
