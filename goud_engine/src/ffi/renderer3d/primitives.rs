@@ -106,6 +106,92 @@ pub extern "C" fn goud_renderer3d_create_plane(
     .unwrap_or(GOUD_INVALID_OBJECT)
 }
 
+/// Creates an instance of a source plane primitive.
+///
+/// Mirrors `goud_renderer3d_instantiate_model` for primitives. Every instance
+/// of the same source plane renders through one instanced draw call, so a
+/// terrain of identical-geometry tiles collapses to one batch per source plane
+/// (issue #679).
+///
+/// The returned id behaves like an object id for transform updates
+/// (`set_object_position`, `set_object_rotation`, `set_object_scale`,
+/// `destroy_object`). Per-instance materials are not supported -- the source
+/// plane's material/texture is captured when the first instance is created.
+/// Use one source plane per material to draw multiple materials.
+///
+/// # Source plane visibility
+///
+/// The source plane is a regular `Object3D`, so it is also drawn by the
+/// per-object pass. Each pool therefore costs **one extra per-object draw on
+/// top of the instanced draw** (e.g., 9 source planes + 9 pools = 18 draws,
+/// not 9). The pool's draw call collapse is still the dominant win for
+/// large terrains, but if the source plane is camera-visible callers should
+/// either:
+///
+/// * Position the source plane outside the camera frustum / view region so
+///   frustum culling drops it (recommended for terrain templates), or
+/// * Use it as the first visible tile (place it where one of the pool's
+///   instances would have been) so the per-object draw is not "extra".
+///
+/// # Lifecycle
+///
+/// Destroying the source plane via `destroy_object` cascades: the underlying
+/// pool's GPU buffers are freed, every existing instance handle is invalidated,
+/// and subsequent calls to `instantiate_plane` with the same id return
+/// `GOUD_INVALID_OBJECT`. Adding the source plane to a scene via
+/// `add_object_to_scene` makes the entire pool visible in that scene; passing
+/// an instance handle to `add_object_to_scene` resolves to the source plane.
+///
+/// # Interaction with batching flags
+///
+/// Plane-instance pools always render through the instanced path. The
+/// renderer's batching flags do **not** gate them:
+///
+/// - `set_static_batching_enabled` controls the static-batch VBO that combines
+///   non-instanced primitives marked with `set_object_static`. It does **not**
+///   apply to plane-instance pools and does not need to be enabled to benefit
+///   from `instantiate_plane`.
+/// - `set_instancing_enabled` enables instanced rendering for skinned model
+///   instances above the `min_instances_for_batching` threshold. It does
+///   **not** apply to plane-instance pools, which always batch regardless of
+///   the flag or instance count.
+/// - `set_min_instances_for_batching` is the threshold for skinned model
+///   instancing. It is ignored by plane-instance pools.
+///
+/// Primitives created via `create_plane` (without `instantiate_plane`) still
+/// follow the legacy paths: `set_object_static` + `set_static_batching_enabled`
+/// places them in the static-batch VBO; otherwise they render via the
+/// per-object pass.
+///
+/// # Arguments
+/// * `context_id` - The windowed context
+/// * `source_plane_id` - Object id returned by `goud_renderer3d_create_plane`
+///
+/// # Returns
+/// Plane-instance handle on success, GOUD_INVALID_OBJECT on failure.
+#[no_mangle]
+pub extern "C" fn goud_renderer3d_instantiate_plane(
+    context_id: GoudContextId,
+    source_plane_id: u32,
+) -> u32 {
+    if context_id == GOUD_INVALID_CONTEXT_ID {
+        set_last_error(GoudError::InvalidContext);
+        return GOUD_INVALID_OBJECT;
+    }
+
+    if let Err(e) = ensure_renderer3d_state(context_id) {
+        set_last_error(e);
+        return GOUD_INVALID_OBJECT;
+    }
+
+    with_renderer(context_id, |renderer| {
+        renderer
+            .instantiate_plane(source_plane_id)
+            .unwrap_or(GOUD_INVALID_OBJECT)
+    })
+    .unwrap_or(GOUD_INVALID_OBJECT)
+}
+
 /// Creates a 3D sphere object.
 #[no_mangle]
 pub extern "C" fn goud_renderer3d_create_sphere(

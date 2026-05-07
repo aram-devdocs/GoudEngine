@@ -380,7 +380,10 @@ fn test_scene_filtering_limits_rendered_objects() {
     assert_eq!(renderer.stats().draw_calls, 2);
 }
 
-/// Regression test for #630: primitives marked static must still render via
+// Plane-instance tests for #679 live in `tests_plane_instances.rs` to keep
+// this file under the 500-line cap (`scripts/check-rs-line-limit.sh`).
+
+/// Regression for #630: primitives marked static must still render via
 /// the static batch path instead of disappearing.
 #[test]
 fn test_static_primitive_renders_via_batch() {

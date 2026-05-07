@@ -35,7 +35,23 @@ impl Renderer3D {
             eff_fog,
             filtered_lights,
         );
-        for mesh in self.instanced_meshes.values() {
+        // Plane-instance pools (#679) only draw when their source plane is
+        // part of the current scene. Non-pool instanced meshes are always drawn.
+        let scene_object_filter = self
+            .current_scene
+            .and_then(|sid| self.scenes.get(&sid))
+            .map(|s| &s.objects);
+        for (mesh_id, mesh) in &self.instanced_meshes {
+            if mesh.instances.is_empty() {
+                continue;
+            }
+            if let (Some(filter), Some(pool)) =
+                (scene_object_filter, self.plane_instance_pools.get(mesh_id))
+            {
+                if !filter.contains(&pool.source_plane_id) {
+                    continue;
+                }
+            }
             if mesh.texture_id > 0 {
                 if let Some(tm) = texture_manager {
                     tm.bind_texture(mesh.texture_id, 0);

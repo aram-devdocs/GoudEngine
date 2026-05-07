@@ -222,6 +222,7 @@ use crate::ffi::renderer3d::goud_renderer3d_get_skinning_mode;
 use crate::ffi::renderer3d::goud_renderer3d_get_static_batching_enabled;
 use crate::ffi::renderer3d::goud_renderer3d_get_visible_object_count;
 use crate::ffi::renderer3d::goud_renderer3d_instantiate_model;
+use crate::ffi::renderer3d::goud_renderer3d_instantiate_plane;
 use crate::ffi::renderer3d::goud_renderer3d_is_animation_playing;
 use crate::ffi::renderer3d::goud_renderer3d_play_animation;
 use crate::ffi::renderer3d::goud_renderer3d_postprocess_pass_count;
@@ -428,6 +429,11 @@ pub(crate) fn register_goud_game_tools(lua: &Lua, ctx_id: u64) -> LuaResult<()> 
         Ok(goud_renderer3d_create_plane(ctx, arg0 as u32, arg1 as f32, arg2 as f32) as i64)
     })?;
     tbl.set("create_plane", f_create_plane)?;
+    // GoudGame.instantiatePlane
+    let f_instantiate_plane = lua.create_function(move |_, arg0: i64| {
+        Ok(goud_renderer3d_instantiate_plane(ctx, arg0 as u32) as i64)
+    })?;
+    tbl.set("instantiate_plane", f_instantiate_plane)?;
     // GoudGame.createSphere
     let f_create_sphere = lua.create_function(move |_, (arg0, arg1, arg2): (i64, f64, i64)| {
         Ok(goud_renderer3d_create_sphere(ctx, arg0 as u32, arg1 as f32, arg2 as u32) as i64)

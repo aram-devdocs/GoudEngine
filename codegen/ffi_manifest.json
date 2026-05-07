@@ -3695,6 +3695,15 @@
       "return_type": "i32",
       "is_unsafe": true
     },
+    "goud_renderer3d_instantiate_plane": {
+      "source_file": "ffi/renderer3d/primitives.rs",
+      "params": [
+        "context_id: GoudContextId",
+        "source_plane_id: u32"
+      ],
+      "return_type": "u32",
+      "is_unsafe": false
+    },
     "goud_renderer3d_is_animation_playing": {
       "source_file": "ffi/renderer3d/animation.rs",
       "params": [
@@ -6593,5 +6602,5 @@
       "is_unsafe": false
     }
   },
-  "total_count": 669
+  "total_count": 670
 }

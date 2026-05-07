@@ -383,6 +383,8 @@ impl Renderer3D {
 
         self.backend.unbind_shader();
 
+        self.flush_dirty_plane_instance_pools();
+
         self.render_instanced_and_particles(
             &view_arr,
             &proj_arr,

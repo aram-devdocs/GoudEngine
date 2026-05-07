@@ -3244,6 +3244,26 @@ pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_createPlane<'
 
 #[allow(non_snake_case)]
 #[no_mangle]
+pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_instantiatePlane<'local>(
+    mut env: jni::JNIEnv<'local>,
+    _class: jni::objects::JClass<'local>,
+    contextId: jni::sys::jlong,
+    sourcePlaneId: jni::sys::jint,
+) -> jni::sys::jint {
+    crate::jni::helpers::catch_jni_panic(&mut env, "Java_com_goudengine_internal_GoudGameNative_instantiatePlane", 0, |env| -> crate::jni::helpers::JniCallResult<jni::sys::jint> {
+            crate::jni::helpers::prepare_call(env)?;
+            crate::jni::helpers::clear_last_error();
+            let result = crate::ffi::renderer3d::goud_renderer3d_instantiate_plane(goud_context_id_from_jlong(contextId), sourcePlaneId as _);
+            if crate::jni::helpers::last_error_code() != 0 {
+                let _ = crate::jni::helpers::throw_engine_error(env, "goud_renderer3d_instantiate_plane", Some(result as i64));
+                return Err(());
+            }
+            Ok(result as i32)
+    })
+}
+
+#[allow(non_snake_case)]
+#[no_mangle]
 pub extern "system" fn Java_com_goudengine_internal_GoudGameNative_createSphere<'local>(
     mut env: jni::JNIEnv<'local>,
     _class: jni::objects::JClass<'local>,

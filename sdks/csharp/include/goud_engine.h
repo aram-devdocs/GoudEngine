@@ -2729,6 +2729,11 @@ uint32_t goud_renderer3d_create_cube(struct GoudContextId context_id, uint32_t t
 uint32_t goud_renderer3d_create_plane(struct GoudContextId context_id, uint32_t texture_id, float width, float depth);
 
 /**
+ * Creates an instance of a source plane primitive.
+ */
+uint32_t goud_renderer3d_instantiate_plane(struct GoudContextId context_id, uint32_t source_plane_id);
+
+/**
  * Creates a 3D sphere object.
  */
 uint32_t goud_renderer3d_create_sphere(struct GoudContextId context_id, uint32_t texture_id, float diameter, uint32_t segments);
