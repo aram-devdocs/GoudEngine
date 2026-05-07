@@ -146,38 +146,9 @@ impl Default for ParticleEmitterConfig {
     }
 }
 
-/// Last-frame renderer statistics exposed for tests and debugging.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub struct Renderer3DStats {
-    /// Total draw calls recorded by the renderer this frame.
-    pub draw_calls: u32,
-    /// Instanced draw calls recorded this frame.
-    pub instanced_draw_calls: u32,
-    /// Particle instanced draw calls recorded this frame.
-    pub particle_draw_calls: u32,
-    /// Number of instance records submitted this frame.
-    pub active_instances: u32,
-    /// Number of live particles submitted this frame.
-    pub active_particles: u32,
-    /// Total objects in the scene (before culling).
-    pub total_objects: u32,
-    /// Objects that passed frustum culling and were drawn.
-    pub visible_objects: u32,
-    /// Objects culled by frustum test.
-    pub culled_objects: u32,
-    /// Number of material/shader state switches this frame.
-    pub material_switches: u32,
-    /// Number of texture bind operations this frame.
-    pub texture_binds: u32,
-    /// Number of skinned mesh instances rendered this frame.
-    pub skinned_instances: u32,
-    /// Number of bone matrix uploads this frame.
-    pub bone_matrix_uploads: u32,
-    /// Number of animation evaluations this frame.
-    pub animation_evaluations: u32,
-    /// Number of animation evaluations saved (cache hits / LOD skips) this frame.
-    pub animation_evaluations_saved: u32,
-}
+// `Renderer3DStats` lives in `super::stats` so that file stays under the
+// repo's per-file line limit; re-exported here for backward compatibility.
+pub use super::stats::Renderer3DStats;
 
 /// Local-space bounding sphere for frustum culling.
 #[derive(Debug, Clone, Copy)]

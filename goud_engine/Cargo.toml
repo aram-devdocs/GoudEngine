@@ -140,6 +140,10 @@ harness = false
 name = "spatial_grid_benchmarks"
 harness = false
 
+[[bench]]
+name = "scene_culling_benchmarks"
+harness = false
+
 [[test]]
 name = "native_main_thread"
 path = "tests/native_main_thread.rs"
