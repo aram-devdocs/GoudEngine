@@ -301,12 +301,18 @@ impl WgpuBackend {
             (snap + shadow_align - 1) & !(shadow_align - 1)
         };
         let shadow_total = self.shadow_draw_commands.len() * shadow_slot_size;
-        let shadow_offsets: Vec<u32> = (0..self.shadow_draw_commands.len())
-            .map(|i| (i * shadow_slot_size) as u32)
-            .collect();
 
-        // Grow uniform buffers if needed (deduplicate by shader to avoid redundant recreation).
-        let mut grown_shaders = rustc_hash::FxHashSet::default();
+        // Reuse scratch buffer to avoid a per-frame Vec<u32> allocation that
+        // scales with shadow caster count (5KB+ for 1.4k casters).
+        let mut shadow_offsets = std::mem::take(&mut self.scratch_shadow_offsets);
+        shadow_offsets.clear();
+        shadow_offsets
+            .extend((0..self.shadow_draw_commands.len()).map(|i| (i * shadow_slot_size) as u32));
+
+        // Reuse scratch set to dedupe shadow uniform buffer growth per shader,
+        // avoiding a per-frame FxHashSet allocation.
+        let mut grown_shaders = std::mem::take(&mut self.scratch_shadow_grown_shaders);
+        grown_shaders.clear();
         for cmd in &self.shadow_draw_commands {
             if grown_shaders.contains(&cmd.shader) {
                 continue;
@@ -337,6 +343,7 @@ impl WgpuBackend {
                 grown_shaders.insert(cmd.shader);
             }
         }
+        self.scratch_shadow_grown_shaders = grown_shaders;
 
         // Write shadow uniform data to GPU.
         for (i, cmd) in self.shadow_draw_commands.iter().enumerate() {
@@ -433,7 +440,8 @@ impl WgpuBackend {
             }
         }
         self.shadow_draw_commands.clear();
-        // Return the scratch Vec so it is reused next frame.
+        // Return scratch buffers so they are reused next frame.
         self.scratch_shadow_pipeline_keys = shadow_keys;
+        self.scratch_shadow_offsets = shadow_offsets;
     }
 }
