@@ -221,7 +221,7 @@ GoudEngine is working toward an alpha release. The full plan covers physics, aud
 
 [![Star History Chart](https://api.star-history.com/svg?repos=aram-devdocs/GoudEngine&type=Date)](https://star-history.com/#aram-devdocs/GoudEngine&Date)
 
-<sub>Last updated: 2026-05-23 via [GitHub Action](.github/workflows/community-stats.yml)</sub>
+<sub>Last updated: 2026-05-24 via [GitHub Action](.github/workflows/community-stats.yml)</sub>
 <!-- COMMUNITY-STATS:END -->
 
 ## License
