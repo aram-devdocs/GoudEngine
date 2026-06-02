@@ -41,7 +41,7 @@ env_logger = { version = "0.11.10", optional = true }
 gilrs = { version = "0.11", optional = true }
 gl = { version = "0.14.0", optional = true }
 glfw = { version = "0.59.0", optional = true }
-log = "0.4.17"
+log = "0.4.30"
 jni = { version = "0.21", features = ["invocation"], optional = true }
 mlua = { version = "0.11", optional = true, default-features = false, features = ["lua54", "vendored"] }
 thiserror = "2.0.12"
@@ -88,7 +88,7 @@ web-sys = { version = "0.3", optional = true, features = [
     "Blob", "Url",
 ] }
 sdl2 = { version = "0.38", optional = true, features = ["bundled", "raw-window-handle"] }
-bumpalo = "3.20.2"
+bumpalo = "3.20.3"
 smallvec = "1.15.1"
 rustc-hash = "2"
 
