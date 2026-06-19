@@ -753,6 +753,9 @@ namespace GoudEngine
         public static extern uint goud_renderer3d_create_plane(GoudContextId context_id, uint texture_id, float width, float depth);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint goud_renderer3d_instantiate_plane(GoudContextId context_id, uint source_plane_id);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern uint goud_renderer3d_create_sphere(GoudContextId context_id, uint texture_id, float diameter, uint segments);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

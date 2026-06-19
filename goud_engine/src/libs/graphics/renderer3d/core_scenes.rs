@@ -49,13 +49,17 @@ impl Renderer3D {
 
     /// Add an object to a scene. Returns `true` on success.
     ///
-    /// Fails if the scene or object does not exist.
+    /// Fails if the scene or object does not exist. When `object_id` is a plane
+    /// instance handle (created via `instantiate_plane`), the corresponding
+    /// source plane is added to the scene instead -- the entire pool's draw
+    /// becomes visible in the scene.
     pub fn add_object_to_scene(&mut self, scene_id: u32, object_id: u32) -> bool {
-        if !self.objects.contains_key(&object_id) {
+        let resolved = self.resolve_scene_object_id(object_id);
+        if !self.objects.contains_key(&resolved) {
             return false;
         }
         if let Some(scene) = self.scenes.get_mut(&scene_id) {
-            scene.add_object(object_id);
+            scene.add_object(resolved);
             true
         } else {
             false
@@ -65,11 +69,22 @@ impl Renderer3D {
     /// Remove an object from a scene. Returns `true` if the scene existed and contained
     /// the object.
     pub fn remove_object_from_scene(&mut self, scene_id: u32, object_id: u32) -> bool {
+        let resolved = self.resolve_scene_object_id(object_id);
         if let Some(scene) = self.scenes.get_mut(&scene_id) {
-            scene.remove_object(object_id)
+            scene.remove_object(resolved)
         } else {
             false
         }
+    }
+
+    /// Map a plane-instance handle to its source plane id; pass-through otherwise.
+    fn resolve_scene_object_id(&self, id: u32) -> u32 {
+        if let Some(&(mesh_id, _)) = self.plane_instance_index.get(&id) {
+            if let Some(pool) = self.plane_instance_pools.get(&mesh_id) {
+                return pool.source_plane_id;
+            }
+        }
+        id
     }
 
     /// Add a model to a scene. Returns `true` on success.

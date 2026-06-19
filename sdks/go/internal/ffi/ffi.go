@@ -2361,6 +2361,11 @@ func GoudRenderer3dInstantiateModelBatch(context_id C.GoudContextId, source_mode
 	return int32(C.goud_renderer3d_instantiate_model_batch(context_id, C.uint32_t(source_model_id), C.uint32_t(count), out_ids))
 }
 
+// GoudRenderer3dInstantiatePlane wraps goud_renderer3d_instantiate_plane.
+func GoudRenderer3dInstantiatePlane(context_id C.GoudContextId, source_plane_id uint32) uint32 {
+	return uint32(C.goud_renderer3d_instantiate_plane(context_id, C.uint32_t(source_plane_id)))
+}
+
 // GoudRenderer3dIsAnimationPlaying wraps goud_renderer3d_is_animation_playing.
 func GoudRenderer3dIsAnimationPlaying(context_id C.GoudContextId, instance_id uint32) bool {
 	return bool(C.goud_renderer3d_is_animation_playing(context_id, C.uint32_t(instance_id)))
