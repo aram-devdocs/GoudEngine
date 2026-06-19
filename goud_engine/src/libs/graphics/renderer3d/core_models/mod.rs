@@ -142,6 +142,7 @@ impl Renderer3D {
                     is_static: false,
                 },
             );
+            self.spatial_index_refresh(object_id);
 
             let material = if let Some(mesh_mat) = material_opt {
                 Material3D {

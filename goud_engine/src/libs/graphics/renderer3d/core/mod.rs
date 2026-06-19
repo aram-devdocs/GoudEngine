@@ -165,10 +165,19 @@ pub struct Renderer3D {
     /// Object IDs that were actually included in the static batch (not overflowed).
     /// Used to distinguish batched objects from overflow objects that need individual draws.
     pub(in crate::libs::graphics::renderer3d) static_batched_ids: FxHashSet<u32>,
+    /// Sparse uniform-grid spatial index over scene objects, used to shrink
+    /// the per-frame frustum-cull candidate set. Maintained incrementally
+    /// alongside `objects` so culling does not have to scan the full registry.
+    pub(in crate::libs::graphics::renderer3d) spatial_index: super::spatial_index::SpatialIndex,
+    /// Reusable scratch buffer of cull candidate IDs gathered from the
+    /// spatial index each frame; reset at the start of every render.
+    pub(in crate::libs::graphics::renderer3d) scratch_cull_candidates: Vec<u32>,
 }
 
 // StaticBatchGroup is defined in core_static_batch.rs
 pub(in crate::libs::graphics::renderer3d) use super::core_static_batch::StaticBatchGroup;
+
+mod spatial;
 
 #[allow(missing_docs)]
 impl Renderer3D {
@@ -364,6 +373,10 @@ impl Renderer3D {
             static_batch_groups: Vec::new(),
             static_batch_vertex_count: 0,
             static_batched_ids: FxHashSet::default(),
+            spatial_index: super::spatial_index::SpatialIndex::new(
+                super::spatial_index::DEFAULT_CELL_SIZE,
+            ),
+            scratch_cull_candidates: Vec::with_capacity(1024),
         })
     }
 }
