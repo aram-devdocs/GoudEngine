@@ -214,7 +214,9 @@ pub extern "C" fn goud_entity_despawn(context_id: GoudContextId, entity_id: u64)
 
     if despawned {
         // Free the entity's dynamic components so storage does not leak and a
-        // recycled index cannot inherit this entity's slots.
+        // recycled index cannot inherit this entity's slots. Both the FFI
+        // component layer and the component_ops layer keep per-context storage.
+        crate::ffi::component::purge_context_entity(context_id, entity_bits);
         crate::component_ops::purge_context_entity(
             crate::component_ops::context_key(context_id),
             entity_bits,
@@ -295,10 +297,12 @@ pub unsafe extern "C" fn goud_entity_despawn_batch(
         context.world_mut().despawn_batch(&entities)
     };
 
-    // Purge each input entity's components. Every entity that was alive is now
-    // despawned; purging an already-dead or unknown entity is a harmless no-op.
+    // Purge each input entity's components from both storage layers. Every entity
+    // that was alive is now despawned; purging an already-dead or unknown entity
+    // is a harmless no-op.
     let key = crate::component_ops::context_key(context_id);
     for &bits in &entity_bits {
+        crate::ffi::component::purge_context_entity(context_id, bits);
         crate::component_ops::purge_context_entity(key, bits);
     }
 
