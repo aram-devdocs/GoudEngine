@@ -56,5 +56,9 @@
       "Bash(rm -rf ~:*)",
       "Bash(chmod -R 777:*)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "goudengine"
+  ],
+  "enableAllProjectMcpServers": true
 }
