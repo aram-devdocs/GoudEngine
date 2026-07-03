@@ -10,11 +10,13 @@ if [[ -z "$CMD" ]]; then
 fi
 
 BLOCKED_PATTERNS=(
-  # Destructive filesystem removals targeting system/home roots. The trailing
-  # boundary keeps legitimate deletes like `rm -rf ./target` from matching.
-  'rm\s+-rf\s+(--no-preserve-root\s+)?/($|\s|[a-zA-Z]+(/|\s|$))'
-  'rm\s+-rf\s+~'
-  'rm\s+-rf\s+\$HOME'
+  # Destructive removals of true system roots or the bare home dir. Project-path
+  # deletes (including absolute paths under /Users, /home, /private/tmp) are
+  # allowed — only the enumerated dangerous roots (and their subpaths) match.
+  'rm\s+-rf\s+(--no-preserve-root\s+)?/\s*($|;)'
+  'rm\s+-rf\s+(--no-preserve-root\s+)?/(usr|etc|bin|sbin|lib|var|boot|dev|sys|proc|opt|root|System|Library|Applications|Volumes)(/|\s|$)'
+  'rm\s+-rf\s+~(\s|$)'
+  'rm\s+-rf\s+\$HOME(\s|$)'
   'rm\s+-rf\s+\.\s*(\*|$)'
   # Force-push to protected branches
   'git\s+push\s+.*(--force|-f)\b.*\b(main|master)\b'
