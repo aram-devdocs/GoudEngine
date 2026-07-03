@@ -22,6 +22,8 @@
 - [Development Guide](development/guide.md)
 - [AI Agent Setup](development/ai-setup.md)
 - [Versioning](development/versioning.md)
+- [Engineering Constitution](development/constitution.md)
+- [Governance and Enforcement](development/governance.md)
 
 # Architecture
 
