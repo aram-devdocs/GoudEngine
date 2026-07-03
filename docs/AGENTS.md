@@ -10,10 +10,14 @@ The `src/` directory contains the mdBook source files. `book.toml` at the repo r
 
 - `src/SUMMARY.md` — Table of contents (defines book structure)
 - `src/introduction.md` — Landing page
-- `src/getting-started/` — SDK-specific quickstart guides (C#, Python, Rust, TypeScript)
-- `src/development/` — Building, development workflow, AI agent setup
-- `src/architecture/` — Layer architecture, adding new language targets
-- `src/reference/` — Tooling reference (husky-rs, cbindgen)
+- `src/getting-started/` — Per-language quickstart guides, one per SDK (C#, Python, TypeScript, Go, Swift, C/C++, Kotlin, Lua, Rust) plus an `index.md`
+- `src/architecture/` — Layer architecture, provider traits, adding new language targets
+- `src/development/` — Dev setup, building, development workflow, AI agent setup
+- `src/features/` — Engine feature guides (animation, audio, physics, networking, UI, and more)
+- `src/guides/` — Task-oriented guides (first game, deployment, showcase, FAQ)
+- `src/reference/` — Tooling and API reference (husky-rs, cbindgen, API)
+- `src/rfcs/` — Design RFCs and the RFC template
+- `src/generated/` — Generated content (showcase, snippets, videos); do not hand-edit
 - `diagrams/` — Auto-generated module dependency graphs
 
 ## Building the Book

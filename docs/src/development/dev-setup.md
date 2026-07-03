@@ -1,6 +1,6 @@
 # Dev Environment Setup
 
-GoudEngine builds on Rust with SDK bindings for C#, Python, and TypeScript. The sections below cover system dependencies, toolchain installation, and verification.
+GoudEngine builds on Rust with SDK bindings for ten languages: C#, Python, TypeScript, Go, Swift, C, C++, Kotlin, Lua, and Rust. The sections below cover system dependencies, toolchain installation, and verification.
 
 ## Prerequisites
 
