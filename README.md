@@ -33,7 +33,7 @@ Pick your language and follow the guide -- you'll have a window open in 5 minute
 | C | Header-only | [Getting Started](docs/src/getting-started/c-cpp.md) | [C examples](examples/c/) |
 | C++ | CMake / Meson | [Getting Started](docs/src/getting-started/c-cpp.md) | [C++ examples](examples/cpp/) |
 | Go | `go get github.com/aram-devdocs/GoudEngine/sdks/go` | [Getting Started](docs/src/getting-started/go.md) | [Go examples](examples/go/) |
-| Kotlin | `implementation("io.github.aram-devdocs:goudengine:0.0.839")` | [Getting Started](docs/src/getting-started/kotlin.md) | [Kotlin examples](examples/kotlin/) |
+| Kotlin | `implementation("io.github.aram-devdocs:goudengine:0.0.841")` | [Getting Started](docs/src/getting-started/kotlin.md) | [Kotlin examples](examples/kotlin/) |
 | Swift | Swift Package Manager | [Getting Started](docs/src/getting-started/swift.md) | [Swift examples](examples/swift/) |
 | Lua | `luarocks install goudengine` | [Getting Started](docs/src/getting-started/lua.md) | [Lua examples](examples/lua/) |
 
@@ -100,8 +100,8 @@ Desktop/native SDKs now expose the shared debugger runtime surface for snapshots
 - Enable it through config before creating the game or headless context.
 - Use the raw JSON accessors for the full snapshot, capture, replay, and metrics payloads.
 - Use the thin helpers to pause, step, change time scale, inject input, and toggle debug draw.
-- TypeScript browser/WASM builds do not support the debugger runtime in this batch.
-- The runtime is local-only. `goudengine-mcp` attaches over local IPC instead of running inside the game process.
+- TypeScript browser/WASM builds are supported: `goudengine-mcp` attaches to them over a WebSocket relay route rather than local IPC.
+- The runtime is local-only. `goudengine-mcp` attaches from outside the game process, over local IPC for native SDKs and over the WebSocket relay for browser/WASM.
 
 See [Debugger Runtime Guide](docs/src/guides/debugger-runtime.md) for scope, determinism limits, artifact formats, and the MCP workflow.
 
@@ -168,7 +168,7 @@ See `codegen/AGENTS.md` for details.
 
 | Directory | Purpose |
 |-----------|---------|
-| `libs/` | Core libraries (graphics, platform, ECS, logger) |
+| `goud_engine/src/libs/` | Core libraries (error, graphics, networking, platform, providers) |
 | `goud_engine/` | Engine crate (core, assets, SDK, FFI) |
 | `goud_engine_macros/` | Procedural macros |
 | `sdks/` | Language SDKs (Rust, C#, Python, TypeScript, C, C++, Go, Kotlin, Swift, Lua) |
