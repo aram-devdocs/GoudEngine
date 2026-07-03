@@ -4,11 +4,11 @@ use crate::core::error::GoudError;
 use crate::ffi::context::GoudContextId;
 use crate::ffi::window::{with_window_state, WindowState};
 use crate::libs::graphics::renderer3d::Renderer3D;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 thread_local! {
-    pub(super) static RENDERER3D_STATE: std::cell::RefCell<HashMap<(u32, u32), Renderer3D>> =
-        std::cell::RefCell::new(HashMap::new());
+    pub(super) static RENDERER3D_STATE: std::cell::RefCell<FxHashMap<(u32, u32), Renderer3D>> =
+        std::cell::RefCell::new(FxHashMap::default());
 }
 
 /// Ensures 3D renderer state is initialized for a context.

@@ -39,7 +39,7 @@
 //! assert_eq!(world.archetype_count(), 1); // Empty archetype always exists
 //! ```
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use super::archetype::{ArchetypeGraph, ArchetypeId};
 use super::component::ComponentId;
@@ -132,7 +132,7 @@ pub struct World {
     ///
     /// Every alive entity has an entry here. When an entity's components
     /// change, it moves to a new archetype and this mapping is updated.
-    entity_archetypes: HashMap<Entity, ArchetypeId>,
+    entity_archetypes: FxHashMap<Entity, ArchetypeId>,
 
     /// Type-erased component storage.
     ///
@@ -143,7 +143,7 @@ pub struct World {
     /// Type safety is ensured by:
     /// 1. Only inserting `SparseSet<T>` for component type T
     /// 2. Downcasting with the correct type when accessing
-    storages: HashMap<ComponentId, ComponentStorageEntry>,
+    storages: FxHashMap<ComponentId, ComponentStorageEntry>,
 
     /// Resource storage.
     ///
@@ -165,7 +165,7 @@ pub struct World {
     builtins_serializable_registered: bool,
 
     /// Reverse lookup: type name -> ComponentId for deserialization.
-    serializable_names: HashMap<String, ComponentId>,
+    serializable_names: FxHashMap<String, ComponentId>,
 
     /// Current change tick, incremented at system boundaries.
     change_tick: u32,
@@ -197,13 +197,13 @@ impl World {
         Self {
             entities: EntityAllocator::new(),
             archetypes: ArchetypeGraph::new(),
-            entity_archetypes: HashMap::new(),
-            storages: HashMap::new(),
+            entity_archetypes: FxHashMap::default(),
+            storages: FxHashMap::default(),
             resources: Resources::new(),
             non_send_resources: NonSendResources::new(),
             builtins_registered: false,
             builtins_serializable_registered: false,
-            serializable_names: HashMap::new(),
+            serializable_names: FxHashMap::default(),
             change_tick: 0,
             last_change_tick: 0,
         }
@@ -233,13 +233,19 @@ impl World {
         Self {
             entities: EntityAllocator::with_capacity(entity_capacity),
             archetypes: ArchetypeGraph::new(),
-            entity_archetypes: HashMap::with_capacity(entity_capacity),
-            storages: HashMap::with_capacity(component_type_capacity),
+            entity_archetypes: FxHashMap::with_capacity_and_hasher(
+                entity_capacity,
+                Default::default(),
+            ),
+            storages: FxHashMap::with_capacity_and_hasher(
+                component_type_capacity,
+                Default::default(),
+            ),
             resources: Resources::new(),
             non_send_resources: NonSendResources::new(),
             builtins_registered: false,
             builtins_serializable_registered: false,
-            serializable_names: HashMap::new(),
+            serializable_names: FxHashMap::default(),
             change_tick: 0,
             last_change_tick: 0,
         }
