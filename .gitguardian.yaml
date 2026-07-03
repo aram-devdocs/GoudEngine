@@ -1,0 +1,8 @@
+version: 2
+
+# The hook fixtures under .claude/hooks/fixtures/ carry deliberately fake
+# AWS/GitHub-shaped tokens so the secret-scanner hook has something to catch.
+# They are not real credentials — exclude them from secret scanning.
+secret:
+  ignored-paths:
+    - ".claude/hooks/fixtures/**"

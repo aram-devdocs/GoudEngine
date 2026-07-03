@@ -1,9 +1,5 @@
-# Allowlist for gitleaks. Each entry is a fingerprint (commit:path:rule:line)
-# or a path/rule the scanner should ignore. Add only vetted false positives —
-# test fixtures with fake credentials, documentation examples — never real
-# secrets. Keep each entry commented with why it is safe.
-
-# Hook fixtures deliberately contain fake AWS/GitHub-shaped tokens to exercise
-# the secret-scanner; they are not real credentials.
-.claude/hooks/fixtures/secret-scanner/write-secret.expect2.json
-.claude/hooks/fixtures/secret-scanner/multiedit-secret.expect2.json
+# gitleaks fingerprint allowlist (commit:path:rule:line entries).
+#
+# Path-based allowlisting for the intentional hook fixtures lives in
+# .gitleaks.toml ([allowlist].paths) instead, which is stable across commits.
+# Add fingerprints here only for one-off vetted findings.
