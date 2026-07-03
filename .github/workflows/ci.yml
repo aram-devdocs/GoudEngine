@@ -564,6 +564,15 @@ jobs:
         path: 'sdks/csharp.tests/TestResults/${{ matrix.os }}/coverage/coverage.cobertura.xml'
         retention-days: 3
 
+    - name: Upload C# coverage to Codecov
+      if: matrix.os == 'ubuntu-latest'
+      uses: codecov/codecov-action@v6
+      with:
+        file: sdks/csharp.tests/TestResults/${{ matrix.os }}/coverage/coverage.cobertura.xml
+        flags: dotnet
+        name: dotnet-coverage
+        fail_ci_if_error: false
+
   # Build check to ensure everything compiles together
   integration-build:
     name: Integration Build Check

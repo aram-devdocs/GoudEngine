@@ -15,7 +15,7 @@ jobs:
       (github.event_name == 'pull_request' && github.event.label.name == 'benchmark')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install system dependencies
         run: |
@@ -23,9 +23,7 @@ jobs:
           sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev
 
       - name: Install Rust stable
-        uses: dtolnay/rust-action/setup@v1
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Rust cache
         uses: Swatinem/rust-cache@v2

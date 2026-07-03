@@ -1,5 +1,7 @@
 * @aramhammoudeh
 goud_engine/src/ffi/ @aramhammoudeh
+codegen/ @aramhammoudeh
+tools/ @aramhammoudeh
 sdks/ @aramhammoudeh
 .github/ @aramhammoudeh
 CLAUDE.md @aramhammoudeh
