@@ -258,9 +258,49 @@ jobs:
           // Add summary
           console.log(`PR size: +${additions} -${deletions} (total: ${total}) - Label: ${sizeLabel}`);
 
+    - name: Enforce PR size limit
+      uses: actions/github-script@v9
+      with:
+        script: |
+          const { data: pr } = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.issue.number
+          });
+
+          const total = pr.additions + pr.deletions;
+          const changedFiles = pr.changed_files;
+          const hasOverride = (pr.labels || []).some(l => l.name === 'size-override');
+          const oversized = total > 4000 || changedFiles > 100;
+
+          if (oversized && !hasOverride) {
+            core.setFailed(
+              `PR is oversized: +${pr.additions} -${pr.deletions} (${total} changed lines) across ${changedFiles} files. ` +
+              `Limits are 4000 changed lines or 100 changed files. ` +
+              `Please split this PR into smaller, focused changes, or apply the 'size-override' label with a written justification if this size is unavoidable.`
+            );
+          } else {
+            console.log(`PR size within limits: ${total} changed lines across ${changedFiles} files (size-override present: ${hasOverride}).`);
+          }
+
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Run gitleaks
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
+
   validate-success:
     name: PR Validation Success
-    needs: [validate-pr-title, validate-release-config, check-file-size, check-rs-line-limit, check-ai-config, check-todos, lint-markdown, pr-size-labeler]
+    needs: [validate-pr-title, validate-release-config, check-file-size, check-rs-line-limit, check-ai-config, check-todos, lint-markdown, pr-size-labeler, secret-scan]
     runs-on: ubuntu-latest
     if: always()
 
@@ -271,7 +311,8 @@ jobs:
            [[ "${{ needs.validate-release-config.result }}" == "failure" ]] || \
            [[ "${{ needs.check-file-size.result }}" == "failure" ]] || \
            [[ "${{ needs.check-rs-line-limit.result }}" == "failure" ]] || \
-           [[ "${{ needs.check-ai-config.result }}" == "failure" ]]; then
+           [[ "${{ needs.check-ai-config.result }}" == "failure" ]] || \
+           [[ "${{ needs.secret-scan.result }}" == "failure" ]]; then
           echo "PR validation failed!"
           exit 1
         fi

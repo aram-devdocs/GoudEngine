@@ -1,0 +1,9 @@
+# Allowlist for gitleaks. Each entry is a fingerprint (commit:path:rule:line)
+# or a path/rule the scanner should ignore. Add only vetted false positives —
+# test fixtures with fake credentials, documentation examples — never real
+# secrets. Keep each entry commented with why it is safe.
+
+# Hook fixtures deliberately contain fake AWS/GitHub-shaped tokens to exercise
+# the secret-scanner; they are not real credentials.
+.claude/hooks/fixtures/secret-scanner/write-secret.expect2.json
+.claude/hooks/fixtures/secret-scanner/multiedit-secret.expect2.json
