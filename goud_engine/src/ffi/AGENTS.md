@@ -5,19 +5,15 @@
 C-compatible FFI exports consumed by the C# and Python SDKs. csbindgen auto-generates
 C# bindings from these exports on `cargo build`.
 
-## Files
+## Layout
 
-- `context.rs` — Engine context creation/destruction
-- `entity.rs` — Entity creation, deletion, component attachment
-- `renderer.rs` — 2D rendering FFI functions
-- `renderer3d.rs` — 3D rendering FFI functions
-- `component.rs` — Generic component operations
-- `component_transform2d.rs` — Transform2D component FFI
-- `component_sprite.rs` — Sprite component FFI
-- `collision.rs` — Collision detection FFI
-- `input.rs` — Input state queries
-- `window.rs` — Window management
-- `types.rs` — `#[repr(C)]` type definitions shared across FFI
+Most domains are directories (a `mod.rs` plus focused submodules), not flat `.rs` files. Run `ls` here for the current set. Key entries:
+
+- `context/`, `entity/` — engine context and entity lifecycle FFI
+- `renderer/`, `renderer3d/` — 2D and 3D rendering FFI
+- `component/`, `component_transform2d/`, `component_sprite/`, `component_sprite_animator/`, `component_text/` — component FFI
+- `input/`, `window/`, `physics/`, `animation/`, `audio/`, `network/`, `ui/` — subsystem FFI
+- `collision.rs`, `types.rs` — flat modules; `types.rs` holds `#[repr(C)]` types shared across FFI
 - `mod.rs` — FFI module registration
 
 ## Rules (MANDATORY)
@@ -32,9 +28,9 @@ C# bindings from these exports on `cargo build`.
 ## After Changes
 
 1. Run `cargo build` to trigger csbindgen (updates C# `NativeMethods.g.cs`)
-2. Manually update `sdks/python/goudengine/generated/_ffi.py`
-3. Update both C# and Python SDK wrappers
+2. Run `./codegen.sh` to regenerate all SDK bindings — never hand-edit generated files such as `sdks/python/goudengine/generated/_ffi.py`
+3. Update the hand-written SDK wrappers that call the regenerated bindings
 
 ## Dependencies
 
-Layer 3 (FFI). May import from core/, ecs/, assets/, libs/. NEVER import from sdk/.
+Layer 5 (FFI). May import from core/, ecs/, assets/, libs/, and Layer 4 engine modules. This is the outermost boundary; no engine module imports from here.

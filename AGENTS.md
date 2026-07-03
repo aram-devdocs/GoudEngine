@@ -30,9 +30,11 @@ See `.agents/rules/orchestrator-protocol.md` for full workflow and `/gh-issue` d
 | engine-lead | opus | Direct implementation for Rust engine and core modules |
 | integration-lead | opus | Direct implementation for FFI, SDK, and codegen work |
 | quick-fix | haiku | Tightly scoped low-risk fixes |
-| reviewer | sonnet | Single review pass for requirements, tests, and major regressions |
+| reviewer | sonnet | Single review pass for requirements, tests, and major quality regressions |
 | security-auditor | opus | FFI, unsafe, pointer, and ownership-boundary review |
 | debugger | sonnet | Root-cause analysis for failing verification or runtime issues |
+
+This table is a curated subset. The full 10-role catalog lives in `.agents/agent-catalog.toml`; the `default` orchestrator and the three strict `/gh-issue` gate reviewers (spec-reviewer, code-quality-reviewer, architecture-validator) are omitted here on purpose.
 
 ## Agent Config Generation
 
@@ -49,4 +51,4 @@ Read only rules matching your change area: `.agents/rules/*.md`.
 
 ## Local AGENTS Files
 
-repo root, `codegen/`, `goud_engine/src/ffi/`, `sdks/typescript/`, `examples/`.
+Nested `AGENTS.md` files exist throughout the tree (repo root, `codegen/`, `goud_engine/src/ffi/`, `sdks/`, `examples/`, and more). The nearest-ancestor file wins for any given path.
