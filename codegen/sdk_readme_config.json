@@ -157,7 +157,7 @@
         "[![Maven Central](https://img.shields.io/maven-central/v/io.github.aram-devdocs/goudengine.svg)](https://central.sonatype.com/artifact/io.github.aram-devdocs/goudengine)"
       ],
       "install_command": null,
-      "install_label": "### Gradle (Maven Central)\n\n```kotlin\ndependencies {\n    implementation(\"io.github.aram-devdocs:goudengine:0.0.839\")\n}\n```\n\n### From Source\n\n```bash\ncargo build --release -p goud-engine-core\npython3 codegen/gen_kotlin.py\ncd sdks/kotlin && ./gradlew build --no-daemon\n```",
+      "install_label": "### Gradle (Maven Central)\n\n```kotlin\ndependencies {\n    implementation(\"io.github.aram-devdocs:goudengine:0.0.841\")\n}\n```\n\n### From Source\n\n```bash\ncargo build --release -p goud-engine-core\npython3 codegen/gen_kotlin.py\ncd sdks/kotlin && ./gradlew build --no-daemon\n```",
       "install_from_source": null,
       "quick_start_file": "kotlin.kt",
       "getting_started_path": "kotlin.md",
