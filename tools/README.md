@@ -11,13 +11,19 @@ all Rust source files in `goud_engine/src/`.
 ### What It Checks
 
 Dependencies must flow DOWN the layer hierarchy. The tool fails if any
-upward import is detected.
+upward import is detected. Layers are ordered from lowest to highest; a
+layer MUST only import from layers below it.
 
 | Layer | Directories | May Import From |
 |-------|-------------|-----------------|
-| 1 (Core) | libs/, core/, ecs/, assets/ | Nothing in Layer 2 or 3 |
-| 2 (Engine) | sdk/ | Layer 1 only |
-| 3 (FFI) | ffi/, wasm/ | Layer 1 and 2 |
+| 1 (Foundation) | core/ | Nothing |
+| 2 (Libs) | libs/ | Foundation |
+| 3 (Services) | ecs/, assets/ | Foundation, Libs |
+| 4 (Engine) | sdk/, rendering/, component_ops/, context_registry/ | Foundation, Libs, Services |
+| 5 (FFI) | ffi/, wasm/ | All lower layers |
+
+The canonical definition lives in `tools/lint_layers.rs`; see
+`.agents/rules/dependency-hierarchy.md` for the rationale.
 
 ### Usage
 

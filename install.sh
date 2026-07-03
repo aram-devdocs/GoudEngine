@@ -1,5 +1,9 @@
 #!/bin/bash
 # install.sh
+#
+# Fail fast so a failed dependency install does not leave a half-configured
+# environment that looks successful.
+set -euo pipefail
 
 echo "Installing GoudEngine dependencies..."
 

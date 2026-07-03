@@ -46,6 +46,14 @@ increment_version() {
     echo "$major.$minor.$patch"
 }
 
+# Portable in-place sed. GNU sed uses `-i`; BSD/macOS sed requires `-i ''`.
+# Detect once and expand SED_INPLACE as the command prefix.
+if sed --version >/dev/null 2>&1; then
+    SED_INPLACE=(sed -i)
+else
+    SED_INPLACE=(sed -i '')
+fi
+
 # Get the flag if provided
 FLAG=$1
 
@@ -56,28 +64,28 @@ NEW_VERSION=$(increment_version "$CURRENT_VERSION" "$FLAG")
 echo "Updating version from $CURRENT_VERSION to $NEW_VERSION"
 
 # Update Cargo.toml
-sed -i '' "s/version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" goud_engine/Cargo.toml
+"${SED_INPLACE[@]}" "s/version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" goud_engine/Cargo.toml
 
 # Update GoudEngine.csproj
-sed -i '' "s/<Version>$CURRENT_VERSION<\/Version>/<Version>$NEW_VERSION<\/Version>/" sdks/csharp/GoudEngine.csproj
+"${SED_INPLACE[@]}" "s/<Version>$CURRENT_VERSION<\/Version>/<Version>$NEW_VERSION<\/Version>/" sdks/csharp/GoudEngine.csproj
 
 # Update all .csproj files in examples directory - handle both formats
-find examples -name "*.csproj" -type f -exec sed -i '' -e "s/<PackageReference Include=\"GoudEngine\" Version=\"[0-9]*\.[0-9]*\.[0-9]*\" \/>/<PackageReference Include=\"GoudEngine\" Version=\"$NEW_VERSION\" \/>/" -e "s/<PackageReference Include=\"GoudEngine\" Version=\"[0-9]*\.[0-9]*\.[0-9]*\">/<PackageReference Include=\"GoudEngine\" Version=\"$NEW_VERSION\">/" {} \;
+find examples -name "*.csproj" -type f -exec "${SED_INPLACE[@]}" -e "s/<PackageReference Include=\"GoudEngine\" Version=\"[0-9]*\.[0-9]*\.[0-9]*\" \/>/<PackageReference Include=\"GoudEngine\" Version=\"$NEW_VERSION\" \/>/" -e "s/<PackageReference Include=\"GoudEngine\" Version=\"[0-9]*\.[0-9]*\.[0-9]*\">/<PackageReference Include=\"GoudEngine\" Version=\"$NEW_VERSION\">/" {} \;
 
 # Update codegen schema version
-sed -i '' "s/\"version\": \"[0-9]*\.[0-9]*\.[0-9]*\"/\"version\": \"$NEW_VERSION\"/" codegen/goud_sdk.schema.json
+"${SED_INPLACE[@]}" "s/\"version\": \"[0-9]*\.[0-9]*\.[0-9]*\"/\"version\": \"$NEW_VERSION\"/" codegen/goud_sdk.schema.json
 
 # Update TypeScript package.json version
-sed -i '' "s/\"version\": \"[0-9]*\.[0-9]*\.[0-9]*\"/\"version\": \"$NEW_VERSION\"/" sdks/typescript/package.json
+"${SED_INPLACE[@]}" "s/\"version\": \"[0-9]*\.[0-9]*\.[0-9]*\"/\"version\": \"$NEW_VERSION\"/" sdks/typescript/package.json
 
 # Update TypeScript native Cargo.toml version
-sed -i '' "s/^version = \"[0-9]*\.[0-9]*\.[0-9]*\"/version = \"$NEW_VERSION\"/" sdks/typescript/native/Cargo.toml
+"${SED_INPLACE[@]}" "s/^version = \"[0-9]*\.[0-9]*\.[0-9]*\"/version = \"$NEW_VERSION\"/" sdks/typescript/native/Cargo.toml
 
 # Update Rust SDK Cargo.toml version
-sed -i '' "s/^version = \"[0-9]*\.[0-9]*\.[0-9]*\"/version = \"$NEW_VERSION\"/" sdks/rust/Cargo.toml
+"${SED_INPLACE[@]}" "s/^version = \"[0-9]*\.[0-9]*\.[0-9]*\"/version = \"$NEW_VERSION\"/" sdks/rust/Cargo.toml
 
 # Update Rust SDK dependency version constraint
-sed -i '' "s/version = \"=$CURRENT_VERSION\"/version = \"=$NEW_VERSION\"/" sdks/rust/Cargo.toml
+"${SED_INPLACE[@]}" "s/version = \"=$CURRENT_VERSION\"/version = \"=$NEW_VERSION\"/" sdks/rust/Cargo.toml
 
 # Update version.txt (used by release-please)
 echo "$NEW_VERSION" > version.txt
