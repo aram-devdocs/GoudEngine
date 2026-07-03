@@ -141,6 +141,9 @@ jobs:
     steps:
     - uses: actions/checkout@v6
 
+    - name: Unit-test the agent-config generator
+      run: python3 scripts/test_sync_agent_configs.py
+
     - name: Verify generated agent wrappers are in sync
       run: |
         python3 scripts/sync-agent-configs.py --check
