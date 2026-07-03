@@ -55,6 +55,7 @@ find .agents/skills/ -name "SKILL.md" -type f 2>/dev/null
 | `/session-continuity` | Manage session state across context compactions | Yes |
 | `/goudengine-debugging` | Debugging workflow and diagnostic checklists for runtime via MCP tools | Yes |
 | `/goudengine-mcp-server` | Setup, tool reference, and troubleshooting for the MCP debugger server | Yes |
+| `/gh-issue` | Strict issue-delivery workflow: worktrees, sequential review gates, PR template, Claude review loop, CI follow-through | Yes |
 
 ## Matching Skills to Tasks
 
@@ -71,6 +72,7 @@ find .agents/skills/ -name "SKILL.md" -type f 2>/dev/null
 | Starting/resuming a session | `/session-continuity` |
 | Debugging a running game | `/goudengine-debugging` |
 | Setting up MCP server | `/goudengine-mcp-server` |
+| Issue-driven change with full review gates | `/gh-issue` |
 | Finding a skill | `/find-skills` (this one) |
 
 ## Adding New Skills
