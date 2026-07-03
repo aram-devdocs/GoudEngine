@@ -189,25 +189,36 @@ pub extern "C" fn goud_entity_despawn(context_id: GoudContextId, entity_id: u64)
         return GoudResult::from_error(GoudError::EntityNotFound);
     }
 
-    let mut registry = match get_context_registry().lock() {
-        Ok(r) => r,
-        Err(_) => {
-            return GoudResult::from_error(GoudError::InternalError(
-                "Failed to lock context registry".to_string(),
-            ));
-        }
-    };
-    let context = match registry.get_mut(context_id) {
-        Some(guard) => guard,
-        None => {
-            return GoudResult::from_error(GoudError::InvalidContext);
-        }
+    let entity_bits = GoudEntityId::new(entity_id).bits();
+    let entity = Entity::from_bits(entity_bits);
+
+    // Despawn under the registry lock, then release it before touching the
+    // component storage (lock order: registry -> storage, never nested here).
+    let despawned = {
+        let mut registry = match get_context_registry().lock() {
+            Ok(r) => r,
+            Err(_) => {
+                return GoudResult::from_error(GoudError::InternalError(
+                    "Failed to lock context registry".to_string(),
+                ));
+            }
+        };
+        let context = match registry.get_mut(context_id) {
+            Some(guard) => guard,
+            None => {
+                return GoudResult::from_error(GoudError::InvalidContext);
+            }
+        };
+        context.world_mut().despawn(entity)
     };
 
-    let entity = Entity::from_bits(GoudEntityId::new(entity_id).bits());
-    let world = context.world_mut();
-
-    if world.despawn(entity) {
+    if despawned {
+        // Free the entity's dynamic components so storage does not leak and a
+        // recycled index cannot inherit this entity's slots.
+        crate::component_ops::purge_context_entity(
+            crate::component_ops::context_key(context_id),
+            entity_bits,
+        );
         GoudResult::ok()
     } else {
         GoudResult::from_error(GoudError::EntityNotFound)
@@ -256,32 +267,42 @@ pub unsafe extern "C" fn goud_entity_despawn_batch(
         return 0;
     }
 
-    let mut registry = match get_context_registry().lock() {
-        Ok(r) => r,
-        Err(_) => {
-            set_last_error(GoudError::InternalError(
-                "Failed to lock context registry".to_string(),
-            ));
-            return 0;
-        }
-    };
-    let context = match registry.get_mut(context_id) {
-        Some(guard) => guard,
-        None => {
-            set_last_error(GoudError::InvalidContext);
-            return 0;
-        }
-    };
-
     // SAFETY: caller guarantees entity_ids is valid for count elements.
-    let entity_slice = std::slice::from_raw_parts(entity_ids, count as usize);
-    let entities: Vec<Entity> = entity_slice
+    let entity_bits: Vec<u64> = std::slice::from_raw_parts(entity_ids, count as usize).to_vec();
+    let entities: Vec<Entity> = entity_bits
         .iter()
         .map(|&bits| Entity::from_bits(bits))
         .collect();
 
-    let world = context.world_mut();
-    world.despawn_batch(&entities) as u32
+    // Despawn under the registry lock, then release it before touching storage.
+    let despawned = {
+        let mut registry = match get_context_registry().lock() {
+            Ok(r) => r,
+            Err(_) => {
+                set_last_error(GoudError::InternalError(
+                    "Failed to lock context registry".to_string(),
+                ));
+                return 0;
+            }
+        };
+        let context = match registry.get_mut(context_id) {
+            Some(guard) => guard,
+            None => {
+                set_last_error(GoudError::InvalidContext);
+                return 0;
+            }
+        };
+        context.world_mut().despawn_batch(&entities)
+    };
+
+    // Purge each input entity's components. Every entity that was alive is now
+    // despawned; purging an already-dead or unknown entity is a harmless no-op.
+    let key = crate::component_ops::context_key(context_id);
+    for &bits in &entity_bits {
+        crate::component_ops::purge_context_entity(key, bits);
+    }
+
+    despawned as u32
 }
 
 // ============================================================================

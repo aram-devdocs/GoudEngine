@@ -33,3 +33,8 @@ pub use single_ops::{
     component_add_impl, component_get_impl, component_get_mut_impl, component_has_impl,
     component_register_type_impl, component_remove_impl,
 };
+
+// Entity despawn cleanup: the FFI lifecycle layer computes the context key and
+// purges an entity's dynamic components after despawn.
+pub(crate) use helpers::context_key;
+pub(crate) use storage::purge_context_entity;
