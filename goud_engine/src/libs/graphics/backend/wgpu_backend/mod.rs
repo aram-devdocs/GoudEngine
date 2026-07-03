@@ -67,31 +67,6 @@ pub(super) fn force_fallback_adapter() -> bool {
         .unwrap_or(false)
 }
 
-#[cfg(test)]
-mod force_fallback_tests {
-    use super::force_fallback_adapter;
-
-    #[test]
-    fn defaults_to_false_without_env() {
-        // SAFETY: single-threaded test; restore the variable afterwards.
-        let prev = std::env::var("GOUD_WGPU_FORCE_FALLBACK").ok();
-        std::env::remove_var("GOUD_WGPU_FORCE_FALLBACK");
-        assert!(!force_fallback_adapter());
-
-        std::env::set_var("GOUD_WGPU_FORCE_FALLBACK", "1");
-        assert!(force_fallback_adapter());
-        std::env::set_var("GOUD_WGPU_FORCE_FALLBACK", "true");
-        assert!(force_fallback_adapter());
-        std::env::set_var("GOUD_WGPU_FORCE_FALLBACK", "0");
-        assert!(!force_fallback_adapter());
-
-        match prev {
-            Some(v) => std::env::set_var("GOUD_WGPU_FORCE_FALLBACK", v),
-            None => std::env::remove_var("GOUD_WGPU_FORCE_FALLBACK"),
-        }
-    }
-}
-
 // =============================================================================
 // WgpuBackend
 // =============================================================================
@@ -222,3 +197,28 @@ pub struct WgpuBackend {
 // via SharedNativeRenderBackend — no unsynchronized shared access occurs.
 unsafe impl Send for WgpuBackend {}
 unsafe impl Sync for WgpuBackend {}
+
+#[cfg(test)]
+mod force_fallback_tests {
+    use super::force_fallback_adapter;
+
+    #[test]
+    fn env_toggles_force_fallback() {
+        // Single-threaded test; restore the variable afterwards.
+        let prev = std::env::var("GOUD_WGPU_FORCE_FALLBACK").ok();
+        std::env::remove_var("GOUD_WGPU_FORCE_FALLBACK");
+        assert!(!force_fallback_adapter());
+
+        std::env::set_var("GOUD_WGPU_FORCE_FALLBACK", "1");
+        assert!(force_fallback_adapter());
+        std::env::set_var("GOUD_WGPU_FORCE_FALLBACK", "true");
+        assert!(force_fallback_adapter());
+        std::env::set_var("GOUD_WGPU_FORCE_FALLBACK", "0");
+        assert!(!force_fallback_adapter());
+
+        match prev {
+            Some(v) => std::env::set_var("GOUD_WGPU_FORCE_FALLBACK", v),
+            None => std::env::remove_var("GOUD_WGPU_FORCE_FALLBACK"),
+        }
+    }
+}
