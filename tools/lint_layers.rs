@@ -3,9 +3,9 @@
 //! Layer mapping (ordered from lowest to highest):
 //!   - Layer 1 (Foundation): core/
 //!   - Layer 2 (Libs):       libs/
-//!   - Layer 3 (Services):   ecs/, assets/
-//!   - Layer 4 (Engine):     sdk/
-//!   - Layer 5 (FFI):        ffi/, wasm/
+//!   - Layer 3 (Services):   ecs/, assets/, ui/
+//!   - Layer 4 (Engine):     sdk/, rendering/, component_ops/, context_registry/
+//!   - Layer 5 (FFI):        ffi/, wasm/, jni/
 //!
 //! Rules:
 //!   - Dependencies flow DOWN only (higher layers may import from lower layers)
@@ -74,7 +74,10 @@ fn classify_file(relative_path: &str) -> Option<Layer> {
         Some(Layer::Foundation)
     } else if relative_path.starts_with("libs/") {
         Some(Layer::Libs)
-    } else if relative_path.starts_with("ecs/") || relative_path.starts_with("assets/") {
+    } else if relative_path.starts_with("ecs/")
+        || relative_path.starts_with("assets/")
+        || relative_path.starts_with("ui/")
+    {
         Some(Layer::Services)
     } else if relative_path.starts_with("sdk/")
         || relative_path.starts_with("rendering/")
@@ -82,7 +85,10 @@ fn classify_file(relative_path: &str) -> Option<Layer> {
         || relative_path.starts_with("context_registry/")
     {
         Some(Layer::Engine)
-    } else if relative_path.starts_with("ffi/") || relative_path.starts_with("wasm/") {
+    } else if relative_path.starts_with("ffi/")
+        || relative_path.starts_with("wasm/")
+        || relative_path.starts_with("jni/")
+    {
         Some(Layer::Ffi)
     } else {
         None
@@ -92,7 +98,10 @@ fn classify_file(relative_path: &str) -> Option<Layer> {
 /// Determines which layer a `use crate::` import targets.
 fn classify_import(import_path: &str) -> Option<Layer> {
     // Check more specific prefixes first to avoid false matches.
-    if import_path.contains("crate::ffi") || import_path.contains("crate::wasm") {
+    if import_path.contains("crate::ffi")
+        || import_path.contains("crate::wasm")
+        || import_path.contains("crate::jni")
+    {
         Some(Layer::Ffi)
     } else if import_path.contains("crate::sdk")
         || import_path.contains("crate::rendering")
@@ -100,7 +109,10 @@ fn classify_import(import_path: &str) -> Option<Layer> {
         || import_path.contains("crate::context_registry")
     {
         Some(Layer::Engine)
-    } else if import_path.contains("crate::ecs") || import_path.contains("crate::assets") {
+    } else if import_path.contains("crate::ecs")
+        || import_path.contains("crate::assets")
+        || import_path.contains("crate::ui")
+    {
         Some(Layer::Services)
     } else if import_path.contains("crate::libs") {
         Some(Layer::Libs)
@@ -271,6 +283,13 @@ mod tests {
     fn classify_file_ffi() {
         assert_eq!(classify_file("ffi/renderer.rs"), Some(Layer::Ffi));
         assert_eq!(classify_file("wasm/bindings.rs"), Some(Layer::Ffi));
+        assert_eq!(classify_file("jni/generated.rs"), Some(Layer::Ffi));
+    }
+
+    #[test]
+    fn classify_file_ui_is_services() {
+        assert_eq!(classify_file("ui/mod.rs"), Some(Layer::Services));
+        assert_eq!(classify_file("ui/widget/button.rs"), Some(Layer::Services));
     }
 
     #[test]
@@ -325,6 +344,18 @@ mod tests {
         assert_eq!(
             classify_import("use crate::wasm::bindings;"),
             Some(Layer::Ffi)
+        );
+        assert_eq!(
+            classify_import("use crate::jni::generated::attach;"),
+            Some(Layer::Ffi)
+        );
+    }
+
+    #[test]
+    fn classify_import_ui_is_services() {
+        assert_eq!(
+            classify_import("use crate::ui::UiManager;"),
+            Some(Layer::Services)
         );
     }
 
