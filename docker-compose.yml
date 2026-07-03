@@ -1,0 +1,28 @@
+# Local containerized test/dev environment for GoudEngine.
+#
+#   docker compose run --rm engine-test        # run the headless test suite
+#   docker compose up engine-test              # same, detached-friendly
+#
+# The engine-test service builds the `test` stage (software Vulkan via lavapipe)
+# so GPU-dependent tests run with no hardware GPU. Ports are deliberately offset
+# so this stack does not clash with other local services.
+
+services:
+  engine-test:
+    build:
+      context: .
+      target: test
+    image: goudengine-test:local
+    environment:
+      GOUD_WGPU_FORCE_FALLBACK: "1"
+      GOUD_SKIP_NATIVE_SMOKE: "1"
+      RUST_BACKTRACE: "1"
+    # A trivial healthcheck: the software Vulkan ICD must enumerate a device.
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "vulkaninfo --summary >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      # Offset from common defaults; the MCP debug relay uses 9229 in-engine.
+      - "39229:9229"

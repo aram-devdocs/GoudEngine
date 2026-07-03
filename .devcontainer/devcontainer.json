@@ -1,0 +1,19 @@
+{
+  "name": "GoudEngine (headless)",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "target": "test"
+  },
+  "remoteEnv": {
+    "GOUD_WGPU_FORCE_FALLBACK": "1",
+    "GOUD_SKIP_NATIVE_SMOKE": "1"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer"
+      ]
+    }
+  },
+  "postCreateCommand": "cargo fetch --locked"
+}

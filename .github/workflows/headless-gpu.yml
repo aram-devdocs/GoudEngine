@@ -1,0 +1,64 @@
+name: Headless GPU
+
+# Runs the GPU-dependent tests (normally #[ignore]'d) against a software Vulkan
+# rasterizer (Mesa lavapipe), so they get exercised somewhere without a hardware
+# GPU. Non-blocking: this lane surfaces signal, it does not gate PRs. It runs
+# nightly, on manual dispatch, and when a PR carries the `headless-gpu` label.
+on:
+  schedule:
+    - cron: '0 4 * * *'  # nightly 04:00 UTC
+  workflow_dispatch:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+
+jobs:
+  headless-gpu:
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && github.event.label.name == 'headless-gpu')
+    runs-on: ubuntu-latest
+    # Advisory lane — never fail the workflow run on a software-rasterizer flake.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install engine + software Vulkan (lavapipe) dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgl1-mesa-dev libglu1-mesa-dev libxrandr-dev libxinerama-dev \
+            libxcursor-dev libxi-dev libxxf86vm-dev libasound2-dev libudev-dev \
+            mesa-vulkan-drivers vulkan-tools xvfb
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: goud_engine
+
+      - name: Report the software adapter
+        run: vulkaninfo --summary || true
+
+      - name: Run GPU-dependent tests under lavapipe
+        working-directory: goud_engine
+        env:
+          GOUD_WGPU_FORCE_FALLBACK: '1'
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GALLIUM_DRIVER: llvmpipe
+          VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+          RUST_BACKTRACE: '1'
+        run: xvfb-run -a cargo test --release -- --ignored --nocapture
+
+      - name: Upload any capture artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: headless-gpu-captures
+          path: |
+            goud_engine/target/**/*.png
+          retention-days: 7
+          if-no-files-found: ignore
