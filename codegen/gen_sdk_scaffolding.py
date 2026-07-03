@@ -47,6 +47,10 @@ def gen_csharp_scaffolding() -> None:
         "    <None Include=\"runtimes/**\" Pack=\"true\" PackagePath=\"runtimes/\" />",
         "    <None Include=\"include/**\" Pack=\"true\" PackagePath=\"include/\" />",
         "    <None Include=\"README.md\" Pack=\"true\" PackagePath=\"/\" />",
+        # Pack the MSBuild targets so NuGet auto-imports build/<PackageId>.targets
+        # in consumers; without it the native lib stays under runtimes/ and
+        # P/Invoke falls back to a slow resolution path (#670).
+        "    <None Include=\"build/GoudEngine.targets\" Pack=\"true\" PackagePath=\"build/\" />",
         "  </ItemGroup>",
         "",
         "  <ItemGroup>",
