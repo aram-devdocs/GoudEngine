@@ -21,8 +21,8 @@ use tempfile::TempDir;
 use crate::server::types::McpDebuggerStepKind;
 use crate::server::types::{
     AttachContextParams, GetDiagnosticsRecordingParams, GetLogsParams,
-    GetSubsystemDiagnosticsParams, InjectInputParams, InputEventParams, RecordDiagnosticsParams,
-    SetPausedParams, SetTimeScaleParams, StartReplayParams, StepParams,
+    GetSubsystemDiagnosticsParams, InjectInputParams, InputEventParams, SetPausedParams,
+    SetTimeScaleParams, StartReplayParams, StepParams,
 };
 use crate::server::GoudEngineMcpServer;
 
