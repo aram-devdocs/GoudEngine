@@ -14,9 +14,9 @@ GoudEngine follows a strict 5-layer architecture. Dependencies flow DOWN only.
 ```
 Layer 1 (Foundation): core/
 Layer 2 (Libs):       libs/
-Layer 3 (Services):   ecs/, assets/
+Layer 3 (Services):   ecs/, assets/, ui/
 Layer 4 (Engine):     sdk/, rendering/, component_ops/, context_registry/
-Layer 5 (FFI):        ffi/, wasm/
+Layer 5 (FFI):        ffi/, wasm/, jni/
 ```
 
 SDKs (`sdks/`) and Apps (`examples/`) sit outside `goud_engine/src/` and connect via FFI only.

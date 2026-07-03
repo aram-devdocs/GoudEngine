@@ -36,4 +36,4 @@ All methods are annotated with `#[goud_api]` to auto-generate C FFI wrappers.
 
 ## Dependencies
 
-Layer 2 (Engine/SDK). Imports from `crate::core::types` for FFI structs.
+Layer 4 (Engine). Imports from `crate::core::types` (Layer 1) for FFI structs.

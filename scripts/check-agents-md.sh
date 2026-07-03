@@ -13,11 +13,11 @@ while IFS= read -r file; do
   lines=$(wc -l < "$file")
   if [ "$lines" -gt "$MAX_LINES" ]; then
     echo "FAIL: $file has $lines lines (max $MAX_LINES)"
-    ((errors++))
+    errors=$((errors + 1))
   fi
 done < <(find . -name "AGENTS.md" -not -path "./.git/*" -not -path "./target/*" -not -path "./node_modules/*" -not -path "./worktrees/*" 2>/dev/null)
 
-# Check for stale patterns in all .md files
+# Check for stale patterns in all .md and generated .mdc files
 stale_patterns=(
   'RendererType'
   'OpenGL Game Engine'
@@ -27,10 +27,36 @@ while IFS= read -r file; do
   for pattern in "${stale_patterns[@]}"; do
     if grep -q "$pattern" "$file" 2>/dev/null; then
       echo "FAIL: $file contains stale pattern: $pattern"
-      ((errors++))
+      errors=$((errors + 1))
     fi
   done
-done < <(find . -name "*.md" -not -path "./.git/*" -not -path "./target/*" -not -path "./node_modules/*" -not -path "./docs/book/*" -not -path "./worktrees/*" -not -name "CHANGELOG.md" -not -name "ALPHA_ROADMAP.md" -not -path "./docs/rfcs/*" -not -path "./docs/src/rfcs/*" 2>/dev/null)
+done < <(find . \( -name "*.md" -o -name "*.mdc" \) -not -path "./.git/*" -not -path "./target/*" -not -path "./node_modules/*" -not -path "./docs/book/*" -not -path "./worktrees/*" -not -name "CHANGELOG.md" -not -name "ALPHA_ROADMAP.md" -not -path "./docs/rfcs/*" -not -path "./docs/src/rfcs/*" 2>/dev/null)
+
+# Assert nested AGENTS.md layer labels match the canonical 5-layer model
+# (tools/lint_layers.rs is the source of truth).
+layer_for_dir() {
+  case "$1" in
+    core) echo 1 ;;
+    libs) echo 2 ;;
+    ecs|assets|ui) echo 3 ;;
+    sdk|rendering|component_ops|context_registry) echo 4 ;;
+    ffi|wasm|jni) echo 5 ;;
+    *) echo "" ;;
+  esac
+}
+
+while IFS= read -r file; do
+  rel="${file#./goud_engine/src/}"
+  top="${rel%%/*}"
+  expected="$(layer_for_dir "$top")"
+  [ -z "$expected" ] && continue
+  actual="$(grep -oE "Layer [0-9]+" "$file" 2>/dev/null | head -1 | grep -oE "[0-9]+" || true)"
+  [ -z "$actual" ] && continue
+  if [ "$actual" != "$expected" ]; then
+    echo "FAIL: $file declares Layer $actual but $top/ is canonical Layer $expected"
+    errors=$((errors + 1))
+  fi
+done < <(find ./goud_engine/src -name "AGENTS.md" 2>/dev/null)
 
 if [ "$errors" -gt 0 ]; then
   echo ""

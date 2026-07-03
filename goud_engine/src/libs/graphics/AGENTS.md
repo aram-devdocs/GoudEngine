@@ -32,4 +32,5 @@ Rendering infrastructure: 2D sprite batching, 3D rendering, and GPU backend abst
 
 ## Dependencies
 
-Layer 1 (Core). No imports from ecs/, assets/, ffi/, or sdk/.
+Layer 2 (Libs). Imports from `crate::core` (Layer 1) and `crate::libs` (error, backend --
+same layer). No imports from ecs/, assets/, ffi/, or sdk/.

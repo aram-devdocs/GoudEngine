@@ -37,5 +37,6 @@ instead of silently accessing the wrong context.
 
 ## Dependencies
 
-Layer 2 (Engine). Imports from `ecs::World` and `core::error`. Every FFI function
-and most `component_ops` functions depend on this module for context lookup.
+Layer 4 (Engine). Imports from `ecs` (World, components) and `assets` (Layer 3) and
+`core` (context_id, error, math, debugger — Layer 1). Every FFI function and most
+`component_ops` functions depend on this module for context lookup.
