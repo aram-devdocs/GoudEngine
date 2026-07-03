@@ -1,6 +1,7 @@
 //! Unit tests for the NullBackend.
 
 use super::NullBackend;
+use crate::libs::graphics::backend::capabilities::ShaderLanguage;
 use crate::libs::graphics::backend::types::{
     BufferType, BufferUsage, PrimitiveTopology, RenderTargetDesc, TextureFilter, TextureFormat,
     TextureWrap,
@@ -158,6 +159,78 @@ fn test_draw_calls_do_not_panic() {
     assert_eq!(backend.draw_indexed_calls(), 2);
     assert_eq!(backend.draw_arrays_instanced_calls(), 1);
     assert_eq!(backend.draw_indexed_instanced_calls(), 1);
+}
+
+#[test]
+fn test_new_reports_glsl_by_default() {
+    let backend = NullBackend::new();
+    assert_eq!(backend.info().shader_language, ShaderLanguage::Glsl);
+}
+
+#[test]
+fn test_with_shader_language_reports_wgsl() {
+    let backend = NullBackend::with_shader_language(ShaderLanguage::Wgsl);
+    assert_eq!(backend.info().shader_language, ShaderLanguage::Wgsl);
+    // Everything else must match the default headless backend.
+    assert_eq!(backend.info().name, "Null");
+    assert_eq!(backend.total_draw_commands(), 0);
+    assert!(!backend.is_shadow_recording());
+}
+
+#[test]
+fn test_aggregate_draw_command_counter() {
+    let mut backend = NullBackend::new();
+
+    backend
+        .draw_arrays(PrimitiveTopology::Triangles, 0, 3)
+        .unwrap();
+    backend
+        .draw_indexed(PrimitiveTopology::Triangles, 6, 0)
+        .unwrap();
+    backend
+        .draw_arrays_instanced(PrimitiveTopology::Triangles, 0, 6, 100)
+        .unwrap();
+
+    // Three draw commands of any kind were issued outside a shadow pass.
+    assert_eq!(backend.total_draw_commands(), 3);
+    assert_eq!(backend.shadow_draw_commands(), 0);
+}
+
+#[test]
+fn test_shadow_recording_counts_only_shadow_pass_draws() {
+    let mut backend = NullBackend::new();
+
+    // Two normal-pass draws.
+    backend
+        .draw_arrays(PrimitiveTopology::Triangles, 0, 3)
+        .unwrap();
+    backend
+        .draw_arrays(PrimitiveTopology::Triangles, 0, 3)
+        .unwrap();
+
+    // Enter shadow recording and issue three shadow-pass draws.
+    assert!(!backend.is_shadow_recording());
+    backend.begin_shadow_recording();
+    assert!(backend.is_shadow_recording());
+    for _ in 0..3 {
+        backend
+            .draw_arrays(PrimitiveTopology::Triangles, 0, 3)
+            .unwrap();
+    }
+    backend.end_shadow_recording();
+    assert!(!backend.is_shadow_recording());
+
+    // One more normal-pass draw after the shadow pass.
+    backend
+        .draw_arrays(PrimitiveTopology::Triangles, 0, 3)
+        .unwrap();
+
+    assert_eq!(backend.total_draw_commands(), 6);
+    assert_eq!(backend.shadow_draw_commands(), 3);
+
+    backend.reset_draw_counters();
+    assert_eq!(backend.total_draw_commands(), 0);
+    assert_eq!(backend.shadow_draw_commands(), 0);
 }
 
 #[test]

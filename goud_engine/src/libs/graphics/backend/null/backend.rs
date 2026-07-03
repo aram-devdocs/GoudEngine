@@ -73,6 +73,14 @@ pub struct NullBackend {
     pub(super) draw_indexed_calls: usize,
     pub(super) draw_arrays_instanced_calls: usize,
     pub(super) draw_indexed_instanced_calls: usize,
+
+    // Aggregate draw-command counting (used by benches/tests to pin draw counts).
+    /// `true` while the backend is inside a shadow pre-pass recording block.
+    pub(super) shadow_recording: bool,
+    /// Total draw commands of every kind recorded since construction/reset.
+    pub(super) total_draw_commands: usize,
+    /// Draw commands recorded while `shadow_recording` was active.
+    pub(super) shadow_draw_commands: usize,
 }
 
 // SAFETY: NullBackend contains only pure Rust data (no raw pointers,
@@ -130,7 +138,24 @@ impl NullBackend {
             draw_indexed_calls: 0,
             draw_arrays_instanced_calls: 0,
             draw_indexed_instanced_calls: 0,
+            shadow_recording: false,
+            total_draw_commands: 0,
+            shadow_draw_commands: 0,
         }
+    }
+
+    /// Creates a headless null backend that reports the given shader language.
+    ///
+    /// The default [`NullBackend::new`] reports [`ShaderLanguage::Glsl`], which
+    /// routes [`Renderer3D`](crate::libs::graphics::renderer3d::Renderer3D)
+    /// down its legacy CPU paths. Constructing the backend with
+    /// [`ShaderLanguage::Wgsl`] instead exercises the wgpu draw-recording and
+    /// GPU shadow pre-pass code paths without touching a real GPU, which is what
+    /// the renderer benchmarks measure.
+    pub fn with_shader_language(lang: ShaderLanguage) -> Self {
+        let mut backend = Self::new();
+        backend.info.shader_language = lang;
+        backend
     }
 
     /// Returns how many shader creation calls have occurred.
@@ -156,6 +181,45 @@ impl NullBackend {
     /// Returns how many indexed instanced draw calls have occurred.
     pub fn draw_indexed_instanced_calls(&self) -> usize {
         self.draw_indexed_instanced_calls
+    }
+
+    /// Returns the total number of draw commands (of every kind) recorded.
+    ///
+    /// This includes main-pass, instanced, and shadow-pass draw commands.
+    pub fn total_draw_commands(&self) -> usize {
+        self.total_draw_commands
+    }
+
+    /// Returns the number of draw commands recorded during shadow pre-pass
+    /// recording (between `begin_shadow_recording` and `end_shadow_recording`).
+    pub fn shadow_draw_commands(&self) -> usize {
+        self.shadow_draw_commands
+    }
+
+    /// Returns `true` while the backend is inside a shadow pre-pass recording block.
+    pub fn is_shadow_recording(&self) -> bool {
+        self.shadow_recording
+    }
+
+    /// Resets all draw-command counters to zero. Handy for measuring a single
+    /// frame in isolation without reconstructing the backend.
+    pub fn reset_draw_counters(&mut self) {
+        self.draw_arrays_calls = 0;
+        self.draw_indexed_calls = 0;
+        self.draw_arrays_instanced_calls = 0;
+        self.draw_indexed_instanced_calls = 0;
+        self.total_draw_commands = 0;
+        self.shadow_draw_commands = 0;
+    }
+
+    /// Records a single draw command against the aggregate counters. Called by
+    /// every `DrawOps` method so that `total_draw_commands` and (when a shadow
+    /// pass is being recorded) `shadow_draw_commands` stay in sync.
+    pub(super) fn record_draw_command(&mut self) {
+        self.total_draw_commands += 1;
+        if self.shadow_recording {
+            self.shadow_draw_commands += 1;
+        }
     }
 }
 

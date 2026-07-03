@@ -24,6 +24,14 @@ impl RenderBackend for NullBackend {
     fn info(&self) -> &BackendInfo {
         &self.info
     }
+
+    fn begin_shadow_recording(&mut self) {
+        self.shadow_recording = true;
+    }
+
+    fn end_shadow_recording(&mut self) {
+        self.shadow_recording = false;
+    }
 }
 
 // ========================================================================
@@ -423,6 +431,7 @@ impl DrawOps for NullBackend {
         _count: u32,
     ) -> GoudResult<()> {
         self.draw_arrays_calls += 1;
+        self.record_draw_command();
         Ok(())
     }
 
@@ -433,6 +442,7 @@ impl DrawOps for NullBackend {
         _offset: usize,
     ) -> GoudResult<()> {
         self.draw_indexed_calls += 1;
+        self.record_draw_command();
         Ok(())
     }
 
@@ -443,6 +453,7 @@ impl DrawOps for NullBackend {
         _offset: usize,
     ) -> GoudResult<()> {
         self.draw_indexed_calls += 1;
+        self.record_draw_command();
         Ok(())
     }
 
@@ -454,6 +465,7 @@ impl DrawOps for NullBackend {
         _instance_count: u32,
     ) -> GoudResult<()> {
         self.draw_arrays_instanced_calls += 1;
+        self.record_draw_command();
         Ok(())
     }
 
@@ -465,6 +477,7 @@ impl DrawOps for NullBackend {
         _instance_count: u32,
     ) -> GoudResult<()> {
         self.draw_indexed_instanced_calls += 1;
+        self.record_draw_command();
         Ok(())
     }
 }
