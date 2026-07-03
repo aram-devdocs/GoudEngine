@@ -62,6 +62,8 @@ add_step  rs-line-limit     block     both   meta     ""               pr-valida
 add_step  ai-config         block     both   meta     ""               pr-validation.yml      '"$REPO_ROOT/scripts/validate-ai-config.sh"'
 add_step  agents-md         block     both   meta     ""               pr-validation.yml      '"$REPO_ROOT/scripts/check-agents-md.sh"'
 add_step  gate-parity       block     both   meta     python3          pr-validation.yml      'python3 "$REPO_ROOT/scripts/check-gate-parity.py"'
+add_step  skills-validate   block     both   meta     python3          pr-validation.yml      'python3 "$REPO_ROOT/scripts/validate-skills.py"'
+add_step  hooks-test        block     both   meta     ""               pr-validation.yml      '"$REPO_ROOT/scripts/test-hooks.sh"'
 add_step  clippy-all        block     full   rust     ""               ci.yml:preflight       'cargo clippy ${FMT_PACKAGES} --all-targets --all-features -- -D warnings'
 add_step  build             block     full   rust     ""               ci.yml:build           'cargo build ${FMT_PACKAGES}'
 # Native window smoke tests need a real display; the gate skips them (as CI does)
