@@ -24,7 +24,7 @@ jobs:
     # Advisory lane — never fail the workflow run on a software-rasterizer flake.
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install engine + software Vulkan (lavapipe) dependencies
         run: |
