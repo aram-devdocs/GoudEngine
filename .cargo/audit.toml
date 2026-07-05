@@ -16,4 +16,6 @@ ignore = [
     "RUSTSEC-2026-0192", # ttf-parser: unmaintained; transitive via rustybuzz
     "RUSTSEC-2026-0194", # quick-xml: quadratic parse of trusted local assets
     "RUSTSEC-2026-0195", # quick-xml: namespace DoS parsing trusted local assets
+    "RUSTSEC-2026-0196", # cgmath: unmaintained; engine math lib, migration tracked #704
+    "RUSTSEC-2026-0197", # cgmath: swap_columns UB only on identical indices; never called so
 ]

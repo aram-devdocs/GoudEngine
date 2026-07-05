@@ -83,6 +83,8 @@ ignore = [
     { id = "RUSTSEC-2026-0192", reason = "ttf-parser unmaintained (not a vulnerability); transitive via rustybuzz text shaping. No maintained replacement adopted upstream — tracked #704." },
     { id = "RUSTSEC-2026-0194", reason = "quick-xml quadratic attribute check; transitive XML parsing of trusted local asset files, not untrusted network input. Pending upstream patch — tracked #704." },
     { id = "RUSTSEC-2026-0195", reason = "quick-xml namespace-declaration allocation DoS; transitive parsing of trusted local assets. Pending upstream patch — tracked #704." },
+    { id = "RUSTSEC-2026-0196", reason = "cgmath unmaintained (not a vulnerability); the engine's math library. Migration to a maintained alternative is tracked #704." },
+    { id = "RUSTSEC-2026-0197", reason = "cgmath Matrix::swap_columns UB only on identical indices; the engine never calls it with identical indices. Pending migration — tracked #704." },
 ]
 # If this is true, then cargo deny will use the git executable to fetch advisory database.
 # If this is false, then it uses a built-in git library.
