@@ -2,13 +2,17 @@
 
 ## Development Environment
 
-**Prerequisites**: Rust (stable), .NET 8 SDK, Python 3.x, Node.js 18+, CMake, GLFW.
+**Prerequisites**: Rust (stable, edition 2021), .NET 8 SDK, Python 3.9+ (3.11 recommended), Node.js 16+ (20 recommended), cbindgen, cargo-deny, CMake. Only Rust and the .NET SDK are required for core development; Python and Node.js support is optional. GLFW is needed only when building the legacy `legacy-glfw-opengl` backend — the default wgpu/winit backend does not require it. See [docs/src/development/dev-setup.md](docs/src/development/dev-setup.md) for the full per-platform setup, including the MSRV toolchain.
 
 ```bash
 git clone https://github.com/aram-devdocs/GoudEngine
 cd GoudEngine
 cargo build
 ```
+
+## Minimum Supported Rust Version
+
+The toolchain is pinned in [`rust-toolchain.toml`](rust-toolchain.toml). rustup reads this file and resolves the same Rust channel and components (`rustfmt`, `clippy`) for every developer, CI runner, and container, so builds are reproducible. Treat a toolchain bump as a deliberate change: update `rust-toolchain.toml` and this note together in the same PR.
 
 Run an example to verify the setup works:
 
@@ -34,6 +38,10 @@ If you want to add a feature:
 Never put logic in an SDK. If you find logic in an SDK, move it to Rust.
 
 **Exception**: Simple value-type math (Vec2.add, Color.fromHex) in the TypeScript SDK is intentionally local to avoid FFI round-trips. These are code-generated for consistency.
+
+## Ownership Rule
+
+Follow the campsite rule: leave the code better than you found it. Nothing in this repo is "pre-existing" or someone else's problem. If you touch a file and find a broken test, a dead code path, a stale comment, or a lint the gate should have caught, fix it as part of your change. Do not route around a defect and defer it — a defect you can see is a defect you own.
 
 ## Layer Architecture
 
@@ -65,6 +73,24 @@ cd sdks/typescript && npm test
 ```
 
 Tests that need a GPU context must call `test_helpers::init_test_context()`. Pure math/logic tests must not require a GPU context.
+
+## Verification Gate
+
+The same checks run at three gates. `scripts/verify.sh` is the single source of truth; the pre-commit gate runs a strict subset of the full suite so that anything passing pre-commit still passes pre-push and CI.
+
+| Gate | Command | Scope |
+|------|---------|-------|
+| pre-commit hook | `scripts/verify.sh --staged` | Fast subset over staged changes |
+| pre-push hook | `scripts/verify.sh` | Full suite |
+| CI | `scripts/verify.sh` | Full suite |
+
+Bypassing the gate is NOT allowed. Do not commit with `--no-verify`, do not push with `--no-verify`, and do not add `[skip ci]` to land code past CI. If a rule fires incorrectly, fix the rule (or the code it flags) — never disable the gate to get a change through.
+
+If your local git hooks do not run, git is probably pointing at a stale hooks path from another tool. Clear it so the repo's hooks take effect:
+
+```bash
+git config --unset core.hooksPath
+```
 
 ## Code Style
 
@@ -128,6 +154,6 @@ Keep PRs focused. One logical change per PR. Large refactors should be discussed
 | FFI boundary patterns | `.agents/rules/ffi-patterns.md` |
 | ECS patterns | `.agents/rules/ecs-patterns.md` |
 | SDK development | `.agents/rules/sdk-development.md` |
-| Architecture docs | `docs/architecture/` |
+| Architecture docs | `docs/src/architecture/` |
 | Development guide | `docs/src/development/dev-setup.md` |
 | Build guide | `docs/src/development/building.md` |

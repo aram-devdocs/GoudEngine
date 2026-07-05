@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Fail fast: exit on error, treat unset variables as errors, and propagate
+# failures through pipelines. Empty-array and optional-env expansions below are
+# written to stay safe under `set -u` on bash 3.2 (macOS system bash).
+set -euo pipefail
+
 # Default values
 GAME="flappy_goud"
 LOCAL=false
@@ -108,6 +113,34 @@ typescript_web_artifacts_fresh() {
     [ -f "$SCRIPT_DIR/sdks/typescript/wasm/goud_engine_bg.wasm" ] || return 1
     [ -f "$SCRIPT_DIR/sdks/typescript/dist/web/web/index.js" ] || return 1
     ! typescript_sources_newer_than "$SCRIPT_DIR/sdks/typescript/wasm/goud_engine_bg.wasm"
+}
+
+# Compiles a TypeScript web example with tsc and serves the repo root over HTTP.
+# Usage: serve_typescript_web <example_dir> <label>
+serve_typescript_web() {
+    local example_dir="$1"
+    local label="$2"
+    local web_port
+
+    echo "Compiling $label for web..."
+    cd "$SCRIPT_DIR/examples/typescript/$example_dir"
+    npx tsc
+
+    web_port="$(pick_web_port)" || {
+        echo "Error: No available localhost port found for web server (8765-8799)."
+        exit 1
+    }
+
+    echo ""
+    if [ "$web_port" != "${TS_WEB_PORT:-8765}" ]; then
+        echo "Port ${TS_WEB_PORT:-8765} is in use; using $web_port instead."
+    fi
+    echo "Starting web server on http://localhost:$web_port"
+    echo "Open: http://localhost:$web_port/examples/typescript/$example_dir/web/index.html"
+    echo "Press Ctrl+C to stop."
+    echo ""
+    cd "$SCRIPT_DIR"
+    python3 -m http.server "$web_port" --bind 127.0.0.1
 }
 
 ensure_example_node_modules() {
@@ -333,7 +366,7 @@ esac
 if [ "$SKIP_BUILD" = false ]; then
     # Prune stale incremental compilation cache (>7 days old) to prevent unbounded growth
     if [ -d "target/debug/incremental" ]; then
-        find "$SCRIPT_DIR/target/debug/incremental" -maxdepth 1 -type d -mtime +7 -exec rm -rf {} + 2>/dev/null
+        find "$SCRIPT_DIR/target/debug/incremental" -maxdepth 1 -type d -mtime +7 -exec rm -rf {} + 2>/dev/null || true
     fi
 
     FAST_LOCAL_CSHARP_PATH=false
@@ -468,14 +501,14 @@ case $SDK_TYPE in
 
     # Direct-project examples do not need local package publish or feed restore churn.
     if [ "$LOCAL" = true ] && csharp_example_uses_project_reference "$GAME"; then
-        "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" restore --nologo
-        "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" build --no-restore --nologo -p:GeneratePackageOnBuild=false
+        ${DOTNET_RUNNER[@]+"${DOTNET_RUNNER[@]}"} "$DOTNET_CMD" restore --nologo
+        ${DOTNET_RUNNER[@]+"${DOTNET_RUNNER[@]}"} "$DOTNET_CMD" build --no-restore --nologo -p:GeneratePackageOnBuild=false
     else
-        "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" clean --nologo
-        "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" restore --source "$HOME/nuget-local" --source https://api.nuget.org/v3/index.json --nologo
-        "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" build --no-restore --nologo
+        ${DOTNET_RUNNER[@]+"${DOTNET_RUNNER[@]}"} "$DOTNET_CMD" clean --nologo
+        ${DOTNET_RUNNER[@]+"${DOTNET_RUNNER[@]}"} "$DOTNET_CMD" restore --source "$HOME/nuget-local" --source https://api.nuget.org/v3/index.json --nologo
+        ${DOTNET_RUNNER[@]+"${DOTNET_RUNNER[@]}"} "$DOTNET_CMD" build --no-restore --nologo
     fi
-    "${DOTNET_RUNNER[@]}" "$DOTNET_CMD" run --no-build --nologo -- "${GAME_ARGS[@]}"
+    ${DOTNET_RUNNER[@]+"${DOTNET_RUNNER[@]}"} "$DOTNET_CMD" run --no-build --nologo -- ${GAME_ARGS[@]+"${GAME_ARGS[@]}"}
     ;;
 
 "c")
@@ -521,14 +554,14 @@ case $SDK_TYPE in
 
 "python")
     # Ensure Python SDK path is accessible
-    export PYTHONPATH="$SCRIPT_DIR/sdks/python:$PYTHONPATH"
-    
+    export PYTHONPATH="$SCRIPT_DIR/sdks/python:${PYTHONPATH:-}"
+
     # Set library path for native bindings
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        export DYLD_LIBRARY_PATH="$SCRIPT_DIR/target/release:$DYLD_LIBRARY_PATH"
+        export DYLD_LIBRARY_PATH="$SCRIPT_DIR/target/release:${DYLD_LIBRARY_PATH:-}"
         export GOUD_ENGINE_LIB="${GOUD_ENGINE_LIB:-$SCRIPT_DIR/target/release/$(native_lib_name)}"
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        export LD_LIBRARY_PATH="$SCRIPT_DIR/target/release:$LD_LIBRARY_PATH"
+        export LD_LIBRARY_PATH="$SCRIPT_DIR/target/release:${LD_LIBRARY_PATH:-}"
         export GOUD_ENGINE_LIB="${GOUD_ENGINE_LIB:-$SCRIPT_DIR/target/release/$(native_lib_name)}"
     fi
     
@@ -556,9 +589,9 @@ case $SDK_TYPE in
 
     # Set library path for native bindings
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        export DYLD_LIBRARY_PATH="$SCRIPT_DIR/target/release:$DYLD_LIBRARY_PATH"
+        export DYLD_LIBRARY_PATH="$SCRIPT_DIR/target/release:${DYLD_LIBRARY_PATH:-}"
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        export LD_LIBRARY_PATH="$SCRIPT_DIR/target/release:$LD_LIBRARY_PATH"
+        export LD_LIBRARY_PATH="$SCRIPT_DIR/target/release:${LD_LIBRARY_PATH:-}"
     fi
 
     cd "$GO_EXAMPLE_DIR"
@@ -587,25 +620,7 @@ case $SDK_TYPE in
         npx tsx desktop.ts
         ;;
     "flappy_bird_web")
-        echo "Compiling game.ts for web..."
-        cd "$SCRIPT_DIR/examples/typescript/flappy_bird"
-        npx tsc
-
-        WEB_PORT="$(pick_web_port)" || {
-            echo "Error: No available localhost port found for web server (8765-8799)."
-            exit 1
-        }
-
-        echo ""
-        if [ "$WEB_PORT" != "${TS_WEB_PORT:-8765}" ]; then
-            echo "Port ${TS_WEB_PORT:-8765} is in use; using $WEB_PORT instead."
-        fi
-        echo "Starting web server on http://localhost:$WEB_PORT"
-        echo "Open: http://localhost:$WEB_PORT/examples/typescript/flappy_bird/web/index.html"
-        echo "Press Ctrl+C to stop."
-        echo ""
-        cd "$SCRIPT_DIR"
-        python3 -m http.server "$WEB_PORT" --bind 127.0.0.1
+        serve_typescript_web "flappy_bird" "Flappy Bird"
         ;;
     "feature_lab")
         echo "Running TypeScript Feature Lab (desktop)..."
@@ -613,25 +628,7 @@ case $SDK_TYPE in
         npx tsx desktop.ts
         ;;
     "feature_lab_web")
-        echo "Compiling Feature Lab for web..."
-        cd "$SCRIPT_DIR/examples/typescript/feature_lab"
-        npx tsc
-
-        WEB_PORT="$(pick_web_port)" || {
-            echo "Error: No available localhost port found for web server (8765-8799)."
-            exit 1
-        }
-
-        echo ""
-        if [ "$WEB_PORT" != "${TS_WEB_PORT:-8765}" ]; then
-            echo "Port ${TS_WEB_PORT:-8765} is in use; using $WEB_PORT instead."
-        fi
-        echo "Starting web server on http://localhost:$WEB_PORT"
-        echo "Open: http://localhost:$WEB_PORT/examples/typescript/feature_lab/web/index.html"
-        echo "Press Ctrl+C to stop."
-        echo ""
-        cd "$SCRIPT_DIR"
-        python3 -m http.server "$WEB_PORT" --bind 127.0.0.1
+        serve_typescript_web "feature_lab" "Feature Lab"
         ;;
     "sandbox")
         echo "Running TypeScript Sandbox (desktop)..."
@@ -639,25 +636,7 @@ case $SDK_TYPE in
         npx tsx desktop.ts
         ;;
     "sandbox_web")
-        echo "Compiling Sandbox for web..."
-        cd "$SCRIPT_DIR/examples/typescript/sandbox"
-        npx tsc
-
-        WEB_PORT="$(pick_web_port)" || {
-            echo "Error: No available localhost port found for web server (8765-8799)."
-            exit 1
-        }
-
-        echo ""
-        if [ "$WEB_PORT" != "${TS_WEB_PORT:-8765}" ]; then
-            echo "Port ${TS_WEB_PORT:-8765} is in use; using $WEB_PORT instead."
-        fi
-        echo "Starting web server on http://localhost:$WEB_PORT"
-        echo "Open: http://localhost:$WEB_PORT/examples/typescript/sandbox/web/index.html"
-        echo "Press Ctrl+C to stop."
-        echo ""
-        cd "$SCRIPT_DIR"
-        python3 -m http.server "$WEB_PORT" --bind 127.0.0.1
+        serve_typescript_web "sandbox" "Sandbox"
         ;;
     esac
     ;;

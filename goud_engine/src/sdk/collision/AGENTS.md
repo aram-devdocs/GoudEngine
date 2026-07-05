@@ -40,5 +40,5 @@ functions are convenience wrappers that delegate to the struct methods.
 
 ## Dependencies
 
-Layer 2 (Engine/SDK). Imports from `crate::core::math::Vec2` and
-`crate::ecs::collision`. NEVER imports from ffi/.
+Layer 4 (Engine). Imports from `crate::core::math::Vec2` (Layer 1) and
+`crate::ecs::collision` (Layer 3). NEVER imports from ffi/.

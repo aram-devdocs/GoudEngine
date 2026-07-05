@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/aram-devdocs/GoudEngine/security/advisories/new
+    about: Report a vulnerability privately through a GitHub security advisory. Do not open a public issue.
+  - name: Questions and discussion
+    url: https://github.com/aram-devdocs/GoudEngine/discussions
+    about: Ask questions, share ideas, and discuss usage in GitHub Discussions.

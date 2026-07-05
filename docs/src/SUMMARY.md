@@ -21,6 +21,10 @@
 - [Building](development/building.md)
 - [Development Guide](development/guide.md)
 - [AI Agent Setup](development/ai-setup.md)
+- [Versioning](development/versioning.md)
+- [Engineering Constitution](development/constitution.md)
+- [Governance and Enforcement](development/governance.md)
+- [Performance Roadmap](development/performance-roadmap.md)
 
 # Architecture
 
@@ -68,6 +72,7 @@
 # Reference
 
 - [API Reference](reference/api.md)
+- [External Standards](reference/standards.md)
 - [Reusable Snippets (Generated)](reference/snippets.generated.md)
 - [husky-rs (Git Hooks)](reference/husky-rs.md)
 - [cbindgen (C Headers)](reference/cbindgen.md)

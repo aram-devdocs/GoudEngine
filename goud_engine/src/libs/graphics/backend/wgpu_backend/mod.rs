@@ -56,6 +56,17 @@ use resources::{
 
 pub use init::{MAX_TEXTURE_UNITS, UNIFORM_BUFFER_SIZE};
 
+/// Whether to request the wgpu software fallback adapter.
+///
+/// Set `GOUD_WGPU_FORCE_FALLBACK=1` (or `true`) to select a software rasterizer
+/// (e.g. lavapipe/llvmpipe) when no hardware GPU is available, such as headless
+/// CI or containers. Console backends never read this and always use hardware.
+pub(super) fn force_fallback_adapter() -> bool {
+    std::env::var("GOUD_WGPU_FORCE_FALLBACK")
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
+}
+
 // =============================================================================
 // WgpuBackend
 // =============================================================================
@@ -186,3 +197,28 @@ pub struct WgpuBackend {
 // via SharedNativeRenderBackend — no unsynchronized shared access occurs.
 unsafe impl Send for WgpuBackend {}
 unsafe impl Sync for WgpuBackend {}
+
+#[cfg(test)]
+mod force_fallback_tests {
+    use super::force_fallback_adapter;
+
+    #[test]
+    fn env_toggles_force_fallback() {
+        // Single-threaded test; restore the variable afterwards.
+        let prev = std::env::var("GOUD_WGPU_FORCE_FALLBACK").ok();
+        std::env::remove_var("GOUD_WGPU_FORCE_FALLBACK");
+        assert!(!force_fallback_adapter());
+
+        std::env::set_var("GOUD_WGPU_FORCE_FALLBACK", "1");
+        assert!(force_fallback_adapter());
+        std::env::set_var("GOUD_WGPU_FORCE_FALLBACK", "true");
+        assert!(force_fallback_adapter());
+        std::env::set_var("GOUD_WGPU_FORCE_FALLBACK", "0");
+        assert!(!force_fallback_adapter());
+
+        match prev {
+            Some(v) => std::env::set_var("GOUD_WGPU_FORCE_FALLBACK", v),
+            None => std::env::remove_var("GOUD_WGPU_FORCE_FALLBACK"),
+        }
+    }
+}

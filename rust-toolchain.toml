@@ -1,0 +1,7 @@
+# Pin the toolchain so every developer, CI runner, and container resolves an
+# identical Rust with the components the gate needs preinstalled. CI installs
+# stable, then cargo honors this file. Bump deliberately (treat as a minor
+# release event) and update the MSRV note in CONTRIBUTING.md at the same time.
+[toolchain]
+channel = "1.95.0"
+components = ["rustfmt", "clippy"]

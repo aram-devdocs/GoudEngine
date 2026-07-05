@@ -115,6 +115,9 @@ impl PlatformBackend for SwitchVulkanPlatform {
 
 #[cfg(test)]
 mod tests {
+    // The only test here is gated to non-aarch64; gate the import to match so the
+    // module has no unused import when compiled on aarch64.
+    #[cfg(not(target_arch = "aarch64"))]
     use super::*;
 
     #[cfg(not(target_arch = "aarch64"))]

@@ -28,4 +28,4 @@ Foundation types used across the engine: error handling, events, math, and resou
 
 ## Dependencies
 
-This is Layer 1 (Core). No imports from ecs/, assets/, ffi/, sdk/, or libs/.
+This is Layer 1 (Foundation). No imports from ecs/, assets/, ffi/, sdk/, or libs/.

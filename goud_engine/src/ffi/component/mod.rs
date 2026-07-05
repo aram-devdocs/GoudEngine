@@ -100,5 +100,8 @@ pub use batch::{goud_component_add_batch, goud_component_has_batch, goud_compone
 pub use ops::{goud_component_add, goud_component_register_type, goud_component_remove};
 pub use query::{goud_component_count, goud_component_get_all, goud_component_get_entities};
 
+// Entity despawn purges this layer's component storage (see ffi::entity::lifecycle).
+pub(crate) use storage::purge_context_entity;
+
 #[cfg(test)]
 mod ffi_tests;

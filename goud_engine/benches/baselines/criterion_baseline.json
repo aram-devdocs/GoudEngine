@@ -1,0 +1,49 @@
+{
+  "entries": {
+    "engine_tick/tick_10k": {
+      "mean_ns": 1290507.8221354913,
+      "ratio": 1.0
+    },
+    "engine_tick/tick_50k": {
+      "mean_ns": 7128460.0525,
+      "ratio": 5.523763537290344
+    },
+    "frame_scan/dynamic_10k": {
+      "mean_ns": 624087.3319795008,
+      "ratio": 0.48359825587634253
+    },
+    "frame_scan/dynamic_30k": {
+      "mean_ns": 1945237.8166673414,
+      "ratio": 1.5073429105206226
+    },
+    "frame_scan/dynamic_moving_10k": {
+      "mean_ns": 663907.4022640231,
+      "ratio": 0.5144543805750904
+    },
+    "frame_scan/static_10k": {
+      "mean_ns": 31800.088089412693,
+      "ratio": 0.024641530678048057
+    },
+    "frame_scan/static_30k": {
+      "mean_ns": 99591.88689086288,
+      "ratio": 0.0771726332708789
+    },
+    "material_sort/off_30k": {
+      "mean_ns": 1516749.6166958064,
+      "ratio": 1.1753122225837713
+    },
+    "material_sort/on_30k": {
+      "mean_ns": 1905435.7084748035,
+      "ratio": 1.4765007044449752
+    },
+    "shadow_record/casters_1400": {
+      "mean_ns": 155227.8765182749,
+      "ratio": 0.12028433602317012
+    },
+    "shadow_record/casters_5k": {
+      "mean_ns": 554229.6660463082,
+      "ratio": 0.4294663360731798
+    }
+  },
+  "reference_bench": "engine_tick/tick_10k"
+}

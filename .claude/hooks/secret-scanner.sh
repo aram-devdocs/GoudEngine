@@ -4,7 +4,14 @@ set -euo pipefail
 
 INPUT=$(cat)
 FILE=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.file // empty')
-CONTENT=$(echo "$INPUT" | jq -r '.tool_input.content // .tool_input.new_string // empty')
+# Collect content from Write (.content), Edit (.new_string), and MultiEdit
+# (.edits[].new_string) — the array form was previously ignored, so MultiEdit
+# payloads passed the scanner unchecked (failed open).
+CONTENT=$(echo "$INPUT" | jq -r '
+  [ .tool_input.content // empty,
+    .tool_input.new_string // empty,
+    ( .tool_input.edits[]?.new_string // empty )
+  ] | join("\n")')
 
 if [[ -z "$CONTENT" ]]; then
   exit 0
@@ -13,6 +20,9 @@ fi
 # Skip test fixtures, docs examples, lock files, and skill/rule definitions
 case "$FILE" in
   *test_fixtures/*|*test_data/*|*docs/examples/*|*.lock)
+    exit 0
+    ;;
+  */hooks/fixtures/*|*.gitleaksignore)
     exit 0
     ;;
   */skills/*/SKILL.md|*/agents/*.md|*/rules/*.md|*/rules/*.mdc)

@@ -1,0 +1,12 @@
+title = "GoudEngine gitleaks config"
+
+# Use the full default gitleaks ruleset, then allowlist the intentional test
+# fixtures below.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Hook fixtures carry deliberately fake AWS/GitHub-shaped tokens to exercise the secret-scanner hook; they are not real credentials."
+paths = [
+    '''\.claude/hooks/fixtures/.*''',
+]

@@ -67,6 +67,20 @@ impl RawComponentStorage {
         }
     }
 
+    /// Resolves the dense index for an entity, verifying the full entity bits
+    /// (index AND generation) match the slot. Because `sparse` is keyed only by
+    /// entity index, a recycled index would otherwise alias a dead entity's
+    /// slot; checking `dense[dense_index]` prevents that stale read.
+    fn resolve(&self, entity_bits: u64) -> Option<usize> {
+        let index = Entity::from_bits(entity_bits).index() as usize;
+        let dense_index = (*self.sparse.get(index)?)?;
+        if self.dense[dense_index] == entity_bits {
+            Some(dense_index)
+        } else {
+            None
+        }
+    }
+
     /// Creates the memory layout for a single component.
     fn layout(&self) -> Layout {
         if self.component_size == 0 {
@@ -94,7 +108,11 @@ impl RawComponentStorage {
         }
 
         if let Some(dense_index) = self.sparse[index] {
-            // Entity already has a component - replace it
+            // The index is occupied - either the same entity replacing its
+            // component, or a recycled index reclaiming a dead entity's slot.
+            // Rebind the slot to the current entity bits so generation checks
+            // resolve correctly afterwards.
+            self.dense[dense_index] = entity_bits;
             let existing_ptr = self.data[dense_index];
             if self.component_size > 0 {
                 std::ptr::copy_nonoverlapping(data_ptr, existing_ptr, self.component_size);
@@ -122,83 +140,57 @@ impl RawComponentStorage {
 
     /// Removes a component from the given entity.
     pub(crate) fn remove(&mut self, entity_bits: u64) -> bool {
-        let entity = Entity::from_bits(entity_bits);
-        let index = entity.index() as usize;
+        // Only remove when the slot belongs to this exact entity (generation
+        // included), so a recycled index cannot evict the live entity's slot.
+        let dense_index = match self.resolve(entity_bits) {
+            Some(d) => d,
+            None => return false,
+        };
 
-        if index >= self.sparse.len() {
-            return false;
+        self.sparse[Entity::from_bits(entity_bits).index() as usize] = None;
+        // Free the component data
+        let ptr = self.data[dense_index];
+        if !ptr.is_null() {
+            // SAFETY: We allocated this pointer with the same layout.
+            unsafe {
+                dealloc(ptr, self.layout());
+            }
         }
 
-        if let Some(dense_index) = self.sparse[index].take() {
-            // Free the component data
-            let ptr = self.data[dense_index];
-            if !ptr.is_null() {
-                // SAFETY: We allocated this pointer with the same layout.
-                unsafe {
-                    dealloc(ptr, self.layout());
-                }
-            }
+        // Swap-remove from dense arrays
+        let last_index = self.dense.len() - 1;
+        if dense_index != last_index {
+            self.dense.swap(dense_index, last_index);
+            self.data.swap(dense_index, last_index);
 
-            // Swap-remove from dense arrays
-            let last_index = self.dense.len() - 1;
-            if dense_index != last_index {
-                self.dense.swap(dense_index, last_index);
-                self.data.swap(dense_index, last_index);
-
-                let swapped_entity = Entity::from_bits(self.dense[dense_index]);
-                self.sparse[swapped_entity.index() as usize] = Some(dense_index);
-            }
-
-            self.dense.pop();
-            self.data.pop();
-            true
-        } else {
-            false
+            let swapped_entity = Entity::from_bits(self.dense[dense_index]);
+            self.sparse[swapped_entity.index() as usize] = Some(dense_index);
         }
+
+        self.dense.pop();
+        self.data.pop();
+        true
     }
 
     /// Gets a pointer to the component data for the given entity.
     pub(crate) fn get(&self, entity_bits: u64) -> *const u8 {
-        let entity = Entity::from_bits(entity_bits);
-        let index = entity.index() as usize;
-
-        if index >= self.sparse.len() {
-            return std::ptr::null();
-        }
-
-        if let Some(dense_index) = self.sparse[index] {
-            self.data[dense_index]
-        } else {
-            std::ptr::null()
+        match self.resolve(entity_bits) {
+            Some(dense_index) => self.data[dense_index],
+            None => std::ptr::null(),
         }
     }
 
     /// Gets a mutable pointer to the component data for the given entity.
     pub(crate) fn get_mut(&mut self, entity_bits: u64) -> *mut u8 {
-        let entity = Entity::from_bits(entity_bits);
-        let index = entity.index() as usize;
-
-        if index >= self.sparse.len() {
-            return std::ptr::null_mut();
-        }
-
-        if let Some(dense_index) = self.sparse[index] {
-            self.data[dense_index]
-        } else {
-            std::ptr::null_mut()
+        match self.resolve(entity_bits) {
+            Some(dense_index) => self.data[dense_index],
+            None => std::ptr::null_mut(),
         }
     }
 
     /// Checks if the entity has this component.
     pub(crate) fn contains(&self, entity_bits: u64) -> bool {
-        let entity = Entity::from_bits(entity_bits);
-        let index = entity.index() as usize;
-
-        if index >= self.sparse.len() {
-            return false;
-        }
-
-        self.sparse[index].is_some()
+        self.resolve(entity_bits).is_some()
     }
 }
 
@@ -228,6 +220,17 @@ pub(crate) struct ContextComponentStorage {
 }
 
 impl ContextComponentStorage {
+    /// Removes the entity from every component storage in this context.
+    ///
+    /// Call this when an entity is despawned so its dynamic-component slots are
+    /// freed. Without it, storages grow unbounded and a later entity that
+    /// recycles the same index could otherwise alias the dead entity's data.
+    pub(crate) fn purge_entity(&mut self, entity_bits: u64) {
+        for storage in self.storages.values_mut() {
+            storage.remove(entity_bits);
+        }
+    }
+
     /// Gets or creates storage for a component type.
     pub(crate) fn get_or_create_storage(
         &mut self,
@@ -266,6 +269,20 @@ pub(crate) static CONTEXT_COMPONENT_STORAGE: Mutex<Option<HashMap<u64, ContextCo
 pub(crate) fn get_context_storage_map(
 ) -> std::sync::MutexGuard<'static, Option<HashMap<u64, ContextComponentStorage>>> {
     CONTEXT_COMPONENT_STORAGE.lock().unwrap()
+}
+
+/// Purges an entity's dynamic components from the given context's storage.
+///
+/// Call after despawning an entity so its component slots are freed. `context_key`
+/// is the caller-computed key (see `helpers::context_key`); this keeps the FFI
+/// context type out of this layer. A no-op if the context has no storage.
+pub(crate) fn purge_context_entity(context_key: u64, entity_bits: u64) {
+    let mut storage_map = get_context_storage_map();
+    if let Some(map) = storage_map.as_mut() {
+        if let Some(context_storage) = map.get_mut(&context_key) {
+            context_storage.purge_entity(entity_bits);
+        }
+    }
 }
 
 // ============================================================================
@@ -314,4 +331,98 @@ pub(crate) fn register_component_type_internal(
 pub(crate) fn get_component_type_info(type_id_hash: u64) -> Option<ComponentTypeInfo> {
     let registry = get_type_registry();
     registry.as_ref()?.get(&type_id_hash).cloned()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ecs::Entity;
+
+    fn insert_u32(storage: &mut RawComponentStorage, entity: Entity, value: u32) -> bool {
+        let bytes = value.to_ne_bytes();
+        // SAFETY: `bytes` is 4 valid bytes matching the registered size/align (4/4).
+        unsafe { storage.insert(entity.to_bits(), bytes.as_ptr()) }
+    }
+
+    fn read_u32(storage: &RawComponentStorage, entity: Entity) -> Option<u32> {
+        let ptr = storage.get(entity.to_bits());
+        if ptr.is_null() {
+            return None;
+        }
+        let mut bytes = [0u8; 4];
+        // SAFETY: `ptr` came from a slot sized for a u32.
+        unsafe { std::ptr::copy_nonoverlapping(ptr, bytes.as_mut_ptr(), 4) };
+        Some(u32::from_ne_bytes(bytes))
+    }
+
+    #[test]
+    fn recycled_index_does_not_read_stale_component() {
+        let mut storage = RawComponentStorage::new(4, 4);
+        let old = Entity::new(5, 1);
+        assert!(insert_u32(&mut storage, old, 111));
+        assert_eq!(read_u32(&storage, old), Some(111));
+
+        // A recycled entity at the same index but a newer generation must not
+        // see the dead entity's component data.
+        let recycled = Entity::new(5, 2);
+        assert_eq!(read_u32(&storage, recycled), None);
+        assert!(!storage.contains(recycled.to_bits()));
+    }
+
+    #[test]
+    fn insert_reclaims_a_recycled_slot() {
+        let mut storage = RawComponentStorage::new(4, 4);
+        insert_u32(&mut storage, Entity::new(5, 1), 111);
+
+        let recycled = Entity::new(5, 2);
+        assert!(insert_u32(&mut storage, recycled, 222));
+        assert_eq!(read_u32(&storage, recycled), Some(222));
+        // The dead entity's bits no longer resolve.
+        assert_eq!(read_u32(&storage, Entity::new(5, 1)), None);
+    }
+
+    #[test]
+    fn remove_only_evicts_the_matching_generation() {
+        let mut storage = RawComponentStorage::new(4, 4);
+        let live = Entity::new(5, 1);
+        insert_u32(&mut storage, live, 111);
+
+        // Removing a different generation at the same index is a no-op.
+        assert!(!storage.remove(Entity::new(5, 2).to_bits()));
+        assert_eq!(read_u32(&storage, live), Some(111));
+
+        assert!(storage.remove(live.to_bits()));
+        assert_eq!(read_u32(&storage, live), None);
+    }
+
+    #[test]
+    fn storage_stays_bounded_across_respawn_cycles() {
+        let mut storage = RawComponentStorage::new(4, 4);
+        for generation in 0..1000u32 {
+            let entity = Entity::new(0, generation);
+            insert_u32(&mut storage, entity, generation);
+            assert!(storage.remove(entity.to_bits()));
+        }
+        assert_eq!(
+            storage.dense.len(),
+            0,
+            "despawn/respawn must not grow storage"
+        );
+    }
+
+    #[test]
+    fn purge_entity_clears_every_storage() {
+        let mut ctx = ContextComponentStorage::default();
+        let entity = Entity::new(3, 1);
+        for type_id in [10u64, 20u64] {
+            let storage = ctx.get_or_create_storage(type_id, 4, 4);
+            insert_u32(storage, entity, 7);
+        }
+
+        ctx.purge_entity(entity.to_bits());
+
+        for type_id in [10u64, 20u64] {
+            assert!(!ctx.get_storage(type_id).unwrap().contains(entity.to_bits()));
+        }
+    }
 }

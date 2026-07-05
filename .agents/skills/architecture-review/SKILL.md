@@ -14,24 +14,27 @@ Run after structural changes, new module additions, or when adding cross-module 
 
 ## 5-Layer Hierarchy
 
-Dependencies MUST flow DOWN only. No upward imports. No same-layer cross-imports (unless explicitly documented).
+Dependencies MUST flow DOWN only. No upward imports. No same-layer cross-imports (unless explicitly documented). The canonical model lives in `tools/lint_layers.rs`.
 
 ```
-Layer 1 (Core)    : goud_engine/src/libs/   — graphics, platform, ecs, logger
-Layer 2 (Engine)  : goud_engine/src/        — core, assets, sdk
-Layer 3 (FFI)     : goud_engine/src/ffi/
-Layer 4 (SDKs)    : sdks/                   — csharp, python
-Layer 5 (Apps)    : examples/               — csharp, python, rust
+Layer 1 (Foundation): goud_engine/src/core/
+Layer 2 (Libs)      : goud_engine/src/libs/          — graphics, platform, logger
+Layer 3 (Services)  : goud_engine/src/ecs/, assets/
+Layer 4 (Engine)    : goud_engine/src/sdk/, rendering/, component_ops/, context_registry/
+Layer 5 (FFI)       : goud_engine/src/ffi/, wasm/
 ```
+
+SDKs (`sdks/`) and apps (`examples/`) sit outside `goud_engine/src/` and connect through the FFI boundary only. The SDK matrix is 10 languages: `c`, `cpp`, `csharp`, `go`, `kotlin`, `lua`, `python`, `rust`, `swift`, `typescript`. Examples are organized by SDK language under `examples/<lang>/`.
 
 **Valid dependency directions:**
 - Layer 5 → Layer 4 → Layer 3 → Layer 2 → Layer 1
 - Any layer may depend on layers below it (not just adjacent)
 
 **Invalid:**
-- Layer 1 importing from Layer 2+ (core depending on engine)
-- Layer 3 importing from Layer 4 (FFI depending on SDK)
-- `libs/graphics/` importing from `libs/ecs/` (same-layer cross-import without justification)
+- Layer 1 importing from Layer 2+ (foundation depending on libs/services/engine)
+- Layer 5 (FFI) is the outermost boundary — nothing inside `goud_engine/src/` may depend on it
+- SDKs reaching into engine internals instead of going through FFI
+- `libs/graphics/` importing from `ecs/` (upward, since ecs is Layer 3)
 
 ## Audit Process
 
@@ -39,19 +42,26 @@ Layer 5 (Apps)    : examples/               — csharp, python, rust
 
 Check Rust `use` statements for violations:
 
+The authoritative validator is `cargo run -p lint-layers`, which scans every `.rs` under `goud_engine/src/` and reports layer violations. Run it first; the greps below are for narrowing down a specific breach.
+
 ```bash
+# Authoritative layer check
+cargo run -p lint-layers
+
 # Find all use statements in the codebase
 rg "^use " goud_engine/src/ --type rust
 
-# Check for upward dependencies from libs (Layer 1)
-rg "use crate::(ffi|sdk|assets)" goud_engine/src/libs/ --type rust
+# Layer 1 (core) MUST NOT import from any higher layer
+rg "use crate::(libs|ecs|assets|sdk|rendering|component_ops|context_registry|ffi|wasm)" goud_engine/src/core/ --type rust
 
-# Check for upward dependencies from core modules (Layer 2)
-rg "use crate::ffi" goud_engine/src/core/ --type rust
-rg "use crate::ffi" goud_engine/src/assets/ --type rust
+# Layer 2 (libs) MUST NOT import from Layer 3+
+rg "use crate::(ecs|assets|sdk|rendering|component_ops|context_registry|ffi|wasm)" goud_engine/src/libs/ --type rust
 
-# Check FFI (Layer 3) doesn't import SDK (Layer 4)
-rg "use crate::sdk" goud_engine/src/ffi/ --type rust
+# Layer 3 (services) MUST NOT import from Layer 4+
+rg "use crate::(sdk|rendering|component_ops|context_registry|ffi|wasm)" goud_engine/src/ecs/ goud_engine/src/assets/ --type rust
+
+# Layer 4 (engine) MUST NOT import from Layer 5 (FFI)
+rg "use crate::(ffi|wasm)" goud_engine/src/sdk/ goud_engine/src/rendering/ --type rust
 ```
 
 ### Step 2: Validate Module Boundaries
@@ -74,17 +84,20 @@ Types should not leak across boundaries:
 
 ### Step 4: SDK Logic Audit
 
-SDKs MUST be thin wrappers. Check for logic that belongs in Rust:
+All 10 SDKs MUST be thin wrappers. Check each language for logic that belongs in Rust:
 
 ```bash
 # C# SDK: look for complex logic (loops, conditionals beyond null checks)
-rg "for |while |if .* && |switch " sdks/csharp/ --type cs
+rg "for |while |if .* && |switch " sdks/csharp/ --type cs -g '!generated/*'
 
 # Python SDK: look for logic beyond FFI calls
-rg "for |while |if .* and |if .* or " sdks/python/goudengine/ --type py
+rg "for |while |if .* and |if .* or " sdks/python/goudengine/ --type py -g '!generated/*'
+
+# Sweep the remaining SDKs for the same smell
+rg "for |while " sdks/go/ sdks/kotlin/ sdks/lua/ sdks/swift/ sdks/rust/ sdks/typescript/ sdks/c/ sdks/cpp/ -g '!*generated*'
 ```
 
-Flag any non-trivial logic found in SDK code — it should be moved to Rust.
+Flag any non-trivial logic found in SDK code — it should be moved to Rust and exposed via FFI so every SDK inherits it.
 
 ### Step 5: Circular Dependency Check
 

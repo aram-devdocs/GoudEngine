@@ -30,11 +30,15 @@ goud_engine/
 └── benches/                 # Benchmarks (criterion)
     └── ecs_bench.rs
 
-sdks/
-├── csharp.tests/            # C# SDK tests (xUnit)
-└── python/
-    └── test_bindings.py     # Python SDK tests
+sdks/                        # 10 language SDKs: c, cpp, csharp, go,
+├── csharp.tests/            #   kotlin, lua, python, rust, swift, typescript
+│                            # C# SDK tests (xUnit)
+├── python/
+│   └── test_bindings.py     # Python SDK tests
+└── typescript/              # TypeScript SDK tests (npm test)
 ```
+
+Every FFI export MUST have a binding in all 10 SDKs. The generated `ffi_manifest.json` is the contract; `codegen/validate_coverage.py` gates coverage across the full matrix.
 
 ## GL Context Management
 
@@ -104,12 +108,15 @@ fn test_ffi_create_entity_roundtrip() {
 
 ## Cross-SDK Parity Tests
 
-Verify the same operation produces the same result in both SDKs:
+Verify the same operation produces the same result across every SDK that has a test harness:
 
 1. Write the test in Rust (ground truth)
 2. Write equivalent test in Python (`test_bindings.py`)
 3. Write equivalent test in C# (`csharp.tests/`)
-4. Results must match across all three
+4. Write equivalent test in TypeScript (`sdks/typescript`, `npm test`)
+5. Results must match across all of them
+
+The remaining SDKs (`go`, `kotlin`, `lua`, `swift`, `rust`, `c`, `cpp`) share the same FFI contract; extend parity coverage to them as their harnesses mature.
 
 ## Test Categories
 
@@ -120,6 +127,8 @@ Verify the same operation produces the same result in both SDKs:
 | FFI boundary | `goud_engine/tests/` | Sometimes | `cargo test --test ffi_*` |
 | Python SDK | `sdks/python/test_bindings.py` | No | `python3 sdks/python/test_bindings.py` |
 | C# SDK | `sdks/csharp.tests/` | No | `dotnet test sdks/csharp.tests/` |
+| TypeScript SDK | `sdks/typescript/` | No | `cd sdks/typescript && npm test` |
+| SDK coverage gate | `codegen/validate_coverage.py` | No | `python3 codegen/validate_coverage.py` |
 | Benchmarks | `goud_engine/benches/` | Sometimes | `cargo bench` |
 
 ## Checklist

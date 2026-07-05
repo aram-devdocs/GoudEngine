@@ -564,6 +564,15 @@ jobs:
         path: 'sdks/csharp.tests/TestResults/${{ matrix.os }}/coverage/coverage.cobertura.xml'
         retention-days: 3
 
+    - name: Upload C# coverage to Codecov
+      if: matrix.os == 'ubuntu-latest'
+      uses: codecov/codecov-action@v6
+      with:
+        file: sdks/csharp.tests/TestResults/${{ matrix.os }}/coverage/coverage.cobertura.xml
+        flags: dotnet
+        name: dotnet-coverage
+        fail_ci_if_error: false
+
   # Build check to ensure everything compiles together
   integration-build:
     name: Integration Build Check
@@ -1099,6 +1108,7 @@ jobs:
   ios-build-pipeline:
     name: iOS Build Pipeline
     runs-on: macos-latest
+    if: github.event_name != 'pull_request'
     needs: [preflight]
     timeout-minutes: 35
     steps:
@@ -1154,6 +1164,7 @@ jobs:
   android-build-pipeline:
     name: Android Build Pipeline
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
     needs: [preflight]
     timeout-minutes: 25
     steps:
@@ -1298,6 +1309,7 @@ jobs:
   clean-room-regeneration:
     name: Clean Room Regeneration
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
     needs: [preflight]
 
     steps:
@@ -1378,9 +1390,11 @@ jobs:
         ALLOW_FASTLANE_SKIPPED="false"
         ALLOW_RUST_SKIPPED="false"
         ALLOW_PUSH_SKIPPED="false"
+        ALLOW_HEAVY_SKIPPED="false"
         if [[ "$EVENT" == "pull_request" ]]; then
           ALLOW_FASTLANE_SKIPPED="true"
           ALLOW_RUST_SKIPPED="true"
+          ALLOW_HEAVY_SKIPPED="true"
         fi
         if [[ "$EVENT" == "push" ]]; then
           ALLOW_RUST_SKIPPED="true"
@@ -1402,12 +1416,12 @@ jobs:
         check_job "kotlin-sdk-test" "${{ needs.kotlin-sdk-test.result }}" "false" || FAIL=1
         check_job "go-sdk-check" "${{ needs.go-sdk-check.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
         check_job "swift-sdk-check" "${{ needs.swift-sdk-check.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
-        check_job "ios-build-pipeline" "${{ needs.ios-build-pipeline.result }}" "false" || FAIL=1
-        check_job "android-build-pipeline" "${{ needs.android-build-pipeline.result }}" "false" || FAIL=1
+        check_job "ios-build-pipeline" "${{ needs.ios-build-pipeline.result }}" "$ALLOW_HEAVY_SKIPPED" || FAIL=1
+        check_job "android-build-pipeline" "${{ needs.android-build-pipeline.result }}" "$ALLOW_HEAVY_SKIPPED" || FAIL=1
         check_job "c-sdk-check" "${{ needs.c-sdk-check.result }}" "$ALLOW_FASTLANE_SKIPPED" || FAIL=1
         check_job "lua-sdk-check" "${{ needs.lua-sdk-check.result }}" "false" || FAIL=1
         check_job "sandbox-parity" "${{ needs.sandbox-parity.result }}" "false" || FAIL=1
-        check_job "clean-room-regeneration" "${{ needs.clean-room-regeneration.result }}" "false" || FAIL=1
+        check_job "clean-room-regeneration" "${{ needs.clean-room-regeneration.result }}" "$ALLOW_HEAVY_SKIPPED" || FAIL=1
 
         if [[ "$FAIL" -ne 0 ]]; then
           echo "One or more jobs failed"

@@ -7,6 +7,12 @@ use std::time::{Duration, Instant};
 use goud_engine::sdk::{GameConfig, GoudGame};
 
 fn should_skip_native_smoke() -> bool {
+    // Explicit headless opt-out for the verification gate and any environment
+    // that cannot create/present a native window (macOS automation has no
+    // display-env signal, so the checks below cannot detect it).
+    if std::env::var_os("GOUD_SKIP_NATIVE_SMOKE").is_some() {
+        return true;
+    }
     if std::env::var_os("CI").is_some() {
         return true;
     }

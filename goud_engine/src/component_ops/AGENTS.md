@@ -40,5 +40,6 @@ All `_impl` functions in `single_ops.rs` and `batch_ops.rs` are `unsafe`. Caller
 
 ## Dependencies
 
-Layer 2 (Engine). Imports from `core::context_registry`, `core::error`, `core::types`,
-and `ecs::Entity`. Does not import from `ffi/` or `sdk/`.
+Layer 4 (Engine). Imports from `context_registry` (top-level module, same layer),
+`core::error`, `core::types` (Layer 1), and `ecs::Entity` (Layer 3). Does not import
+from `ffi/` or `sdk/`.

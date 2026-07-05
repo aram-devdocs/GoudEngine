@@ -1,15 +1,9 @@
 //! Test helpers for GPU-free testing.
 //!
 //! This module provides utilities for running tests without requiring a real GPU or OpenGL context.
-//! Tests using these helpers can run in headless CI environments where graphics acceleration is unavailable.
-//!
-//! # Running Headless Tests
-//!
-//! To run the entire test suite with the headless backend:
-//!
-//! ```bash
-//! cargo test --features headless
-//! ```
+//! Tests that opt into these helpers can run in headless CI environments where graphics
+//! acceleration is unavailable. Tests that require a live GL/GPU context are marked `#[ignore]`
+//! and are not covered by these helpers — run them locally with `cargo test -- --ignored`.
 //!
 //! # Using init_test_context()
 //!

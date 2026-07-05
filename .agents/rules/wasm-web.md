@@ -1,0 +1,32 @@
+---
+globs:
+  - "goud_engine/src/wasm/**"
+  - "sdks/typescript/**"
+alwaysApply: false
+---
+
+# WASM and Web Target Patterns
+
+The WASM module (`goud_engine/src/wasm/`) is a Layer 5 (FFI) module — the browser boundary, parallel to the C FFI and JNI bridges. It exposes the engine to JavaScript via `wasm-bindgen` and backs the browser build of the TypeScript SDK (`sdks/typescript/`).
+
+## Target and Backend
+
+- Target is `wasm32-unknown-unknown` only. Code here MUST compile without native-only dependencies; guard anything native behind `cfg` and keep the browser path self-contained.
+- Rendering uses the wgpu backend attached to an HTML canvas — never the legacy OpenGL path. The WASM sprite batcher (`sprite_renderer.rs`) is separate from the native renderer; do not assume shared code.
+- `WasmGame` is the main handle exposed to JS. Construct headless via `WasmGame::new(w, h, title)` or with rendering via `create_with_canvas(...)`. Input is push-based: JS calls `press_key()`/`release_key()`.
+
+## Networking and Debugger Attach
+
+- Browser networking (`network.rs`) is WebSocket client only; hosting/server behavior is intentionally unsupported in the browser. Addresses are normalized to `ws://`/`wss://`.
+- The WASM debugger is attached over a WebSocket relay, not a local IPC socket. Call `initDebugger(routeLabel)` once after construction (it registers the context with `publish_local_attach: false`), then the relay forwards IPC verbs through `dispatchDebuggerRequest(json)`, which returns a JSON response.
+
+## TypeScript SDK
+
+- The SDK has two targets: Node.js via napi-rs (`src/node/`) and browser via WASM (`src/web/`). It is a thin wrapper — no game logic, math, or rendering in TS.
+- f64 vs f32: napi-rs uses JS `f64`, the engine uses `f32`. The Node path converts at the boundary; the WASM path uses `f32` directly. Do not assume f64 precision carries through.
+- `.g.rs` and `.g.ts` files are codegen output and MUST NOT be hand-edited. `index.js`/`index.d.ts` are auto-built napi loaders and are gitignored — never commit them.
+
+## Build Path
+
+- Browser build: `npm run build:web`, which runs `wasm-pack build ../../goud_engine --target web --out-dir ../sdks/typescript/wasm --features web --no-default-features` then compiles the web TS.
+- Native build: `npm run build:native` (napi-rs). After any FFI/WASM export change, rerun `./codegen.sh` and the SDK smoke tests, and keep parity with the other SDKs.

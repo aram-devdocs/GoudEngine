@@ -10,32 +10,41 @@ if [[ -z "$CMD" ]]; then
 fi
 
 BLOCKED_PATTERNS=(
-  'rm\s+-rf\s+/'
-  'rm\s+-rf\s+~'
-  'rm\s+-rf\s+\$HOME'
-  'git\s+push\s+.*--force\s+.*main'
-  'git\s+push\s+.*--force\s+.*master'
-  'git\s+push\s+-f\s+.*main'
-  'git\s+push\s+-f\s+.*master'
+  # Destructive removals of true system roots or the bare home dir. Project-path
+  # deletes (including absolute paths under /Users, /home, /private/tmp) are
+  # allowed — only the enumerated dangerous roots (and their subpaths) match.
+  'rm\s+-rf\s+(--no-preserve-root\s+)?/\s*($|;)'
+  'rm\s+-rf\s+(--no-preserve-root\s+)?/(usr|etc|bin|sbin|lib|var|boot|dev|sys|proc|opt|root|System|Library|Applications|Volumes)(/|\s|$)'
+  'rm\s+-rf\s+~(\s|$)'
+  'rm\s+-rf\s+\$HOME(\s|$)'
+  'rm\s+-rf\s+\.\s*(\*|$)'
+  # Force-push to protected branches
+  'git\s+push\s+.*(--force|-f)\b.*\b(main|master)\b'
+  'git\s+push\s+.*(--force|-f)\s*$'
+  # Bypassing the verification gate is never allowed (see CONTRIBUTING)
+  '--no-verify\b'
+  '\[skip[ -]ci\]'
+  # Publishing is release-automation's job, not an agent's
   'cargo\s+publish'
+  # Privilege escalation and pipe-to-shell installs
+  'sudo\s'
+  '(curl|wget)\b[^|]*\|\s*(ba|z|k)?sh\b'
+  # Destructive DB ops
   'DROP\s+TABLE'
   'DROP\s+DATABASE'
   'TRUNCATE\s+TABLE'
+  # Broad permission and disk-destroying commands
   'chmod\s+-R\s+777'
   ':\(\)\{\s*:\|:&\s*\};:'
   'mkfs\.'
   'dd\s+if=.*of=/dev/'
-  'cargo\s+publish\s+--no-verify'
-  'git\s+push\s+--force'
-  'git\s+push\s+-f'
-  'git\s+push\s+.*--force\s+.*main'
-  'git\s+push\s+.*--force\s+.*master'
-  'git\s+push\s+-f\s+.*main'
-  'git\s+push\s+-f\s+.*master'
+  '>\s*/dev/sd[a-z]'
 )
 
 for PATTERN in "${BLOCKED_PATTERNS[@]}"; do
-  if echo "$CMD" | grep -qiE "$PATTERN"; then
+  # -e marks the pattern explicitly so entries beginning with `-` (e.g. --no-verify)
+  # are not misparsed as grep options.
+  if echo "$CMD" | grep -qiE -e "$PATTERN"; then
     echo "✗ BLOCKED: dangerous command detected"
     echo "  Command: $CMD"
     echo "  Pattern: $PATTERN"

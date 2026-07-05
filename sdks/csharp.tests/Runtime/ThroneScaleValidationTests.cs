@@ -305,7 +305,7 @@ public class ThroneScaleValidationTests
         }
     }
 
-    [Fact(Skip = "Known bug: FFI component storage not cleaned up on entity despawn (see PR description)")]
+    [Fact]
     public void Despawn_10k_Entities_Cleans_Up_Component_Storage()
     {
         var (context, game) = RuntimeTestSupport.CreateHeadlessGame("ThroneDespawnComponents");

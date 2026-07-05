@@ -1,5 +1,21 @@
 [advisories]
 # rustls-webpki advisories (RUSTSEC-2026-0049/0098/0099/0104) were resolved by upgrading
-# rustls-webpki to >=0.103.13. Keep this file present so future ignores can be added without
-# editing the workflow.
-ignore = []
+# rustls-webpki to >=0.103.13.
+#
+# The entries below mirror deny.toml's ignore list (kept in sync — see #704 for the
+# upstream-upgrade remediation). cargo-audit and cargo-deny read separate files, so both
+# must carry the same triaged advisories.
+ignore = [
+    "RUSTSEC-2024-0436", # paste: transitive via wgpu->metal; no upstream alternative
+    "RUSTSEC-2025-0141", # bincode 1.3.3: authors consider it complete; scene serialization
+    "RUSTSEC-2026-0097", # rand: unsoundness only via a custom global logger; engine sets none
+    "RUSTSEC-2026-0105", # core2: unmaintained; transitive via image->ravif->rav1e
+    "RUSTSEC-2026-0186", # memmap2: offset validation; transitive, offsets from internal callers
+    "RUSTSEC-2026-0189", # rmcp: DNS rebinding in the localhost-only MCP debug server
+    "RUSTSEC-2026-0190", # anyhow: downcast_mut-after-context UB; pending patched release
+    "RUSTSEC-2026-0192", # ttf-parser: unmaintained; transitive via rustybuzz
+    "RUSTSEC-2026-0194", # quick-xml: quadratic parse of trusted local assets
+    "RUSTSEC-2026-0195", # quick-xml: namespace DoS parsing trusted local assets
+    "RUSTSEC-2026-0196", # cgmath: unmaintained; engine math lib, migration tracked #704
+    "RUSTSEC-2026-0197", # cgmath: swap_columns UB only on identical indices; never called so
+]

@@ -1,7 +1,7 @@
 # Rust build and cargo files
 /target
 **/*.rs.bk
-Cargo.lock
+# Cargo.lock is intentionally tracked (this repo ships binaries and SDKs).
 
 # Swift Package Manager
 .build/
@@ -22,7 +22,6 @@ package-lock.json
 *.swo
 .idea
 .vscode/
-*.DS_Store
 
 # Output binary
 /debug
@@ -112,6 +111,7 @@ sdks/c/tests/build/
 # Claude worktrees (ephemeral, per-session)
 .claude/worktrees/
 .worktrees/
+worktrees/
 .mcp.json
 
 # Gradle build artifacts

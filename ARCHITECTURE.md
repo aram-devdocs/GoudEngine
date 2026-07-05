@@ -39,9 +39,9 @@ Dependencies flow **down only**. Upward imports are build-time violations enforc
 ```mermaid
 flowchart TD
     EXT["External -- SDKs & Apps\nsdks/  examples/"]
-    L5["Layer 5 -- FFI\nffi/  wasm/"]
+    L5["Layer 5 -- FFI\nffi/  wasm/  jni/"]
     L4["Layer 4 -- Engine\nsdk/  rendering/  component_ops/  context_registry/"]
-    L3["Layer 3 -- Services\necs/  assets/"]
+    L3["Layer 3 -- Services\necs/  assets/  ui/"]
     L2["Layer 2 -- Libs\nlibs/"]
     L1["Layer 1 -- Foundation\ncore/"]
 
@@ -57,9 +57,9 @@ flowchart TD
 |-------|------|-------------|-----------------|
 | 1 | Layer 1 (Foundation) | `core/` | (none) |
 | 2 | Layer 2 (Libs) | `libs/` | Layer 1 (Foundation) |
-| 3 | Layer 3 (Services) | `assets/`, `ecs/` | Layer 1 (Foundation), Layer 2 (Libs) |
+| 3 | Layer 3 (Services) | `assets/`, `ecs/`, `ui/` | Layer 1 (Foundation), Layer 2 (Libs) |
 | 4 | Layer 4 (Engine/SDK) | `component_ops/`, `context_registry/`, `rendering/`, `sdk/` | Layer 1 (Foundation), Layer 2 (Libs), Layer 3 (Services) |
-| 5 | Layer 5 (FFI/WASM) | `ffi/`, `wasm/` | Layer 1 (Foundation), Layer 2 (Libs), Layer 3 (Services), Layer 4 (Engine/SDK) |
+| 5 | Layer 5 (FFI/WASM) | `ffi/`, `jni/`, `wasm/` | Layer 1 (Foundation), Layer 2 (Libs), Layer 3 (Services), Layer 4 (Engine/SDK) |
 <!-- /gen:layer-hierarchy -->
 
 SDKs (`sdks/`) and Apps (`examples/`) sit outside `goud_engine/src/` and connect via FFI only. They are not checked by `lint-layers` since they are separate projects.

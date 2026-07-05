@@ -1,3 +1,8 @@
+---
+description: Orchestrator workflow and agent dispatch protocol
+alwaysApply: true
+---
+
 # Orchestrator Protocol
 
 Use the smallest workflow that still protects quality.

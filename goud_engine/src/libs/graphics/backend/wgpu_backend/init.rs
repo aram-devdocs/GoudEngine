@@ -35,7 +35,7 @@ impl WgpuBackend {
             .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
                 compatible_surface: Some(&surface),
-                force_fallback_adapter: false,
+                force_fallback_adapter: super::force_fallback_adapter(),
             })
             .await
             .map_err(|e| GoudError::BackendNotSupported(format!("No suitable GPU adapter: {e}")))?;

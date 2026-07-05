@@ -10,7 +10,10 @@ Performance benchmarks using the `criterion` crate. Focus on hot paths.
 - `asset_benchmarks.rs` — Asset loading, caching, handle resolution
 - `sprite_batch_benchmarks.rs` — Sprite batch gather, sort, vertex generation, full CPU pipeline
 - `render_benchmarks.rs` — Render pipeline CPU benchmarks (full frame, metrics, percentiles, scaling)
-- `physics_benchmarks.rs.disabled` — Physics benchmarks (currently disabled)
+- `spatial_grid_benchmarks.rs` — Spatial grid insertion and query hot paths
+- `ffi_component_benchmarks.rs` — FFI component boundary-crossing overhead
+- `pool_benchmarks.rs` — Object/component pool allocation and reuse
+- `physics_benchmarks.rs` — Collider, AABB, and physics-step hot paths
 
 ## Running
 

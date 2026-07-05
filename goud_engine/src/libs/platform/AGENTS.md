@@ -41,5 +41,6 @@ trait PlatformBackend {
 
 ## Dependencies
 
-Layer 1 (Core). Imports from `crate::core::error`, `crate::core::math`,
-and `crate::ecs::InputManager`. NEVER imports from Layer 2+ (engine, ffi, sdk).
+Layer 2 (Libs). Imports from `crate::core` (error, math, input_manager, providers --
+Layer 1) and `crate::libs` (error, graphics backend -- same layer). NEVER imports from
+Layer 3+ (services, engine, ffi, sdk).

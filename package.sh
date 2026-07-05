@@ -53,14 +53,14 @@ deploy_local() {
     fi
 }
 
-# Function to handle production deployment (TODO)
+# Production publishing to nuget.org is NOT handled by this script.
+# It runs from CI: release-please cuts the version bump and tag, and the
+# release workflow publishes the signed package. This is a deliberate no-op
+# so local `--prod` invocations do not push unofficial builds to nuget.org.
 deploy_prod() {
-    echo "TODO: Implement production deployment to nuget.org."
-    echo "You need to ensure the following:"
-    echo "1. Have a nuget.org API key."
-    echo "2. Add the key to your environment or configure it securely."
-    echo "3. Use the following command to publish:"
-    echo "   dotnet nuget push <nupkg-file> --api-key <your-api-key> --source https://api.nuget.org/v3/index.json"
+    echo "Production publishing is handled by the release workflow (release-please + CI),"
+    echo "not by this script. Merge conventional commits to main and let the Release PR"
+    echo "drive the nuget.org publish. Use './package.sh --local' for local iteration."
 }
 
 # Parse command-line arguments
@@ -70,9 +70,6 @@ if [ "$1" == "--local" ]; then
 
     deploy_local
 elif [ "$1" == "--prod" ]; then
-    # run ./build.sh first
-    ./build.sh --prod
-
     deploy_prod
 else
     echo "Usage: ./package.sh [--local | --prod]"

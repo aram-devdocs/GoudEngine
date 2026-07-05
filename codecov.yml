@@ -24,13 +24,13 @@ coverage:
         flags:
           - rust
       
-      # TODO: Enable when C# tests are added
-      # dotnet:
-      #   target: 80%
-      #   paths:
-      #     - "sdks/GoudEngine/**/*.cs"
-      #   flags:
-      #     - dotnet
+      dotnet:
+        target: 80%
+        paths:
+          - "sdks/csharp/**/*.cs"
+        flags:
+          - dotnet
+        if_not_found: success
     
     patch:
       default:
@@ -60,11 +60,10 @@ flags:
       - goud_engine/src/**
     carryforward: false
   
-  # TODO: Enable when C# tests are added
-  # dotnet:
-  #   paths:
-  #     - sdks/GoudEngine/**/*.cs
-  #   carryforward: false
+  dotnet:
+    paths:
+      - sdks/csharp/**/*.cs
+    carryforward: false
 
 ignore:
   # Ignore generated files

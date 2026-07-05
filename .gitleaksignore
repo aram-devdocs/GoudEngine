@@ -1,0 +1,5 @@
+# gitleaks fingerprint allowlist (commit:path:rule:line entries).
+#
+# Path-based allowlisting for the intentional hook fixtures lives in
+# .gitleaks.toml ([allowlist].paths) instead, which is stable across commits.
+# Add fingerprints here only for one-off vetted findings.

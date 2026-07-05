@@ -37,4 +37,4 @@ Bevy-inspired ECS architecture: World → Entities → Components, with type-saf
 
 ## Dependencies
 
-Layer 1 (Core). May import from `core/` only.
+Layer 3 (Services). Imports from `core/` (Layer 1) and `assets/` (same layer). No imports from ffi/ or sdk/.

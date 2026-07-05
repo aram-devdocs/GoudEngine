@@ -90,6 +90,7 @@ class SyncAgentConfigsTests(unittest.TestCase):
                 "default": {
                     "description": "fallback",
                     "nickname_candidates": ["Northstar"],
+                    "codex_enabled": True,
                 }
             },
         }
@@ -102,6 +103,38 @@ class SyncAgentConfigsTests(unittest.TestCase):
         self.assertIn("job_max_runtime_seconds = 1800", rendered)
         self.assertIn('config_file = "agents/default.toml"', rendered)
         self.assertIn('nickname_candidates = ["Northstar"]', rendered)
+
+    def test_parse_rule_frontmatter_extracts_globs_and_body(self) -> None:
+        text = '---\nglobs:\n  - "**/ecs/**"\n  - "**/foo/**"\nalwaysApply: false\n---\n# Title\n\nBody.\n'
+        front, body = SYNC.parse_rule_frontmatter(text)
+        self.assertEqual(front["globs"], ["**/ecs/**", "**/foo/**"])
+        self.assertEqual(front["alwaysApply"], "false")
+        self.assertTrue(body.startswith("# Title"))
+
+    def test_parse_rule_frontmatter_handles_no_frontmatter(self) -> None:
+        text = "# Title\n\nBody only.\n"
+        front, body = SYNC.parse_rule_frontmatter(text)
+        self.assertEqual(front, {})
+        self.assertEqual(body, text)
+
+    def test_render_cursor_rule_scoped(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            rule = Path(tmpdir) / "ecs-patterns.md"
+            rule.write_text('---\nglobs:\n  - "**/ecs/**"\n---\n# ECS Patterns\n\nBody.\n', encoding="utf-8")
+            rendered = SYNC.render_cursor_rule(rule)
+        self.assertIn("description: ECS Patterns", rendered)
+        self.assertIn("globs: **/ecs/**", rendered)
+        self.assertIn("alwaysApply: false", rendered)  # scoped rule auto-attaches
+        self.assertIn(SYNC.GENERATED_MARKER, rendered)
+        self.assertIn("# ECS Patterns", rendered)
+
+    def test_render_cursor_rule_unscoped_always_applies(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            rule = Path(tmpdir) / "orchestrator-protocol.md"
+            rule.write_text("# Orchestrator Protocol\n\nBody.\n", encoding="utf-8")
+            rendered = SYNC.render_cursor_rule(rule)
+        self.assertIn("description: Orchestrator Protocol", rendered)
+        self.assertIn("alwaysApply: true", rendered)  # no globs -> always on
 
 
 if __name__ == "__main__":

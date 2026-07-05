@@ -1,0 +1,14 @@
+# Keep the build context small and reproducible. Cargo rebuilds inside the image
+# from the locked manifest, so host build output and VCS/tooling state are excluded.
+target/
+**/target/
+.git/
+node_modules/
+**/node_modules/
+docs/book/
+sdks/**/bin/
+sdks/**/obj/
+sdks/nuget_package_output/
+.worktrees/
+worktrees/
+*.log

@@ -31,4 +31,4 @@ Asset loading, storage, hot-reload, and audio management.
 
 ## Dependencies
 
-Layer 2 (Engine). May import from `core/` and `libs/`.
+Layer 3 (Services). Imports from `core/` (Layer 1) and `ecs/` (same layer). No imports from ffi/ or sdk/.

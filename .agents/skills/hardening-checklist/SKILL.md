@@ -56,8 +56,8 @@ Each area is scored 0-10. Total score out of 120. Ratings:
 - [ ] Integration tests in `goud_engine/tests/`
 - [ ] GL-dependent tests use `test_helpers::init_test_context()`
 - [ ] Math/logic tests independent of GL context
-- [ ] Python SDK tests passing (`test_bindings.py`)
-- [ ] No `#[ignore]` or `todo!()` in committed test code
+- [ ] SDK test harnesses passing (C# `dotnet test`, Python `test_bindings.py`, TypeScript `npm test`)
+- [ ] `#[ignore]` reserved for tests needing a live GPU context; no `todo!()` in committed test code
 - [ ] Coverage target: 80%+ new code
 
 ### 5. Graphics Architecture (0-10)
@@ -114,12 +114,14 @@ Each area is scored 0-10. Total score out of 120. Ratings:
 
 ### 11. SDK Parity (0-10)
 
-- [ ] Every FFI export has C# DllImport wrapper
-- [ ] Every FFI export has Python ctypes wrapper
-- [ ] C# uses PascalCase, Python uses snake_case
+The engine ships 10 SDKs: `c`, `cpp`, `csharp`, `go`, `kotlin`, `lua`, `python`, `rust`, `swift`, `typescript`.
+
+- [ ] Every FFI export has a wrapper in all 10 SDKs
+- [ ] `python3 codegen/validate_coverage.py` passes (100% coverage against `ffi_manifest.json`)
+- [ ] C# uses PascalCase, Python uses snake_case; each SDK follows its language idiom
 - [ ] SDKs are thin wrappers (no logic implemented in SDK)
-- [ ] SDK tests verify binding correctness
-- [ ] Version numbers synchronized across Rust/C#/Python
+- [ ] SDK tests verify binding correctness (C#, Python, TypeScript harnesses)
+- [ ] Version numbers synchronized across all SDKs (see `version.txt`)
 
 ### 12. Security Basics (0-10)
 

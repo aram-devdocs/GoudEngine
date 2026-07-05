@@ -19,7 +19,7 @@ end
 -- When using the embedded runtime (lua-runner), bindings are
 -- automatically registered. This module provides the standalone
 -- entry point for external Lua interpreters.
-M.VERSION = "0.0.832"
+M.VERSION = "0.0.841" -- x-release-please-version
 M.ALPHA = true
 
 -- Re-export constants
