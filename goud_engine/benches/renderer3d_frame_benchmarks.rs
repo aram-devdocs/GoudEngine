@@ -20,6 +20,7 @@
 //!   the legacy `CreatePlane` / `CreateCube` primitive paths.
 //! - `shadow_record/casters_{1400,5k}` — cost of recording the GPU shadow
 //!   pre-pass (requires the Wgsl NullBackend + a directional light).
+//!
 //! The opt-in native-wgpu shadow bench lives in
 //! `renderer3d_real_wgpu_shadow_benchmarks.rs` so the default suite stays
 //! CPU-safe in CI and headless environments.
