@@ -1,48 +1,68 @@
 {
   "entries": {
+    "cull_scaling/visible_5k_total_100k": {
+      "mean_ns": 917174.9174338623,
+      "ratio": 1.9668823098740116
+    },
+    "cull_scaling/visible_5k_total_10k": {
+      "mean_ns": 350246.5993994201,
+      "ratio": 0.7511040995099229
+    },
+    "cull_scaling/visible_5k_total_30k": {
+      "mean_ns": 481366.94020676694,
+      "ratio": 1.0322917703635788
+    },
     "engine_tick/tick_10k": {
-      "mean_ns": 1290507.8221354913,
+      "mean_ns": 466308.99715225556,
       "ratio": 1.0
     },
     "engine_tick/tick_50k": {
-      "mean_ns": 7128460.0525,
-      "ratio": 5.523763537290344
+      "mean_ns": 2479772.321044973,
+      "ratio": 5.31787363355397
     },
     "frame_scan/dynamic_10k": {
-      "mean_ns": 624087.3319795008,
-      "ratio": 0.48359825587634253
+      "mean_ns": 623367.6022023809,
+      "ratio": 1.3368122983028008
     },
     "frame_scan/dynamic_30k": {
-      "mean_ns": 1945237.8166673414,
-      "ratio": 1.5073429105206226
+      "mean_ns": 1920766.813579365,
+      "ratio": 4.119085896496677
     },
     "frame_scan/dynamic_moving_10k": {
-      "mean_ns": 663907.4022640231,
-      "ratio": 0.5144543805750904
+      "mean_ns": 674277.5649485596,
+      "ratio": 1.445988752235891
     },
     "frame_scan/static_10k": {
-      "mean_ns": 31800.088089412693,
-      "ratio": 0.024641530678048057
+      "mean_ns": 31411.31926250892,
+      "ratio": 0.0673615981127054
     },
     "frame_scan/static_30k": {
-      "mean_ns": 99591.88689086288,
-      "ratio": 0.0771726332708789
+      "mean_ns": 95881.97488221213,
+      "ratio": 0.2056189682544459
     },
     "material_sort/off_30k": {
-      "mean_ns": 1516749.6166958064,
-      "ratio": 1.1753122225837713
+      "mean_ns": 1538245.871517857,
+      "ratio": 3.2987694445355107
     },
     "material_sort/on_30k": {
-      "mean_ns": 1905435.7084748035,
-      "ratio": 1.4765007044449752
+      "mean_ns": 1975946.3773650795,
+      "ratio": 4.237418513115047
+    },
+    "primitive_draw_calls/cube_10k": {
+      "mean_ns": 625983.7367566137,
+      "ratio": 1.3424226008494158
+    },
+    "primitive_draw_calls/plane_10k": {
+      "mean_ns": 625987.1186746032,
+      "ratio": 1.342429853375123
     },
     "shadow_record/casters_1400": {
-      "mean_ns": 155227.8765182749,
-      "ratio": 0.12028433602317012
+      "mean_ns": 170131.63051175504,
+      "ratio": 0.3648474113747477
     },
     "shadow_record/casters_5k": {
-      "mean_ns": 554229.6660463082,
-      "ratio": 0.4294663360731798
+      "mean_ns": 612422.163079365,
+      "ratio": 1.3133397957565072
     }
   },
   "reference_bench": "engine_tick/tick_10k"

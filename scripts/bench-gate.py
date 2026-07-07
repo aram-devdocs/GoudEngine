@@ -70,7 +70,14 @@ DEFAULT_REFERENCE = "engine_tick/tick_10k"
 
 # Benchmark groups this gate tracks. A "bench name" is "<group>/<function>".
 # Groups are also read from an existing baseline so the two stay in sync.
-DEFAULT_GROUPS = ["engine_tick", "frame_scan", "material_sort", "shadow_record"]
+DEFAULT_GROUPS = [
+    "engine_tick",
+    "frame_scan",
+    "material_sort",
+    "cull_scaling",
+    "primitive_draw_calls",
+    "shadow_record",
+]
 
 DEFAULT_THRESHOLD = 0.10  # 10%
 QUICK_THRESHOLD = 0.15  # 15%
