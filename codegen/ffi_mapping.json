@@ -636,6 +636,7 @@
     "renderer_3d": {
       "goud_renderer3d_create_cube": {},
       "goud_renderer3d_create_plane": {},
+      "goud_renderer3d_instantiate_plane": {},
       "goud_renderer3d_create_sphere": {},
       "goud_renderer3d_create_cylinder": {},
       "goud_renderer3d_set_object_position": {},
