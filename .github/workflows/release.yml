@@ -32,7 +32,7 @@ jobs:
       tag_name: ${{ steps.release.outputs.tag_name || steps.fallback.outputs.tag_name }}
       version: ${{ steps.release.outputs.version || steps.fallback.outputs.version }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: googleapis/release-please-action@v5
         id: release
@@ -83,7 +83,7 @@ jobs:
             lib: goud_engine.dll
             static_lib: goud_engine.lib
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -159,7 +159,7 @@ jobs:
           - rid: win-x64
             lib: goud_engine.dll
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Download native artifact
         uses: actions/download-artifact@v8
@@ -215,7 +215,7 @@ jobs:
           - rid: win-x64
             static_lib: goud_engine.lib
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Download native artifact
         uses: actions/download-artifact@v8
@@ -270,7 +270,7 @@ jobs:
             target: x86_64-pc-windows-msvc
             name: win32-x64-msvc
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -327,7 +327,7 @@ jobs:
     if: needs.release-please.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -366,7 +366,7 @@ jobs:
     if: needs.release-please.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v6
         with:
@@ -408,7 +408,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: npm
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v6
         with:
@@ -471,7 +471,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: nuget
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -519,7 +519,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v6
         with:
@@ -589,7 +589,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: maven
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-java@v5
         with:
@@ -674,7 +674,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: crates-io
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -709,7 +709,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: luarocks
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install luarocks
         run: |
@@ -743,7 +743,7 @@ jobs:
     if: needs.release-please.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-go@v6
         with:
