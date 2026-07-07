@@ -318,6 +318,8 @@ impl WgpuBackend {
             readback_requested: false,
             scratch_pipeline_keys: Vec::new(),
             scratch_shadow_pipeline_keys: Vec::new(),
+            scratch_shadow_offsets: Vec::new(),
+            scratch_shadow_grown_shaders: rustc_hash::FxHashSet::default(),
         })
     }
 }
