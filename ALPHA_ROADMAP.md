@@ -1,12 +1,21 @@
-# GoudEngine Alpha Roadmap
+# GoudEngine Alpha Roadmap (ARCHIVED)
 
-## Completion Status
+> **ARCHIVED — DO NOT USE FOR PLANNING.** This is the historical alpha (v1) roadmap.
+> Its status claims are unreliable: the "Phase 0 (v2): Core Performance — COMPLETE"
+> line below was false when written — #677, #678, and #679 were open priority:high
+> perf bugs at the time, and the v2 perf gate (60 fps @ 10k entities) was never
+> validated against a consumer-scale scene.
+>
+> **The current roadmap is the v2 Rebuild Runbook: `docs/src/runbook/phase-index.md`
+> and the pinned master tracking issue (ENG2 #810).** Historical body preserved below.
+
+## Completion Status (v1 — historical)
 - [x] Phase 0 (v1): Foundation -- COMPLETE
 - [x] Phase 1 (v1): Core Stabilization -- COMPLETE
 - [x] Phase 2 (v1): Core Systems -- COMPLETE
 - [x] Phase 2.5 (v1): AI Debugger & Runtime Observability -- COMPLETE
 - [x] Phase 3 (v1): Rendering Pipeline + SDK Expansion -- COMPLETE
-- [x] Phase 0 (v2): Core Performance (GoudEngine side) -- COMPLETE
+- [ ] Phase 0 (v2): Core Performance -- SUPERSEDED by ENG2 (was falsely marked COMPLETE)
 
 ## Vision
 

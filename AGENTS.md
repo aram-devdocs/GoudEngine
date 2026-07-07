@@ -47,7 +47,7 @@ Source of truth: `.agents/agent-catalog.toml` and `.agents/role-specs/*.md`.
 
 ## Rules
 
-Read only rules matching your change area: `.agents/rules/*.md`.
+Read only rules matching your change area: `.agents/rules/*.md`. Active roadmap: v2 rebuild ("ENG2") — `docs/src/runbook/` + pinned master issue #810 (perf/render/test rules: `perf-work.md`, `render-v2.md`, `testing-v2.md`).
 
 ## Local AGENTS Files
 
