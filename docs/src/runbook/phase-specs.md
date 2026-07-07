@@ -141,7 +141,7 @@ CI runners cannot measure Metal. Two enforcement layers:
 
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
-| ENG2-P1-03 | Generate ffi_mapping.json from the Rust manifest; delete the 30-entry _TYPE_ALIASES drift table | A | M | — |
+| ENG2-P1-03 | Generate ffi_mapping.json from the Rust manifest; delete the 30-entry `_TYPE_ALIASES` drift table | A | M | — |
 | ENG2-P1-04 | Per-SDK export-parity CI gate: diff each generated SDK against the manifest | A | M | P1-03 |
 | ENG2-P1-05 | Bring wasm/web bridge under manifest codegen + coverage gate; wasm-pack modernization (#425) | B | L | P1-03 |
 
@@ -393,6 +393,7 @@ CI runners cannot measure Metal. Two enforcement layers:
 **Goal:** Four sprite renderers become one instanced core; 2D camera and culling move engine-side. 8 issues.
 
 ### Batch 6.0 — Decision record
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P6-01 | RFC-0008: Unified instanced 2D sprite core | — | S | Phase 4 gate |
@@ -400,6 +401,7 @@ CI runners cannot measure Metal. Two enforcement layers:
 - Four parallel renderers today: immediate FFI (~15 GL-state calls/sprite, `ffi/renderer/draw/internal.rs:107-132`), batched FFI (full rebuild/sort/upload per call, `draw/batch.rs:171-343`), retained ECS SpriteBatch (unreachable from FFI, `rendering/sprite_batch/batch.rs`), WASM batcher (`wasm/sprite_renderer/renderer_core.rs`). Zero GPU instancing anywhere — every sprite CPU-expanded to 4 vertices.
 
 ### Batch 6.1 — Core
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P6-02 | Instanced sprite core: static unit quad + dirty-tracked per-instance buffer (incl. flip flags, #424) | — | L | P6-01 |
@@ -407,6 +409,7 @@ CI runners cannot measure Metal. Two enforcement layers:
 - Per-instance {transform, size, uv-rect, color, tex-index, flags}; persistent buffers, changed-only uploads (replaces `batch.rs:234-242` CPU corner rotation + `batch.rs:355-417` per-frame vertex gen). Reuses Phase 2 instancing patterns behind the backend trait.
 
 ### Batch 6.2 — Path unification (3 groups, parallel)
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P6-03 | Route FFI sprite paths through the core; delete immediate + rebuild-per-call paths | A | M | P6-02 |
@@ -416,6 +419,7 @@ CI runners cannot measure Metal. Two enforcement layers:
 - **P6-05:** FFI batch sets only `u_viewport` (`draw/batch.rs:355`); Throne does world→screen math + visibility in C# per sprite (`GoudRenderPort.cs:275`). Camera uniform + grid/quadtree culling before submission; #554's configurable origin lands in the camera.
 
 ### Batch 6.3 — 2D scale features (3 groups, parallel)
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P6-06 | Chunked tilemap renderer from TileLayer gids | A | M | P6-02 |
@@ -439,6 +443,7 @@ CI runners cannot measure Metal. Two enforcement layers:
 **Goal:** The built-but-unwired services become real: async assets, mipmaps, one audio stack, one 2D physics, retained UI, multi-window. 6 issues.
 
 ### Batch 7.1 — Assets & media (3 groups, parallel)
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P7-01 | Wire async asset pipeline into the runtime; background decode incl. RGB→RGBA off main thread | A | M | Phase 4 gate |
@@ -450,6 +455,7 @@ CI runners cannot measure Metal. Two enforcement layers:
 - **P7-03:** `assets/audio_manager/` (2832 LOC) vs `libs/providers/impls/rodio_audio.rs:118-138` — two full rodio wrappers, two unsafe Send/Sync blocks; keep the provider-trait one, bridge asset data through it.
 
 ### Batch 7.2 — Physics, UI, windowing (3 groups, parallel)
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P7-04 | Consolidate 2D physics on rapier2d; delete the custom ECS solver | A | M | P3-07 |
@@ -474,6 +480,7 @@ CI runners cannot measure Metal. Two enforcement layers:
 **Goal:** "Any game" credibility: navigation, particles, save/load, procedural primitives, terrain. Every capability ships FFI + 10-SDK parity + integration test + docs page (per the Phase 1 gates, now cheap). 11 issues.
 
 ### Batch 8.1 — Highest-demand capabilities (4 groups, parallel)
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P8-01 | Grid A* + flow fields reusing ecs/spatial_grid; nav FFI surface (#546) | A | L | P5-03 |
@@ -487,6 +494,7 @@ CI runners cannot measure Metal. Two enforcement layers:
 - **P8-04:** No `rand`/`noise` in engine deps; cross-language determinism requires an engine-owned seeded PRNG (ties to P5-04 hashing).
 
 ### Batch 8.2 — Gameplay services (4 groups, parallel)
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P8-05 | Engine event bus with FFI subscription (#547) | A | M | — |
@@ -498,6 +506,7 @@ CI runners cannot measure Metal. Two enforcement layers:
 - **P8-08:** Deliberately late: Phases 2/3/6 already deleted much cgmath-using code; migrate the remainder onto `core/math`, drop the advisory-ignored dep.
 
 ### Batch 8.3 — Big-world (2 groups)
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P8-09 | Navmesh generation/query for 3D navigation | A | L | P8-01 |
@@ -519,6 +528,7 @@ CI runners cannot measure Metal. Two enforcement layers:
 **Goal:** Every kept platform is CI-real; developers can see and author scenes; examples prove the v2 API. 9 issues.
 
 ### Batch 9.1 — Platforms & tooling (4 groups, parallel)
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P9-01 | Scene inspector MVP (egui or web client over the MCP relay): entity tree + live component editing | A | L | P7-06 |
@@ -533,6 +543,7 @@ CI runners cannot measure Metal. Two enforcement layers:
 - **P9-05:** `providers/impls/webrtc_network/mod.rs:1-17` is custom UDP+STUN labeled WebRTC, `net-webrtc=[]` pulls no crate; ~7-8k LOC networking has zero production consumers — decision record on tiering (default-feature status) + honest naming.
 
 ### Batch 9.2 — Examples, docs, agent configs (4 groups, parallel)
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P9-06 | Compiled Rust examples in the engine crate (currently zero .rs examples) | A | M | — |

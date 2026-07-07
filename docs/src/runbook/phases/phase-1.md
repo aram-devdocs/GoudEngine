@@ -22,7 +22,7 @@ _Authoritative spec. See also the [phase index](../phase-index.md), [perf-dod](.
 
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
-| ENG2-P1-03 | Generate ffi_mapping.json from the Rust manifest; delete the 30-entry _TYPE_ALIASES drift table | A | M | — |
+| ENG2-P1-03 | Generate ffi_mapping.json from the Rust manifest; delete the 30-entry `_TYPE_ALIASES` drift table | A | M | — |
 | ENG2-P1-04 | Per-SDK export-parity CI gate: diff each generated SDK against the manifest | A | M | P1-03 |
 | ENG2-P1-05 | Bring wasm/web bridge under manifest codegen + coverage gate; wasm-pack modernization (#425) | B | L | P1-03 |
 

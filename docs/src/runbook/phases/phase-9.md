@@ -11,6 +11,7 @@ _Authoritative spec. See also the [phase index](../phase-index.md), [perf-dod](.
 **Goal:** Every kept platform is CI-real; developers can see and author scenes; examples prove the v2 API. 9 issues.
 
 ### Batch 9.1 — Platforms & tooling (4 groups, parallel)
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P9-01 | Scene inspector MVP (egui or web client over the MCP relay): entity tree + live component editing | A | L | P7-06 |
@@ -25,6 +26,7 @@ _Authoritative spec. See also the [phase index](../phase-index.md), [perf-dod](.
 - **P9-05:** `providers/impls/webrtc_network/mod.rs:1-17` is custom UDP+STUN labeled WebRTC, `net-webrtc=[]` pulls no crate; ~7-8k LOC networking has zero production consumers — decision record on tiering (default-feature status) + honest naming.
 
 ### Batch 9.2 — Examples, docs, agent configs (4 groups, parallel)
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P9-06 | Compiled Rust examples in the engine crate (currently zero .rs examples) | A | M | — |

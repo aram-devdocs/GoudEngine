@@ -9,6 +9,7 @@ _Authoritative spec. See also the [phase index](../phase-index.md), [perf-dod](.
 **Goal:** "Any game" credibility: navigation, particles, save/load, procedural primitives, terrain. Every capability ships FFI + 10-SDK parity + integration test + docs page (per the Phase 1 gates, now cheap). 11 issues.
 
 ### Batch 8.1 — Highest-demand capabilities (4 groups, parallel)
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P8-01 | Grid A* + flow fields reusing ecs/spatial_grid; nav FFI surface (#546) | A | L | P5-03 |
@@ -22,6 +23,7 @@ _Authoritative spec. See also the [phase index](../phase-index.md), [perf-dod](.
 - **P8-04:** No `rand`/`noise` in engine deps; cross-language determinism requires an engine-owned seeded PRNG (ties to P5-04 hashing).
 
 ### Batch 8.2 — Gameplay services (4 groups, parallel)
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P8-05 | Engine event bus with FFI subscription (#547) | A | M | — |
@@ -33,6 +35,7 @@ _Authoritative spec. See also the [phase index](../phase-index.md), [perf-dod](.
 - **P8-08:** Deliberately late: Phases 2/3/6 already deleted much cgmath-using code; migrate the remainder onto `core/math`, drop the advisory-ignored dep.
 
 ### Batch 8.3 — Big-world (2 groups)
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P8-09 | Navmesh generation/query for 3D navigation | A | L | P8-01 |

@@ -9,6 +9,7 @@ _Authoritative spec. See also the [phase index](../phase-index.md), [perf-dod](.
 **Goal:** Four sprite renderers become one instanced core; 2D camera and culling move engine-side. 8 issues.
 
 ### Batch 6.0 — Decision record
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P6-01 | RFC-0008: Unified instanced 2D sprite core | — | S | Phase 4 gate |
@@ -16,6 +17,7 @@ _Authoritative spec. See also the [phase index](../phase-index.md), [perf-dod](.
 - Four parallel renderers today: immediate FFI (~15 GL-state calls/sprite, `ffi/renderer/draw/internal.rs:107-132`), batched FFI (full rebuild/sort/upload per call, `draw/batch.rs:171-343`), retained ECS SpriteBatch (unreachable from FFI, `rendering/sprite_batch/batch.rs`), WASM batcher (`wasm/sprite_renderer/renderer_core.rs`). Zero GPU instancing anywhere — every sprite CPU-expanded to 4 vertices.
 
 ### Batch 6.1 — Core
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P6-02 | Instanced sprite core: static unit quad + dirty-tracked per-instance buffer (incl. flip flags, #424) | — | L | P6-01 |
@@ -23,6 +25,7 @@ _Authoritative spec. See also the [phase index](../phase-index.md), [perf-dod](.
 - Per-instance {transform, size, uv-rect, color, tex-index, flags}; persistent buffers, changed-only uploads (replaces `batch.rs:234-242` CPU corner rotation + `batch.rs:355-417` per-frame vertex gen). Reuses Phase 2 instancing patterns behind the backend trait.
 
 ### Batch 6.2 — Path unification (3 groups, parallel)
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P6-03 | Route FFI sprite paths through the core; delete immediate + rebuild-per-call paths | A | M | P6-02 |
@@ -32,6 +35,7 @@ _Authoritative spec. See also the [phase index](../phase-index.md), [perf-dod](.
 - **P6-05:** FFI batch sets only `u_viewport` (`draw/batch.rs:355`); Throne does world→screen math + visibility in C# per sprite (`GoudRenderPort.cs:275`). Camera uniform + grid/quadtree culling before submission; #554's configurable origin lands in the camera.
 
 ### Batch 6.3 — 2D scale features (3 groups, parallel)
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P6-06 | Chunked tilemap renderer from TileLayer gids | A | M | P6-02 |

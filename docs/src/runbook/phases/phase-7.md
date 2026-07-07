@@ -9,6 +9,7 @@ _Authoritative spec. See also the [phase index](../phase-index.md), [perf-dod](.
 **Goal:** The built-but-unwired services become real: async assets, mipmaps, one audio stack, one 2D physics, retained UI, multi-window. 6 issues.
 
 ### Batch 7.1 — Assets & media (3 groups, parallel)
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P7-01 | Wire async asset pipeline into the runtime; background decode incl. RGB→RGBA off main thread | A | M | Phase 4 gate |
@@ -20,6 +21,7 @@ _Authoritative spec. See also the [phase index](../phase-index.md), [perf-dod](.
 - **P7-03:** `assets/audio_manager/` (2832 LOC) vs `libs/providers/impls/rodio_audio.rs:118-138` — two full rodio wrappers, two unsafe Send/Sync blocks; keep the provider-trait one, bridge asset data through it.
 
 ### Batch 7.2 — Physics, UI, windowing (3 groups, parallel)
+
 | ID | Title | Grp | Effort | Blocked by |
 |---|---|---|---|---|
 | ENG2-P7-04 | Consolidate 2D physics on rapier2d; delete the custom ECS solver | A | M | P3-07 |
