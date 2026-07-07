@@ -45,6 +45,7 @@ mod switch_init;
 #[cfg(feature = "switch-vulkan")]
 pub(crate) mod switch_surface;
 mod texture;
+mod timestamps;
 mod uniforms;
 #[cfg(feature = "xbox-gdk")]
 mod xbox_init;
@@ -57,6 +58,7 @@ use resources::{
 };
 
 pub use init::{MAX_TEXTURE_UNITS, UNIFORM_BUFFER_SIZE};
+pub use timestamps::{probe_gpu_timestamp_queries, GpuTimestampProbeReport};
 
 /// Whether to request the wgpu software fallback adapter.
 ///
@@ -197,6 +199,7 @@ pub struct WgpuBackend {
     /// Scratch set reused each frame to dedupe shadow uniform-buffer growth
     /// per shader, avoiding a per-frame FxHashSet allocation.
     scratch_shadow_grown_shaders: rustc_hash::FxHashSet<ShaderHandle>,
+    gpu_timestamps: Option<timestamps::GpuTimestampQueries>,
 }
 
 // SAFETY: wgpu Device and Queue are Send+Sync. Surface is Send.

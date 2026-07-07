@@ -386,7 +386,10 @@ impl WgpuBackend {
                     }),
                     stencil_ops: None,
                 }),
-                timestamp_writes: None,
+                timestamp_writes: self
+                    .gpu_timestamps
+                    .as_ref()
+                    .map(|gpu_timestamps| gpu_timestamps.shadow_pass_writes()),
                 occlusion_query_set: None,
                 multiview_mask: None,
             });

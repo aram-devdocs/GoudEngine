@@ -12,6 +12,10 @@ impl FrameOps for WgpuBackend {
         crate::libs::profiling::profile_scope!(WGPU_BEGIN_FRAME);
 
         frame_timing::reset_timings();
+        if let Some(gpu_timestamps) = self.gpu_timestamps.as_mut() {
+            gpu_timestamps.poll_ready_results(&self.device);
+            gpu_timestamps.record_latest_timings();
+        }
 
         let surface = match self.surface.as_ref() {
             Some(s) => s,
@@ -63,6 +67,7 @@ impl FrameOps for WgpuBackend {
             crate::libs::profiling::finish_frame!();
             return Err(GoudError::InvalidState("No active frame".into()));
         };
+        let timestamp_readback_slot;
 
         let mut encoder = self
             .device
@@ -159,7 +164,10 @@ impl FrameOps for WgpuBackend {
                     }),
                     stencil_ops: None,
                 }),
-                timestamp_writes: None,
+                timestamp_writes: self
+                    .gpu_timestamps
+                    .as_ref()
+                    .map(|gpu_timestamps| gpu_timestamps.render_pass_writes()),
                 occlusion_query_set: None,
                 multiview_mask: None,
             });
@@ -275,10 +283,16 @@ impl FrameOps for WgpuBackend {
             {
                 crate::libs::profiling::profile_scope!(WGPU_GPU_SUBMIT);
 
+                timestamp_readback_slot = self
+                    .gpu_timestamps
+                    .as_mut()
+                    .and_then(|gpu_timestamps| gpu_timestamps.resolve_into_readback(&mut encoder));
                 self.queue.submit(std::iter::once(encoder.finish()));
             }
             let submit_us = submit_start.elapsed().as_micros() as u64;
-            frame_timing::record_phase("gpu_submit", submit_us);
+            if self.gpu_timestamps.is_none() {
+                frame_timing::record_phase("gpu_submit", submit_us);
+            }
 
             // -- readback_stall phase ---------------------------------------------
             let readback_start = std::time::Instant::now();
@@ -295,10 +309,16 @@ impl FrameOps for WgpuBackend {
             {
                 crate::libs::profiling::profile_scope!(WGPU_GPU_SUBMIT);
 
+                timestamp_readback_slot = self
+                    .gpu_timestamps
+                    .as_mut()
+                    .and_then(|gpu_timestamps| gpu_timestamps.resolve_into_readback(&mut encoder));
                 self.queue.submit(std::iter::once(encoder.finish()));
             }
             let submit_us = submit_start.elapsed().as_micros() as u64;
-            frame_timing::record_phase("gpu_submit", submit_us);
+            if self.gpu_timestamps.is_none() {
+                frame_timing::record_phase("gpu_submit", submit_us);
+            }
 
             self.last_frame_readback = None;
         }
@@ -308,6 +328,11 @@ impl FrameOps for WgpuBackend {
         frame.surface_texture.present();
         let present_us = present_start.elapsed().as_micros() as u64;
         frame_timing::record_phase("surface_present", present_us);
+        if let (Some(gpu_timestamps), Some(slot)) =
+            (self.gpu_timestamps.as_mut(), timestamp_readback_slot)
+        {
+            gpu_timestamps.begin_readback(slot);
+        }
 
         crate::libs::profiling::finish_frame!();
 
