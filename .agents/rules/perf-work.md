@@ -1,0 +1,24 @@
+# Performance Work Rules (ENG2)
+
+Applies to any change under `**/rendering/**`, `**/graphics/**`, `**/benches/**`, `scripts/bench-gate.py`, or any issue labeled `area:performance`.
+
+## Definition of done (non-negotiable)
+
+A performance change is done only when BOTH hold:
+
+1. **A named scripted scene hits its numeric target** — S1–S5/H1/cull_scaling from `docs/src/runbook/perf-dod.md`, captured via `scripts/perf-capture` (3-run median on Apple M-series/Metal) or the CI `scripts/bench-gate.py` ratio-gate for CI-runnable benches.
+2. **A phase counter attributes the cost.** The relevant GPU/CPU phase timing is non-zero and accounts for the frame.
+
+**A counter that reads zero means the instrumentation is broken, never that the work is free.** GPU cost surfaces at surface-acquire/present, not in a CPU command-record timer — measure it with a real GPU timestamp (QuerySet), do not infer it.
+
+## Rules
+
+- No optimization without a measurement first. Post the before-number, then the after-number, on the issue.
+- Never silently cap coverage (top-N, sampling, windowing) to hit a number — `log`/document what was dropped. A scene-windowing workaround is a consumer band-aid, not an engine fix.
+- The target is **O(visible), not O(total)**: per-frame CPU cost must not scale with total scene/entity count. If it does, that is the bug, regardless of FPS.
+- Steady-state render frame (no scene mutation) must perform **0 heap allocations** in the render path — assert it with the alloc-budget harness (ENG2-P0-15), do not eyeball it.
+- Aim for headroom, not the 60 FPS floor: the v2 targets are 120+ FPS for tens of thousands of visible entities.
+
+## Before closing
+
+Run the relevant bench-gate scene, attach the capture (scene, numbers, phase breakdown, delta vs baseline). See `docs/src/runbook/perf-dod.md` for scenes and targets and `[perf-work]`↔`[render-v2]`↔`[testing-v2]` for the companion rules.

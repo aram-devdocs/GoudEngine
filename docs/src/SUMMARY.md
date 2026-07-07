@@ -26,6 +26,27 @@
 - [Governance and Enforcement](development/governance.md)
 - [Performance Roadmap](development/performance-roadmap.md)
 
+# v2 Rebuild Runbook (ENG2)
+
+- [Runbook Overview](runbook/index.md)
+- [Phase Index](runbook/phase-index.md)
+- [Perf Definition of Done](runbook/perf-dod.md)
+- [Testing Strategy](runbook/testing-strategy.md)
+- [Throne Sync](runbook/throne-sync.md)
+- [Roadmap Issue Template](runbook/issue-template.md)
+- [Phase Specs (full)](runbook/phase-specs.md)
+- [Phase Specs — Perf/Test Expansion](runbook/phase-specs-expansion.md)
+- [Phase 0: Instrumentation, Truth & Test Foundation](runbook/phases/phase-0.md)
+- [Phase 1: SDK Single Source of Truth](runbook/phases/phase-1.md)
+- [Phase 2: Render Core v2](runbook/phases/phase-2.md)
+- [Phase 3: Data Core v2](runbook/phases/phase-3.md)
+- [Phase 4: FFI v2 Convergence](runbook/phases/phase-4.md)
+- [Phase 5: Parallelism & Determinism](runbook/phases/phase-5.md)
+- [Phase 6: 2D Render v2](runbook/phases/phase-6.md)
+- [Phase 7: Runtime Services](runbook/phases/phase-7.md)
+- [Phase 8: Capability Gaps](runbook/phases/phase-8.md)
+- [Phase 9: Authoring & Release](runbook/phases/phase-9.md)
+
 # Architecture
 
 - [SDK-First Architecture](architecture/sdk-first.md)
