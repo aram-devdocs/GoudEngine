@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.0.842](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.841...v0.0.842) (2026-07-08)
+
+
+### Features
+
+* add feature-gated profiler spans ([#817](https://github.com/aram-devdocs/GoudEngine/issues/817)) ([b10f727](https://github.com/aram-devdocs/GoudEngine/commit/b10f727b66491e18b1e2c5102775253cbd3c0381))
+* **agents:** generate .cursor/rules from the canonical .agents/rules ([4afc8df](https://github.com/aram-devdocs/GoudEngine/commit/4afc8df8a35ebbf6ea2523fca724a0d90ca8ce0c))
+* **bench:** renderer frame + engine-tick benches with a ratio-normalized gate ([a5dd119](https://github.com/aram-devdocs/GoudEngine/commit/a5dd119af3618c27733a6ff71cd4f97878a20505))
+* **hooks:** add lifecycle hooks for challenge, quality, session, and cleanup ([3a0ec08](https://github.com/aram-devdocs/GoudEngine/commit/3a0ec081d10386abfe5a08276d0a46a5c8f5e776))
+* **infra:** dockerized headless test environment and GPU CI lane ([313a434](https://github.com/aram-devdocs/GoudEngine/commit/313a43451c9656a95827729d1a7d953670ed94a3))
+* **render:** env-selectable software fallback adapter ([b0545a6](https://github.com/aram-devdocs/GoudEngine/commit/b0545a6cf6a6c268540040e83110518b3b451490))
+* **renderer:** record begin/end frame timings and surface them via FFI ([#682](https://github.com/aram-devdocs/GoudEngine/issues/682)) ([a524dc2](https://github.com/aram-devdocs/GoudEngine/commit/a524dc27058d559f971f5670c7ff0777b3163227))
+* **render:** headless benchmarking support in NullBackend ([a02d22f](https://github.com/aram-devdocs/GoudEngine/commit/a02d22fbaecf69dea2934c090e8ad73be587253b))
+* **rules:** add discovery-first, challenge, compaction, and doc-standards rules ([b44b9f2](https://github.com/aram-devdocs/GoudEngine/commit/b44b9f215c55be164f9ded67e8ed5fa6a905db4a))
+* **skills:** add skill validator, authoring standard, and four new skills ([bf5e68c](https://github.com/aram-devdocs/GoudEngine/commit/bf5e68ceabed3741da86f791c1b64fd8254073fe))
+* **verify:** canonical verification gate shared by hooks and CI ([c809985](https://github.com/aram-devdocs/GoudEngine/commit/c809985f0a08a354b28af3ad380992a838a7d930))
+* **verify:** gate on the skill validator and hook test harness ([598ab12](https://github.com/aram-devdocs/GoudEngine/commit/598ab124593ca48272f7c938812a8d6dfa0321ad))
+
+
+### Bug Fixes
+
+* **arch:** classify jni/ and ui/ in the layer linter ([1c5d118](https://github.com/aram-devdocs/GoudEngine/commit/1c5d1187957e26e7861a4c3548923e9badba02a8))
+* **bench:** register pool and physics bench harnesses, refresh bench index ([7f034c7](https://github.com/aram-devdocs/GoudEngine/commit/7f034c7dd9d6ed3a254804164309c1333d398df0))
+* **ci:** bump rustls-webpki to 0.103.13 to clear RUSTSEC-2026-0098/0099/0104 ([#683](https://github.com/aram-devdocs/GoudEngine/issues/683)) ([53247db](https://github.com/aram-devdocs/GoudEngine/commit/53247db15ed74520572b13bc738372832557aa69)), closes [#599](https://github.com/aram-devdocs/GoudEngine/issues/599)
+* **ci:** clear clippy while_let_loop and yanked core2 advisory ([1d70d0d](https://github.com/aram-devdocs/GoudEngine/commit/1d70d0dda0a9390662711f628bfeaae9d6fe55de))
+* **ci:** ignore new upstream advisories RUSTSEC-2026-0097/0098/0099 ([607967d](https://github.com/aram-devdocs/GoudEngine/commit/607967d6520a713e3d4578c9758b1a4843e446aa))
+* **ci:** repair benchmarks workflow, enable dotnet coverage, expand CODEOWNERS ([c5db111](https://github.com/aram-devdocs/GoudEngine/commit/c5db1116eaa1ef575bdbdfa01051068d7c4ea550))
+* **clippy:** remove unused imports surfaced by the full gate ([9b3c005](https://github.com/aram-devdocs/GoudEngine/commit/9b3c005abd3132656f85bd7260033759bf583bba))
+* **codex:** drop --locked from cargo fetch in setup ([e688e1c](https://github.com/aram-devdocs/GoudEngine/commit/e688e1c30bbeca8ec7ecebfb83e5102a27a643c8))
+* **deny:** triage newly-surfaced dependency advisories ([#704](https://github.com/aram-devdocs/GoudEngine/issues/704)) ([b8914a6](https://github.com/aram-devdocs/GoudEngine/commit/b8914a6b49e13b39df850ac3a9bdd0b5cbc552cb))
+* **ffi:** free component storage on despawn and reject stale-generation reads ([e5f9900](https://github.com/aram-devdocs/GoudEngine/commit/e5f99001c1ba8abacc0f8eaa14fefad24d9f3db2))
+* **ffi:** purge the FFI component storage on despawn (correct storage layer) ([c04d2f9](https://github.com/aram-devdocs/GoudEngine/commit/c04d2f986ac732ff33512593a446e6172f81f81a))
+* **hooks:** scan MultiEdit payloads, harden command guard, add fixtures ([75af57a](https://github.com/aram-devdocs/GoudEngine/commit/75af57a1b73085e34ba596df771b40a479981e4c))
+* **hooks:** scope the removal guard to system roots only ([1840cbd](https://github.com/aram-devdocs/GoudEngine/commit/1840cbdd80dc875756dfa8014b42886ea567ba91))
+* **packaging:** pack build/GoudEngine.targets into the NuGet package ([#670](https://github.com/aram-devdocs/GoudEngine/issues/670)) ([d472a9d](https://github.com/aram-devdocs/GoudEngine/commit/d472a9d1f2c95f83eaae80eca92d12bc9e0688a2))
+* **render:** move the force-fallback test module to end of file ([7628f16](https://github.com/aram-devdocs/GoudEngine/commit/7628f16e700711258230d2084e4456bf9334b779))
+
+
+### Performance
+
+* **renderer3d:** InstantiatePlane collapses identical plane primitives into one instanced draw ([#679](https://github.com/aram-devdocs/GoudEngine/issues/679)) ([#685](https://github.com/aram-devdocs/GoudEngine/issues/685)) ([7ac30db](https://github.com/aram-devdocs/GoudEngine/commit/7ac30dbfcf84ee6844d48572467d3651cd92f09d))
+* use FxHashMap for hot renderer3d-state and ECS World maps ([147fbbf](https://github.com/aram-devdocs/GoudEngine/commit/147fbbf6ad9297d1e334e483e0ecc22efb9320bb))
+* **wgpu:** eliminate per-frame allocations in shadow pass ([#684](https://github.com/aram-devdocs/GoudEngine/issues/684)) ([8e9795e](https://github.com/aram-devdocs/GoudEngine/commit/8e9795e3c442ffbde7d4c8a20aa46c8e15515fdb))
+
+
+### Refactoring
+
+* **scripts:** de-duplicate validators, fix portability, document scripts ([80fb32b](https://github.com/aram-devdocs/GoudEngine/commit/80fb32b86bc618cd18f18d8d2db3fe040b4ba3c0))
+
 ## [0.0.841](https://github.com/aram-devdocs/GoudEngine/compare/v0.0.840...v0.0.841) (2026-04-04)
 
 
@@ -418,7 +467,7 @@
 * **kotlin:** tighten JNI debugger JSON handling ([67e8369](https://github.com/aram-devdocs/GoudEngine/commit/67e8369873d9416fe30f13320330dca922ad2a15))
 * map SpriteCmd to ISpriteCmd in TS codegen, keep SpriteCmd for C# ([ad07cb9](https://github.com/aram-devdocs/GoudEngine/commit/ad07cb912bfb6c267a0c956c7cc3d1349b8e7c45))
 * move native backend kinds below sdk ([a2364af](https://github.com/aram-devdocs/GoudEngine/commit/a2364afb876d153ad614a335cba920d63131f36a))
-* prefix unused WebRTC event variants with _ to satisfy clippy dead_code ([900d419](https://github.com/aram-devdocs/GoudEngine/commit/900d419e4883ab0336455d4013a6177d0692a7b2))
+* prefix unused WebRTC event variants with `_` to satisfy clippy dead_code ([900d419](https://github.com/aram-devdocs/GoudEngine/commit/900d419e4883ab0336455d4013a6177d0692a7b2))
 * Python FfiRenderMetrics import, Swift batch/continue-on-error ([535673c](https://github.com/aram-devdocs/GoudEngine/commit/535673cd1264d8b952a1068da193d49a5bf94e32))
 * regenerate all SDK codegen outputs for fixed timestep ([a51e84e](https://github.com/aram-devdocs/GoudEngine/commit/a51e84ed3c72dcced71034a11eaf841cee42b6d7))
 * regenerate all SDKs after ffi_mapping change, re-add Go SpriteCmd/TextCmd ([1858b39](https://github.com/aram-devdocs/GoudEngine/commit/1858b39deb49905653538e688e2039d300b71f46))
@@ -680,7 +729,7 @@
 * eliminate race condition in MCP test harness ([2c0f7c3](https://github.com/aram-devdocs/GoudEngine/commit/2c0f7c33588cfa9a12680aaf5219f290cd7a9edc))
 * emit python ffi enum fields as scalars ([97103fa](https://github.com/aram-devdocs/GoudEngine/commit/97103fa70dd55d26500d3b1eee11d65c3ba11d16))
 * exempt generated *.g.rs from line limit, split TS audio into audio.g.rs ([f69a4bd](https://github.com/aram-devdocs/GoudEngine/commit/f69a4bdcbf1bc31a385410aa619794e401db6b42))
-* export TransitionType from Python SDK generated __init__.py ([43c2ae4](https://github.com/aram-devdocs/GoudEngine/commit/43c2ae44e091ce84a6af13a24d8259b069d4b715))
+* export TransitionType from Python SDK generated `__init__.py` ([43c2ae4](https://github.com/aram-devdocs/GoudEngine/commit/43c2ae44e091ce84a6af13a24d8259b069d4b715))
 * format ui ffi and wasm updates ([14ebc2f](https://github.com/aram-devdocs/GoudEngine/commit/14ebc2f69c35c0b751cf04ed2eb181dfe423d0e9))
 * format UI review follow-up ([c63a204](https://github.com/aram-devdocs/GoudEngine/commit/c63a204374f5763cd7c5dde6463f0f8e85a1f9bd))
 * format wasm ui bindings ([0101872](https://github.com/aram-devdocs/GoudEngine/commit/01018729902abeab6e2877a3f3b97bf4e5121ed0))
@@ -854,7 +903,7 @@
 * deduplicate backend/mod.rs — extract to submodules (898→42 lines) ([40e2ae0](https://github.com/aram-devdocs/GoudEngine/commit/40e2ae05272efbe9358d85f4e7a36a75b374fb53))
 * escape hash in C# markdown heading for markdownlint ([9ec8693](https://github.com/aram-devdocs/GoudEngine/commit/9ec8693e80c7680c3571e2a547fbb53b28e5bae5))
 * make plan execution protocol tool-agnostic (not Claude Code-specific) ([03f949d](https://github.com/aram-devdocs/GoudEngine/commit/03f949d32216dd207df35dcacc0ed77a535a8d10))
-* prefix unread wgpu_backend fields with _ to fix CI dead_code errors ([d521095](https://github.com/aram-devdocs/GoudEngine/commit/d521095f4d3b97e80c1271f3557c7d5a2fb9e5f3))
+* prefix unread wgpu_backend fields with `_` to fix CI dead_code errors ([d521095](https://github.com/aram-devdocs/GoudEngine/commit/d521095f4d3b97e80c1271f3557c7d5a2fb9e5f3))
 * remove unused Vec2 import in core/types/tests.rs ([01681b7](https://github.com/aram-devdocs/GoudEngine/commit/01681b7a6cadae8edc0df21c15009d59ac0086a9))
 * replace hardcoded path with {{MAIN_REPO_PATH}} placeholder, clarify plan re-interpretation scope ([aef4086](https://github.com/aram-devdocs/GoudEngine/commit/aef4086ea222d9e8ad81a9e857cf829cd48a3776))
 * replace RefCell with Mutex for sound Sync impl ([6a3a426](https://github.com/aram-devdocs/GoudEngine/commit/6a3a426a9474ca860439c041296e6ea1747789a0))

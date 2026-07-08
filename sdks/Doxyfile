@@ -1,5 +1,5 @@
 PROJECT_NAME           = "GoudEngine C/C++ SDK"
-PROJECT_NUMBER         = 0.0.841 # x-release-please-version
+PROJECT_NUMBER         = 0.0.842 # x-release-please-version
 OUTPUT_DIRECTORY       = doxygen_output
 INPUT                  = c/include cpp/include
 RECURSIVE              = YES
