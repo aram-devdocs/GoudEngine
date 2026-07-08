@@ -21,6 +21,8 @@ net-udp = []
 net-tcp = []
 net-webrtc = []
 net-ws = ["dep:tungstenite", "dep:rustls"]
+profiling-puffin = ["dep:profiling", "dep:puffin"]
+profiling-tracy = ["dep:profiling", "profiling/profile-with-tracy"]
 wgpu-backend = ["dep:wgpu", "dep:winit", "dep:naga", "dep:pollster"]
 web = ["wgpu-backend", "dep:wasm-bindgen", "dep:wasm-bindgen-futures", "dep:web-sys", "dep:js-sys"]
 rapier2d = ["dep:rapier2d"]
@@ -71,6 +73,8 @@ wgpu = { version = "29", optional = true }
 winit = { version = "0.30", optional = true, features = ["android-native-activity"] }
 naga = { version = "29", optional = true, features = ["glsl-in", "wgsl-out"] }
 pollster = { version = "0.4", optional = true }
+profiling = { version = "1.0.18", optional = true, default-features = false }
+puffin = { version = "0.20", optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
 wasm-bindgen-futures = { version = "0.4", optional = true }
 js-sys = { version = "0.3", optional = true }

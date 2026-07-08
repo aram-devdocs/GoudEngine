@@ -25,6 +25,7 @@
 - [Engineering Constitution](development/constitution.md)
 - [Governance and Enforcement](development/governance.md)
 - [Performance Roadmap](development/performance-roadmap.md)
+- [Profiling](development/profiling.md)
 
 # v2 Rebuild Runbook (ENG2)
 
