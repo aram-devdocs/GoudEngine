@@ -41,6 +41,7 @@ struct TimestampReadbackSlot {
 pub(super) struct GpuTimestampQueries {
     query_set: wgpu::QuerySet,
     resolve_buffer: wgpu::Buffer,
+    submit_marker_buffer: wgpu::Buffer,
     readback_slots: [TimestampReadbackSlot; 2],
     timestamp_period_ns: f32,
     pass_mode: TimestampPassMode,
@@ -91,6 +92,12 @@ impl GpuTimestampQueries {
             usage: wgpu::BufferUsages::QUERY_RESOLVE | wgpu::BufferUsages::COPY_SRC,
             mapped_at_creation: false,
         });
+        let submit_marker_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("goud-gpu-timestamp-submit-marker"),
+            size: SUBMIT_MARKER_COPY_SIZE,
+            usage: wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
         let readback_slots = std::array::from_fn(|index| TimestampReadbackSlot {
             buffer: device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some(match index {
@@ -107,6 +114,7 @@ impl GpuTimestampQueries {
         Some(Self {
             query_set,
             resolve_buffer,
+            submit_marker_buffer,
             readback_slots,
             timestamp_period_ns: queue.get_timestamp_period(),
             pass_mode,
@@ -176,7 +184,7 @@ impl GpuTimestampQueries {
         // before the query resolve/copy that makes the timestamps readable next frame.
         encoder.write_timestamp(&self.query_set, SUBMIT_BEGIN_QUERY);
         encoder.copy_buffer_to_buffer(
-            &self.resolve_buffer,
+            &self.submit_marker_buffer,
             0,
             &slot.buffer,
             0,
@@ -296,11 +304,28 @@ fn read_timestamp_timings(
     Some(timings)
 }
 
-fn raw_timestamp_delta_us(start: u64, end: u64, timestamp_period_ns: f32) -> u64 {
+pub(super) fn raw_timestamp_delta_us(start: u64, end: u64, timestamp_period_ns: f32) -> u64 {
     if end <= start {
         return 0;
     }
 
     let delta_ticks = end - start;
-    ((delta_ticks as f64) * (timestamp_period_ns as f64) / 1_000.0) as u64
+    let elapsed_us = ((delta_ticks as f64) * (timestamp_period_ns as f64) / 1_000.0).ceil();
+    elapsed_us.max(1.0) as u64
+}
+
+#[cfg(test)]
+mod tests {
+    use super::raw_timestamp_delta_us;
+
+    #[test]
+    fn timestamp_delta_rounds_up_sub_microsecond_work() {
+        assert_eq!(raw_timestamp_delta_us(10, 11, 1.0), 1);
+    }
+
+    #[test]
+    fn timestamp_delta_keeps_zero_for_missing_or_reversed_queries() {
+        assert_eq!(raw_timestamp_delta_us(10, 10, 1.0), 0);
+        assert_eq!(raw_timestamp_delta_us(11, 10, 1.0), 0);
+    }
 }
