@@ -11,6 +11,8 @@ use super::ParallelSystemStage;
 impl ParallelSystemStage {
     /// Runs all systems using parallel execution.
     pub fn run_parallel(&mut self, world: &mut World) {
+        crate::libs::profiling::profile_scope!(ECS_PARALLEL_STAGE, self.name.as_str());
+
         let profiler_route = debugger::current_route().filter(debugger::profiler_enabled_for_route);
 
         if (self.dirty || self.batches.is_empty()) && self.config.auto_rebuild {
@@ -52,6 +54,11 @@ impl ParallelSystemStage {
                 continue;
             }
             if runnable.len() == 1 {
+                crate::libs::profiling::profile_scope!(
+                    ECS_PARALLEL_SYSTEM,
+                    self.systems[runnable[0]].name()
+                );
+
                 if let Some(route_id) = profiler_route.as_ref() {
                     let system_name = self.systems[runnable[0]].name();
                     let started_at = Instant::now();
@@ -87,6 +94,11 @@ impl ParallelSystemStage {
                             let profiler_route = profiler_route.clone();
                             let stage_name = stage_name.clone();
                             s.spawn(move |_| {
+                                crate::libs::profiling::profile_scope!(
+                                    ECS_PARALLEL_SYSTEM,
+                                    system_name
+                                );
+
                                 let started_at = Instant::now();
                                 // SAFETY: Each system accesses disjoint data.
                                 unsafe {
@@ -109,6 +121,11 @@ impl ParallelSystemStage {
                 #[cfg(not(feature = "native"))]
                 {
                     for &idx in &runnable {
+                        crate::libs::profiling::profile_scope!(
+                            ECS_PARALLEL_SYSTEM,
+                            self.systems[idx].name()
+                        );
+
                         if let Some(route_id) = profiler_route.as_ref() {
                             let system_name = self.systems[idx].name();
                             let started_at = Instant::now();

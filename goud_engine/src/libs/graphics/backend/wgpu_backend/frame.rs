@@ -9,6 +9,8 @@ impl FrameOps for WgpuBackend {
     fn begin_frame(&mut self) -> GoudResult<()> {
         use crate::libs::graphics::frame_timing;
 
+        crate::libs::profiling::profile_scope!(WGPU_BEGIN_FRAME);
+
         frame_timing::reset_timings();
 
         let surface = match self.surface.as_ref() {
@@ -55,10 +57,12 @@ impl FrameOps for WgpuBackend {
     fn end_frame(&mut self) -> GoudResult<()> {
         use crate::libs::graphics::frame_timing;
 
-        let frame = self
-            .current_frame
-            .take()
-            .ok_or(GoudError::InvalidState("No active frame".into()))?;
+        crate::libs::profiling::profile_scope!(WGPU_END_FRAME);
+
+        let Some(frame) = self.current_frame.take() else {
+            crate::libs::profiling::finish_frame!();
+            return Err(GoudError::InvalidState("No active frame".into()));
+        };
 
         let mut encoder = self
             .device
@@ -69,7 +73,11 @@ impl FrameOps for WgpuBackend {
 
         // Upload per-draw-command uniform data into aligned dynamic-offset
         // slots.  Returns the byte offset for each command.
-        let cmd_offsets = self.upload_per_draw_uniforms();
+        let cmd_offsets = {
+            crate::libs::profiling::profile_scope!(WGPU_UNIFORM_UPLOAD);
+
+            self.upload_per_draw_uniforms()
+        };
 
         let load_op = if self.needs_clear {
             self.needs_clear = false;
@@ -115,7 +123,11 @@ impl FrameOps for WgpuBackend {
 
         // -- shadow_pass phase ---------------------------------------------------
         let shadow_pass_start = std::time::Instant::now();
-        self.execute_shadow_pass(&mut encoder);
+        {
+            crate::libs::profiling::profile_scope!(WGPU_SHADOW_PASS);
+
+            self.execute_shadow_pass(&mut encoder);
+        }
         let shadow_pass_us = shadow_pass_start.elapsed().as_micros() as u64;
         frame_timing::record_phase("shadow_pass", shadow_pass_us);
 
@@ -126,6 +138,8 @@ impl FrameOps for WgpuBackend {
         // -- render_pass phase ----------------------------------------------------
         let render_pass_start = std::time::Instant::now();
         {
+            crate::libs::profiling::profile_scope!(WGPU_RENDER_PASS);
+
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: None,
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -258,19 +272,31 @@ impl FrameOps for WgpuBackend {
 
             // -- gpu_submit phase (readback path) ---------------------------------
             let submit_start = std::time::Instant::now();
-            self.queue.submit(std::iter::once(encoder.finish()));
+            {
+                crate::libs::profiling::profile_scope!(WGPU_GPU_SUBMIT);
+
+                self.queue.submit(std::iter::once(encoder.finish()));
+            }
             let submit_us = submit_start.elapsed().as_micros() as u64;
             frame_timing::record_phase("gpu_submit", submit_us);
 
             // -- readback_stall phase ---------------------------------------------
             let readback_start = std::time::Instant::now();
-            self.finish_frame_readback(readback)?;
+            let readback_result = self.finish_frame_readback(readback);
             let readback_us = readback_start.elapsed().as_micros() as u64;
             frame_timing::record_phase("readback_stall", readback_us);
+            if readback_result.is_err() {
+                crate::libs::profiling::finish_frame!();
+            }
+            readback_result?;
         } else {
             // -- gpu_submit phase (no-readback path) ------------------------------
             let submit_start = std::time::Instant::now();
-            self.queue.submit(std::iter::once(encoder.finish()));
+            {
+                crate::libs::profiling::profile_scope!(WGPU_GPU_SUBMIT);
+
+                self.queue.submit(std::iter::once(encoder.finish()));
+            }
             let submit_us = submit_start.elapsed().as_micros() as u64;
             frame_timing::record_phase("gpu_submit", submit_us);
 
@@ -282,6 +308,8 @@ impl FrameOps for WgpuBackend {
         frame.surface_texture.present();
         let present_us = present_start.elapsed().as_micros() as u64;
         frame_timing::record_phase("surface_present", present_us);
+
+        crate::libs::profiling::finish_frame!();
 
         // draw_commands is already cleared in begin_frame().
         self.flush_pending_buffer_destroys();

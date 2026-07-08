@@ -168,9 +168,13 @@ impl SystemStage {
 
     /// Runs a single system by ID on the given world.
     pub fn run_system(&mut self, id: SystemId, world: &mut World) -> Option<bool> {
+        crate::libs::profiling::profile_scope!(ECS_RUN_SYSTEM);
+
         if let Some(&index) = self.system_indices.get(&id) {
             let system = &mut self.systems[index];
             if system.should_run(world) {
+                crate::libs::profiling::profile_scope!(ECS_SYSTEM, system.name());
+
                 system.run(world);
                 Some(true)
             } else {
@@ -371,6 +375,8 @@ impl Stage for SystemStage {
     }
 
     fn run(&mut self, world: &mut World) {
+        crate::libs::profiling::profile_scope!(ECS_SYSTEM_STAGE, self.name.as_str());
+
         let profiler_route = debugger::current_route().filter(debugger::profiler_enabled_for_route);
 
         if self.order_dirty {
@@ -396,6 +402,8 @@ impl Stage for SystemStage {
         }
         for system in &mut self.systems {
             if system.should_run(world) {
+                crate::libs::profiling::profile_scope!(ECS_SYSTEM, system.name());
+
                 if let Some(route_id) = profiler_route.as_ref() {
                     let started_at = Instant::now();
                     system.run(world);
