@@ -14,18 +14,29 @@
 //!   object's transform changes each frame.
 //! - `material_sort/{on,off}_30k` — cost of sorting the visible draw list by
 //!   material vs. leaving it unsorted.
+//! - `cull_scaling/visible_5k_total_*` — fixed 5k visible objects with total
+//!   scene size growing from 10k to 100k to keep #678 measurable.
+//! - `primitive_draw_calls/{plane,cube}_10k` — per-frame draw-record cost for
+//!   the legacy `CreatePlane` / `CreateCube` primitive paths.
 //! - `shadow_record/casters_{1400,5k}` — cost of recording the GPU shadow
 //!   pre-pass (requires the Wgsl NullBackend + a directional light).
+//!
+//! The opt-in native-wgpu shadow bench lives in
+//! `renderer3d_real_wgpu_shadow_benchmarks.rs` so the default suite stays
+//! CPU-safe in CI and headless environments.
 //!
 //! The scenes are deterministic; the companion assertions that pin the exact
 //! draw-call / culled counts live in
 //! `goud_engine/tests/renderer3d_frame_counts.rs`.
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion, Throughput};
+use goud_engine::libs::graphics::renderer3d::PrimitiveType;
 
 #[path = "helpers/scene3d.rs"]
 mod scene3d;
 
+const CULL_VISIBLE_COUNT: usize = 5_000;
+const CULL_SCALING_SIZES: [usize; 3] = [10_000, 30_000, 100_000];
 const FRAME_SCAN_SIZES: [usize; 2] = [10_000, 30_000];
 
 // ================================================================================================
@@ -91,7 +102,54 @@ fn bench_material_sort(c: &mut Criterion) {
 }
 
 // ================================================================================================
-// Group 3: Shadow pre-pass recording
+// Group 3: Frustum-culling scaling (fixed visible set, growing total)
+// ================================================================================================
+
+fn bench_cull_scaling(c: &mut Criterion) {
+    let mut group = c.benchmark_group("cull_scaling");
+
+    for &total in &CULL_SCALING_SIZES {
+        group.throughput(Throughput::Elements(total as u64));
+        group.bench_function(
+            format!(
+                "visible_{}k_total_{}",
+                CULL_VISIBLE_COUNT / 1000,
+                label(total)
+            ),
+            |b| {
+                let mut renderer = scene3d::cull_scaling_scene(total, CULL_VISIBLE_COUNT);
+                b.iter(|| renderer.render(black_box(None)));
+            },
+        );
+    }
+
+    group.finish();
+}
+
+// ================================================================================================
+// Group 4: Legacy primitive draw-call scaling
+// ================================================================================================
+
+fn bench_primitive_draw_calls(c: &mut Criterion) {
+    let mut group = c.benchmark_group("primitive_draw_calls");
+    const N: usize = 10_000;
+    group.throughput(Throughput::Elements(N as u64));
+
+    for (label, primitive_type) in [
+        ("plane_10k", PrimitiveType::Plane),
+        ("cube_10k", PrimitiveType::Cube),
+    ] {
+        group.bench_function(label, |b| {
+            let mut renderer = scene3d::dynamic_primitive_scene(N, primitive_type);
+            b.iter(|| renderer.render(black_box(None)));
+        });
+    }
+
+    group.finish();
+}
+
+// ================================================================================================
+// Group 5: Shadow pre-pass recording
 // ================================================================================================
 
 fn bench_shadow_record(c: &mut Criterion) {
@@ -123,6 +181,8 @@ criterion_group!(
     renderer3d_frame_benches,
     bench_frame_scan,
     bench_material_sort,
+    bench_cull_scaling,
+    bench_primitive_draw_calls,
     bench_shadow_record,
 );
 criterion_main!(renderer3d_frame_benches);

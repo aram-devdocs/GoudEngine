@@ -73,6 +73,42 @@ fn material_sorting_does_not_change_draw_count() {
     assert_eq!(sorted.stats().draw_calls, unsorted.stats().draw_calls);
 }
 
+/// The cull-scaling scene keeps exactly 5k objects inside the frustum while
+/// parking the rest far outside it so bug #678 stays measurable as total scene
+/// size grows.
+#[test]
+fn cull_scaling_scene_pins_visible_and_culled_counts() {
+    let total = 10_000usize;
+    let visible = 5_000usize;
+    let mut renderer = scene3d::cull_scaling_scene(total, visible);
+    renderer.render(None);
+    let stats = renderer.stats();
+
+    assert_eq!(stats.total_objects, total as u32);
+    assert_eq!(stats.visible_objects, visible as u32);
+    assert_eq!(stats.culled_objects, (total - visible) as u32);
+    assert_eq!(stats.draw_calls, visible as u32);
+}
+
+/// The primitive draw-call bench scenes pin one draw per visible object for
+/// both legacy primitive constructors.
+#[test]
+fn primitive_draw_scenes_pin_plane_and_cube_counts() {
+    for primitive in [
+        goud_engine::libs::graphics::renderer3d::PrimitiveType::Plane,
+        goud_engine::libs::graphics::renderer3d::PrimitiveType::Cube,
+    ] {
+        let mut renderer = scene3d::dynamic_primitive_scene(1_000, primitive);
+        renderer.render(None);
+        let stats = renderer.stats();
+
+        assert_eq!(stats.total_objects, 1_000);
+        assert_eq!(stats.visible_objects, 1_000);
+        assert_eq!(stats.culled_objects, 0);
+        assert_eq!(stats.draw_calls, 1_000);
+    }
+}
+
 /// The shadow scene records the GPU shadow pre-pass (Wgsl backend + directional
 /// light) and still draws every object in the main pass. Shadow-pass draw
 /// commands are depth-only and are not reflected in `Renderer3DStats`; the main

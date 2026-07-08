@@ -77,8 +77,6 @@ ignore = [
     { crate = "core2@0.4.0", reason = "yanked upstream; transitive via image→ravif→rav1e→bitstream-io. No replacement version published." },
     # Triaged advisories tracked for upstream upgrade in #704. Accepted risk with
     # rationale below; revisit each when a patched upstream release is available.
-    { id = "RUSTSEC-2026-0186", reason = "memmap2 offset/len validation; transitive via asset loaders, offsets come from internal callers not untrusted input. Pending upstream patch — tracked #704." },
-    { id = "RUSTSEC-2026-0189", reason = "rmcp Streamable-HTTP DNS rebinding affects the localhost-only MCP debug server (dev tooling, not shipped in the engine). Upgrade rmcp when 1.4.0+ integrates — tracked #704." },
     { id = "RUSTSEC-2026-0190", reason = "anyhow downcast_mut-after-context UB; pending patched anyhow release — tracked #704." },
     { id = "RUSTSEC-2026-0192", reason = "ttf-parser unmaintained (not a vulnerability); transitive via rustybuzz text shaping. No maintained replacement adopted upstream — tracked #704." },
     { id = "RUSTSEC-2026-0194", reason = "quick-xml quadratic attribute check; transitive XML parsing of trusted local asset files, not untrusted network input. Pending upstream patch — tracked #704." },

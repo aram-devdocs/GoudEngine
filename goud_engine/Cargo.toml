@@ -153,6 +153,10 @@ name = "renderer3d_frame_benchmarks"
 harness = false
 
 [[bench]]
+name = "renderer3d_real_wgpu_shadow_benchmarks"
+harness = false
+
+[[bench]]
 name = "engine_tick_benchmarks"
 harness = false
 
