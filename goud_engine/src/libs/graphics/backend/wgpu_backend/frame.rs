@@ -142,6 +142,9 @@ impl FrameOps for WgpuBackend {
 
         // -- render_pass phase ----------------------------------------------------
         let render_pass_start = std::time::Instant::now();
+        if let Some(gpu_timestamps) = self.gpu_timestamps.as_ref() {
+            gpu_timestamps.write_render_begin(&mut encoder);
+        }
         {
             crate::libs::profiling::profile_scope!(WGPU_RENDER_PASS);
 
@@ -167,7 +170,7 @@ impl FrameOps for WgpuBackend {
                 timestamp_writes: self
                     .gpu_timestamps
                     .as_ref()
-                    .map(|gpu_timestamps| gpu_timestamps.render_pass_writes()),
+                    .and_then(|gpu_timestamps| gpu_timestamps.render_pass_writes()),
                 occlusion_query_set: None,
                 multiview_mask: None,
             });
@@ -248,6 +251,9 @@ impl FrameOps for WgpuBackend {
                     }
                 }
             }
+        }
+        if let Some(gpu_timestamps) = self.gpu_timestamps.as_ref() {
+            gpu_timestamps.write_render_end(&mut encoder);
         }
         let render_pass_us = render_pass_start.elapsed().as_micros() as u64;
         frame_timing::record_phase("render_pass", render_pass_us);

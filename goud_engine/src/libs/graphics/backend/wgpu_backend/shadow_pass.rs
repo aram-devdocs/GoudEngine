@@ -287,6 +287,9 @@ impl WgpuBackend {
     /// `shadow_draw_commands` after execution.
     pub(super) fn execute_shadow_pass(&mut self, encoder: &mut wgpu::CommandEncoder) {
         if self.shadow_draw_commands.is_empty() || self.shadow_depth_view.is_none() {
+            if let Some(gpu_timestamps) = self.gpu_timestamps.as_ref() {
+                gpu_timestamps.write_empty_shadow_phase(encoder);
+            }
             return;
         }
 
@@ -374,6 +377,9 @@ impl WgpuBackend {
         // SAFETY: shadow_depth_view is confirmed Some above.
         let shadow_view = self.shadow_depth_view.as_ref().unwrap();
 
+        if let Some(gpu_timestamps) = self.gpu_timestamps.as_ref() {
+            gpu_timestamps.write_shadow_begin(encoder);
+        }
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("shadow-pass"),
@@ -389,7 +395,7 @@ impl WgpuBackend {
                 timestamp_writes: self
                     .gpu_timestamps
                     .as_ref()
-                    .map(|gpu_timestamps| gpu_timestamps.shadow_pass_writes()),
+                    .and_then(|gpu_timestamps| gpu_timestamps.shadow_pass_writes()),
                 occlusion_query_set: None,
                 multiview_mask: None,
             });
@@ -441,6 +447,9 @@ impl WgpuBackend {
                     }
                 }
             }
+        }
+        if let Some(gpu_timestamps) = self.gpu_timestamps.as_ref() {
+            gpu_timestamps.write_shadow_end(encoder);
         }
         self.shadow_draw_commands.clear();
         // Return scratch buffers so they are reused next frame.

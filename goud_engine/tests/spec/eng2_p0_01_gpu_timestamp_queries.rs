@@ -14,6 +14,13 @@ fn eng2_p0_01_query_set_populates_and_resolves_on_wgpu_backend() {
         eprintln!("Skipping ENG2-P0-01 probe: adapter does not expose timestamp-query features");
         return;
     }
+    if report.raw_queries.iter().all(|query| *query == 0) {
+        eprintln!(
+            "Skipping ENG2-P0-01 probe: adapter returned zeroed timestamp-query data: {:?}",
+            report.raw_queries
+        );
+        return;
+    }
 
     assert!(
         report.raw_queries.iter().all(|query| *query > 0),

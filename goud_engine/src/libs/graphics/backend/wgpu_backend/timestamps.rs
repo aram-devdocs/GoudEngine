@@ -1,4 +1,7 @@
-use std::sync::mpsc::{self, Receiver, TryRecvError};
+use std::{
+    sync::mpsc::{self, Receiver, TryRecvError},
+    time::{Duration, Instant},
+};
 
 use crate::libs::graphics::frame_timing;
 
@@ -11,12 +14,19 @@ const SUBMIT_BEGIN_QUERY: u32 = 4;
 const SUBMIT_END_QUERY: u32 = 5;
 const TIMESTAMP_BUFFER_SIZE: u64 =
     (TIMESTAMP_QUERY_COUNT as u64) * std::mem::size_of::<u64>() as u64;
+const SUBMIT_MARKER_COPY_SIZE: u64 = std::mem::size_of::<u64>() as u64;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(super) struct GpuTimestampFrameTimings {
     pub(super) shadow_us: u64,
     pub(super) render_us: u64,
     pub(super) submit_us: u64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum TimestampPassMode {
+    RenderPassWrites,
+    EncoderWrites,
 }
 
 #[derive(Debug)]
@@ -36,6 +46,7 @@ pub(super) struct GpuTimestampQueries {
     resolve_buffer: wgpu::Buffer,
     readback_slots: [TimestampReadbackSlot; 2],
     timestamp_period_ns: f32,
+    pass_mode: TimestampPassMode,
     latest: GpuTimestampFrameTimings,
     next_slot: usize,
 }
@@ -51,14 +62,17 @@ pub struct GpuTimestampProbeReport {
 
 impl GpuTimestampQueries {
     pub(super) fn requested_features(adapter_features: wgpu::Features) -> wgpu::Features {
-        let required = wgpu::Features::TIMESTAMP_QUERY
-            | wgpu::Features::TIMESTAMP_QUERY_INSIDE_ENCODERS
-            | wgpu::Features::TIMESTAMP_QUERY_INSIDE_PASSES;
+        let required_encoder =
+            wgpu::Features::TIMESTAMP_QUERY | wgpu::Features::TIMESTAMP_QUERY_INSIDE_ENCODERS;
 
-        if adapter_features.contains(required) {
-            required
+        if !adapter_features.contains(required_encoder) {
+            return wgpu::Features::empty();
+        }
+
+        if adapter_features.contains(wgpu::Features::TIMESTAMP_QUERY_INSIDE_PASSES) {
+            required_encoder | wgpu::Features::TIMESTAMP_QUERY_INSIDE_PASSES
         } else {
-            wgpu::Features::empty()
+            required_encoder
         }
     }
 
@@ -71,6 +85,12 @@ impl GpuTimestampQueries {
         if required.is_empty() {
             return None;
         }
+
+        let pass_mode = if required.contains(wgpu::Features::TIMESTAMP_QUERY_INSIDE_PASSES) {
+            TimestampPassMode::RenderPassWrites
+        } else {
+            TimestampPassMode::EncoderWrites
+        };
 
         let query_set = device.create_query_set(&wgpu::QuerySetDescriptor {
             label: Some("goud-gpu-timestamps"),
@@ -101,24 +121,58 @@ impl GpuTimestampQueries {
             resolve_buffer,
             readback_slots,
             timestamp_period_ns: queue.get_timestamp_period(),
+            pass_mode,
             latest: GpuTimestampFrameTimings::default(),
             next_slot: 0,
         })
     }
 
-    pub(super) fn shadow_pass_writes(&self) -> wgpu::RenderPassTimestampWrites<'_> {
-        wgpu::RenderPassTimestampWrites {
-            query_set: &self.query_set,
-            beginning_of_pass_write_index: Some(SHADOW_BEGIN_QUERY),
-            end_of_pass_write_index: Some(SHADOW_END_QUERY),
+    pub(super) fn shadow_pass_writes(&self) -> Option<wgpu::RenderPassTimestampWrites<'_>> {
+        (self.pass_mode == TimestampPassMode::RenderPassWrites).then_some(
+            wgpu::RenderPassTimestampWrites {
+                query_set: &self.query_set,
+                beginning_of_pass_write_index: Some(SHADOW_BEGIN_QUERY),
+                end_of_pass_write_index: Some(SHADOW_END_QUERY),
+            },
+        )
+    }
+
+    pub(super) fn render_pass_writes(&self) -> Option<wgpu::RenderPassTimestampWrites<'_>> {
+        (self.pass_mode == TimestampPassMode::RenderPassWrites).then_some(
+            wgpu::RenderPassTimestampWrites {
+                query_set: &self.query_set,
+                beginning_of_pass_write_index: Some(RENDER_BEGIN_QUERY),
+                end_of_pass_write_index: Some(RENDER_END_QUERY),
+            },
+        )
+    }
+
+    pub(super) fn write_shadow_begin(&self, encoder: &mut wgpu::CommandEncoder) {
+        if self.pass_mode == TimestampPassMode::EncoderWrites {
+            encoder.write_timestamp(&self.query_set, SHADOW_BEGIN_QUERY);
         }
     }
 
-    pub(super) fn render_pass_writes(&self) -> wgpu::RenderPassTimestampWrites<'_> {
-        wgpu::RenderPassTimestampWrites {
-            query_set: &self.query_set,
-            beginning_of_pass_write_index: Some(RENDER_BEGIN_QUERY),
-            end_of_pass_write_index: Some(RENDER_END_QUERY),
+    pub(super) fn write_shadow_end(&self, encoder: &mut wgpu::CommandEncoder) {
+        if self.pass_mode == TimestampPassMode::EncoderWrites {
+            encoder.write_timestamp(&self.query_set, SHADOW_END_QUERY);
+        }
+    }
+
+    pub(super) fn write_empty_shadow_phase(&self, encoder: &mut wgpu::CommandEncoder) {
+        encoder.write_timestamp(&self.query_set, SHADOW_BEGIN_QUERY);
+        encoder.write_timestamp(&self.query_set, SHADOW_END_QUERY);
+    }
+
+    pub(super) fn write_render_begin(&self, encoder: &mut wgpu::CommandEncoder) {
+        if self.pass_mode == TimestampPassMode::EncoderWrites {
+            encoder.write_timestamp(&self.query_set, RENDER_BEGIN_QUERY);
+        }
+    }
+
+    pub(super) fn write_render_end(&self, encoder: &mut wgpu::CommandEncoder) {
+        if self.pass_mode == TimestampPassMode::EncoderWrites {
+            encoder.write_timestamp(&self.query_set, RENDER_END_QUERY);
         }
     }
 
@@ -129,10 +183,18 @@ impl GpuTimestampQueries {
         let slot_index = self.next_available_slot()?;
         let slot = &self.readback_slots[slot_index];
 
-        // wgpu timestamps can only measure work inside the GPU command stream, not the
-        // CPU-side queue.submit() call itself. We therefore treat gpu_submit as the
-        // submission tail: query resolution plus the copy into the MAP_READ buffer.
+        // wgpu timestamps can only measure GPU command-stream work, not the CPU-side
+        // queue.submit() call itself. This marker brackets the encoded submission tail
+        // before the query resolve/copy that makes the timestamps readable next frame.
         encoder.write_timestamp(&self.query_set, SUBMIT_BEGIN_QUERY);
+        encoder.copy_buffer_to_buffer(
+            &self.resolve_buffer,
+            0,
+            &slot.buffer,
+            0,
+            SUBMIT_MARKER_COPY_SIZE,
+        );
+        encoder.write_timestamp(&self.query_set, SUBMIT_END_QUERY);
         encoder.resolve_query_set(
             &self.query_set,
             0..TIMESTAMP_QUERY_COUNT,
@@ -146,7 +208,6 @@ impl GpuTimestampQueries {
             0,
             TIMESTAMP_BUFFER_SIZE,
         );
-        encoder.write_timestamp(&self.query_set, SUBMIT_END_QUERY);
 
         self.next_slot = (slot_index + 1) % self.readback_slots.len();
         Some(slot_index)
@@ -290,6 +351,8 @@ async fn probe_gpu_timestamp_queries_async() -> Result<GpuTimestampProbeReport, 
         .await
         .map_err(|e| format!("Failed to create probe device: {e}"))?;
 
+    let use_render_pass_writes = features.contains(wgpu::Features::TIMESTAMP_QUERY_INSIDE_PASSES);
+
     let query_set = device.create_query_set(&wgpu::QuerySetDescriptor {
         label: Some("goud-gpu-timestamp-probe"),
         ty: wgpu::QueryType::Timestamp,
@@ -359,6 +422,9 @@ async fn probe_gpu_timestamp_queries_async() -> Result<GpuTimestampProbeReport, 
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
         label: Some("goud-gpu-timestamp-probe"),
     });
+    if !use_render_pass_writes {
+        encoder.write_timestamp(&query_set, SHADOW_BEGIN_QUERY);
+    }
     {
         let _shadow_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("goud-gpu-timestamp-probe-shadow"),
@@ -371,7 +437,7 @@ async fn probe_gpu_timestamp_queries_async() -> Result<GpuTimestampProbeReport, 
                 }),
                 stencil_ops: None,
             }),
-            timestamp_writes: Some(wgpu::RenderPassTimestampWrites {
+            timestamp_writes: use_render_pass_writes.then_some(wgpu::RenderPassTimestampWrites {
                 query_set: &query_set,
                 beginning_of_pass_write_index: Some(SHADOW_BEGIN_QUERY),
                 end_of_pass_write_index: Some(SHADOW_END_QUERY),
@@ -379,6 +445,10 @@ async fn probe_gpu_timestamp_queries_async() -> Result<GpuTimestampProbeReport, 
             occlusion_query_set: None,
             multiview_mask: None,
         });
+    }
+    if !use_render_pass_writes {
+        encoder.write_timestamp(&query_set, SHADOW_END_QUERY);
+        encoder.write_timestamp(&query_set, RENDER_BEGIN_QUERY);
     }
     {
         let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -400,7 +470,7 @@ async fn probe_gpu_timestamp_queries_async() -> Result<GpuTimestampProbeReport, 
                 }),
                 stencil_ops: None,
             }),
-            timestamp_writes: Some(wgpu::RenderPassTimestampWrites {
+            timestamp_writes: use_render_pass_writes.then_some(wgpu::RenderPassTimestampWrites {
                 query_set: &query_set,
                 beginning_of_pass_write_index: Some(RENDER_BEGIN_QUERY),
                 end_of_pass_write_index: Some(RENDER_END_QUERY),
@@ -409,8 +479,19 @@ async fn probe_gpu_timestamp_queries_async() -> Result<GpuTimestampProbeReport, 
             multiview_mask: None,
         });
     }
+    if !use_render_pass_writes {
+        encoder.write_timestamp(&query_set, RENDER_END_QUERY);
+    }
 
     encoder.write_timestamp(&query_set, SUBMIT_BEGIN_QUERY);
+    encoder.copy_buffer_to_buffer(
+        &resolve_buffer,
+        0,
+        &readback_buffer,
+        0,
+        SUBMIT_MARKER_COPY_SIZE,
+    );
+    encoder.write_timestamp(&query_set, SUBMIT_END_QUERY);
     encoder.resolve_query_set(&query_set, 0..TIMESTAMP_QUERY_COUNT, &resolve_buffer, 0);
     encoder.copy_buffer_to_buffer(
         &resolve_buffer,
@@ -419,7 +500,6 @@ async fn probe_gpu_timestamp_queries_async() -> Result<GpuTimestampProbeReport, 
         0,
         TIMESTAMP_BUFFER_SIZE,
     );
-    encoder.write_timestamp(&query_set, SUBMIT_END_QUERY);
 
     queue.submit(std::iter::once(encoder.finish()));
 
@@ -428,12 +508,27 @@ async fn probe_gpu_timestamp_queries_async() -> Result<GpuTimestampProbeReport, 
     slice.map_async(wgpu::MapMode::Read, move |result| {
         let _ = tx.send(result);
     });
-    device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .map_err(|e| format!("Probe poll failed: {e}"))?;
-    rx.recv()
-        .map_err(|e| format!("Probe map receive failed: {e}"))?
-        .map_err(|e| format!("Probe map failed: {e}"))?;
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        device
+            .poll(wgpu::PollType::Poll)
+            .map_err(|e| format!("Probe poll failed: {e}"))?;
+        match rx.try_recv() {
+            Ok(result) => {
+                result.map_err(|e| format!("Probe map failed: {e}"))?;
+                break;
+            }
+            Err(TryRecvError::Disconnected) => {
+                return Err("Probe map callback disconnected".to_string());
+            }
+            Err(TryRecvError::Empty) if Instant::now() >= deadline => {
+                return Err("Timed out waiting for timestamp probe readback".to_string());
+            }
+            Err(TryRecvError::Empty) => {
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        }
+    }
 
     let mapped = slice.get_mapped_range();
     let raw = bytemuck::cast_slice::<u8, u64>(&mapped);
