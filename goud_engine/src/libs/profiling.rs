@@ -1,12 +1,5 @@
 //! Feature-gated local profiling helpers.
 
-macro_rules! begin_frame {
-    () => {
-        #[cfg(all(not(feature = "profiling-tracy"), feature = "profiling-puffin"))]
-        puffin::set_scopes_on(true);
-    };
-}
-
 macro_rules! finish_frame {
     () => {
         #[cfg(feature = "profiling-tracy")]
@@ -70,7 +63,6 @@ macro_rules! profile_scope {
     };
 }
 
-pub(crate) use begin_frame;
 pub(crate) use finish_frame;
 pub(crate) use profile_scope;
 

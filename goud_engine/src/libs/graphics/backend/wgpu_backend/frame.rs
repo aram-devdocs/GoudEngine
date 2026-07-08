@@ -9,7 +9,6 @@ impl FrameOps for WgpuBackend {
     fn begin_frame(&mut self) -> GoudResult<()> {
         use crate::libs::graphics::frame_timing;
 
-        crate::libs::profiling::begin_frame!();
         crate::libs::profiling::profile_scope!(WGPU_BEGIN_FRAME);
 
         frame_timing::reset_timings();
@@ -60,10 +59,10 @@ impl FrameOps for WgpuBackend {
 
         crate::libs::profiling::profile_scope!(WGPU_END_FRAME);
 
-        let frame = self
-            .current_frame
-            .take()
-            .ok_or(GoudError::InvalidState("No active frame".into()))?;
+        let Some(frame) = self.current_frame.take() else {
+            crate::libs::profiling::finish_frame!();
+            return Err(GoudError::InvalidState("No active frame".into()));
+        };
 
         let mut encoder = self
             .device
