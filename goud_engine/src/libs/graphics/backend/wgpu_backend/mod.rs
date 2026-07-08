@@ -45,6 +45,7 @@ mod switch_init;
 #[cfg(feature = "switch-vulkan")]
 pub(crate) mod switch_surface;
 mod texture;
+mod timestamp_probe;
 mod timestamps;
 mod uniforms;
 #[cfg(feature = "xbox-gdk")]
@@ -58,7 +59,7 @@ use resources::{
 };
 
 pub use init::{MAX_TEXTURE_UNITS, UNIFORM_BUFFER_SIZE};
-pub use timestamps::{probe_gpu_timestamp_queries, GpuTimestampProbeReport};
+pub use timestamp_probe::{probe_gpu_timestamp_queries, GpuTimestampProbeReport};
 
 /// Whether to request the wgpu software fallback adapter.
 ///
