@@ -111,6 +111,8 @@ The `RenderBackend` trait abstracts the GPU backend. Both 2D (SpriteBatch) and 3
 | `net-tcp` | (empty) |
 | `net-webrtc` | (empty) |
 | `net-ws` | `tungstenite`, `rustls` |
+| `profiling-puffin` | `profiling`, `puffin` |
+| `profiling-tracy` | `profiling`, `profiling/profile-with-tracy` |
 | `wgpu-backend` | `wgpu`, `winit`, `naga`, `pollster` |
 | `web` | `wgpu-backend`, `wasm-bindgen`, `wasm-bindgen-futures`, `web-sys`, `js-sys` |
 | `rapier2d` | `rapier2d` |
