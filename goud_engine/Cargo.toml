@@ -71,7 +71,7 @@ bytemuck = "1.14"
 goud_engine_macros = { version = "=0.0.842", path = "../goud_engine_macros" } # x-release-please-version
 wgpu = { version = "29", optional = true }
 winit = { version = "0.30", optional = true, features = ["android-native-activity"] }
-naga = { version = "29", optional = true, features = ["glsl-in", "wgsl-out"] }
+naga = { version = "30", optional = true, features = ["glsl-in", "wgsl-out"] }
 pollster = { version = "0.4", optional = true }
 profiling = { version = "1.0.18", optional = true, default-features = false }
 puffin = { version = "0.20", optional = true }
