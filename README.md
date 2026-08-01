@@ -16,7 +16,7 @@
 [![LuaRocks](https://img.shields.io/luarocks/v/aram-devdocs/goudengine.svg)](https://luarocks.org/modules/aram-devdocs/goudengine)
 [![Go Reference](https://pkg.go.dev/badge/github.com/aram-devdocs/GoudEngine/sdks/go/goud.svg)](https://pkg.go.dev/github.com/aram-devdocs/GoudEngine/sdks/go/goud)
 
-[![total downloads](https://img.shields.io/badge/total_downloads-12%2C063-brightgreen)](#downloads)
+[![total downloads](https://img.shields.io/badge/total_downloads-12%2C072-brightgreen)](#downloads)
 
 Game engine written in Rust. Build 2D and 3D games from Rust, C#, Python, TypeScript, C, C++, Go, Kotlin, Swift, or Lua.
 
@@ -208,7 +208,7 @@ GoudEngine is working toward an alpha release. The full plan covers physics, aud
 | Registry | Total Downloads |
 |----------|-----------------|
 | crates.io | [57](https://crates.io/crates/goud-engine) |
-| NuGet | [2,882](https://www.nuget.org/packages/GoudEngine/) |
+| NuGet | [2,891](https://www.nuget.org/packages/GoudEngine/) |
 | PyPI | [6,551](https://pypi.org/project/goudengine/) |
 | npm | [2,573](https://www.npmjs.com/package/goudengine) |
 | Maven Central | [0](https://central.sonatype.com/artifact/io.github.aram-devdocs/goudengine) |
@@ -221,7 +221,7 @@ GoudEngine is working toward an alpha release. The full plan covers physics, aud
 
 [![Star History Chart](https://api.star-history.com/svg?repos=aram-devdocs/GoudEngine&type=Date)](https://star-history.com/#aram-devdocs/GoudEngine&Date)
 
-<sub>Last updated: 2026-07-31 via [GitHub Action](.github/workflows/community-stats.yml)</sub>
+<sub>Last updated: 2026-08-01 via [GitHub Action](.github/workflows/community-stats.yml)</sub>
 <!-- COMMUNITY-STATS:END -->
 
 ## License
