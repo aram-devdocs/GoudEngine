@@ -517,7 +517,7 @@ jobs:
       run: echo "DYLD_LIBRARY_PATH=${{ github.workspace }}/native-release:$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
 
     - name: Cache NuGet packages
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
