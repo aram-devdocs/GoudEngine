@@ -1,8 +1,8 @@
 //! wgpu backend initialization: device/surface setup and public accessors.
 
 use super::{
-    BackendCapabilities, BackendInfo, BlendFactor, CullFace, DepthFunc, FrontFace, HashMap,
-    PrimitiveTopology, ShaderLanguage, TextureOps, WgpuBackend,
+    timestamps::GpuTimestampQueries, BackendCapabilities, BackendInfo, BlendFactor, CullFace,
+    DepthFunc, FrontFace, HashMap, PrimitiveTopology, ShaderLanguage, TextureOps, WgpuBackend,
 };
 use crate::core::{
     error::{GoudError, GoudResult},
@@ -40,10 +40,11 @@ impl WgpuBackend {
             .await
             .map_err(|e| GoudError::BackendNotSupported(format!("No suitable GPU adapter: {e}")))?;
 
+        let timestamp_features = GpuTimestampQueries::requested_features(adapter.features());
         let (device, queue): (wgpu::Device, wgpu::Queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
                 label: Some("GoudEngine"),
-                required_features: wgpu::Features::empty(),
+                required_features: timestamp_features,
                 required_limits: wgpu::Limits::default(),
                 ..Default::default()
             })
@@ -241,6 +242,8 @@ impl WgpuBackend {
             })
         };
 
+        let gpu_timestamps = GpuTimestampQueries::new(&device, &queue, device.features());
+
         Ok(Self {
             info,
             device,
@@ -307,6 +310,7 @@ impl WgpuBackend {
             scratch_shadow_pipeline_keys: Vec::new(),
             scratch_shadow_offsets: Vec::new(),
             scratch_shadow_grown_shaders: rustc_hash::FxHashSet::default(),
+            gpu_timestamps,
         })
     }
 

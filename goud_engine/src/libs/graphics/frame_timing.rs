@@ -19,6 +19,10 @@ pub struct FramePhaseTimings {
     pub uniform_upload_us: u64,
     /// GPU render pass recording time.
     pub render_pass_us: u64,
+    /// GPU timestamp duration for the shadow pre-pass.
+    pub gpu_shadow_us: u64,
+    /// GPU timestamp duration for the main render pass.
+    pub gpu_render_us: u64,
     /// GPU command submission time.
     pub gpu_submit_us: u64,
     /// GPU readback stall time.
@@ -53,6 +57,8 @@ pub fn record_timing(field: &str, value: u64) {
             "surface_acquire" => t.surface_acquire_us = value,
             "uniform_upload" => t.uniform_upload_us = value,
             "render_pass" => t.render_pass_us = value,
+            "gpu_shadow" => t.gpu_shadow_us = value,
+            "gpu_render" => t.gpu_render_us = value,
             "gpu_submit" => t.gpu_submit_us = value,
             "readback_stall" => t.readback_stall_us = value,
             "surface_present" => t.surface_present_us = value,
@@ -100,6 +106,8 @@ mod tests {
         record_timing("render3d_scene", 300);
         record_timing("uniform_upload", 400);
         record_timing("render_pass", 500);
+        record_timing("gpu_shadow", 550);
+        record_timing("gpu_render", 575);
         record_timing("gpu_submit", 600);
         record_timing("readback_stall", 700);
         record_timing("surface_present", 800);
@@ -116,6 +124,8 @@ mod tests {
         assert_eq!(t.render3d_scene_us, 300);
         assert_eq!(t.uniform_upload_us, 400);
         assert_eq!(t.render_pass_us, 500);
+        assert_eq!(t.gpu_shadow_us, 550);
+        assert_eq!(t.gpu_render_us, 575);
         assert_eq!(t.gpu_submit_us, 600);
         assert_eq!(t.readback_stall_us, 700);
         assert_eq!(t.surface_present_us, 800);
@@ -135,6 +145,8 @@ mod tests {
         assert_eq!(t.render3d_scene_us, 0);
         assert_eq!(t.begin_frame_us, 0);
         assert_eq!(t.end_frame_us, 0);
+        assert_eq!(t.gpu_shadow_us, 0);
+        assert_eq!(t.gpu_render_us, 0);
     }
 
     #[test]
@@ -156,6 +168,8 @@ mod tests {
         assert_eq!(t.shadow_pass_us, 0);
         assert_eq!(t.shadow_build_us, 0);
         assert_eq!(t.render3d_scene_us, 0);
+        assert_eq!(t.gpu_shadow_us, 0);
+        assert_eq!(t.gpu_render_us, 0);
         assert_eq!(t.uniform_upload_us, 0);
         assert_eq!(t.render_pass_us, 0);
         assert_eq!(t.gpu_submit_us, 0);
