@@ -686,7 +686,7 @@ jobs:
         save-if: ${{ github.ref == 'refs/heads/main' }}
 
     - name: Setup Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@v7
       with:
         node-version: '20'
         cache: 'npm'
@@ -817,7 +817,7 @@ jobs:
         save-if: ${{ github.ref == 'refs/heads/main' }}
 
     - name: Setup Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@v7
       with:
         node-version: '20'
         cache: 'npm'
@@ -990,7 +990,7 @@ jobs:
         python-version: '3.11'
 
     - name: Setup Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@v7
       with:
         node-version: '20'
         cache: 'npm'
@@ -1334,7 +1334,7 @@ jobs:
         dotnet-version: '8.0.x'
 
     - name: Setup Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@v7
       with:
         node-version: '20'
         cache: 'npm'
