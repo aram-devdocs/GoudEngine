@@ -2492,5 +2492,16 @@
     "luarocks": 0,
     "go_versions": 0,
     "total": 13085
+  },
+  {
+    "date": "2026-10-28",
+    "crates_io": 68,
+    "nuget": 3197,
+    "pypi": 7126,
+    "npm": 2698,
+    "maven": 0,
+    "luarocks": 0,
+    "go_versions": 0,
+    "total": 13089
   }
 ]
