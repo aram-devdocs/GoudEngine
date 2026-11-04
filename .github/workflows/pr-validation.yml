@@ -201,7 +201,7 @@ jobs:
 
     - name: Lint changed Markdown files
       if: steps.changed.outputs.files != ''
-      uses: DavidAnson/markdownlint-cli2-action@v23
+      uses: DavidAnson/markdownlint-cli2-action@v24
       with:
         globs: ${{ steps.changed.outputs.files }}
 
